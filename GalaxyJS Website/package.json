@@ -1,0 +1,12 @@
+{
+  "name":"GalaxyJS_Website",
+  "version":"1.0.0",
+  "keywords":[
+    "util",
+    "browser"
+  ],
+  "author":"Eeliya",
+  "contributors":[
+  ],
+  "dependencies":{}
+}
