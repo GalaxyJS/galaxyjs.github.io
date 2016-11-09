@@ -2,6 +2,19 @@
 <html>
   <head>
     <title>GalaxyJS - Welcome</title>
+    <script src="https://rawgit.com/x-tag/core/master/dist/x-tag-core.min.js"></script>
+    <script src="galaxyjs/build.js"></script>
+
+    <script>
+      Galaxy.init();
+
+
+      Galaxy.on('app', function (full) {
+        console.log(full);
+      });
+
+      Galaxy.start();
+    </script>
   </head>
   <body>
     <h1>Welcome to GalaxyJS</h1>
