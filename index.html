@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>GalaxyJS - Welcome</title>
+    <link rel="stylesheet" href="styles/styles.css" />
     <script src="https://rawgit.com/x-tag/core/master/dist/x-tag-core.min.js"></script>
     <script src="galaxyjs/build.js"></script>
 
@@ -11,14 +12,25 @@
         window.addEventListener('load', run);
 
         function run() {
+          var dependecies = {
+            styles: {
+              id: 'styles',
+              url: 'styles/component.html'
+            }
+          };
+
           var components = {
             start: {
               id: 'start',
-              url: 'start/component.html'
+              url: 'star/component.html'
             },
             guide: {
               id: 'guide',
               url: 'guide/component.html'
+            },
+            planet: {
+              id: 'planet',
+              url: 'planet/component.html'
             }
           };
 
@@ -50,8 +62,21 @@
   </head>
   <body>
     <h1>Welcome to GalaxyJS</h1>
-    <p>GalaxyJS is still very hot and forming, check back soon...</p>
-    <p>Gravity is in work...</p>
+    <h3>GalaxyJS is library to help you to divide your web application into isolated components</h3>
+    <p>
+      GalaxyJS a simple structure to write your app into peaces and load them on the fly when you need them. 
+    </p>
+    <ul>
+      <li>
+        It provides a central state manager
+      </li>
+      <li>
+        Every component will run in isolation
+      </li>
+      <li>
+        Its structure encourages you to write more DRY code
+      </li>
+    </ul>
     <section id="content">
 
     </section>
