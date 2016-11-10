@@ -6,19 +6,54 @@
     <script src="galaxyjs/build.js"></script>
 
     <script>
-      Galaxy.init();
+
+      (function () {
+        window.addEventListener('load', run);
+
+        function run() {
+          var components = {
+            start: {
+              id: 'start',
+              url: 'start/component.html'
+            },
+            guide: {
+              id: 'guide',
+              url: 'guide/component.html'
+            }
+          };
+
+          Galaxy.init();
 
 
-      Galaxy.on('app', function (full) {
-        console.log(full);
-      });
+          Galaxy.on('app', function (full, app) {
+            if (components[app]) {
+              Galaxy.load(components[app], function (module, html) {
+                Galaxy.ui.setContent(document.querySelector('#content'), html);
 
-      Galaxy.start();
+                if (module.start) {
+                  module.start();
+                }
+              });
+            } else {
+              alert('Component not found: ' + app);
+            }
+          });
+
+          Galaxy.start();
+
+          Galaxy.app.setParamIfNull('app', 'start');
+        }
+
+      })();
+
     </script>
   </head>
   <body>
     <h1>Welcome to GalaxyJS</h1>
     <p>GalaxyJS is still very hot and forming, check back soon...</p>
     <p>Gravity is in work...</p>
+    <section id="content">
+
+    </section>
   </body>
 </html>
