@@ -1,0 +1,24 @@
+<div class="card">
+  <h2>
+    Start
+  </h2>
+  <p>
+    This is star component. The scripts in this component are running in isolation
+  </p>
+</div>
+
+<script>
+  Galaxy.component(Scope, function (state) {
+
+    state.onInit = function () {
+      console.log('init');
+    };
+
+    state.onStart = function () {
+      console.log('start');
+    };
+
+  });
+
+
+</script>

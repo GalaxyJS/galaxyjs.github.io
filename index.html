@@ -4,6 +4,7 @@
     <title>GalaxyJS - Welcome</title>
     <link rel="stylesheet" href="styles/styles.css" />
     <script src="https://rawgit.com/x-tag/core/master/dist/x-tag-core.min.js"></script>
+    <script src="http://vuejs.org/js/vue.js"></script>
     <script src="galaxyjs/build.js"></script>
 
     <script>
@@ -21,24 +22,46 @@
 
           var components = {
             start: {
+              title: 'Start',
               id: 'start',
-              url: 'star/component.html'
+              url: 'start/component.html'
+            },
+            planet: {
+              title: 'Planet',
+              id: 'planet',
+              url: 'planet/component.html'
             },
             guide: {
+              title: 'Guide',
               id: 'guide',
               url: 'guide/component.html'
             },
-            planet: {
-              id: 'planet',
-              url: 'planet/component.html'
+            tags: {
+              title: 'Tags',
+              id: 'tags',
+              url: 'tags/component.html'
+            },
+            themes: {
+              title: 'Themes',
+              id: 'themes',
+              url: 'themes/component.html'
             }
           };
+
+          var mainNav = new Vue({
+            el: '#main_nav',
+            data: {
+              navs: components,
+              currentApp: ''
+            }
+          });
 
           Galaxy.init();
 
 
           Galaxy.on('app', function (full, app) {
             if (components[app]) {
+              mainNav.currentApp = app;
               Galaxy.load(components[app], function (module, html) {
                 Galaxy.ui.setContent(document.querySelector('#content'), html);
 
@@ -61,24 +84,40 @@
     </script>
   </head>
   <body>
-    <h1>Welcome to GalaxyJS</h1>
-    <h3>GalaxyJS is library to help you to divide your web application into isolated components</h3>
-    <p>
-      GalaxyJS a simple structure to write your app into peaces and load them on the fly when you need them. 
-    </p>
-    <ul>
-      <li>
-        It provides a central state manager
-      </li>
-      <li>
-        Every component will run in isolation
-      </li>
-      <li>
-        Its structure encourages you to write more DRY code
-      </li>
-    </ul>
-    <section id="content">
 
-    </section>
+    <nav id="main_nav" class="main-nav">
+      <a v-for="nav in navs"
+         v-bind:href="'#app=' + nav.id"
+         v-bind:class="{ 'active': nav.id === currentApp }">
+        {{ nav.title }}
+      </a>
+    </nav>
+
+    <div class="main-content">
+      <div class="card container">
+        <section class="content">
+          <h1>Welcome to GalaxyJS</h1>
+          <h3>GalaxyJS is library to help you to divide your web application into isolated components</h3>
+          <p>
+            GalaxyJS a simple structure to write your app into peaces and load them on the fly when you need them. 
+          </p>
+          <ul>
+            <li>
+              It provides a central state manager
+            </li>
+            <li>
+              Every component will run in isolation
+            </li>
+            <li>
+              Its structure encourages you to write more DRY code
+            </li>
+          </ul>
+        </section>
+
+        <section id="content" >
+
+        </section>
+      </div>
+    </div>
   </body>
 </html>
