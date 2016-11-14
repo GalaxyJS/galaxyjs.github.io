@@ -1,13 +1,51 @@
-<div class="card">
-  <h2>
-    Start
-  </h2>
-  <p>
-    This is star component. The scripts in this component are running in isolation
-  </p>
+<div class="card big">
+  <img class="banner" src='start/images/galaxy-1.jpeg' alt='galaxy' />
+
+  <section class="content">
+    <h1 >Welcome to GalaxyJS</h1>
+    <h3>GalaxyJS is library to help you to implement your web application into isolated components</h3>
+    <p>
+      It offers a simple structure <strong>'How to write your web app'</strong>
+    </p>
+    <p>
+      Things you need to know before start using GalaxyJS
+    </p>
+    <ul>
+      <li>
+        It's not a framework
+      </li>
+      <li>
+        GalaxyJS components are not web components, they are parts that make up the application
+      </li>
+      <li>
+        Its structure encourages you to write more DRY code
+      </li>
+    </ul>
+  </section>
+
+  <section class="content">
+    <h2>Why GalaxyJS?</h2>
+    
+    <p>
+      The difference between Vanilla JS and a Javascript framework is like the difference between a planet and a galaxy.
+    </p>
+    <p>
+      Don't get me wrong, frameworks are great. They offer generic solutions, structure for the app, patterns to program and etc 
+      which are huge deals BUT these don't mean better application, also using a frameworks doesn't make you a better programmer.
+    </p>
+    <p>
+      In fact that's one of the most important thing that a framework offers. It gives you a frame to work so you don't need to know or understand everything.
+      You only need to know the frame and how to work with which is way easier than understanding or working with the framework underlying technology.
+    </p>
+    <p>
+      The most important thing a framework offers is consistency in the structure of the app.
+    </p>
+  </section>
+
 </div>
 
 <script>
+  
   Galaxy.component(Scope, function (state) {
 
     state.onInit = function () {
@@ -19,6 +57,5 @@
     };
 
   });
-
 
 </script>

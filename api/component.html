@@ -1,19 +1,26 @@
-<style>
-  h3 {
-    color: #009688
-  }
-  
-  p {
-    color: #009688;
-  }
-  
-</style>
+<div class="card big">
+  <img class="banner" src='api/images/tools.jpg' alt='tools' />
 
-<p>
-  This component make the color of all the elements on red
-</p>
+  <section class="content">
+    <h1>API</h1>
+  </section>
+</div>
 
 <script>
-  
-  console.log('planet: ', Scope);
+
+  Galaxy.component(Scope, Handler);
+
+
+  function Handler(state, scope) {
+    scope = scope || Scope;
+
+    state.onInit = function () {
+      console.log('API inited');
+    };
+
+    state.onStart = function () {
+      console.log('API started');
+    };
+  }
+
 </script>

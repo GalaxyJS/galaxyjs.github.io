@@ -3,10 +3,14 @@
     Author     : Eeliya
 */
 
-@import url('https://fonts.googleapis.com/css?family=Alegreya+Sans:100,300,400,500,700');
+@import url('https://fonts.googleapis.com/css?family=Rubik:300,400,500,700');
+
+h1 {
+  font-size: 1.9em;
+}
 
 html, body {
-  font-family: 'Alegreya Sans', sans-serif;
+  font-family: 'Rubik', sans-serif;
   font-size: 18px;
   background-color: #fafbfc;
   position: relative;
@@ -47,7 +51,7 @@ html, body {
   text-decoration: none;
   margin: 0 0 15px;
   border-radius: 26px;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .main-nav > a.active, .main-nav > a.active:hover {
@@ -62,28 +66,36 @@ html, body {
 }
 
 .card {
-  width: 600px;
+  width: 540px;
   overflow: hidden;
   background-color: #fff;
   border-radius: 6px;
   margin: 15px auto;
-  padding: 0 15px;
+  padding: 0;
   box-shadow: 0 0 9px rgba(0,0,0, 0.04), 0 11px 23px rgba(0,0,0, .1);
 }
 
-.card.container {
-  width: 88%;
-  max-width: 960px;
-  margin: 30px auto;
-  box-shadow: 0 9px 11px rgba(0,0,0, 0.02), 0 0 17px rgba(0,0,0, .03);
-  padding: 30px;
+.card.big {
+  width: 800px;
   border-radius: 12px;
+}
+
+.card .banner {
+  display: block;
+  background-size: cover;
+  width: 100%;
+  margin: 0;
 }
 
 .content {
   margin-bottom: 60px;
+  padding: 0 30px;
 }
 
 .content > h3 {
   font-weight: 300;
+}
+
+ul > li {
+  padding: 10px 0;
 }
