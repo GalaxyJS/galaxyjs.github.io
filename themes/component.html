@@ -1,27 +1,38 @@
 
 <div class="card big">
   <img class="banner" src='themes/images/paint.jpg' alt='paint' />
-  
+
   <section class="content">
     <h1>
       Themes
     </h1>
-    <p>
+    <p bind-html="titles.head">
       Choose a theme
     </p>
+
+    <button type="button" bind-onclick="shout">
+      Shout!
+    </button>
   </section>
 </div>
 
 <script>
+  
+  var bindings = Scope.import('Bindings');
+
+  bindings.titles.head = 'Themes are awesome!';
+  bindings.shout = function (event) {
+    bindings.titles.head = 'Right Now: ' + Date();
+  };
 
   Galaxy.component(Scope, function (state) {
-
     state.onInit = function () {
+
     };
 
     state.onStart = function () {
-    };
 
+    };
   });
 
 </script>

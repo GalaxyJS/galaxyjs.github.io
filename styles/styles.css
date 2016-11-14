@@ -52,6 +52,7 @@ html, body {
   margin: 0 0 15px;
   border-radius: 26px;
   font-weight: 500;
+  line-height: 20px;
 }
 
 .main-nav > a.active, .main-nav > a.active:hover {
@@ -88,8 +89,8 @@ html, body {
 }
 
 .content {
-  margin-bottom: 60px;
-  padding: 0 30px;
+  margin-bottom: 3em;
+  padding: 0 1.5em;
 }
 
 .content > h3 {
@@ -97,5 +98,54 @@ html, body {
 }
 
 ul > li {
-  padding: 10px 0;
+  padding: .4em 0;
+}
+
+@media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+  html, body {
+    font-size: 14px;
+  }
+
+  .main-content {
+    top: 50px;
+    left: 0px;
+    width: 100%;  
+    height: calc(100% - 50px);
+  }
+
+  .main-nav {
+    height: 50px;
+    width: 100%;
+    padding: 5px;
+  }
+
+  .main-nav > a {
+    padding: 10px 15px;
+  }
+
+  .card.big {
+    width: auto;
+    margin: 15px;
+  }
+}
+
+@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) {
+  html, body {
+    font-size: 16px;
+  }
+  
+  .main-content {
+    width: calc(100% - 220px);
+    left: 220px;
+  }
+
+  .main-nav {    
+    width: 220px;
+    padding: 10px;
+  }
+
+  .card.big {
+    width: auto;
+    margin: 15px;
+  }
 }
