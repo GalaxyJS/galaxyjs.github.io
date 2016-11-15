@@ -1,4 +1,8 @@
-
+<style>
+  .red {
+    color: red;
+  }
+</style>
 <div class="card big">
   <img class="banner" src='themes/images/paint.jpg' alt='paint' />
 
@@ -6,9 +10,17 @@
     <h1>
       Themes
     </h1>
-    <p bind-html="titles.head">
+    <p b>
       Choose a theme
     </p>
+
+    <p bind-list="item in classes">
+      [[ titles.head ]]
+      <span>
+        [[ item ]]
+      </span>
+    </p>
+
 
     <button type="button" bind-onclick="shout">
       Shout!
@@ -17,12 +29,14 @@
 </div>
 
 <script>
-  
+
   var bindings = Scope.import('Bindings');
 
   bindings.titles.head = 'Themes are awesome!';
+  bindings.classes = ['nice', 'perfect'];
   bindings.shout = function (event) {
-    bindings.titles.head = 'Right Now: ' + Date();
+    bindings.classes.push('red');
+    bindings.titles.head += '!';
   };
 
   Galaxy.component(Scope, function (state) {
