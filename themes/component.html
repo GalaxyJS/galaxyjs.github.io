@@ -7,15 +7,15 @@
   <img class="banner" src='themes/images/paint.jpg' alt='paint' />
 
   <section class="content">
-    <h1>
+    <h1 bind-title="head">
       Themes
     </h1>
-    <p b>
-      Choose a theme
+    <p>
+      Choose a theme [[ head ]]
     </p>
 
     <p bind-list="item in classes">
-      [[ titles.head ]]
+
       <span>
         [[ item ]]
       </span>
@@ -32,7 +32,7 @@
 
   var bindings = Scope.import('Bindings');
 
-  bindings.titles.head = 'Themes are awesome!';
+  bindings.head = 'Themes are awesome!';
   bindings.classes = ['nice', 'perfect'];
   bindings.shout = function (event) {
     bindings.classes.push('red');
