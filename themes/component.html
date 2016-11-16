@@ -7,24 +7,25 @@
   <img class="banner" src='themes/images/paint.jpg' alt='paint' />
 
   <section class="content">
-    <h1 bind-title="head">
+    <h1>
       Themes
     </h1>
-    <p>
+    <p bind-class="styles" bind-title="title">
       Choose a theme [[ head ]]
     </p>
-
-    <p bind-list="item in classes">
-
-      <span>
-        [[ item ]]
-      </span>
-    </p>
-
 
     <button type="button" bind-onclick="shout">
       Shout!
     </button>
+
+    <p bind-list="item in classes">
+      <label bind-html="head"></label>
+      <span bind-html="item"></span>
+    </p>
+
+        <h2 bind-list="item in classes" bind-html="head">
+          
+        </h2>
   </section>
 </div>
 
@@ -32,12 +33,23 @@
 
   var bindings = Scope.import('Bindings');
 
+
   bindings.head = 'Themes are awesome!';
-  bindings.classes = ['nice', 'perfect'];
+  bindings.title = 'Themes are awesome!';
+  bindings.classes = [];
   bindings.shout = function (event) {
-    bindings.classes.push('red');
-    bindings.titles.head += '!';
+//    bindings.classes[5] = 'Hooray!';
+    bindings.head += '!';
   };
+
+  var c = [];
+
+  for (var i = 0; i < 5; i++) {
+    bindings.classes.push('No. ' + i);
+  }
+
+//  bindings.classes = c;
+
 
   Galaxy.component(Scope, function (state) {
     state.onInit = function () {
