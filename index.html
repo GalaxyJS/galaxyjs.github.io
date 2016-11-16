@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/styles.css" />
     <script src="https://rawgit.com/x-tag/core/master/dist/x-tag-core.min.js"></script>
-    <script src="http://vuejs.org/js/vue.js"></script>
+    <script src="https://vuejs.org/js/vue.js"></script>
     <script src="galaxyjs/build.js"></script>
 
     <script>
@@ -64,6 +64,7 @@
             if (components[app]) {
               mainNav.currentApp = app;
               Galaxy.load(components[app], function (module, html) {
+                console.log(module.scope);
                 Galaxy.ui.setContent(document.querySelector('#content'), html);
 
                 if (module.start) {

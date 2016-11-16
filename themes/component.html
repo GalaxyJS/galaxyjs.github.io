@@ -3,53 +3,52 @@
     color: red;
   }
 </style>
-<div class="card big">
+<div ui-view="main" class="card big">
   <img class="banner" src='themes/images/paint.jpg' alt='paint' />
 
   <section class="content">
     <h1>
       Themes
     </h1>
-    <p bind-class="styles" bind-title="title">
-      Choose a theme [[ head ]]
+    <p v-for="item in classes">
+      {{ header }} {{ item }}
     </p>
 
-    <button type="button" bind-onclick="shout">
+    <button type="button" v-on:click="shout()" >
       Shout!
     </button>
 
-    <p bind-list="item in classes">
-      <label bind-html="head"></label>
-      <span bind-html="item"></span>
-    </p>
+    <!--    <p bind-list="item in classes">
+          <label bind-html="head"></label>
+          <span bind-html="item"></span>
+        </p>-->
 
-        <h2 bind-list="item in classes" bind-html="head">
-          
-        </h2>
+    <!--    <h2 bind-each-item="classes">
+     { head } { item }
+        </h2>-->
   </section>
 </div>
 
 <script>
 
-  var bindings = Scope.import('Bindings');
-
-
-  bindings.head = 'Themes are awesome!';
-  bindings.title = 'Themes are awesome!';
-  bindings.classes = [];
-  bindings.shout = function (event) {
-//    bindings.classes[5] = 'Hooray!';
-    bindings.head += '!';
+  var data = {
+    header: 'Do Not reinvent the WHEEL, Engineer it!',
+    classes: []
   };
 
-  var c = [];
+  var vue = new Vue({
+    el: Scope.views.main,
+    data: data,
+    methods: {
+      shout: function (parameters) {
+        data.header += '!';
+      }
+    }
+  });
 
   for (var i = 0; i < 5; i++) {
-    bindings.classes.push('No. ' + i);
+    data.classes.push('No. ' + (i + 1));
   }
-
-//  bindings.classes = c;
-
 
   Galaxy.component(Scope, function (state) {
     state.onInit = function () {

@@ -164,7 +164,7 @@
       return {
         html: [],
         imports: [],
-        uiView: [],
+        views: [],
         script: ''
       };
     }
@@ -208,13 +208,13 @@
       html[i] = temp.appendChild(html[i]);
     }
     document.getElementsByTagName('body')[0].appendChild(temp);
-    var uiView = temp.querySelectorAll('system-ui-view,[system-ui-view]');
+    var uiView = temp.querySelectorAll('ui-view,[ui-view]');
     temp.parentNode.removeChild(temp);
 
     return {
       html: html,
       imports: imports,
-      uiView: uiView,
+      views: uiView,
       script: scripts.join('\n')
     };
   };
@@ -240,7 +240,7 @@
     if (moduleExist) {
       //console.log('module exist: ', module.id);
       if ('function' === typeof (Galaxy.onModuleLoaded['system/' + module.id])) {
-        Galaxy.onModuleLoaded['system/' + module.id].call(this, moduleExist, moduleExist.html);
+        Galaxy.onModuleLoaded['system/' + module.id].call(this, moduleExist, moduleExist.scope.html);
         delete Galaxy.onModuleLoaded['system/' + module.id];
       }
 
@@ -265,36 +265,34 @@
       }, 1);
     });
 
-    function compile(parsedContent) {
+    function compile(moduleContent) {
       var scopeUIViews = {};
-      Array.prototype.forEach.call(parsedContent.uiView, function (item) {
-        var uiViewName = item.getAttribute('system-ui-view') || item.getAttribute('name');
+      Array.prototype.forEach.call(moduleContent.views, function (node, i) {
+        var uiViewName = node.getAttribute('ui-view');
         var key = uiViewName.replace(/([A-Z])|(\-)|(\s)/g, function ($1) {
           return "_" + (/[A-Z]/.test($1) ? $1.toLowerCase() : '');
         });
 
-        scopeUIViews[key] = item;
+        scopeUIViews[key || 'view_' + i] = node;
       });
 
       var scope = {
         _moduleId: 'system/' + module.id,
         _stateId: module.id,
         parentScope: module.scope || null,
-        uiViews: scopeUIViews,
-        ui: parsedContent.html,
-        html: parsedContent.html,
+        html: moduleContent.html,
         views: scopeUIViews,
         imports: {}
       };
 
 //        console.log(parsedContent.imports);
-      var imports = Array.prototype.slice.call(parsedContent.imports, 0);
+      var imports = Array.prototype.slice.call(moduleContent.imports, 0);
       //var importsOfScope = {};
-      var scriptContent = parsedContent.script || '';
+      var scriptContent = moduleContent.script || '';
 
       // extract imports from the source code
       scriptContent = scriptContent.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '');
-      parsedContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+      moduleContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
         var query = path.match(/([\S]+)/gm);
         imports.push({
           url: query[query.length - 1],
@@ -307,17 +305,19 @@
 //       console.log('Libraries to be imported: ', JSON.stringify(imports));
 
       if (imports.length) {
-        imports.forEach(function (item) {
+        var importsCopy = imports.slice(0);
+        imports.forEach(function (item, i) {
+
           var scopeService = Galaxy.getScopeService(item.url);
           if (scopeService) {
             importedLibraries[item.url] = {
               name: item.url,
-              module: scopeService.handler.call(null, parsedContent)
+              module: scopeService.handler.call(null, moduleContent)
             };
 
-            doneImporting(module, scope, imports, parsedContent);
+            doneImporting(module, scope, importsCopy, moduleContent);
           } else if (importedLibraries[item.url] && !item.fresh) {
-            doneImporting(module, scope, imports, parsedContent);
+            doneImporting(module, scope, importsCopy, moduleContent);
           } else {
             Galaxy.load({
               id: (new Date()).valueOf() + '-' + performance.now(),
@@ -328,7 +328,7 @@
               invokers: invokers,
               temprory: true
             }, function (loaded) {
-              doneImporting(module, scope, imports, parsedContent);
+              doneImporting(module, scope, importsCopy, moduleContent);
             });
           }
         });
@@ -336,15 +336,15 @@
         return false;
       }
 
-      moduleLoaded(module, scope, parsedContent);
+      moduleLoaded(module, scope, moduleContent);
     }
 
-    function doneImporting(module, scope, imports, filtered) {
-      imports.splice(imports.indexOf(module.url), 1);
+    function doneImporting(module, scope, imports, moduleContent) {
+      imports.splice(imports.indexOf(module.url) - 1, 1);
 
       if (imports.length === 0) {
         // This will load the original initilizer
-        moduleLoaded(module, scope, filtered);
+        moduleLoaded(module, scope, moduleContent);
       }
     }
 
@@ -356,21 +356,28 @@
         }
       }
 
+      var html = document.createDocumentFragment();
+      
+      scope.html.forEach(function (item) {
+        html.appendChild(item);
+      });
+
+      scope.html = html;
+      html._scope = scope;
+//      debugger;
+
       var currentComponentScripts = filtered.script;
       delete filtered.script;
-
-//      var scopeServices = Galaxy.passToScopeServices(filtered, scope);
-
-//      scopeServices.names.push('Scope');
-//      scopeServices.services.push(scope);
-
-//      var componentScript = new Function(scopeServices.names, currentComponentScripts);
-
-//      componentScript.apply(null, scopeServices.services);
 
       var componentScript = new Function('Scope', currentComponentScripts);
 
       componentScript.call(null, scope);
+      var htmlNodes = [];
+      
+      for (var i = 0, len = html.childNodes.length; i < len; i++) {
+        htmlNodes.push(html.childNodes[i]);
+      }
+      scope.html = htmlNodes;
 
       if (!importedLibraries[module.url]) {
         importedLibraries[module.url] = {
@@ -382,7 +389,6 @@
       } else {
         scope.imports[module.name] = importedLibraries[module.url].module;
       }
-
 //        delete scope.export;
 
       var currentModule = Galaxy.modules['system/' + module.id];
@@ -396,12 +402,11 @@
         currentModule = Galaxy.modules['system/' + module.id] = {};
       }
 
-      currentModule.html = filtered.html;
       currentModule.scope = scope;
 
       if ('function' === typeof (Galaxy.onModuleLoaded['system/' + module.id])) {
         //console.log('immidiate load: ', currentModule, Galaxy.onModuleLoaded);
-        Galaxy.onModuleLoaded['system/' + module.id].call(this, currentModule, currentModule.html);
+        Galaxy.onModuleLoaded['system/' + module.id].call(this, currentModule, scope.html);
         delete Galaxy.onModuleLoaded['system/' + module.id];
       }
 
@@ -688,17 +693,24 @@
     return height;
   };
 
-  GalaxyUI.prototype.setContent = function (parent, nodes) {    
+  GalaxyUI.prototype.setContent = function (parent, nodes) {
     var children = Array.prototype.slice.call(parent.childNodes);
-    
+
     children.forEach(function (child) {
       parent.removeChild(child);
     });
-    
-    nodes.forEach(function (item) {
+
+    if (!nodes.hasOwnProperty('length')) {
+      nodes = [nodes];
+    }
+
+    for (var i = 0, len = nodes.length; i < len; i++) {
+      var item = nodes[i];
       parent.appendChild(item);
-    });
+    }
   };
+
+
 
   GalaxyUI.prototype.clone = function (obj) {
     var target = {};
@@ -1165,375 +1177,6 @@
 (function () {
 
 })();
-/* global Galaxy, Node */
-
-(function (galaxy) {
-  galaxy.registerScopeService('Bindings', process);
-
-  function process(module) {
-    var data = {};
-
-    var binds = extractBinds(module.html);
-
-    bindToData(binds, data, []);
-
-//    var test = makeBinds(module.html, data, []);
-    console.log(data);
-//    debugger;
-    return data;
-  }
-
-  function makeBinds(nodes, data, localvariables) {
-    var binds = [];
-
-    for (var i = 0, len = nodes.length; i < len; i++) {
-      var node = nodes[i];
-      if (node.nodeType === Node.TEXT_NODE) {
-        var match = node.textContent.match(/\[\[\s*([^\[\]\s]*)\s*\]\]/);
-        if (match) {
-          binds.push(new Bind(node, data, localvariables));
-        }
-      } else if (node.nodeType !== Node.COMMENT_NODE) {
-        var attrs = node.attributes;
-        var shouldBind = false;
-        for (var ai = 0, alen = attrs.length; ai < alen; ai++) {
-          var attr = attrs[ai];
-
-          if (attr.name.indexOf('bind-') === 0) {
-            shouldBind = true;
-            break;
-          }
-        }
-
-        if (shouldBind) {
-          binds.push(new Bind(node, data, localvariables));
-        }
-
-        if (node.hasAttribute('bind-list') && !node._bindsScope) {
-          localvariables = [];
-          localvariables.push(node.getAttribute('bind-list').split(/\s+/g)[0]);
-          node.removeAttribute('bind-list');
-        }
-
-        binds = binds.concat(makeBinds(node.childNodes, data, localvariables));
-      }
-    }
-
-    return binds;
-  }
-
-  function extractBinds(nodes) {
-    var binds = [];
-    var data = {};
-
-    for (var i = 0, len = nodes.length; i < len; i++) {
-      var node = nodes[i];
-      /*if (node.nodeType === Node.TEXT_NODE) {
-       var match = node.textContent.match(/\[\[\s*([^\[\]\s]*)\s*\]\]/);
-       if (match) {
-       binds.push(parseBind(node));
-       }
-       } else */if (node.nodeType === Node.ELEMENT_NODE) {
-        var attrs = node.attributes;
-
-        for (var ai = 0, alen = attrs.length; ai < alen; ai++) {
-          var attr = attrs[ai];
-
-          if (attr.name.indexOf('bind-') === 0) {
-            binds.push(parseBind(attr));
-          }
-        }
-
-        if (node.hasAttribute('bind-list') && !node._bindsScope) {
-          node._bindsScope = {
-            itemName: node.getAttribute('bind-list').split(/\s+/g)[0]
-          };
-          node.removeAttribute('bind-list');
-          continue;
-        }
-
-        binds = binds.concat(extractBinds(node.childNodes));
-      }
-    }
-
-    return binds;
-  }
-
-  function parseBind(item) {
-    var bind = {};
-
-    if (item.nodeType === Node.TEXT_NODE) {
-      item.textContent = item.textContent.replace(/\[\[\s*([^\[\]\s]*)\s*\]\]/, function (matches, value) {
-
-        bind.attr = 'textContent';
-        bind.boundTo = value.split('.');
-        bind.el = item;
-
-        return '$' + value + '$';
-      });
-
-      bind.originalContent = item.textContent;
-    } else {
-      var value = item.value.split(/\s+/g);
-      bind.attr = item.name.substring(5);
-      bind.boundTo = (value.pop() || '').split('.');
-      bind.itemName = value[0] || null;
-      bind.el = item.ownerElement;
-
-      if (bind.attr === 'list') {
-        bind.placeholder = document.createComment(' list ');
-        bind.el.parentNode.insertBefore(bind.placeholder, bind.el);
-        bind.el.parentNode.removeChild(bind.el);
-      }
-    }
-
-    return bind;
-  }
-
-  function bindToData(binds, data, scope) {
-    binds.forEach(function (item) {
-//      console.log(item, itemName);
-
-      makeBinding(item, data, scope);
-    });
-  }
-
-  function makeBinding(bind, data, localVariables) {
-    var valueName = bind.boundTo[0];
-
-    data._links = data._links || {};
-    var links = data._links[valueName] || [];
-
-    if (!data._links[valueName]) {
-      data._links[valueName] = links;
-    }
-
-    data._links[valueName] = links = links.filter(function (link) {
-      return link.delete !== true;
-    });
-
-    if (localVariables.indexOf(valueName) !== -1) {
-      delete data._links[valueName];
-      links = [];
-    }
-//
-    links.push(bind);
-
-    var oldValue = null;
-    var originalValue = data[valueName];
-
-//    data._linked = data._linked || {};
-//    data._linked[valueName] = true;
-
-    Object.defineProperty(data, valueName, {
-      set: function (value) {
-        if (value !== oldValue) {
-          oldValue = value;
-          var links = data._links[valueName];
-
-          if (localVariables.indexOf(valueName) !== -1) {
-            links = [bind];
-          }
-
-          if (value instanceof Array) {
-            arrayValue(links, value, data);
-          }
-//          debugger
-          setPropertiesValue(links, value, data);
-        }
-      },
-      get: function () {
-        return oldValue;
-      },
-      configurable: true,
-      enumerable: true
-    });
-
-    data[valueName] = originalValue;
-  }
-
-  var bindToAttributeMaps = {
-    html: 'innerHTML'
-  };
-
-  function setPropertiesValue(properties, value, data) {
-    properties.forEach(function (property) {
-      if (property.attr === 'textContent') {
-        property.el['textContent'] = property.originalContent.replace('$' + property.boundTo[0] + '$', value);
-      } else if (property.attr === 'list') {
-        renderList(property, data);
-      } else {
-        property.el[bindToAttributeMaps[property.attr] || property.attr] = value;
-      }
-    });
-  }
-
-  function renderList(property, data) {
-    var value = data[property.boundTo[0]] || [];
-    var list = [];
-    var localVariables = [property.itemName];
-    var parentNode = property.placeholder.parentNode;
-
-    if (property.childs) {
-      property.childs.forEach(function (item) {
-        item._links.forEach(function (link) {
-          link.delete = true;
-        });
-        parentNode.removeChild(item);
-      });
-    }
-//    debugger;
-    var binds;
-    value.forEach(function (item) {
-      var node = property.el.cloneNode(true);
-//      var listScopeData = {};
-
-//      listScopeData[property.itemName] = item;
-      binds = extractBinds([node]);
-
-//      Galaxy.utility.extend(listScopeData, data);
-//      listScopeData._links = data._links;
-      
-      bindToData(binds, data, localVariables);
-      data[property.itemName] = item;
-      
-      node._links = binds;      
-
-      list.push(node);
-    });
-//    debugger;
-    property.childs = list;
-
-    list.forEach(function (node) {
-      parentNode.insertBefore(node, property.placeholder);
-    });
-  }
-
-  function arrayValue(properties, value, data) {
-    var arrayProto = Array.prototype;
-    var methods = [
-      'push',
-      'pop',
-      'shift',
-      'unshift',
-      'splice',
-      'sort',
-      'reverse'
-    ];
-
-    methods.forEach(function (method) {
-      var original = arrayProto[method];
-
-      Object.defineProperty(value, method, {
-        value: function () {
-          original.apply(this, arguments);
-          setPropertiesValue(properties, this, data);
-        },
-        writable: true,
-        configurable: true
-      });
-    });
-  }
-
-  /**
-   * 
-   * @param {type} element
-   * @param {type} data
-   * @param {type} localVariables
-   * @returns {Bind}
-   */
-  function Bind(element, data, localVariables) {
-    this.element = element;
-    this.properties = this.getBinds();
-    this.data = data;
-    this.locals = localVariables || [];
-
-    element._bind = this;
-
-
-    this.properties.forEach(function (prop) {
-      var valueName = prop.boundTo[0];
-      if (data._links && data._links[valueName]) {
-        if (localVariables.indexOf(valueName) !== -1) {
-//          data._links[valueName] = [prop];
-        } else {
-          var links = data._links[valueName];
-          debugger;
-          links.push(prop);
-        }
-      } else {
-        data._links = data._links || {};
-
-        data._links[valueName] = data._links[valueName] || [];
-        data._links[valueName].push(prop);
-//        debugger;
-//        makeBinding(prop, data, localVariables);
-
-        Object.defineProperty(data, valueName, {
-          set: function (value) {
-            if (value !== this['__' + valueName]) {
-              this['__' + valueName] = value;
-              var links = data._links[valueName];
-
-              if (localVariables.indexOf(valueName) !== -1) {
-                links = [prop];
-              }
-
-              if (value instanceof Array) {
-                arrayValue(links, value, data);
-              }
-//          debugger
-              setPropertiesValue(links, value, data);
-            }
-          },
-          get: function () {
-            return this['__' + valueName];
-          },
-          configurable: true,
-          enumerable: true
-        });
-      }
-    });
-  }
-
-  Bind.prototype.getBinds = function () {
-    var binds = [];
-    var element = this.element;
-
-    if (element.nodeType === Node.TEXT_NODE) {
-      var match = element.textContent.match(/\[\[\s*([^\[\]\s]*)\s*\]\]/);
-      if (match) {
-        binds.push(parseBind(element));
-      }
-    } else {
-      var attrs = element.attributes || [];
-      for (var i = 0, len = attrs.length; i < len; i++) {
-        var attr = attrs[i];
-
-        if (attr.name.indexOf('bind-') === 0) {
-          binds.push(parseBind(attr));
-        }
-      }
-    }
-
-//    var nodes = element.childNodes;
-//    for (var i = 0, len = nodes.length; i < len; i++) {
-//      var node = nodes[i];
-//
-//      if (node.nodeType === Node.TEXT_NODE) {
-//        var match = node.textContent.match(/\[\[\s*([^\[\]\s]*)\s*\]\]/);
-//        if (match) {
-//          binds.push(parseBind(node));
-//        }
-//      }
-//    }
-
-    return binds;
-  };
-
-
-
-})(Galaxy);
 /* global xtag */
 
 (function () {
