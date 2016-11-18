@@ -3,10 +3,19 @@
   <head>
     <title>GalaxyJS - Welcome</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="styles/images/favicon.ico">
     <link rel="stylesheet" href="styles/styles.css" />
     <script src="https://rawgit.com/x-tag/core/master/dist/x-tag-core.min.js"></script>
     <script src="https://vuejs.org/js/vue.js"></script>
     <script src="galaxyjs/build.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenLite.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TimelineLite.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/easing/EasePack.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/plugins/CSSPlugin.min.js"></script>
+
+    <script src="animation-effects/zoom.js"></script>
+    <script src="animation-effects/come-and-go.js"></script>
 
     <script>
 
@@ -14,14 +23,7 @@
         window.addEventListener('load', run);
 
         function run() {
-          var dependecies = {
-            styles: {
-              id: 'styles',
-              url: 'styles/component.html'
-            }
-          };
-
-          var components = {
+          var modules = {
             start: {
               title: 'Start',
               id: 'start',
@@ -52,20 +54,18 @@
           var mainNav = new Vue({
             el: '#main_nav',
             data: {
-              navs: components,
+              navs: modules,
               currentApp: ''
             }
           });
 
           Galaxy.init();
 
-
           Galaxy.on('app', function (full, app) {
-            if (components[app]) {
+            if (modules[app]) {
               mainNav.currentApp = app;
-              Galaxy.load(components[app], function (module, html) {
-                console.log(module.scope);
-                Galaxy.ui.setContent(document.querySelector('#content'), html);
+              Galaxy.load(modules[app], function (module) {
+                Galaxy.ui.setContent(document.querySelector('#content'), module.scope.html);
 
                 if (module.start) {
                   module.start();
@@ -95,7 +95,8 @@
       </a>
     </nav>
 
+  <galaxy-animation effects="galaxy.come-and-go" come-and-go-item="card">
     <div id="content" class="main-content"></div>
-    
-  </body>
+  </galaxy-animation>
+</body>
 </html>

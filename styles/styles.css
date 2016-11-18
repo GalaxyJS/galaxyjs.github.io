@@ -149,3 +149,8 @@ ul > li {
     margin: 15px;
   }
 }
+
+.card.come {
+  opacity: 0;
+  transform: scale(1.15);
+}

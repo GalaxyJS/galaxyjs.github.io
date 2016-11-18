@@ -3,7 +3,7 @@
 
   <section class="content">
     <h1 >Welcome to GalaxyJS</h1>
-    <h3>GalaxyJS is library to help you to implement your web application into isolated components</h3>
+    <h3>GalaxyJS is library to help you to implement your web application into isolated modules</h3>
     <p>
       It offers a simple structure <strong>'How to write your web app'</strong>
     </p>
@@ -13,10 +13,7 @@
     <ul>
       <li>
         It's not a framework
-      </li>
-      <li>
-        GalaxyJS components are not web components, they are parts that make up the application
-      </li>
+      </li>     
       <li>
         Its structure encourages you to write more DRY code
       </li>
@@ -25,7 +22,7 @@
 
   <section class="content">
     <h2>Why GalaxyJS?</h2>
-    
+
     <p>
       The difference between Vanilla JS and a Javascript framework is like the difference between a planet and a galaxy.
     </p>
@@ -45,17 +42,15 @@
 </div>
 
 <script>
-  
-  Galaxy.component(Scope, function (state) {
 
-    state.onInit = function () {
-      console.log('init');
-    };
+  Galaxy.newStateHandler(Scope, Handler);
 
-    state.onStart = function () {
-      console.log('start');
-    };
+  function Handler(state) {
 
-  });
+    state.onInit = function () { };
+
+    state.onStart = function () { };
+
+  }
 
 </script>
