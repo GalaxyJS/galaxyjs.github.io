@@ -1,0 +1,63 @@
+<nav ui-view="main-nav" class="main-nav">
+  <a v-for="nav in navs"
+     v-bind:href="'#app=' + nav.id"
+     v-bind:class="{ 'active': nav.id === currentApp }">
+    {{ nav.title }}
+  </a>
+</nav>
+
+<galaxy-animation effects="galaxy.come-and-go" come-and-go-item="card">
+  <div ui-view="main-content" class="main-content"></div>
+</galaxy-animation>
+
+
+<script>
+
+  var modules = {
+    start: {
+      title: 'Start',
+      id: 'start',
+      url: 'start/component.html'
+    },
+    api: {
+      title: 'API',
+      id: 'api',
+      url: 'api/component.html'
+    },
+    guide: {
+      title: 'Guide',
+      id: 'guide',
+      url: 'guide/component.html'
+    },
+    tags: {
+      title: 'Tags',
+      id: 'tags',
+      url: 'tags/component.html'
+    },
+    themes: {
+      title: 'Themes',
+      id: 'themes',
+      url: 'themes/component.html'
+    }
+  };
+
+  var mainNav = new Vue({
+    el: Scope.views['main-nav'],
+    data: {
+      navs: modules,
+      currentApp: ''
+    }
+  });
+
+  Galaxy.on('app', function (full, app) {
+    if (modules[app]) {
+      mainNav.currentApp = app;
+      Galaxy.helpers.loadModuleInto(modules[app], Scope.views['main-content']);
+    } else {
+      alert('Component not found: ' + app);
+    }
+  });
+  
+  Galaxy.app.setParamIfNull('app', 'start');
+
+</script>

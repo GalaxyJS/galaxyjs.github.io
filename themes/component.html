@@ -18,26 +18,24 @@
       Shout!
     </button>
 
-    <!--    <p bind-list="item in classes">
-          <label bind-html="head"></label>
-          <span bind-html="item"></span>
-        </p>-->
-
-    <!--    <h2 bind-each-item="classes">
-     { head } { item }
-        </h2>-->
+    <pre>
+      {{ shareData }}
+    </pre>
   </section>
 </div>
 
 <script>
 
+  var shareData = Scope.import('services/share-data.js');
+
   var data = {
     header: 'Do Not reinvent the WHEEL, Engineer it!',
-    classes: []
+    classes: [],
+    shareData: shareData
   };
 
   var vue = new Vue({
-    el: Scope.views.main,
+    el: Scope.views['main'],
     data: data,
     methods: {
       shout: function (parameters) {

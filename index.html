@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="styles/styles.css" />
     <script src="https://rawgit.com/x-tag/core/master/dist/x-tag-core.min.js"></script>
     <script src="https://vuejs.org/js/vue.js"></script>
-    <script src="galaxyjs/build.js"></script>
+    <script src="galaxyjs/galaxy.js"></script>
+    <script src="galaxyjs/galaxy-tags.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenLite.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TimelineLite.min.js"></script>
@@ -18,85 +19,20 @@
     <script src="animation-effects/come-and-go.js"></script>
 
     <script>
-
       (function () {
         window.addEventListener('load', run);
 
         function run() {
-          var modules = {
-            start: {
-              title: 'Start',
-              id: 'start',
-              url: 'start/component.html'
-            },
-            api: {
-              title: 'API',
-              id: 'api',
-              url: 'api/component.html'
-            },
-            guide: {
-              title: 'Guide',
-              id: 'guide',
-              url: 'guide/component.html'
-            },
-            tags: {
-              title: 'Tags',
-              id: 'tags',
-              url: 'tags/component.html'
-            },
-            themes: {
-              title: 'Themes',
-              id: 'themes',
-              url: 'themes/component.html'
-            }
-          };
-
-          var mainNav = new Vue({
-            el: '#main_nav',
-            data: {
-              navs: modules,
-              currentApp: ''
-            }
+          Galaxy.boot({url: 'main.html'}, function (module) {
+            Galaxy.ui.setContent('body', module.scope.html);
           });
-
-          Galaxy.init();
-
-          Galaxy.on('app', function (full, app) {
-            if (modules[app]) {
-              mainNav.currentApp = app;
-              Galaxy.load(modules[app], function (module) {
-                Galaxy.ui.setContent(document.querySelector('#content'), module.scope.html);
-
-                if (module.start) {
-                  module.start();
-                }
-              });
-            } else {
-              alert('Component not found: ' + app);
-            }
-          });
-
-          Galaxy.start();
-
-          Galaxy.app.setParamIfNull('app', 'start');
         }
 
       })();
-
     </script>
   </head>
+  
   <body>
 
-    <nav id="main_nav" class="main-nav">
-      <a v-for="nav in navs"
-         v-bind:href="'#app=' + nav.id"
-         v-bind:class="{ 'active': nav.id === currentApp }">
-        {{ nav.title }}
-      </a>
-    </nav>
-
-  <galaxy-animation effects="galaxy.come-and-go" come-and-go-item="card">
-    <div id="content" class="main-content"></div>
-  </galaxy-animation>
-</body>
+  </body>
 </html>
