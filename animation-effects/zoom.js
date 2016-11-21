@@ -15,13 +15,13 @@
   function ZoomInAnimation(element) {
     var _this = this;
     _this.element = element;
-    _this.zoomItem = element.getAttribute('zoom');
-
+    
     if (!this.observer) {
       var existedNodes = element.querySelectorAll('.' + _this.zoomItem);
       _this.animate(existedNodes);
 
       _this.observer = new MutationObserver(function (mutations) {
+        _this.zoomItem = element.getAttribute('zoom');
         _this.stagger = 0;
         var nodes = [];
 

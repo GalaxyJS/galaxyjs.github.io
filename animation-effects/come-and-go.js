@@ -15,7 +15,7 @@
   function ComeAndGo(element) {
     var _this = this;
     _this.element = element;
-    _this.targetItem = element.getAttribute('come-and-go-item');
+    //_this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
 
     if (!this.observer) {
       var existedNodes = element.querySelectorAll('.' + _this.targetItem);
@@ -23,15 +23,15 @@
 
       _this.observer = new MutationObserver(function (mutations) {
         _this.stagger = 0;
+        _this.targetItem = element.getAttribute('come-and-go-item');
+         _this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
         var nodes = [];
 
         mutations.forEach(function (item) {
           var node = null;
-          if (item.addedNodes[0]) {
+          if (item.addedNodes[0] && item.addedNodes[0].nodeType === Node.ELEMENT_NODE) {
 
-            if (item.addedNodes[0].__ui_neutral ||
-                    item.addedNodes[0].nodeType !== Node.ELEMENT_NODE ||
-                    !item.addedNodes[0].classList.contains(_this.targetItem))
+            if (item.addedNodes[0].__ui_neutral || !item.addedNodes[0].classList.contains(_this.targetItem))
               return null;
 
             node = item.addedNodes[0];
@@ -89,7 +89,7 @@
       }));
     });
 
-    timeline.add(timelineItems, null, null, GalaxyAnimation.CONFIG.staggerDuration);
+    timeline.add(timelineItems, null, null, this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration);
 
     timeline.play(0);
   };

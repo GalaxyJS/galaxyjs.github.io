@@ -6,9 +6,12 @@
   </a>
 </nav>
 
-<galaxy-animation effects="galaxy.come-and-go" come-and-go-item="card">
-  <div ui-view="main-content" class="main-content"></div>
-</galaxy-animation>
+
+<div  class="main-content">
+  <galaxy-animation ui-view="main-content" effects="galaxy.come-and-go,galaxy.auto-height" come-and-go-item="card">
+  </galaxy-animation>  
+</div>
+
 
 
 <script>
@@ -57,7 +60,7 @@
       alert('Component not found: ' + app);
     }
   });
-  
+
   Galaxy.app.setParamIfNull('app', 'start');
 
 </script>

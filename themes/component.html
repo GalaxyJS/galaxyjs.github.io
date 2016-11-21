@@ -1,6 +1,30 @@
 <style>
-  .red {
-    color: red;
+  .theme-list {
+    display: flex;
+    justify-content: space-between;
+    align-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .theme-list > .theme-item {
+    width: 240px;
+    height: 160px;
+    background-color: #009688;
+    color: #fff;
+    font-size: .78em;
+    font-weight: 300;
+    margin: 0 0 15px;
+    display: block;
+    flex: 0 0 auto;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 2px 5px rgba(0,0,0,.1);
+  }
+
+  .theme-item.come {
+    transform: translateY(50%);
+    opacity: 0;
   }
 </style>
 <div ui-view="main" class="card big">
@@ -10,17 +34,15 @@
     <h1>
       Themes
     </h1>
-    <p v-for="item in classes">
-      {{ header }} {{ item }}
-    </p>
 
-    <button type="button" v-on:click="shout()" >
-      Shout!
-    </button>
-
-    <pre>
-      {{ shareData }}
-    </pre>
+    <galaxy-animation class="theme-list"
+                      effects="galaxy.come-and-go"
+                      come-and-go-item="theme-item"
+                      come-and-go-stagger="0.15" >
+      <div class="theme-item" v-for="item in themes">
+        {{ header }} {{ item }}
+      </div>
+    </galaxy-animation>
   </section>
 </div>
 
@@ -30,7 +52,7 @@
 
   var data = {
     header: 'Do Not reinvent the WHEEL, Engineer it!',
-    classes: [],
+    themes: [],
     shareData: shareData
   };
 
@@ -44,9 +66,7 @@
     }
   });
 
-  for (var i = 0; i < 5; i++) {
-    data.classes.push('No. ' + (i + 1));
-  }
+
 
   Galaxy.newStateHandler(Scope, function (state) {
     state.onInit = function () {
@@ -54,7 +74,12 @@
     };
 
     state.onStart = function () {
-
+      data.themes = [];
+      Vue.nextTick(function () {
+        for (var i = 0; i < 5; i++) {
+          data.themes.push('No. ' + (i + 1));
+        }
+      });
     };
   });
 
