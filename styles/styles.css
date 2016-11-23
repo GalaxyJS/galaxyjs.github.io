@@ -160,6 +160,11 @@ galaxy-animation {
   }
 }
 
+.come {
+  transform: translateY(15px);
+  opacity: 0;
+}
+
 .card.come {
   opacity: 0;
   transform: scale(.85);

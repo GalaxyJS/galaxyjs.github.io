@@ -18,13 +18,14 @@
     //_this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
 
     if (!this.observer) {
-      var existedNodes = element.querySelectorAll('.' + _this.targetItem);
-      _this.animate(existedNodes);
-
+      var existedNodes = element.querySelectorAll(element.getAttribute('come-and-go-item'));
+      animate(existedNodes);
+     
       _this.observer = new MutationObserver(function (mutations) {
         _this.stagger = 0;
         _this.targetItem = element.getAttribute('come-and-go-item');
-         _this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
+        _this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
+
         var nodes = [];
 
         mutations.forEach(function (item) {
@@ -44,7 +45,7 @@
           node && nodes.push(node);
         });
 
-        _this.animate(nodes);
+        animate(nodes);
       });
 
       _this.observer.observe(_this.element, {
@@ -64,7 +65,7 @@
     }
   };
 
-  ComeAndGo.prototype.animate = function (nodes, style) {
+    function animate(nodes, style) {
     if (!nodes.length) {
       return;
     }
@@ -77,7 +78,7 @@
       }
     });
 
-    nodes.forEach(function (element) {
+    Array.prototype.forEach.call(nodes, function (element) {
       TweenLite.set(element, {
         className: '+=come'
       });
