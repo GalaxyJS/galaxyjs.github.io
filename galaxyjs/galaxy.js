@@ -203,7 +203,7 @@
     };
   };
 
-  CONTENT_PARSERS['text/javascript'] = function (content) {
+  var javascriptParser = function (content) {
     return {
       html: [],
       imports: [],
@@ -211,6 +211,9 @@
       script: content
     };
   };
+
+  CONTENT_PARSERS['text/javascript'] = javascriptParser;
+  CONTENT_PARSERS['application/javascript'] = javascriptParser;
 
   System.prototype.parseModuleContent = function (module, content, contentType) {
     var parser = CONTENT_PARSERS[contentType];
@@ -270,7 +273,7 @@
       body: Galaxy.utility.serialize(module.params || {})
     }, function (code, response, meta) {
       var contentType = (meta.getResponseHeader('content-type').split(';')[0] + '').trim() || 'text/html';
-      
+
       var parsedContent = _this.parseModuleContent(module, response, contentType);
 
       window.requestAnimationFrame(function () {
