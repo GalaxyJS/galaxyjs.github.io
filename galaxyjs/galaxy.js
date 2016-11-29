@@ -217,7 +217,7 @@
     if (parser) {
       return parser(content);
     } else {
-      console.log('Resource is not a valid html file:', module.url);
+      console.log('Resource is not a valid html file:', module.url, contentType);
 
       return {
         html: [],
