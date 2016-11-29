@@ -216,7 +216,7 @@
   CONTENT_PARSERS['application/javascript'] = javascriptParser;
 
   System.prototype.parseModuleContent = function (module, content, contentType) {
-    var parser = CONTENT_PARSERS[contentType];
+    var parser = CONTENT_PARSERS[contentType.toLowerCase()];
     if (parser) {
       return parser(content);
     } else {
