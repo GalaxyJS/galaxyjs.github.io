@@ -31,15 +31,14 @@
 </div>
 
 <script>
+  var state = Scope.import('state');
 
-  Galaxy.newStateHandler(Scope, function (state) {
+  state.onInit = function () {
+    console.log('tag init');
+  };
 
-    state.onInit = function () {
-    };
-
-    state.onStart = function () {
-    };
-
-  });
+  state.onStart = function () {
+    console.log('tag start');
+  };
 
 </script>

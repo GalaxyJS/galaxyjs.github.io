@@ -25,6 +25,28 @@
     this.app = null;
   }
 
+  System.prototype.createState = function (id) {
+    var module;
+    var domain = this;
+    if (!domain) {
+      throw 'Domain can NOT be null';
+    }
+    id = this.app.id + '/' + id;
+
+    if (domain.modules[id]) {
+      return domain.modules[id];
+    }
+
+    module = new Galaxy.GalaxyModule();
+    module.domain = domain;
+    module.id = id;
+    module.stateId = id.replace('system/', '');    
+
+    domain.modules[id] = module;
+
+    return module;
+  };
+
   System.prototype.state = function (id, handler) {
     //return this.app.module(id, object, false);
     var module, modulePath, moduleNavigation;
@@ -138,10 +160,10 @@
     if (this.inited) {
       throw new Error('Galaxy is initialized already');
     }
-    
-    var app = new Galaxy.GalaxyModule();    
-    this.app =  app;
-    
+
+    var app = new Galaxy.GalaxyModule();
+    this.app = app;
+
     app.domain = this;
     app.stateKey = this.stateKey;
     app.id = 'system';
@@ -302,9 +324,9 @@
         imports: {}
       };
 
-//        console.log(parsedContent.imports);
+      module.scopeServices = [];
+
       var imports = Array.prototype.slice.call(moduleContent.imports, 0);
-      //var importsOfScope = {};
       var scriptContent = moduleContent.script || '';
 
       // extract imports from the source code
@@ -327,10 +349,13 @@
 
           var scopeService = Galaxy.getScopeService(item.url);
           if (scopeService) {
+            var scopeService = scopeService.handler.call(null, scope);
             importedLibraries[item.url] = {
               name: item.url,
-              module: scopeService.handler.call(null, moduleContent)
+              module: scopeService.pre()
             };
+
+            module.scopeServices.push(scopeService);
 
             doneImporting(module, scope, importsCopy, moduleContent);
           } else if (importedLibraries[item.url] && !item.fresh) {
@@ -389,6 +414,11 @@
       var componentScript = new Function('Scope', currentComponentScripts);
 
       componentScript.call(null, scope);
+
+      module.scopeServices.forEach(function (item) {
+        item.post();
+      });
+
       var htmlNodes = [];
 
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
@@ -1088,6 +1118,25 @@
 })(Galaxy);
 // https://github.com/yanatan16/nanoajax
 !function(t,e){function n(t){return t&&e.XDomainRequest&&!/MSIE 1/.test(navigator.userAgent)?new XDomainRequest:e.XMLHttpRequest?new XMLHttpRequest:void 0}function o(t,e,n){t[e]=t[e]||n}var r=["responseType","withCredentials","timeout","onprogress"];t.ajax=function(t,a){function s(t,e){return function(){c||(a(void 0===f.status?t:f.status,0===f.status?"Error":f.response||f.responseText||e,f),c=!0)}}var u=t.headers||{},i=t.body,d=t.method||(i?"POST":"GET"),c=!1,f=n(t.cors);f.open(d,t.url,!0);var l=f.onload=s(200);f.onreadystatechange=function(){4===f.readyState&&l()},f.onerror=s(null,"Error"),f.ontimeout=s(null,"Timeout"),f.onabort=s(null,"Abort"),i&&(o(u,"X-Requested-With","XMLHttpRequest"),e.FormData&&i instanceof e.FormData||o(u,"Content-Type","application/x-www-form-urlencoded"));for(var p,m=0,v=r.length;v>m;m++)p=r[m],void 0!==t[p]&&(f[p]=t[p]);for(var p in u)f.setRequestHeader(p,u[p]);return f.send(i),f},e.nanoajax=t}({},function(){return this}());
+/* global Galaxy */
+
+(function (galaxy) {
+  galaxy.registerScopeService('state', function (scope) {
+    var module = galaxy.createState(scope._stateId);
+    return {
+      pre: function () {
+        return module;
+      },
+      post: function () {
+        var modulePath = module.domain.app.navigation[module.stateKey] ? module.domain.app.navigation[module.stateKey] : [];
+        var moduleNavigation = Galaxy.utility.extend(true, {}, module.domain.app.navigation);
+        moduleNavigation[module.stateKey] = modulePath.slice(module.id.split('/').length - 1);
+
+        module.init(moduleNavigation, module.domain.app.params);
+      }
+    };
+  });
+})(Galaxy);
 /* global Galaxy */
 
 (function (galaxy) {
