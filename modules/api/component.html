@@ -8,19 +8,14 @@
 
 <script>
 
-  Galaxy.newStateHandler(Scope, Handler);
+  var state = Scope.import('state');
 
+  state.onInit = function () {
+    console.log('API inited');
+  };
 
-  function Handler(state, scope) {
-    scope = scope || Scope;
-
-    state.onInit = function () {
-      console.log('API inited');
-    };
-
-    state.onStart = function () {
-      console.log('API started');
-    };
-  }
+  state.onStart = function () {
+    console.log('API started', Scope);
+  };
 
 </script>

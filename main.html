@@ -1,6 +1,6 @@
 <nav ui-view="main-nav" class="main-nav">
   <a v-for="nav in navs"
-     v-bind:href="'#app=' + nav.id"
+     v-bind:href="'#' + nav.id"
      v-bind:class="{ 'active': nav.id === currentApp }">
     {{ nav.title }}
   </a>
@@ -51,15 +51,15 @@
     }
   });
 
-  Galaxy.on('app', function (full, app) {
-    if (modules[app]) {
+  Galaxy.on('#', function (full, app) {
+    if (modules[app] && mainNav.currentApp !== app) {
       mainNav.currentApp = app;
       Galaxy.helpers.loadModuleInto(modules[app], Scope.views['main-content']);
     } else {
-      alert('Component not found: ' + app);
+//      alert('Component not found: ' + app);
     }
   });
 
-  Galaxy.app.setParamIfNull('app', 'start');
+  Galaxy.app.setParamIfNull('#', 'start');
 
 </script>
