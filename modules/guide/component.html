@@ -5,13 +5,42 @@
     <h1>
       Guide Page
     </h1>
+    <h2>
+      Instalation
+    </h2>
     <p>
-      Here you can learn how to make a web application with GalaxyJS
+      Coming soon...
     </p>
+
+    <h2>
+      Galaxy.bootstrap
+    </h2>
+    <p>
+      Add this code to your index.html
+    </p>
+    <pre class="prettyprint lang-js">
+(function () {
+  window.addEventListener('load', run);
+
+  function run() {
+    Galaxy.boot({
+      url: 'main.html' // The path to your main component file
+    }, 
+    function (module) {
+      Galaxy.ui.setContent('body', module.scope.html);
+    });
+  }
+})();    </pre>
   </section>
 </div>
 <script>
   var shareData = Scope.import('services/share-data.js');
 
+  var state = Scope.import('state');
+
   shareData.name = 'Eeliya was in Guide page';
+
+  state.onStart = function (parameters) {
+    PR.prettyPrint();
+  };
 </script>
