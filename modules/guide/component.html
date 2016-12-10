@@ -5,32 +5,58 @@
     <h1>
       Guide Page
     </h1>
-    <h2>
-      Instalation
-    </h2>
-    <p>
-      Coming soon...
-    </p>
 
-    <h2>
-      Galaxy.bootstrap
-    </h2>
-    <p>
-      Add this code to your index.html
-    </p>
-    <pre class="prettyprint lang-js">
+    <section>
+      <h2>
+        Instalation
+      </h2>
+      <p>
+        Coming soon...
+      </p>
+    </section>    
+
+    <section>
+      <h2>
+        Recommended project file & folder structure
+      </h2>
+
+      <pre class="prettyprint lang-js">
+project
+|-app  
+| |-modules
+| | |-main
+| | | |-index.html
+| | 
+| |-services ...
+| |-index.html
+|
+|-node_modules
+|-package.json    </pre>
+    </section>
+
+    <section>
+      <h2>
+        Galaxy.bootstrap
+      </h2>
+      <p>
+        Add this code to your index.html
+      </p>
+      <pre class="prettyprint lang-js">
 (function () {
   window.addEventListener('load', run);
 
   function run() {
     Galaxy.boot({
-      url: 'main.html' // The path to your main component file
+      // The path to your main module file
+      url: 'modules/main/index.html'
     }, 
     function (module) {
       Galaxy.ui.setContent('body', module.scope.html);
     });
   }
 })();    </pre>
+    </section>
+
   </section>
 </div>
 <script>
