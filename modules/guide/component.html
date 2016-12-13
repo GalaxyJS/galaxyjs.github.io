@@ -19,6 +19,10 @@
       <h2>
         Recommended project file & folder structure
       </h2>
+      <p>
+        You can have whatever directory structure you like as long as you know how to the load modules.
+        The following structure is recommended and we are using this structure though out our guide.
+      </p>
 
       <pre class="prettyprint lang-js">
 project
@@ -39,7 +43,7 @@ project
         Galaxy.bootstrap
       </h2>
       <p>
-        Add this code to your index.html
+        Add this code into the modules/main/index.html
       </p>
       <pre class="prettyprint lang-js">
 (function () {
@@ -55,6 +59,30 @@ project
     });
   }
 })();    </pre>
+    </section>
+
+    <section>
+      <h2>
+        Hello world module
+      </h2>
+      <p>
+        Create a directory inside <code>modules/</code> directory and rename it to <code>hello-world</code>
+      </p>
+      <p>
+        Inside the <code>hello-world</code> directory create a html file called <code>index.html</code> 
+        and add the following code into it
+      </p>
+
+      <pre class="prettyprint lang-js">
+var state = Scope.import('state');
+
+state.onStart = function (parameters) {
+  console.log('Hello World!');
+};      </pre>
+      
+      <p>
+        Now
+      </p>
     </section>
 
   </section>
