@@ -26,7 +26,7 @@
         window.addEventListener('load', run);
 
         function run() {
-          Galaxy.boot({url: 'modules/main/component.html'}, function (module) {
+          Galaxy.boot({url: 'modules/main/index.html'}, function (module) {
             Galaxy.ui.setContent('body', module.scope.html);
           });
         }

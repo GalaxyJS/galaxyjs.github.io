@@ -7,6 +7,7 @@
 
 h1 {
   font-size: 1.9em;
+  cursor: default;
 }
 
 html, body {
@@ -79,6 +80,7 @@ html, body {
 .card.big {
   width: 800px;
   border-radius: 12px;
+  margin-bottom: 45px;
 }
 
 .card .banner {
@@ -86,6 +88,7 @@ html, body {
   background-size: cover;
   width: 100%;
   margin: 0;
+  min-height: 400px;
 }
 
 .content {
@@ -167,7 +170,7 @@ galaxy-animation {
 
 .card.come {
   opacity: 0;
-  transform: scale(.85);
+  transform: translateY(100px);
 }
 
 pre.prettyprint {
@@ -175,4 +178,19 @@ pre.prettyprint {
   border-radius: 4px;
   padding: 15px;
   background-color: #eee;
+  font-size: 16px;
+}
+
+blockquote {
+  margin: 0;
+  padding: 0 1em;
+  overflow: hidden;
+  background-color: #FFECB3;
+  font-weight: 300;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+section > section {
+  margin-bottom: 3em;
 }
