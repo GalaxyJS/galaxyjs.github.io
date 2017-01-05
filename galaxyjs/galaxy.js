@@ -1,11 +1,18 @@
 /* global Galaxy, nanoajax, Node */
 
 (function () {
+
   Galaxy = new System();
+  
+  /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
+   * 
+   * @returns {Galaxy.GalaxySystem}
+   */
   Galaxy.GalaxySystem = System;
 
   var entities = {};
   var importedLibraries = {};
+  
   function System() {
     this.stateKey = '#';
     this.registry = {};
@@ -519,9 +526,9 @@
 
   /** Set parameters for app/nav. if app/nav was not in parameters, then set paraters for current app/nav
    * 
-   * @param {type} parameters
-   * @param {type} replace if true it overwrites last url history otherwise it create new url history
-   * @param {type} clean clean all the existing parameters
+   * @param {Object} parameters
+   * @param {Boolean} replace if true it overwrites last url history otherwise it create new url history
+   * @param {Boolean} clean clean all the existing parameters
    * @returns {undefined}
    */
   System.prototype.setHashParameters = function (parameters, replace, clean) {
@@ -817,9 +824,13 @@
 })();
 /* global Galaxy */
 
-(function (galaxy) {
-  galaxy.GalaxyModule = GalaxyModule;
-  galaxy.module = new galaxy.GalaxyModule();
+(function () {
+  /** 
+   *  
+   * @returns {Galaxy.GalaxyModule}
+   */
+  Galaxy.GalaxyModule = GalaxyModule;    
+  Galaxy.module = new Galaxy.GalaxyModule();
 
   function GalaxyModule() {
     this.domain = null;
@@ -864,7 +875,7 @@
       console.log(this.domain.app.params[this.stateKey]);
       throw new Error('Could not find module `' + this.id + '` by state key `' + this.stateKey + '`');
     }
-    var newNav = galaxy.utility.extend(true, {}, this.domain.app.navigation);
+    var newNav = Galaxy.utility.extend(true, {}, this.domain.app.navigation);
     var st = 'system/' + this.domain.app.params[this.stateKey];
     var napPath = st.indexOf(this.id) === 0 ? st.substr(this.id.length).split('/').filter(Boolean) : [];
 
@@ -937,6 +948,12 @@
     this.domain.setHashParameters(paramObject, replace);
   };
 
+  /** Set value for param if the parameter does not exist in hash
+   * 
+   * @param {String} param
+   * @param {String} value
+   * @returns {undefined}
+   */
   GalaxyModule.prototype.setParamIfNull = function (param, value) {
     if (!this.domain.getHashParam(param)) {
       var paramObject = {};
@@ -945,6 +962,12 @@
     }
   };
 
+  /** Set value for param if the current value of param is not equal to the passed value
+   * 
+   * @param {staring} param
+   * @param {staring} value
+   * @returns {undefined}
+   */
   GalaxyModule.prototype.setParamIfNot = function (param, value) {
     if (this.domain.getHashParam(param) !== value) {
       var paramObject = {};
@@ -1002,7 +1025,7 @@
     }
 
     this.hashHandler.call(this, navigation, params);
-    var allNavigations = galaxy.utility.extend({}, this.navigation, navigation);
+    var allNavigations = Galaxy.utility.extend({}, this.navigation, navigation);
 
     var tempNav = _this.navigation;
 
@@ -1030,7 +1053,7 @@
             if (navigationValue) {
               parameters[0] = navigationValue.join('/');
               for (var i = 0; i < navigationValue.length; i++) {
-                var arg = galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
+                var arg = Galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
 
                 parameters.push(arg);
               }
@@ -1090,7 +1113,7 @@
           if (navigationValue) {
             parameters[0] = navigationValue.join('/');
             for (var i = 0; i < navigationValue.length; i++) {
-              var arg = galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
+              var arg = Galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
 
               parameters.push(arg);
             }
@@ -1111,7 +1134,7 @@
     if (this.activeModule && this.activeModule.id === this.id + '/' + navigation[this.stateKey][0])
     {
       // Remove first part of navigation in order to force activeModule to only react to events at its level and higher 
-      moduleNavigation = galaxy.utility.extend(true, {}, navigation);
+      moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
       moduleNavigation[this.stateKey] = fullNav.slice(this.activeModule.id.split('/').length - 1);
       // Call module level events handlers
       this.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
@@ -1119,12 +1142,12 @@
   };
 
   GalaxyModule.prototype.loadModule = function (module, onDone) {
-    galaxy.loadModule(module, onDone, this.scope);
+    Galaxy.loadModule(module, onDone, this.scope);
   };
 
   GalaxyModule.prototype.hashHandler = function (nav, params) {};
 
-})(Galaxy);
+})();
 // https://github.com/yanatan16/nanoajax
 !function(t,e){function n(t){return t&&e.XDomainRequest&&!/MSIE 1/.test(navigator.userAgent)?new XDomainRequest:e.XMLHttpRequest?new XMLHttpRequest:void 0}function o(t,e,n){t[e]=t[e]||n}var r=["responseType","withCredentials","timeout","onprogress"];t.ajax=function(t,a){function s(t,e){return function(){c||(a(void 0===f.status?t:f.status,0===f.status?"Error":f.response||f.responseText||e,f),c=!0)}}var u=t.headers||{},i=t.body,d=t.method||(i?"POST":"GET"),c=!1,f=n(t.cors);f.open(d,t.url,!0);var l=f.onload=s(200);f.onreadystatechange=function(){4===f.readyState&&l()},f.onerror=s(null,"Error"),f.ontimeout=s(null,"Timeout"),f.onabort=s(null,"Abort"),i&&(o(u,"X-Requested-With","XMLHttpRequest"),e.FormData&&i instanceof e.FormData||o(u,"Content-Type","application/x-www-form-urlencoded"));for(var p,m=0,v=r.length;v>m;m++)p=r[m],void 0!==t[p]&&(f[p]=t[p]);for(var p in u)f.setRequestHeader(p,u[p]);return f.send(i),f},e.nanoajax=t}({},function(){return this}());
 /* global Galaxy */
