@@ -8,7 +8,7 @@
 
 
 <div  class="main-content">
-  <galaxy-animation ui-view="main-content" effects="galaxy.come-and-go" come-and-go-item="card">
+  <galaxy-animation ui-view="main-content" effects="galaxy.in-out" in-out-item="card">
   </galaxy-animation>  
 </div>
 
@@ -54,7 +54,10 @@
   Galaxy.on('#', function (full, app) {
     if (modules[app] && mainNav.currentApp !== app) {
       mainNav.currentApp = app;
-      Galaxy.helpers.loadModuleInto(modules[app], Scope.views['main-content']);
+//      setTimeout(function () {
+    Galaxy.helpers.loadModuleInto(modules[app], Scope.views['main-content']);
+//},1000)
+      
     } else {
 //      alert('Component not found: ' + app);
     }

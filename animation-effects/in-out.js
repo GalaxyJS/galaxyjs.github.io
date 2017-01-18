@@ -1,15 +1,13 @@
 /* global GalaxyAnimation, TweenLite, Node, Galaxy */
 
 (function () {
-  var tree = [];
-
-  GalaxyAnimation.effects['galaxy.come-and-go'] = {
+  GalaxyAnimation.effects['galaxy.in-out'] = {
     register: function (element) {
       return new ComeAndGo(element);
     },
     deregister: function (element) {
-      if (element.xtag.animations['galaxy.come-and-go']) {
-        element.xtag.animations['galaxy.come-and-go'].off();
+      if (element.xtag.animations['galaxy.in-out']) {
+        element.xtag.animations['galaxy.in-out'].off();
       }
     }
   };
@@ -17,17 +15,15 @@
   function ComeAndGo(element) {
     var _this = this;
     _this.element = element;
-    //_this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
-
     if (!_this.observer) {
       _this.observer = new MutationObserver(function (mutations) {
         _this.stagger = 0;
-        _this.targetItem = element.getAttribute('come-and-go-item');
-        _this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
+        _this.targetItem = element.getAttribute('in-out-item');
+        _this.staggerDuration = parseFloat(element.getAttribute('in-out-stagger') || 0.05);
 
         var come = [];
         var go = [];
-
+      
         mutations.forEach(function (item) {
           var addedNode = item.addedNodes[0];
           if (addedNode && addedNode.nodeType === Node.ELEMENT_NODE) {
@@ -36,7 +32,6 @@
               return null;
 
             addedNode.__cag_ready = true;
-//            console.log(!addedNode.classList.contains('content'),_this.targetItem,addedNode.__ui_neutral,addedNode.__cag_ready);  
             come.push({
               parent: item.target,
               node: addedNode
@@ -45,8 +40,9 @@
 
           var removedNode = item.removedNodes[0];
           if (removedNode && removedNode.nodeType === Node.ELEMENT_NODE) {
-            if (removedNode.__ui_neutral || removedNode.__cag_ready || !removedNode.classList.contains(_this.targetItem))
+            if (removedNode.__ui_neutral || removedNode.__cag_ready || !removedNode.classList.contains(_this.targetItem)) {
               return null;
+            }
 
             removedNode.__cag_ready = true;
             go.push({
@@ -56,7 +52,10 @@
           }
         });
 
-        _this.animate(come, go);
+//        window.clearTimeout(_this.throttle);
+//        _this.throttle = setTimeout(function () {
+          _this.animate(come, go);
+//        }, 1000);
       });
 
       window.requestAnimationFrame(function () {
@@ -71,14 +70,14 @@
         });
 
         var existedNodes = [];
-        Array.prototype.forEach.call(element.getElementsByClassName(element.getAttribute('come-and-go-item')), function (item) {
+        Array.prototype.forEach.call(element.getElementsByClassName(element.getAttribute('in-out-item')), function (item) {
           item.__cag_ready = true;
           existedNodes.push({
             parent: item.parentNode,
             node: item
           });
         });
-//        console.log(existedNodes, _this.element);
+
         _this.animate(existedNodes, []);
       });
     }
@@ -92,17 +91,15 @@
   };
 
 
-  ComeAndGo.prototype.animate = function (comingNodes, goingNodes) {
-    if (!comingNodes.length && !goingNodes.length) {
+  ComeAndGo.prototype.animate = function (inNodes, outNodes) {
+    if (!inNodes.length && !outNodes.length) {
       return;
     }
 
     var _this = this;
     var parentGalaxyAnimation = Galaxy.ui.utility.findParent(_this.element, 'galaxy-animation');
-    if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations['galaxy.come-and-go'] && parentGalaxyAnimation.xtag.animations['galaxy.come-and-go'].timeline) {
-      _this.timeline = parentGalaxyAnimation.xtag.animations['galaxy.come-and-go'].timeline;
-//      _this.timeline.pause();
-//      console.log('asd');
+    if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations['galaxy.in-out'] && parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline) {
+      _this.timeline = parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline;
     } else {
       if (_this.timeline) {
         _this.timeline.progress(1, false);
@@ -117,61 +114,52 @@
       });
     }
 
-
     _this.element.xtag.__come_and_go_animating = true;
-    var comeTimlineItems = [];
-    var goTimlineItems = [];
+    var inTimlineItems = [];
+    var outTimlineItems = [];
 
-    Array.prototype.forEach.call(comingNodes || [], function (item) {
+    Array.prototype.forEach.call(inNodes || [], function (item) {
       item.node.__cag_ready = true;
-//      GalaxyAnimation.disable(item.node);
-
       if (item.node.parenNode) {
         item.parent.removeChild(item.node);
       }
     });
 
-    Array.prototype.forEach.call(goingNodes || [], function (item) {
+    Array.prototype.forEach.call(outNodes || [], function (item) {
       var element = item.node;
-
       GalaxyAnimation.disable(element);
       item.parent.appendChild(element);
       TweenLite.set(element, {
-        className: '-=come'
+        className: '-=out'
       });
 
-      goTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
-        className: '+=come',
+      outTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
+        className: '+=out',
         ease: 'Power2.easeInOut',
         onComplete: function () { }
       }));
     });
 
-    Array.prototype.forEach.call(comingNodes || [], function (item) {
+    Array.prototype.forEach.call(inNodes || [], function (item) {
       var element = item.node;
       var parent = item.parent;
-//      GalaxyAnimation.enable(element);
       parent.appendChild(element);
       TweenLite.set(element, {
-        //display: 'none',
-        className: '+=come'
+        className: '+=out'
       });
 
-      comeTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
-        //display: '',
-        className: '-=come',
+      inTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
+        className: '-=out',
         ease: 'Power2.easeInOut',
         onComplete: function () {
-          element.__cag_ready = false;
           delete element.__cag_ready;
         }
       }));
     });
 
-//    debugger;
-    _this.timeline.add(goTimlineItems, null, null, this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration);
+    _this.timeline.add(outTimlineItems, null, null, this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration);
     _this.timeline.add(function () {
-      Array.prototype.forEach.call(goingNodes || [], function (item) {
+      Array.prototype.forEach.call(outNodes || [], function (item) {
         var element = item.node;
         if (element.parentNode) {
           GalaxyAnimation.enable(element);
@@ -182,11 +170,7 @@
         }
       });
     });
-
-    _this.timeline.add(comeTimlineItems, null, null, this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration);
-    _this.timeline.play(0);
-//    window.requestAnimationFrame(function () {
-//      debugger;
-//    })
+    _this.timeline.add(inTimlineItems, null, null, this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration);
+    _this.timeline.play();
   };
 })();

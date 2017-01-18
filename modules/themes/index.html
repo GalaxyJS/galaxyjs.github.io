@@ -8,9 +8,9 @@
     </h1>
 
     <galaxy-animation class="theme-list"
-                      effects="galaxy.come-and-go,galaxy.auto-height"
-                      come-and-go-item="theme-item"
-                      come-and-go-stagger="0.15" >
+                      effects="galaxy.in-out,galaxy.auto-height"
+                      in-out-item="theme-item"
+                      in-out-stagger="0.15" >
       <div v-if="bool" class="theme-item" v-for="item in themes" >
         {{ header }} {{ item }}
       </div>
@@ -49,7 +49,7 @@
     state.onStart = function () {
       data.themes = [];
       Vue.nextTick(function () {
-        for (var i = 0; i < 9; i++) {
+        for (var i = 0; i < 24; i++) {
           data.themes.push('No. ' + (i + 1));
         }
       });
