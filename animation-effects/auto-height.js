@@ -3,7 +3,7 @@
 (function () {
   GalaxyAnimation.effects['galaxy.auto-height'] = {
     register: function (element) {
-      new AutoHeightAnimation(element);
+      return new AutoHeightAnimation(element);
     },
     deregister: function (element) {
       if (element.xtag.liveHeightAnimation) {
@@ -87,7 +87,7 @@
           height: _this.height
         }, {
           height: newHeight,
-          clearProps: newHeight === 0 ? 'height' : '',
+//          clearProps: newHeight === 0 ? 'height' : '',
           ease: 'Power2.easeInOut',
           onComplete: function () {
             _this.height = newHeight;

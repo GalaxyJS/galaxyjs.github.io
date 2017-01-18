@@ -1,13 +1,15 @@
-/* global GalaxyAnimation, TweenLite, Node */
+/* global GalaxyAnimation, TweenLite, Node, Galaxy */
 
 (function () {
+  var tree = [];
+
   GalaxyAnimation.effects['galaxy.come-and-go'] = {
     register: function (element) {
-      new ComeAndGo(element);
+      return new ComeAndGo(element);
     },
     deregister: function (element) {
-      if (element.xtag.PopInAnimation) {
-        element.xtag.PopInAnimation.off();
+      if (element.xtag.animations['galaxy.come-and-go']) {
+        element.xtag.animations['galaxy.come-and-go'].off();
       }
     }
   };
@@ -17,81 +19,174 @@
     _this.element = element;
     //_this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
 
-    if (!this.observer) {
-      var existedNodes = element.querySelectorAll(element.getAttribute('come-and-go-item'));
-      animate(existedNodes);
-     
+    if (!_this.observer) {
       _this.observer = new MutationObserver(function (mutations) {
         _this.stagger = 0;
         _this.targetItem = element.getAttribute('come-and-go-item');
         _this.staggerDuration = parseFloat(element.getAttribute('come-and-go-stagger') || 0.05);
 
-        var nodes = [];
+        var come = [];
+        var go = [];
 
         mutations.forEach(function (item) {
-          var node = null;
-          if (item.addedNodes[0] && item.addedNodes[0].nodeType === Node.ELEMENT_NODE) {
+          var addedNode = item.addedNodes[0];
+          if (addedNode && addedNode.nodeType === Node.ELEMENT_NODE) {
 
-            if (item.addedNodes[0].__ui_neutral || !item.addedNodes[0].classList.contains(_this.targetItem))
+            if (addedNode.__ui_neutral || addedNode.__cag_ready || !addedNode.classList.contains(_this.targetItem))
               return null;
 
-            node = item.addedNodes[0];
+            addedNode.__cag_ready = true;
+//            console.log(!addedNode.classList.contains('content'),_this.targetItem,addedNode.__ui_neutral,addedNode.__cag_ready);  
+            come.push({
+              parent: item.target,
+              node: addedNode
+            });
           }
 
-          if (item.removedNodes[0] && item.removedNodes[0].__ui_neutral) {
-            return null;
-          }
+          var removedNode = item.removedNodes[0];
+          if (removedNode && removedNode.nodeType === Node.ELEMENT_NODE) {
+            if (removedNode.__ui_neutral || removedNode.__cag_ready || !removedNode.classList.contains(_this.targetItem))
+              return null;
 
-          node && nodes.push(node);
+            removedNode.__cag_ready = true;
+            go.push({
+              parent: item.target,
+              node: removedNode
+            });
+          }
         });
 
-        animate(nodes);
+        _this.animate(come, go);
       });
 
-      _this.observer.observe(_this.element, {
-        attributes: false,
-        childList: true,
-        characterData: false,
-        subtree: true
+      window.requestAnimationFrame(function () {
+        if (!_this.observer) {
+          return;
+        }
+        _this.observer.observe(_this.element, {
+          attributes: false,
+          childList: true,
+          characterData: false,
+          subtree: true
+        });
+
+        var existedNodes = [];
+        Array.prototype.forEach.call(element.getElementsByClassName(element.getAttribute('come-and-go-item')), function (item) {
+          item.__cag_ready = true;
+          existedNodes.push({
+            parent: item.parentNode,
+            node: item
+          });
+        });
+//        console.log(existedNodes, _this.element);
+        _this.animate(existedNodes, []);
       });
     }
-
-    _this.element.xtag.PopInAnimation = this;
   }
 
   ComeAndGo.prototype.off = function () {
     if (this.observer) {
       this.observer.disconnect();
+      this.observer = null;
     }
   };
 
-    function animate(nodes, style) {
-    if (!nodes.length) {
+
+  ComeAndGo.prototype.animate = function (comingNodes, goingNodes) {
+    if (!comingNodes.length && !goingNodes.length) {
       return;
     }
 
-    var timelineItems = [];
-    var timeline = new TimelineLite({
-      paused: true,
-      smoothChildTiming: true,
-      onComplete: function () {
+    var _this = this;
+    var parentGalaxyAnimation = Galaxy.ui.utility.findParent(_this.element, 'galaxy-animation');
+    if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations['galaxy.come-and-go'] && parentGalaxyAnimation.xtag.animations['galaxy.come-and-go'].timeline) {
+      _this.timeline = parentGalaxyAnimation.xtag.animations['galaxy.come-and-go'].timeline;
+//      _this.timeline.pause();
+//      console.log('asd');
+    } else {
+      if (_this.timeline) {
+        _this.timeline.progress(1, false);
+      }
+      _this.timeline = new TimelineLite({
+        paused: true,
+        smoothChildTiming: true,
+        onComplete: function () {
+          _this.element.xtag.__come_and_go_animating = false;
+          _this.timeline = null;
+        }
+      });
+    }
+
+
+    _this.element.xtag.__come_and_go_animating = true;
+    var comeTimlineItems = [];
+    var goTimlineItems = [];
+
+    Array.prototype.forEach.call(comingNodes || [], function (item) {
+      item.node.__cag_ready = true;
+//      GalaxyAnimation.disable(item.node);
+
+      if (item.node.parenNode) {
+        item.parent.removeChild(item.node);
       }
     });
 
-    Array.prototype.forEach.call(nodes, function (element) {
+    Array.prototype.forEach.call(goingNodes || [], function (item) {
+      var element = item.node;
+
+      GalaxyAnimation.disable(element);
+      item.parent.appendChild(element);
       TweenLite.set(element, {
-        className: '+=come'
+        className: '-=come'
       });
 
-      timelineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
-        className: '-=come',
-        ease: 'Power2.easeOut',
+      goTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
+        className: '+=come',
+        ease: 'Power2.easeInOut',
         onComplete: function () { }
       }));
     });
 
-    timeline.add(timelineItems, null, null, this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration);
+    Array.prototype.forEach.call(comingNodes || [], function (item) {
+      var element = item.node;
+      var parent = item.parent;
+//      GalaxyAnimation.enable(element);
+      parent.appendChild(element);
+      TweenLite.set(element, {
+        //display: 'none',
+        className: '+=come'
+      });
 
-    timeline.play(0);
+      comeTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
+        //display: '',
+        className: '-=come',
+        ease: 'Power2.easeInOut',
+        onComplete: function () {
+          element.__cag_ready = false;
+          delete element.__cag_ready;
+        }
+      }));
+    });
+
+//    debugger;
+    _this.timeline.add(goTimlineItems, null, null, this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration);
+    _this.timeline.add(function () {
+      Array.prototype.forEach.call(goingNodes || [], function (item) {
+        var element = item.node;
+        if (element.parentNode) {
+          GalaxyAnimation.enable(element);
+          element.parentNode.removeChild(element);
+          window.requestAnimationFrame(function () {
+            delete element.__cag_ready;
+          });
+        }
+      });
+    });
+
+    _this.timeline.add(comeTimlineItems, null, null, this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration);
+    _this.timeline.play(0);
+//    window.requestAnimationFrame(function () {
+//      debugger;
+//    })
   };
 })();

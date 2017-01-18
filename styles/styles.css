@@ -164,7 +164,7 @@ galaxy-animation {
 }
 
 .come {
-  transform: translateY(15px);
+  transform: translateY(15px) scale(.5);
   opacity: 0;
 }
 
@@ -194,3 +194,31 @@ blockquote {
 section > section {
   margin-bottom: 3em;
 }
+
+.theme-list {
+    display: flex;
+    justify-content: flex-start;
+    align-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .theme-list > .theme-item {
+    width: 240px;
+    height: 160px;
+    background-color: #009688;
+    color: #fff;
+    font-size: .78em;
+    font-weight: 300;
+    margin: 0 auto 15px;
+    display: block;
+    flex: 0 0 auto;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 2px 5px rgba(0,0,0,.1);
+  }
+
+  .theme-item.come {
+    transform: translateY(50%);
+    opacity: 0;
+  }

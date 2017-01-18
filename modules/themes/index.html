@@ -1,45 +1,17 @@
-<style>
-  .theme-list {
-    display: flex;
-    justify-content: flex-start;
-    align-content: flex-start;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .theme-list > .theme-item {
-    width: 240px;
-    height: 160px;
-    background-color: #009688;
-    color: #fff;
-    font-size: .78em;
-    font-weight: 300;
-    margin: 0 auto 15px;
-    display: block;
-    flex: 0 0 auto;
-    padding: 10px;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 2px 5px rgba(0,0,0,.1);
-  }
-
-  .theme-item.come {
-    transform: translateY(50%);
-    opacity: 0;
-  }
-</style>
-<div ui-view="main" class="card big">
+<div ui-view="main" class="card big theme-card">
   <img class="banner" src='modules/themes/images/paint.jpg' alt='paint' />
 
   <section class="content">
     <h1>
       Themes
+      <button v-on:click="bool = !bool">On / Off</button>
     </h1>
 
     <galaxy-animation class="theme-list"
-                      effects="galaxy.come-and-go"
+                      effects="galaxy.come-and-go,galaxy.auto-height"
                       come-and-go-item="theme-item"
                       come-and-go-stagger="0.15" >
-      <div class="theme-item" v-for="item in themes">
+      <div v-if="bool" class="theme-item" v-for="item in themes" >
         {{ header }} {{ item }}
       </div>
     </galaxy-animation>
@@ -51,6 +23,7 @@
   var shareData = Scope.import('services/share-data.js');
 
   var data = {
+    bool: true,
     header: 'Do Not reinvent the WHEEL, Engineer it!',
     themes: [],
     shareData: shareData
@@ -76,7 +49,7 @@
     state.onStart = function () {
       data.themes = [];
       Vue.nextTick(function () {
-        for (var i = 0; i < 5; i++) {
+        for (var i = 0; i < 9; i++) {
           data.themes.push('No. ' + (i + 1));
         }
       });

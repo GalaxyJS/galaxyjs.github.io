@@ -3,7 +3,7 @@
 (function () {
   GalaxyAnimation.effects['galaxy.zoom'] = {
     register: function (element) {
-      new ZoomInAnimation(element);
+      return new ZoomInAnimation(element);
     },
     deregister: function (element) {
       if (element.xtag.PopInAnimation) {
