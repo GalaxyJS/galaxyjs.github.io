@@ -3,7 +3,7 @@
 (function () {
 
   Galaxy = new System();
-  
+
   /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
    * 
    * @returns {Galaxy.GalaxySystem}
@@ -12,7 +12,7 @@
 
   var entities = {};
   var importedLibraries = {};
-  
+
   function System() {
     this.stateKey = '#';
     this.registry = {};
@@ -130,11 +130,27 @@
 
     var detect = function () {
       if (_this.app.oldHash !== window.location.hash || _this.app.newListener) {
+        var oldParesedHash = _this.parseHash(_this.app.oldHash);
         var parsedHash = _this.parseHash(window.location.hash);
 
         _this.setModuleHashValue(parsedHash.navigation, parsedHash.params, parsedHash.hash);
+        // If the user changes only the app(#) parameter in the url, 
+        // then the old hash of the requested module would be considered instead of the value of the url
+        // if user make more changes, then the old hash of the requested module will be ignored and url value will be taken
+        if (oldParesedHash.params['#'] !== parsedHash.params['#']) {
+          var temp = Galaxy.utility.clone(parsedHash.params);
+          delete oldParesedHash.params['#'];
+          delete temp['#'];
+
+          if (JSON.stringify(temp) === JSON.stringify(oldParesedHash.params) && JSON.stringify(temp) !== '{}') {
+            return  Galaxy.app.setParam('#', parsedHash.params['#']);
+          } else {
+            Galaxy.modulesHashes[parsedHash.params['#']] = parsedHash.hash;
+          }
+        }
+
         _this.app.hashChanged(parsedHash.navigation, parsedHash.params, parsedHash.hash, parsedHash.navigation[_this.app.stateKey]); // Galaxy
-        _this.app.oldHash = '#' + parsedHash.hash;
+        _this.app.oldHash = parsedHash.hash;
         _this.app.newListener = false;
       }
     };
@@ -144,6 +160,34 @@
     this.hashChecker = setInterval(function () {
       detect();
     }, 50);
+  };
+
+  System.prototype.setModuleHashValue = function (navigation, parameters, hashValue, init) {
+    var nav = parameters['#'];
+
+    if (!nav) {
+      return hashValue;
+    }
+
+    if (Galaxy.modulesHashes[nav] && Galaxy.app.activeModule !== Galaxy.modules['system/' + nav] && Galaxy.app.activeModule && Galaxy.app.activeModule.stateKey === '#') {
+      return Galaxy.modulesHashes[nav];
+      // When the navigation path is changed
+    } else if (!this.firstTime) {
+      // first time indicates that the page is (re)loaded and the window.location.hash should be set
+      // as the module hash value for the module which is specified by app parameter in the hash value.
+      // Other modules get default hash value
+      Galaxy.modulesHashes[nav] = hashValue;
+      this.firstTime = true;
+      return Galaxy.modulesHashes[nav];
+    } else if (!Galaxy.modulesHashes[nav]) {
+      // When the module does not exist 
+      Galaxy.modulesHashes[nav] = '#' + nav;
+      return Galaxy.modulesHashes[nav];
+    } else if (Galaxy.modulesHashes[nav]) {
+      // When the hash parameters value is changed from the browser url bar or originated from url bar
+      Galaxy.modulesHashes[nav] = hashValue;
+    }
+    return hashValue;
   };
 
   System.prototype.parseHash = function (hash) {
@@ -418,13 +462,10 @@
 
       scope.html = html;
       html._scope = scope;
-//      debugger;
-
       var currentComponentScripts = filtered.script;
       delete filtered.script;
 
       var componentScript = new Function('Scope', currentComponentScripts);
-
       componentScript.call(null, scope);
 
       module.scopeServices.forEach(function (item) {
@@ -432,12 +473,11 @@
       });
 
       var htmlNodes = [];
-
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
         htmlNodes.push(html.childNodes[i]);
       }
-      scope.html = htmlNodes;
 
+      scope.html = htmlNodes;
       if (!importedLibraries[module.url]) {
         importedLibraries[module.url] = {
           name: module.name || module.url,
@@ -453,11 +493,9 @@
       var currentModule = Galaxy.modules['system/' + module.id];
 
       if (module.temprory || scope._doNotRegister) {
-//          console.log('do not register', module.id);
         delete scope._doNotRegister;
         currentModule = {};
       } else if (!currentModule) {
-//          console.log('empty', module.id);
         currentModule = Galaxy.modules['system/' + module.id] = {};
       }
 
@@ -496,34 +534,6 @@
     ];
   };
 
-  System.prototype.setModuleHashValue = function (navigation, parameters, hashValue, init) {
-    var nav = parameters['#'];
-
-    if (!nav) {
-      return;
-    }
-
-    if (Galaxy.modulesHashes[nav] && Galaxy.app.activeModule !== Galaxy.modules['system/' + nav] && Galaxy.app.activeModule && Galaxy.app.activeModule.stateKey === '#') {
-      //window.location.hash = Galaxy.modulesHashes[nav];
-      // When the navigation path is changed
-      //alert(Galaxy.modulesHashes[nav] + " YES " + nav);
-    } else if (!this.firstTime) {
-      // first time indicates that the page is (re)loaded and the window.location.hash should be set
-      // as the module hash value for the module which is specified by app parameter in the hash value.
-      // Other modules get default hash value
-      Galaxy.modulesHashes[nav] = hashValue;
-      this.firstTime = true;
-      //alert("first time: " + Galaxy.modulesHashes[nav] + " " + hashValue);
-    } else if (!Galaxy.modulesHashes[nav]) {
-      // When the module does not exist 
-      Galaxy.modulesHashes[nav] = '#' + nav;
-      //alert(Galaxy.modulesHashes[nav] + " default hash");
-    } else if (Galaxy.modulesHashes[nav]) {
-      // When the hash parameters value is changed from the browser url bar or originated from url bar
-      Galaxy.modulesHashes[nav] = hashValue;
-    }
-  };
-
   /** Set parameters for app/nav. if app/nav was not in parameters, then set paraters for current app/nav
    * 
    * @param {Object} parameters
@@ -535,16 +545,14 @@
     var newParams = Galaxy.utility.clone(parameters);
     this.lastHashParams = parameters;
     var hashValue = window.location.hash;
-    //var originHash = hashValue;
     var nav = parameters['#'];
+
     if (nav && !Galaxy.modulesHashes[nav]) {
-//      console.log(hashValue, nav)
       Galaxy.modulesHashes[nav] = hashValue = '#' + nav;
 
     } else if (nav && Galaxy.modulesHashes[nav]) {
-      //console.log(hashValue, nav , Galaxy.modulesHashes[nav]);
-      //alert("---------");
       hashValue = Galaxy.modulesHashes[nav];
+
     }
     //console.log(parameters, nav, Galaxy.modulesHashes[nav]);
 
@@ -842,7 +850,7 @@
    *  
    * @returns {Galaxy.GalaxyModule}
    */
-  Galaxy.GalaxyModule = GalaxyModule;    
+  Galaxy.GalaxyModule = GalaxyModule;
   Galaxy.module = new Galaxy.GalaxyModule();
 
   function GalaxyModule() {
@@ -1023,19 +1031,18 @@
   GalaxyModule.prototype.hashChanged = function (navigation, params, hashValue, fullNav) {
     var _this = this;
     var moduleNavigation = navigation;
-
     var fullNavPath = params[_this.stateKey];
 
-    if (this.id === 'system/' + fullNavPath/* && Galaxy.app.activeModule !== this*/) {
-      this.domain.app.activeModule = this;
-      this.domain.app.activeModule.active = true;
-    } else if (!this.solo) {
-      if (this.domain.app.activeModule && this.domain.app.activeModule.active) {
-        this.domain.app.activeModule.trigger('onStop');
+    for (var id in this.domain.modules) {
+      var module = this.domain.modules[id];
+      if (module.id !== 'system/' + fullNavPath && module.active) {
+        module.trigger('onStop');
+        module.active = false;
+      } else if (module.id === 'system/' + fullNavPath && module.active) {
+        this.domain.app.activeModule = module;
       }
-      this.domain.app.activeModule = null;
-      this.active = false;
     }
+//    console.log(this.id);
 
     this.hashHandler.call(this, navigation, params);
     var allNavigations = Galaxy.utility.extend({}, this.navigation, navigation);
@@ -1046,23 +1053,23 @@
     _this.params = params;
 
     if (this.domain.app.activeModule && this.active && this.domain.app.activeModule.id === _this.id) {
-      for (var key in allNavigations) {
-        if (allNavigations.hasOwnProperty(key)) {
+      for (var id in allNavigations) {
+        if (allNavigations.hasOwnProperty(id)) {
           var stateHandlers = _this.hashListeners.filter(function (item) {
-            return item.id === key;
+            return item.id === id;
           });
 
           if (stateHandlers.length) {
-            if (tempNav[key]) {
-              var currentKeyValue = tempNav[key].join('/');
-              if (navigation[key] && currentKeyValue === navigation[key].join('/')) {
+            if (tempNav[id]) {
+              var currentKeyValue = tempNav[id].join('/');
+              if (navigation[id] && currentKeyValue === navigation[id].join('/')) {
                 continue;
               }
             }
 
             var parameters = [];
             parameters.push(null);
-            var navigationValue = navigation[key];
+            var navigationValue = navigation[id];
             if (navigationValue) {
               parameters[0] = navigationValue.join('/');
               for (var i = 0; i < navigationValue.length; i++) {
@@ -1105,16 +1112,16 @@
       }
     }
 
-    for (var key in allNavigations) {
-      if (allNavigations.hasOwnProperty(key)) {
+    for (var id in allNavigations) {
+      if (allNavigations.hasOwnProperty(id)) {
         var globalStateHandlers = _this.globalHashListeners.filter(function (item) {
-          return item.id === key;
+          return item.id === id;
         });
 
         if (globalStateHandlers.length) {
-          if (tempNav[key]) {
-            var currentKeyValue = tempNav[key].join('/');
-            if (navigation[key] && currentKeyValue === navigation[key].join('/')) {
+          if (tempNav[id]) {
+            var currentKeyValue = tempNav[id].join('/');
+            if (navigation[id] && currentKeyValue === navigation[id].join('/')) {
               continue;
             }
           }
@@ -1122,7 +1129,7 @@
           parameters = [];
           parameters.push(null);
 
-          navigationValue = navigation[key];
+          navigationValue = navigation[id];
           if (navigationValue) {
             parameters[0] = navigationValue.join('/');
             for (var i = 0; i < navigationValue.length; i++) {
@@ -1141,16 +1148,15 @@
 
     // Set the app.activeModule according to the current navigation path
     if (navigation[this.stateKey] && this.domain.modules[this.id + '/' + navigation[this.stateKey][0]]) {
-      this.activeModule = this.domain.modules[this.id + '/' + navigation[this.stateKey][0]];
+      this.domain.app.activeModule = this.domain.modules[this.id + '/' + navigation[this.stateKey][0]];
     }
 
-    if (this.activeModule && this.activeModule.id === this.id + '/' + navigation[this.stateKey][0])
-    {
+    if (this.domain.app.activeModule && this.domain.app.activeModule.id === this.id + '/' + navigation[this.stateKey][0]) {
       // Remove first part of navigation in order to force activeModule to only react to events at its level and higher 
       moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
-      moduleNavigation[this.stateKey] = fullNav.slice(this.activeModule.id.split('/').length - 1);
+      moduleNavigation[this.stateKey] = fullNav.slice(this.domain.app.activeModule.id.split('/').length - 1);
       // Call module level events handlers
-      this.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
+      this.domain.app.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
     }
   };
 

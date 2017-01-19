@@ -48,16 +48,18 @@
     data: {
       navs: modules,
       currentApp: ''
+    },
+    methods: {
+      goTo: function (id) {
+        Galaxy.app.setParam('#', id);
+      }
     }
   });
 
   Galaxy.on('#', function (full, app) {
     if (modules[app] && mainNav.currentApp !== app) {
       mainNav.currentApp = app;
-//      setTimeout(function () {
-    Galaxy.helpers.loadModuleInto(modules[app], Scope.views['main-content']);
-//},1000)
-      
+      Galaxy.helpers.loadModuleInto(modules[app], Scope.views['main-content']);
     } else {
 //      alert('Component not found: ' + app);
     }

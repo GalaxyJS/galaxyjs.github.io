@@ -20,6 +20,7 @@
 
 <script>
 
+  var state = Scope.import('state');
   var shareData = Scope.import('services/share-data.js');
 
   var data = {
@@ -41,19 +42,15 @@
 
 
 
-  Galaxy.newStateHandler(Scope, function (state) {
-    state.onInit = function () {
+  state.onInit = function () { };
 
-    };
-
-    state.onStart = function () {
-      data.themes = [];
-      Vue.nextTick(function () {
-        for (var i = 0; i < 24; i++) {
-          data.themes.push('No. ' + (i + 1));
-        }
-      });
-    };
-  });
+  state.onStart = function () {
+    data.themes = [];
+    Vue.nextTick(function () {
+      for (var i = 0; i < 24; i++) {
+        data.themes.push('No. ' + (i + 1));
+      }
+    });
+  };
 
 </script>

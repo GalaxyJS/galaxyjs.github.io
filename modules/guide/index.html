@@ -174,7 +174,11 @@ project
 
   shareData.name = 'Eeliya was in Guide page';
 
-  state.onStart = function (parameters) {
+  state.onInit = function () { };
+
+  state.onStart = function () {
     PR.prettyPrint();
   };
+
+  state.onStop = function () { };
 </script>
