@@ -13,7 +13,7 @@
       Galaxy.GalaxySystem
     </h2>
     <p>
-      The main class of the GalaxyJS. <code>window.galaxy</code> is an instance of this class.
+      The main class of the GalaxyJS, <code>window.galaxy</code> is an instance of this class.
     </p>
   </section>  
 
@@ -22,8 +22,64 @@
       Galaxy.GalaxyModule
     </h2>
     <p>
-
+      GalaxyModule is like a state handler. You can load a module via <code>Galaxy.load</code>.
     </p>
+    <pre class="prettyprint lang-js">
+ Galaxy.load({
+    // id should be equals to the url # value
+    // otherwise the module will be not registered
+    id: 'my-module' 
+    url: 'path/to/module.html'
+  }, function (module) {
+    // Set the html content of the module as the content of the element
+    var element = document.getElementsByTagName('body')[0];
+    Galaxy.ui.setContent(element, module.scope.html);
+
+    // Modules that are loaded via Galaxy.load method 
+    // will be not started automatically therefore you have to start them
+    if (module.start) {
+      module.start();
+    }
+}); </pre>
+    <p>
+      A module will be activated when the # value of the url matches the id of that module. 
+      Then the module starts listening to the state (url) changes. 
+    </p>
+    <p>
+      There is a shorter version for the top code.
+    </p>
+    <pre class="prettyprint lang-js">
+var element = document.getElementsByTagName('body')[0];
+
+Galaxy.helpers.loadModuleInto({
+  // id should be equals to the url # value
+  // otherwise the module will be not registered
+  id: 'my-module' 
+  url: 'path/to/module.html'
+}, element); </pre>
+    <p>
+      <code>Galaxy.helpers.loadModuleInto</code> will load the html of the loaded module into the passed element
+      and also start the module
+    </p>
+    <p>
+      In the module file you can access the state handler like this
+    </p>
+    <pre class="prettyprint lang-js">
+var state = Scope.import('state');
+
+state.onInit = function () { 
+  // Called first time the module is loaded
+};
+
+state.onStart = function () { 
+  // Called every time the module is started
+};
+
+state.onStop = function () { 
+  // Called every time the module is deactivated, 
+  // for example when the # value of url 
+  // changes to something other than the module id 
+}; </pre>
   </section>  
 
   <section class="content">
@@ -54,7 +110,7 @@
   };
 
   state.onStart = function () {
-    console.log('API started', Scope);
+    PR.prettyPrint();
   };
 
 </script>

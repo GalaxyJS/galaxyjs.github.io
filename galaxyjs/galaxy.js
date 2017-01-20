@@ -129,7 +129,7 @@
     }
 
     var detect = function () {
-      if (_this.app.oldHash !== window.location.hash || _this.app.newListener) {
+      if (_this.app.oldHash !== window.location.hash || _this.app.newListenerAdded) {
         var oldParesedHash = _this.parseHash(_this.app.oldHash);
         var parsedHash = _this.parseHash(window.location.hash);
 
@@ -151,7 +151,7 @@
 
         _this.app.hashChanged(parsedHash.navigation, parsedHash.params, parsedHash.hash, parsedHash.navigation[_this.app.stateKey]); // Galaxy
         _this.app.oldHash = parsedHash.hash;
-        _this.app.newListener = false;
+        _this.app.newListenerAdded = false;
       }
     };
 
@@ -864,7 +864,7 @@
     this.html = '';
     this.installModules = [];
     this.binds = {};
-    this.newListener = false;
+    this.newListenerAdded = false;
     this.onInit = null;
     this.onStart = null;
     this.onStop = null;
@@ -929,7 +929,7 @@
    */
   GalaxyModule.prototype.on = function (id, handler) {
     this.hashListeners.push({id: id, handler: handler});
-    this.newListener = true;
+    this.newListenerAdded = true;
   };
 
   /** Register an state handler globaly with the specified id.
