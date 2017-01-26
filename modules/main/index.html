@@ -61,7 +61,7 @@
       mainNav.currentApp = app;
       Galaxy.helpers.loadModuleInto(modules[app], Scope.views['main-content']);
     } else {
-//      alert('Component not found: ' + app);
+      console.warn('Component not found: ' + app);
     }
   });
 
