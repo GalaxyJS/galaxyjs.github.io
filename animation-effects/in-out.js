@@ -23,7 +23,7 @@
 
         var come = [];
         var go = [];
-      
+
         mutations.forEach(function (item) {
           var addedNode = item.addedNodes[0];
           if (addedNode && addedNode.nodeType === Node.ELEMENT_NODE) {
@@ -54,7 +54,7 @@
 
 //        window.clearTimeout(_this.throttle);
 //        _this.throttle = setTimeout(function () {
-          _this.animate(come, go);
+        _this.animate(come, go);
 //        }, 1000);
       });
 
@@ -100,6 +100,7 @@
     var parentGalaxyAnimation = Galaxy.ui.utility.findParent(_this.element, 'galaxy-animation');
     if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations['galaxy.in-out'] && parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline) {
       _this.timeline = parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline;
+      _this.timeline.pause();
     } else {
       if (_this.timeline) {
         _this.timeline.progress(1, false);
@@ -118,14 +119,14 @@
     var inTimlineItems = [];
     var outTimlineItems = [];
 
-    Array.prototype.forEach.call(inNodes || [], function (item) {
+    inNodes.forEach(function (item) {
       item.node.__cag_ready = true;
       if (item.node.parenNode) {
         item.parent.removeChild(item.node);
       }
     });
 
-    Array.prototype.forEach.call(outNodes || [], function (item) {
+    outNodes.forEach(function (item) {
       var element = item.node;
       GalaxyAnimation.disable(element);
       item.parent.appendChild(element);
@@ -140,7 +141,7 @@
       }));
     });
 
-    Array.prototype.forEach.call(inNodes || [], function (item) {
+    inNodes.forEach(function (item) {
       var element = item.node;
       var parent = item.parent;
       parent.appendChild(element);
