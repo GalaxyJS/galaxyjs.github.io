@@ -21,18 +21,18 @@
         _this.targetItem = element.getAttribute('in-out-item');
         _this.staggerDuration = parseFloat(element.getAttribute('in-out-stagger') || 0.05);
 
-        var come = [];
-        var go = [];
+        var inNodes = [];
+        var outNodes = [];
 
         mutations.forEach(function (item) {
           var addedNode = item.addedNodes[0];
           if (addedNode && addedNode.nodeType === Node.ELEMENT_NODE) {
-
-            if (addedNode.__ui_neutral || addedNode.__cag_ready || !addedNode.classList.contains(_this.targetItem))
+            if (addedNode.__ui_neutral || addedNode.__cag_ready || !addedNode.classList.contains(_this.targetItem)) {
               return null;
+            }
 
             addedNode.__cag_ready = true;
-            come.push({
+            inNodes.push({
               parent: item.target,
               node: addedNode
             });
@@ -45,17 +45,14 @@
             }
 
             removedNode.__cag_ready = true;
-            go.push({
+            outNodes.push({
               parent: item.target,
               node: removedNode
             });
           }
         });
 
-//        window.clearTimeout(_this.throttle);
-//        _this.throttle = setTimeout(function () {
-        _this.animate(come, go);
-//        }, 1000);
+        _this.animate(inNodes, outNodes);
       });
 
       window.requestAnimationFrame(function () {
@@ -71,6 +68,10 @@
 
         var existedNodes = [];
         Array.prototype.forEach.call(element.getElementsByClassName(element.getAttribute('in-out-item')), function (item) {
+          if (item.offsetParent === null) {
+            return;
+          }
+
           item.__cag_ready = true;
           existedNodes.push({
             parent: item.parentNode,
@@ -97,10 +98,14 @@
     }
 
     var _this = this;
+    var inTimlineItems = [];
+    var outTimlineItems = [];
+
     var parentGalaxyAnimation = Galaxy.ui.utility.findParent(_this.element, 'galaxy-animation');
     if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations['galaxy.in-out'] && parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline) {
       _this.timeline = parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline;
       _this.timeline.pause();
+      _this.timeline.add(TweenLite.to({}, GalaxyAnimation.CONFIG.staggerDuration));
     } else {
       if (_this.timeline) {
         _this.timeline.progress(1, false);
@@ -116,8 +121,7 @@
     }
 
     _this.element.xtag.__come_and_go_animating = true;
-    var inTimlineItems = [];
-    var outTimlineItems = [];
+
 
     inNodes.forEach(function (item) {
       item.node.__cag_ready = true;
@@ -126,6 +130,10 @@
       }
     });
 
+    var outAnimation = {
+      className: '+=out',
+      ease: 'Power2.easeInOut'
+    };
     outNodes.forEach(function (item) {
       var element = item.node;
       GalaxyAnimation.disable(element);
@@ -133,12 +141,7 @@
       TweenLite.set(element, {
         className: '-=out'
       });
-
-      outTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
-        className: '+=out',
-        ease: 'Power2.easeInOut',
-        onComplete: function () { }
-      }));
+      outTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, outAnimation));
     });
 
     inNodes.forEach(function (item) {
@@ -148,7 +151,6 @@
       TweenLite.set(element, {
         className: '+=out'
       });
-
       inTimlineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
         className: '-=out',
         ease: 'Power2.easeInOut',

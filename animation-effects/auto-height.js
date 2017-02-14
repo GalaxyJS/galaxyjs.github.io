@@ -18,6 +18,10 @@
 
     if (!this.observer) {
       _this.observer = new MutationObserver(function (mutations) {
+        if (_this.element.offsetParent === null) {
+          return;
+        }
+
         mutations.forEach(function (item) {
           if (item.addedNodes[0] && item.addedNodes[0].__ui_neutral) {
             return null;
@@ -26,9 +30,9 @@
           if (item.removedNodes[0] && item.removedNodes[0].__ui_neutral) {
             return null;
           }
-
-          _this.animate();
         });
+
+        _this.animate();
       });
 
       window.requestAnimationFrame(function () {
@@ -46,6 +50,8 @@
             subtree: true
           });
         }
+
+        _this.animate();
       });
 
       _this.resizeHandler = function () {
