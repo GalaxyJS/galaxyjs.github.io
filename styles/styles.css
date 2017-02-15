@@ -73,7 +73,8 @@ html, body {
   background-color: #fff;
   border-radius: 6px;
   margin: 15px auto;
-  padding: 0;
+  padding: 0 0 15px 0;
+  text-align: justify;
   box-shadow: 0 0 9px rgba(0,0,0, 0.04), 0 11px 23px rgba(0,0,0, .1);
 }
 
@@ -217,9 +218,10 @@ section > section {
   padding: 10px;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 2px 5px rgba(0,0,0,.1);
+  transform-origin: left top;
 }
 
 .theme-item.out {
-  transform: translateY(50%) rotateX(-90deg);
+  transform: scale(.5);
   opacity: 0;
 }
