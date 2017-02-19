@@ -1,50 +1,72 @@
 <div class="card big start-mod">
-  <img class="banner" src='modules/start/images/galaxy-1.jpeg' alt='galaxy' />
+    <img class="banner" src='modules/start/images/galaxy-1.jpeg' alt='galaxy'/>
 
-  <galaxy-animation effects="galaxy.in-out" in-out-item="content">
-    <section class="content">
-      <h1 >Welcome to GalaxyJS</h1>
-      <h3>GalaxyJS is library to help you to implement your web application into isolated modules</h3>
-      <p>
-        It's build on the premise that it's not a framework but a library.
-      </p>
-      <p>
-        Things you need to know before start using GalaxyJS
-      </p>
-      <ul>
-        <li>
-          It's depends on Javascript <strong>new Function()</strong> feature
-        </li>     
-        <li>
-          Its structure encourages you to write more DRY code
-        </li>
-      </ul>
-    </section>
+    <galaxy-animation effects="galaxy.in-out" in-out-item="content">
+        <section class="content">
+            <h1>Welcome to GalaxyJS</h1>
+            <h3>GalaxyJS is library to help you to implement your web application into isolated modules</h3>
+            <p>
+                It's build on the premise that it's not a framework but a library.
+            </p>
+            <p>
+                Things you need to know before start using GalaxyJS
+            </p>
+            <ul>
+                <li>
+                    It's depends on Javascript <strong>new Function()</strong> feature
+                </li>
+                <li>
+                    Its structure encourages you to write more DRY code
+                </li>
+            </ul>
+        </section>
 
-    <section class="content">
-      <h2>Why GalaxyJS?</h2>
+        <section class="content">
+            <h2>Why GalaxyJS?</h2>
 
-      <h3>Easy to learn... That's it!</h3>
+            <h3>Easy to learn... That's it!</h3>
 
-      <p>
-        The difference between Vanilla JS and a Javascript framework is like the difference between a galaxy and a planet. Planets exist inside the galaxy. 
-      </p>
-      <p>
-        Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is life on that planet of course)</i>. 
-      </p>
-      <p>
-        With GalaxyJS you can create your own favorite application ecosystem <i>(framework)</i>, which suits your project the best.
-      </p>
-    </section>
-  </galaxy-animation>
+            <p>
+                The difference between Vanilla JS and a Javascript framework is like the difference between a galaxy and
+                a planet. Planets exist inside the galaxy.
+            </p>
+            <p>
+                Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is
+                life on that planet of course)</i>.
+            </p>
+            <p>
+                With GalaxyJS you can create your own favorite application ecosystem <i>(framework)</i>, which suits
+                your project the best.
+            </p>
+        </section>
+
+        <section class="content">
+            <h2>Browser support</h2>
+
+            <p>
+                <strong>GalaxyJS</strong> is supported on IE9+ and all evergreen browsers
+            </p>
+            <p>
+                <strong>GalaxyJS Animation</strong> is supported on IE11+ and all evergreen browsers, due to use of <a
+                    href="https://developer.mozilla.org/en/docs/Web/API/MutationObserver" target="_blank">MutationObserver</a>.
+                <br>
+                You can see the state of support for MutationObserver <a
+                    href="http://caniuse.com/#search=MutationObserver" target="_blank">here</a>.
+            </p>
+
+        </section>
+    </galaxy-animation>
 </div>
 
 <script>
   var state = Scope.import('state');
 
-  state.onInit = function () { };
+  state.onInit = function () {
+  };
 
-  state.onStart = function () { };
+  state.onStart = function () {
+  };
 
-  state.onStop = function () { };
+  state.onStop = function () {
+  };
 </script>

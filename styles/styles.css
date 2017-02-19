@@ -24,6 +24,11 @@ html, body {
   box-sizing: border-box;
 }
 
+a {
+  color: #009688;
+}
+
+
 .main-content {
   position: absolute;
   width: calc(100% - 300px);
