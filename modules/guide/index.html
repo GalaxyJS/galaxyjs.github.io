@@ -82,6 +82,7 @@ project
           }, 
           function (module) {
             Galaxy.ui.setContent('body', module.scope.html);
+            module.start();
           });
         }
       })();
