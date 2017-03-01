@@ -6,9 +6,9 @@
   </a>
 </nav>
 
-<div  class="main-content">
+<div class="main-content">
   <galaxy-animation ui-view="main-content" effects="galaxy.in-out" in-out-item="card">
-  </galaxy-animation>  
+  </galaxy-animation>
 </div>
 
 <script>
@@ -42,7 +42,7 @@
   };
 
   var mainNav = new Vue({
-    el: Scope.views['main-nav'],
+    el: Scope.views[ 'main-nav' ],
     data: {
       navs: modules,
       currentApp: ''
@@ -55,11 +55,16 @@
   });
 
   Galaxy.on('#', function (full, app) {
-    if (modules[app] && mainNav.currentApp !== app) {
+    if (modules[ app ] && mainNav.currentApp !== app) {
       mainNav.currentApp = app;
-      Galaxy.helpers.loadModuleInto(modules[app], Scope.views['main-content']);
+      Galaxy.helpers.loadModuleInto(modules[ app ], Scope.views[ 'main-content' ]);
     } else {
-      console.warn('Component not found: ' + app);
+      mainNav.currentApp = null;
+      console.warn('Module not found: ' + app);
+      Galaxy.helpers.loadModuleInto({
+        id: '404',
+        url: 'modules/404/index.html'
+      }, Scope.views[ 'main-content' ]);
     }
   });
 

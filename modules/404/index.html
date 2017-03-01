@@ -1,0 +1,33 @@
+<div ui-view="main" class="card big">
+  <img class="banner" src='modules/guide/images/guide.jpg' alt='guide'/>
+
+  <section class="content">
+    <h1>
+      404
+    </h1>
+    <h3>
+      Hi, I'm module 404. You are seeing me because the module that you'er trying to load by state key
+      <strong>#{{ app }}</strong> is not found.
+    </h3>
+    <p>
+      Go back to <a href="#start">start</a>
+    </p>
+  </section>
+</div>
+
+<script>
+  var state = Scope.import('state');
+
+  new Vue({
+    el: Scope.views[ 'main' ],
+    data: {
+      app: Galaxy.app.getParam('#')
+    }
+  });
+
+  state.onInit = function () { };
+
+  state.onStart = function () { };
+
+  state.onStop = function () { };
+</script>
