@@ -1,44 +1,42 @@
 <div class="card big">
-    <img class="banner" src='modules/guide/images/guide.jpg' alt='guide'/>
+  <img class="banner" src="modules/guide/images/guide.jpg" alt="guide"/>
 
-    <section class="content">
-        <h1>
-            Guide Page
-        </h1>
+  <section class="content">
+    <h1>
+      Guide Page
+    </h1>
 
-        <section>
-            <h2>
-                Instalation
-            </h2>
-            <p>
-                <a href="https://raw.githubusercontent.com/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy-min.js"
-                   target="_blank">GalaxyJS</a>
+    <section>
+      <h2>
+        Instalation
+      </h2>
+      <p>
+        <a href="https://cdn.rawgit.com/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy-min.js"
+           target="_blank">GalaxyJS</a>
 
-            </p>
-            <p>
-                <a href="https://raw.githubusercontent.com/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy-tags-min.js"
-                   target="_blank">GalaxyJS Tags</a>
-            </p>
-            <p>
-                Or simply copy & paste the following into your page's head
-            <pre class="prettyprint lang-html">
-&lt;script src="https://raw.githubusercontent.com/GalaxyJS/
-            galaxyjs.github.io/master/galaxyjs/galaxy-min.js"&gt;&lt;/script&gt;
-&lt;script src="https://raw.githubusercontent.com/GalaxyJS/
-            galaxyjs.github.io/master/galaxyjs/galaxy-tags-min.js"&gt;&lt;/script&gt; </pre>
-            </p>
-        </section>
+      </p>
+      <p>
+        <a href="https://cdn.rawgit.com/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy-tags-min.js"
+           target="_blank">GalaxyJS Tags</a>
+      </p>
+      <p>
+        Or simply copy & paste the following into your page's head
+      <pre class="prettyprint lang-html">
+&lt;script src="https://cdn.rawgit.com/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy-min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.rawgit.com/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy-tags-min.js"&gt;&lt;/script&gt; </pre>
+      </p>
+    </section>
 
-        <section>
-            <h2>
-                Recommended project file & folder structure
-            </h2>
-            <p>
-                You can have whatever directory structure you like as long as you know how to the load modules.
-                The following structure is recommended and we are using this structure though out our guide.
-            </p>
+    <section>
+      <h2>
+        Recommended project file & folder structure
+      </h2>
+      <p>
+        You can have whatever directory structure you like as long as you know how to the load modules.
+        The following structure is recommended and we are using this structure though out our guide.
+      </p>
 
-            <pre class="prettyprint lang-js">
+      <pre class="prettyprint lang-js">
 project
 |-app  
 | |-modules
@@ -50,16 +48,16 @@ project
 |
 |-node_modules
 |-package.json    </pre>
-        </section>
+    </section>
 
-        <section>
-            <h2>
-                Galaxy.bootstrap
-            </h2>
-            <p>
-                Add this code into the app/index.html.
-            </p>
-            <pre class="prettyprint lang-html">
+    <section>
+      <h2>
+        Galaxy.bootstrap
+      </h2>
+      <p>
+        Add this code into the app/index.html.
+      </p>
+      <pre class="prettyprint lang-html">
 &lt;!doctype html&gt;
 &lt;html&gt;
   &lt;head&gt;
@@ -92,46 +90,46 @@ project
     Loading...
   &lt;/body&gt;
 &lt;/html&gt;    </pre>
-        </section>
+    </section>
 
-        <section>
-            <h2>
-                Hello World!
-            </h2>
-            <p>
-                Add the following code into the modules/main/index.html
-            </p>
-            <pre class="prettyprint lang-html">
+    <section>
+      <h2>
+        Hello World!
+      </h2>
+      <p>
+        Add the following code into the modules/main/index.html
+      </p>
+      <pre class="prettyprint lang-html">
 &lt;h1&gt;Hello World!&lt;/h1&gt;      </pre>
-            <p>
-                That's it, now you should be able to see Hello World! in your browser.
-            </p>
+      <p>
+        That's it, now you should be able to see Hello World! in your browser.
+      </p>
 
-            <p>
-                What happens here is that you bootstrap <code>Galaxy</code> and load
-                your main module as soon as Galaxy done bootstrapping.<br/>
-                Then you add the content(html) of the main module to the body element by
-                <code>Galaxy.ui.setContent()</code>.
-            </p>
+      <p>
+        What happens here is that you bootstrap <code>Galaxy</code> and load
+        your main module as soon as Galaxy done bootstrapping.<br/>
+        Then you add the content(html) of the main module to the body element by
+        <code>Galaxy.ui.setContent()</code>.
+      </p>
 
-            <p>
-                Lets add another module to our app.
-            </p>
-        </section>
+      <p>
+        Lets add another module to our app.
+      </p>
+    </section>
 
-        <section>
-            <h2>
-                Navigation module
-            </h2>
-            <p>
-                Create a directory inside <code>modules/</code> directory and rename it to <code>navigation</code>.
-            </p>
-            <p>
-                Inside the <code>navigation</code> directory create a html file called <code>index.html</code>
-                and add the following code into it.
-            </p>
+    <section>
+      <h2>
+        Navigation module
+      </h2>
+      <p>
+        Create a directory inside <code>modules/</code> directory and rename it to <code>navigation</code>.
+      </p>
+      <p>
+        Inside the <code>navigation</code> directory create a html file called <code>index.html</code>
+        and add the following code into it.
+      </p>
 
-            <pre class="prettyprint lang-html">
+      <pre class="prettyprint lang-html">
 &lt;div ui-view="main"&gt; 
   &lt;a v-for="nav in navs" href="#{{ nav.id }}"&gt; {{ nav.title }} &lt;/a&gt;
 &lt;/div&gt;
@@ -148,22 +146,22 @@ project
   })
 &lt;/script&gt;      </pre>
 
-            <p>
-                We are going to load this module inside our main module.
-            </p>
+      <p>
+        We are going to load this module inside our main module.
+      </p>
 
-            <blockquote>
-                <p>
-                    You can also load <code>navigation</code> module in your bootstrap function,
-                    but in our guide we try to stick to best practices.
-                </p>
-            </blockquote>
+      <blockquote>
+        <p>
+          You can also load <code>navigation</code> module in your bootstrap function,
+          but in our guide we try to stick to best practices.
+        </p>
+      </blockquote>
 
-            <p>
-                Add the following code into the modules/main/index.html
-            </p>
+      <p>
+        Add the following code into the modules/main/index.html
+      </p>
 
-            <pre class="prettyprint lang-html">
+      <pre class="prettyprint lang-html">
 &lt;div ui-view="main-content"&gt; &lt;/div&gt;
 
 &lt;script&gt;
@@ -172,15 +170,15 @@ project
   }, Scope.views['main-content']);
 &lt;/script&gt;       </pre>
 
-        </section>
-        <p>
-            <code>Galaxy.helper.loadModuleInto()</code> will load the module content into the specified element.
-        </p>
-        <p>
-            Now you should be able see your navigation module content on the page.
-        </p>
-
     </section>
+    <p>
+      <code>Galaxy.helper.loadModuleInto()</code> will load the module content into the specified element.
+    </p>
+    <p>
+      Now you should be able see your navigation module content on the page.
+    </p>
+
+  </section>
 </div>
 <script>
   var shareData = Scope.import('services/share-data.js');
