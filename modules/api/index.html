@@ -1,5 +1,5 @@
-<div class="card big">
-  <img class="banner" src='modules/api/images/tools.jpg' alt='tools' />
+<div class="card big" ui-view="main-content">
+  <img class="banner" src='modules/api/images/tools.jpg' alt='tools'/>
 
   <section class="content">
     <h1>API</h1>
@@ -15,7 +15,7 @@
     <p>
       The main class of the GalaxyJS, <code>window.galaxy</code> is an instance of this class.
     </p>
-  </section>  
+  </section>
 
   <section class="content">
     <h2>
@@ -42,8 +42,8 @@
     }
 }); </pre>
     <p>
-      A module will be activated when the # value of the url matches the id of that module. 
-      Then the module starts listening to the state (url) changes. 
+      A module will be activated when the # value of the url matches the id of that module.
+      Then the module starts listening to the state (url) changes.
     </p>
     <p>
       There is a shorter version for the top code.
@@ -80,7 +80,7 @@ state.onStop = function () {
   // for example when the # value of url 
   // changes to something other than the module id 
 }; </pre>
-  </section>  
+  </section>
 
   <section class="content">
     <h2>
@@ -104,9 +104,28 @@ state.onStop = function () {
 <script>
 
   var state = Scope.import('state');
+  var subSections = {
+    'galaxy-system': {},
+    'galaxy-module': {},
+    'galaxy-ui': {},
+    'galaxy-helpers': {}
+  };
 
   state.onInit = function () {
     console.log('API inited');
+
+    state.on('#', function (full, app) {
+      if (subSections[ app ]) {
+        console.log(full, app);
+      } else if (app) {
+        Galaxy.helpers.loadModuleInto({
+          id: '404',
+          url: 'modules/404/index.html'
+        }, Scope.views[ 'main-content' ]);
+      } else {
+
+      }
+    });
   };
 
   state.onStart = function () {

@@ -1,31 +1,32 @@
 /* global GalaxyAnimation, TweenLite, Node, Galaxy */
 
 (function () {
-  GalaxyAnimation.effects['galaxy.in-out'] = {
+  GalaxyAnimation.effects[ 'galaxy.in-out' ] = {
     register: function (element) {
       return new ComeAndGo(element);
     },
     deregister: function (element) {
-      if (element.xtag.animations['galaxy.in-out']) {
-        element.xtag.animations['galaxy.in-out'].off();
+      if (element.xtag.animations[ 'galaxy.in-out' ]) {
+        element.xtag.animations[ 'galaxy.in-out' ].off();
       }
     }
   };
 
-  function ComeAndGo(element) {
+  function ComeAndGo (element) {
     var _this = this;
+    _this.timeline = null;
     _this.element = element;
+    _this.inTimeLineItems = [];
+
     if (!_this.observer) {
       _this.observer = new MutationObserver(function (mutations) {
-        _this.stagger = 0;
-        _this.targetItem = element.getAttribute('in-out-item');
-        _this.staggerDuration = parseFloat(element.getAttribute('in-out-stagger') || 0.05);
+        _this.readProperties();
 
         var inNodes = [];
         var outNodes = [];
 
         mutations.forEach(function (item) {
-          var addedNode = item.addedNodes[0];
+          var addedNode = item.addedNodes[ 0 ];
           if (addedNode && addedNode.nodeType === Node.ELEMENT_NODE) {
             if (addedNode.__ui_neutral || addedNode.__cag_ready || !addedNode.classList.contains(_this.targetItem)) {
               return null;
@@ -38,9 +39,10 @@
             });
           }
 
-          var removedNode = item.removedNodes[0];
+          var removedNode = item.removedNodes[ 0 ];
           if (removedNode && removedNode.nodeType === Node.ELEMENT_NODE) {
-            if (removedNode.__ui_neutral || removedNode.__cag_ready || !removedNode.classList.contains(_this.targetItem)) {
+            if (removedNode.__ui_neutral || removedNode.__cag_ready ||
+              !removedNode.classList.contains(_this.targetItem)) {
               return null;
             }
 
@@ -59,6 +61,8 @@
         if (!_this.observer) {
           return;
         }
+
+        _this.readProperties();
         _this.observer.observe(_this.element, {
           attributes: false,
           childList: true,
@@ -91,6 +95,10 @@
     }
   };
 
+  ComeAndGo.prototype.readProperties = function () {
+    this.targetItem = this.element.getAttribute('in-out-item');
+    this.staggerDuration = parseFloat(this.element.getAttribute('in-out-stagger') || 0.05);
+  }
 
   ComeAndGo.prototype.animate = function (inNodes, outNodes) {
     if (!inNodes.length && !outNodes.length) {
@@ -98,29 +106,32 @@
     }
 
     var _this = this;
-    var inTimeLineItems = [];
+    _this.readProperties();
+
     var outTimeLineItems = [];
     var staggerDuration = this.staggerDuration || GalaxyAnimation.CONFIG.staggerDuration;
     var parentTimeLine = null;
 
     var parentGalaxyAnimation = Galaxy.ui.utility.findParent(_this.element, 'galaxy-animation');
-    if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations['galaxy.in-out'] && parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline) {
-      parentTimeLine = parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline;
+    if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations[ 'galaxy.in-out' ] &&
+      parentGalaxyAnimation.xtag.animations[ 'galaxy.in-out' ].timeline) {
+      parentTimeLine = parentGalaxyAnimation.xtag.animations[ 'galaxy.in-out' ].timeline;
       parentTimeLine.pause();
     }
 
     if (_this.timeline) {
-      // _this.timeline.progress(1, false);
+      _this.timeline.clear();
+    } else {
+      _this.timeline = new TimelineLite({
+        paused: true,
+        smoothChildTiming: true,
+        autoRemoveChildren: true,
+        onComplete: function () {
+          _this.element.xtag.__come_and_go_animating = false;
+          _this.timeline = null;
+        }
+      });
     }
-    _this.timeline = new TimelineLite({
-      autoRemoveChildren: true,
-      paused: true,
-      smoothChildTiming: true,
-      onComplete: function () {
-        _this.element.xtag.__come_and_go_animating = false;
-        _this.timeline = null;
-      }
-    });
 
     _this.element.xtag.__come_and_go_animating = true;
     inNodes.forEach(function (item) {
@@ -151,13 +162,17 @@
       TweenLite.set(element, {
         className: '+=out'
       });
-      inTimeLineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
+
+      var tempTween = TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
         className: '-=out',
         ease: 'Power2.easeInOut',
         onComplete: function () {
+          _this.inTimeLineItems.splice(_this.inTimeLineItems.indexOf(tempTween), 1);
           delete element.__cag_ready;
         }
-      }));
+      });
+
+      _this.inTimeLineItems.push(tempTween);
     });
 
     _this.timeline.add(outTimeLineItems, null, null, staggerDuration);
@@ -173,12 +188,19 @@
         }
       });
     });
-    _this.timeline.add(inTimeLineItems, null, null, staggerDuration);
+
+    _this.timeline.add(_this.inTimeLineItems, null, null, staggerDuration);
 
     if (parentTimeLine) {
-      parentTimeLine.add(_this.timeline, '+=' + staggerDuration, null, null);
+
+      if (!parentTimeLine._timeline_added) {
+        parentTimeLine.add(_this.timeline, null, null, staggerDuration);
+        parentTimeLine._timeline_added = true;
+      }
+
       parentTimeLine.resume();
     }
+
     _this.timeline.play();
   };
 })();

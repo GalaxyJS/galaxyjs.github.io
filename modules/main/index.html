@@ -58,7 +58,7 @@
     if (modules[ app ] && mainNav.currentApp !== app) {
       mainNav.currentApp = app;
       Galaxy.helpers.loadModuleInto(modules[ app ], Scope.views[ 'main-content' ]);
-    } else {
+    } else if (!modules[ app ]) {
       mainNav.currentApp = null;
       console.warn('Module not found: ' + app);
       Galaxy.helpers.loadModuleInto({
