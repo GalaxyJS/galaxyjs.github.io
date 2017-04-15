@@ -49,6 +49,7 @@ a {
 }
 
 .main-nav > a {
+  min-width: 100px;
   display: block;
   padding: 15px 20px;
   color: inherit;
@@ -75,14 +76,15 @@ a {
   overflow: hidden;
   background-color: #fff;
   border-radius: 6px;
-  margin: 15px auto;
+  margin: 25px auto;
   padding: 0;
   text-align: justify;
   box-shadow: 0 0 9px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(0, 0, 0, .1);
 }
 
 .card.big {
-  width: 800px;
+  width: calc(100% - 40px);
+  max-width: 800px;
   border-radius: 12px;
   margin-bottom: 45px;
 }
@@ -128,25 +130,38 @@ galaxy-animation {
   min-height: 100%;
 }
 
-@media only screen and (min-device-width: 320px) and (max-device-width: 480px) {
+@media only screen and (max-device-width: 319px) {
+  html, body {
+    display: none;
+  }
+}
+
+@media only screen and (min-device-width: 320px) and (max-device-width: 767px) {
   html, body {
     font-size: 14px;
   }
 
   .main-content {
-    top: 50px;
-    left: 0px;
+    top: 60px;
+    left: 0;
     width: 100%;
-    height: calc(100% - 50px);
+    height: calc(100% - 60px);
   }
 
   .main-nav {
-    height: 50px;
+    height: 60px;
     width: 100%;
-    padding: 5px;
+    padding: 10px 15px;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, .1);
+    overflow: hidden;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 
   .main-nav > a {
+    display: inline-block;
+    margin-right: 15px;
     padding: 10px 15px;
   }
 
@@ -158,7 +173,7 @@ galaxy-animation {
 
 @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
   html, body {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .main-content {
@@ -171,9 +186,13 @@ galaxy-animation {
     padding: 10px;
   }
 
+  .main-nav > a {
+    padding: 8px 12px;
+  }
+
   .card.big {
     width: auto;
-    margin: 15px;
+    margin: 10px;
   }
 }
 

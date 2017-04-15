@@ -1,18 +1,18 @@
 /* global GalaxyAnimation, TweenLite, Node, Galaxy */
 
 (function () {
-  GalaxyAnimation.effects[ 'galaxy.in-out' ] = {
+  GalaxyAnimation.effects['galaxy.in-out'] = {
     register: function (element) {
       return new ComeAndGo(element);
     },
     deregister: function (element) {
-      if (element.xtag.animations[ 'galaxy.in-out' ]) {
-        element.xtag.animations[ 'galaxy.in-out' ].off();
+      if (element.xtag.animations['galaxy.in-out']) {
+        element.xtag.animations['galaxy.in-out'].off();
       }
     }
   };
 
-  function ComeAndGo (element) {
+  function ComeAndGo(element) {
     var _this = this;
     _this.timeline = null;
     _this.element = element;
@@ -26,7 +26,11 @@
         var outNodes = [];
 
         mutations.forEach(function (item) {
-          var addedNode = item.addedNodes[ 0 ];
+          if (item.target !== _this.element) {
+            return null;
+          }
+
+          var addedNode = item.addedNodes[0];
           if (addedNode && addedNode.nodeType === Node.ELEMENT_NODE) {
             if (addedNode.__ui_neutral || addedNode.__cag_ready || !addedNode.classList.contains(_this.targetItem)) {
               return null;
@@ -39,7 +43,7 @@
             });
           }
 
-          var removedNode = item.removedNodes[ 0 ];
+          var removedNode = item.removedNodes[0];
           if (removedNode && removedNode.nodeType === Node.ELEMENT_NODE) {
             if (removedNode.__ui_neutral || removedNode.__cag_ready ||
               !removedNode.classList.contains(_this.targetItem)) {
@@ -113,25 +117,26 @@
     var parentTimeLine = null;
 
     var parentGalaxyAnimation = Galaxy.ui.utility.findParent(_this.element, 'galaxy-animation');
-    if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations[ 'galaxy.in-out' ] &&
-      parentGalaxyAnimation.xtag.animations[ 'galaxy.in-out' ].timeline) {
-      parentTimeLine = parentGalaxyAnimation.xtag.animations[ 'galaxy.in-out' ].timeline;
+    if (parentGalaxyAnimation && parentGalaxyAnimation.xtag.animations['galaxy.in-out'] &&
+      parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline) {
+      parentTimeLine = parentGalaxyAnimation.xtag.animations['galaxy.in-out'].timeline;
       parentTimeLine.pause();
     }
 
     if (_this.timeline) {
-      _this.timeline.clear();
-    } else {
-      _this.timeline = new TimelineLite({
-        paused: true,
-        smoothChildTiming: true,
-        autoRemoveChildren: true,
-        onComplete: function () {
-          _this.element.xtag.__come_and_go_animating = false;
-          _this.timeline = null;
-        }
-      });
+      _this.timeline.progress(1, false);
     }
+
+    _this.timeline = new TimelineLite({
+      paused: true,
+      smoothChildTiming: true,
+      autoRemoveChildren: true,
+      onComplete: function () {
+        _this.element.xtag.__come_and_go_animating = false;
+        _this.timeline = null;
+      }
+    });
+
 
     _this.element.xtag.__come_and_go_animating = true;
     inNodes.forEach(function (item) {
