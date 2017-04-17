@@ -117,7 +117,15 @@ a {
 }
 
 ul > li {
-  padding: .4em 0;
+  padding: .2em 0;
+}
+
+ul.items-list > li {
+  cursor: pointer;
+}
+
+ul.items-list > li:hover {
+  color: #009688;
 }
 
 galaxy-animation {
@@ -256,4 +264,15 @@ section > section {
 .theme-item.out {
   transform: scale(.5);
   opacity: 0;
+}
+
+.btn-link {
+  display: inline-block;
+  color: #000;
+  text-decoration: none;
+  padding: .2em 0;
+}
+
+.btn-link:hover {
+  color: #009688;
 }

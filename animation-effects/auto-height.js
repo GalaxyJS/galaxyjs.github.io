@@ -16,7 +16,7 @@
     var _this = this;
     _this.element = element;
 
-    if (!this.observer) {
+    if (!_this.observer) {
       _this.observer = new MutationObserver(function (mutations) {
         if (_this.element.offsetParent === null) {
           return;
@@ -59,6 +59,7 @@
       };
 
       window.addEventListener('resize', _this.resizeHandler);
+      //window.addEventListener('galaxy-layout-repaint', _this.resizeHandler);
     }
 
     _this.element.xtag.liveHeightAnimation = this;
@@ -70,6 +71,7 @@
       this.observer = null;
 
       window.removeEventListener('resize', this.resizeHandler);
+      //window.removeEventListener('galaxy-layout-repaint', this.resizeHandler);
       TweenLite.set(this.element, {
         height: ''
       });
@@ -93,7 +95,7 @@
           height: _this.height
         }, {
           height: newHeight,
-//          clearProps: newHeight === 0 ? 'height' : '',
+          //clearProps: newHeight === 0 ? 'height' : '',
           ease: 'Power2.easeInOut',
           onComplete: function () {
             _this.height = newHeight;

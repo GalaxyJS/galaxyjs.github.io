@@ -102,7 +102,7 @@
   ComeAndGo.prototype.readProperties = function () {
     this.targetItem = this.element.getAttribute('in-out-item');
     this.staggerDuration = parseFloat(this.element.getAttribute('in-out-stagger') || 0.05);
-  }
+  };
 
   ComeAndGo.prototype.animate = function (inNodes, outNodes) {
     if (!inNodes.length && !outNodes.length) {
@@ -136,44 +136,37 @@
         _this.timeline = null;
       }
     });
-
-
     _this.element.xtag.__come_and_go_animating = true;
-    inNodes.forEach(function (item) {
-      item.node.__cag_ready = true;
-      if (item.node.parenNode) {
-        item.parent.removeChild(item.node);
-      }
-    });
 
     var outAnimation = {
       className: '+=out',
       ease: 'Power2.easeInOut'
     };
+
     outNodes.forEach(function (item) {
-      var element = item.node;
-      GalaxyAnimation.disable(element);
-      item.parent.appendChild(element);
-      TweenLite.set(element, {
+      GalaxyAnimation.disable(item.node);
+      item.parent.appendChild(item.node);
+      TweenLite.set(item.node, {
         className: '-=out'
       });
-      outTimeLineItems.push(TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, outAnimation));
+      outTimeLineItems.push(TweenLite.to(item.node, GalaxyAnimation.CONFIG.baseDuration, outAnimation));
     });
 
     inNodes.forEach(function (item) {
-      var element = item.node;
-      var parent = item.parent;
-      parent.appendChild(element);
-      TweenLite.set(element, {
+      item.node.__cag_ready = true;
+      item.node.style.position = outNodes.length ? 'absolute' : '';
+
+      //item.parent.appendChild(item.node);
+      TweenLite.set(item.node, {
         className: '+=out'
       });
 
-      var tempTween = TweenLite.to(element, GalaxyAnimation.CONFIG.baseDuration, {
+      var tempTween = TweenLite.to(item.node, GalaxyAnimation.CONFIG.baseDuration, {
         className: '-=out',
         ease: 'Power2.easeInOut',
         onComplete: function () {
           _this.inTimeLineItems.splice(_this.inTimeLineItems.indexOf(tempTween), 1);
-          delete element.__cag_ready;
+          delete item.node.__cag_ready;
         }
       });
 
@@ -183,21 +176,31 @@
     _this.timeline.add(outTimeLineItems, null, null, staggerDuration);
     _this.timeline.add(function () {
       Array.prototype.forEach.call(outNodes || [], function (item) {
-        var element = item.node;
-        if (element.parentNode) {
-          element.parentNode.removeChild(element);
-          GalaxyAnimation.enable(element);
+        if (item.node.parentNode) {
+          item.node.parentNode.removeChild(item.node);
+          GalaxyAnimation.enable(item.node);
           window.requestAnimationFrame(function () {
-            delete element.__cag_ready;
+            delete item.node.__cag_ready;
           });
         }
+      });
+
+      xtag.fireEvent(_this.element, 'galaxy-layout-repaint', {
+        detail: {
+          from: _this
+        },
+        bubbles: true,
+        cancelable: true
+      });
+
+      inNodes.forEach(function (item) {
+        item.node.style.position = '';
       });
     });
 
     _this.timeline.add(_this.inTimeLineItems, null, null, staggerDuration);
 
     if (parentTimeLine) {
-
       if (!parentTimeLine._timeline_added) {
         parentTimeLine.add(_this.timeline, null, null, staggerDuration);
         parentTimeLine._timeline_added = true;

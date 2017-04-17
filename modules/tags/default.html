@@ -1,0 +1,27 @@
+<section ui-view="main" class="content">
+  <h2>
+    Tags
+  </h2>
+  <h3>
+    Tags that make your GalaxyJS app even more awesome
+  </h3>
+  <ul>
+    <li v-for="module in modules">
+      <a class="btn-link" v-bind:href="'#tags/' + module.id">
+        <strong>{{ module.id }}</strong>
+        {{ module.info }}
+      </a>
+    </li>
+  </ul>
+</section>
+
+<script>
+  var modules = Scope.import('modules/tags/modules.js');
+
+  new Vue({
+    el: Scope.views['main'],
+    data: {
+      modules: modules
+    }
+  })
+</script>

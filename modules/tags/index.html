@@ -1,40 +1,24 @@
-<div ui-view="main" class="card big">  
-  <section class="content">
-    <h2>
-      Tags
-    </h2>
-    <h3>
-      Tags that make your GalaxyJS app even more awesome
-    </h3>
-    <ul>
-      <li>
-        <strong>galaxy-animation</strong>
-        Add animation to your web pages like a boss
-      </li>
-
-      <li>         
-        <strong>galaxy-field</strong>
-        Make boring input tags great again
-      </li>
-
-      <li>       
-        <strong>galaxy-switch</strong>
-        you are making a web app?! You gonna need this :D
-      </li>
-
-      <li>          
-        <strong>galaxy-float-menu</strong>
-        When material design meets GalaxyJS 
-      </li>
-    </ul>
-  </section>
+<div class="card big">
+  <galaxy-animation ui-view="main" effects="galaxy.in-out" in-out-item="content" duration="5">
+  </galaxy-animation>
 </div>
 
 <script>
   var state = Scope.import('state');
+  var modules = Scope.import('modules/tags/modules.js');
 
   state.onInit = function () {
     console.log('tag init');
+
+    state.on('#', function (full, tag) {
+      var module = modules[tag] || {
+          url: 'modules/tags/default.html'
+        };
+
+      if (module) {
+        Galaxy.helpers.loadModuleInto(module, Scope.views['main']);
+      }
+    });
   };
 
   state.onStart = function () {
