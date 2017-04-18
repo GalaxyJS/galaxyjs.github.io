@@ -4,19 +4,19 @@
 </div>
 
 <script>
-  var state = Scope.import('state');
+  var state = Scope.import('galaxy/scope-state');
   var modules = Scope.import('modules/tags/modules.js');
 
   state.onInit = function () {
     console.log('tag init');
 
     state.on('#', function (full, tag) {
-      var module = modules[tag] || {
+      var module = modules[ tag ] || {
           url: 'modules/tags/default.html'
         };
 
       if (module) {
-        Galaxy.helpers.loadModuleInto(module, Scope.views['main']);
+        Scope.loadModuleInto(module, Scope.views[ 'main' ]);
       }
     });
   };

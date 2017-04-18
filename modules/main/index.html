@@ -56,11 +56,11 @@
   Galaxy.on('#', function (full, app) {
     if (modules[ app ] && mainNav.currentApp !== app) {
       mainNav.currentApp = app;
-      Galaxy.helpers.loadModuleInto(modules[ app ], Scope.views[ 'main-content' ]);
+      Scope.loadModuleInto(modules[ app ], Scope.views[ 'main-content' ]);
     } else if (!modules[ app ]) {
       mainNav.currentApp = null;
       console.warn('Module not found: ' + app);
-      Galaxy.helpers.loadModuleInto({
+      Scope.loadModuleInto({
         id: '404',
         url: 'modules/404/index.html'
       }, Scope.views[ 'main-content' ]);

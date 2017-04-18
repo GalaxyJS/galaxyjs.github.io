@@ -103,7 +103,7 @@ state.onStop = function () {
 
 <script>
 
-  var state = Scope.import('state');
+  var state = Scope.import('galaxy/scope-state');
   var subSections = {
     'galaxy-system': {},
     'galaxy-module': {},
@@ -118,7 +118,7 @@ state.onStop = function () {
       if (subSections[ app ]) {
         console.log(full, app);
       } else if (app) {
-        Galaxy.helpers.loadModuleInto({
+        Scope.loadModuleInto({
           id: '404',
           url: 'modules/404/index.html'
         }, Scope.views[ 'main-content' ]);

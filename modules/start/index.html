@@ -59,14 +59,17 @@
 </div>
 
 <script>
-  var state = Scope.import('state');
+  var state = Scope.import('galaxy/scope-state');
 
   state.onInit = function () {
+    console.log('start->init');
   };
 
   state.onStart = function () {
+    console.log('start->start');
   };
 
   state.onStop = function () {
+    console.log('start->destroy');
   };
 </script>
