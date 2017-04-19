@@ -6,6 +6,7 @@
 <script>
   var state = Scope.import('galaxy/scope-state');
   var modules = Scope.import('modules/tags/modules.js');
+  var selectedTag = null;
 
   state.onInit = function () {
     console.log('tags->init');
@@ -15,7 +16,8 @@
           url: 'modules/tags/default.html'
         };
 
-      if (module) {
+      if (module && selectedTag !== tag) {
+        selectedTag = tag;
         Scope.loadModuleInto(module, Scope.views[ 'main' ]);
       }
     });

@@ -124,7 +124,7 @@
     }
 
     if (_this.timeline) {
-      _this.timeline.clear();
+      // _this.timeline.clear();
       _this.timeline.progress(1);
     }
 
