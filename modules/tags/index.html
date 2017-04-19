@@ -8,7 +8,7 @@
   var modules = Scope.import('modules/tags/modules.js');
 
   state.onInit = function () {
-    console.log('tag init');
+    console.log('tags->init');
 
     state.on('#', function (full, tag) {
       var module = modules[ tag ] || {
@@ -22,7 +22,11 @@
   };
 
   state.onStart = function () {
-    console.log('tag start');
+    console.log('tags->start');
   };
+
+  state.onStop = function () {
+    console.log('tags->stop');
+  }
 
 </script>

@@ -1,0 +1,14 @@
+<script>
+  var state = Scope.import('galaxy/scope-state');
+
+  state.onInit = function () {
+    debugger;
+    state.on('#', function (full, app) {
+      debugger;
+    });
+  }
+
+  state.onStop = function () {
+    console.log('m2 stop');
+  }
+</script>
