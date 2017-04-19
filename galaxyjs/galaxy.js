@@ -228,7 +228,7 @@
       return "Scope.imports['" + query[ query.length - 1 ] + "']";
     });
 
-    module.services = module.services || {};
+    // module.services = module.services || {};
     if (imports.length) {
       var importsCopy = imports.slice(0);
       imports.forEach(function (item, i) {
@@ -522,7 +522,7 @@
       // Start galaxy
       _this.start();
       _this.bootModule.start();
-      _this.app = _this.bootModule.services[ 'galaxy/scope-state' ] || _this.app;
+      _this.app = _this.bootModule.addOns[ 'galaxy/scope-state' ] || _this.app;
     });
   };
 
@@ -1166,28 +1166,32 @@
     this.id = module.id;
     this.systemId = module.systemId;
     this.url = module.url || null;
-    this.services = module.services || {};
+    this.addOns = module.addOns || {};
     this.domain = module.domain;
     this.scope = scope;
   }
 
   GalaxyModule.prototype.init = function () {
-    for (var key in this.services) {
-      var service = this.services[key];
-      if (typeof service.onModuleInit === 'function') {
-        service.onModuleInit();
+    for (var key in this.addOns) {
+      var addOn = this.addOns[key];
+      if (typeof addOn.onModuleInit === 'function') {
+        addOn.onModuleInit();
       }
     }
   };
 
   GalaxyModule.prototype.start = function () {
-    for (var key in this.services) {
-      var service = this.services[key];
-      if (typeof service.onModuleStart === 'function') {
-        service.onModuleStart();
+    for (var key in this.addOns) {
+      var addOn = this.addOns[key];
+      if (typeof addOn.onModuleStart === 'function') {
+        addOn.onModuleStart();
       }
     }
   };
+
+  GalaxyModule.prototype.registerAddOn = function (id, object) {
+    this.addOns[id] = object;
+  }
 }());
 
 /**
@@ -1443,9 +1447,13 @@
     this.imports = {};
   }
 
-  GalaxyScope.prototype.loadModuleInto = function (module, view) {
+  GalaxyScope.prototype.load = function (module, onDone) {
     module.parentScope = this;
-    Galaxy.load(module, function (module) {
+    Galaxy.load(module, onDone);
+  };
+
+  GalaxyScope.prototype.loadModuleInto = function (module, view) {
+    this.load(module, function (module) {
       Galaxy.ui.setContent(view, module.scope.html);
 
       module.start();
@@ -1465,7 +1473,6 @@
 
   function GalaxyStateHandler (module) {
     this.module = module;
-    this.module.services[ 'galaxy/scope-state' ] = this;
     this.id = module.id;
     this.systemId = module.systemId;
     this.domain = module.domain;
@@ -1486,6 +1493,8 @@
     this.onInit = null;
     this.onStart = null;
     this.onStop = null;
+
+    this.module.registerAddOn('galaxy/scope-state', this);
   }
 
   GalaxyStateHandler.prototype.onModuleStart = function () {
@@ -1632,7 +1641,7 @@
 
     for (var id in this.domain.modules) {
       var module = this.domain.modules[ id ];
-      var service = module.services[ 'galaxy/scope-state' ] || {};
+      var service = module.addOns[ 'galaxy/scope-state' ] || {};
       if (('system/' + fullNavPath).indexOf(module.systemId) !== 0 &&
         service.active) {
         service.trigger('onStop');
@@ -1754,8 +1763,8 @@
       var path = 'system';
       for (var i = 0, len = navigation[ _this.stateKey ].length; i < len; i++) {
         path += '/' + navigation[ _this.stateKey ][ i ];
-        if (_this.domain.modules[ path ] && _this.domain.modules[ path ].services[ 'galaxy/scope-state' ]) {
-          _this.domain.app.activeModule = _this.domain.modules[ path ].services[ 'galaxy/scope-state' ];
+        if (_this.domain.modules[ path ] && _this.domain.modules[ path ].addOns[ 'galaxy/scope-state' ]) {
+          _this.domain.app.activeModule = _this.domain.modules[ path ].addOns[ 'galaxy/scope-state' ];
           _this.domain.app.activeModule.active = true;
           moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
           moduleNavigation[ _this.stateKey ] = fullNav.slice(_this.domain.app.activeModule.systemId.split('/').length -
@@ -1764,7 +1773,8 @@
           _this.domain.app.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
         }
       }
-    } else if (this.domain.app.activeModule && this.domain.app.activeModule.systemId === this.systemId + '/' + navigation[ this.stateKey ][ 0 ]) {
+    } else if (this.domain.app.activeModule &&
+      this.domain.app.activeModule.systemId === this.systemId + '/' + navigation[ this.stateKey ][ 0 ]) {
       moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
       moduleNavigation[ _this.stateKey ] = fullNav.slice(_this.domain.app.activeModule.systemId.split('/').length - 1);
       // Call module level events handlers
@@ -1786,19 +1796,13 @@
 (function (galaxy) {
   galaxy.registerScopeService('galaxy/scope-state', function (scope, module) {
     module.domain = module.domain || Galaxy;
-    var stateModule = module.services[ 'galaxy/scope-state' ] || new Galaxy.GalaxyStateHandler(module);
+    var stateModule = module.addOns[ 'galaxy/scope-state' ] || new Galaxy.GalaxyStateHandler(module);
 
     return {
       pre: function () {
         return stateModule;
       },
       post: function () {
-        // var modulePath = stateModule.domain.app.navigation[ stateModule.stateKey ] ?
-        //   stateModule.domain.app.navigation[ stateModule.stateKey ] :
-        //   [];
-        // var moduleNavigation = Galaxy.utility.extend(true, {}, stateModule.domain.app.navigation);
-        // moduleNavigation[ stateModule.stateKey ] = modulePath.slice(stateModule.id.split('/').length - 1);
-
         stateModule.init();
       }
     };
