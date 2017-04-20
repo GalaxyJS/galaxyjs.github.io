@@ -4,25 +4,31 @@
 </div>
 
 <script>
-  var state = Scope.import('state');
+  var state = Scope.import('galaxy/scope-state');
   var modules = Scope.import('modules/tags/modules.js');
+  var selectedTag = null;
 
   state.onInit = function () {
-    console.log('tag init');
+    console.log('tags->init');
 
     state.on('#', function (full, tag) {
-      var module = modules[tag] || {
+      var module = modules[ tag ] || {
           url: 'modules/tags/default.html'
         };
 
-      if (module) {
-        Galaxy.helpers.loadModuleInto(module, Scope.views['main']);
+      if (module && selectedTag !== tag) {
+        selectedTag = tag;
+        Scope.loadModuleInto(module, Scope.views[ 'main' ]);
       }
     });
   };
 
   state.onStart = function () {
-    console.log('tag start');
+    console.log('tags->start');
   };
+
+  state.onStop = function () {
+    console.log('tags->stop');
+  }
 
 </script>

@@ -28,6 +28,7 @@
         function run() {
           Galaxy.boot({url: 'modules/main/index.html'}, function (module) {
             Galaxy.ui.setContent('body', module.scope.html);
+            module.start();
           });
         }
 

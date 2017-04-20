@@ -22,10 +22,15 @@
       Galaxy.GalaxyModule
     </h2>
     <p>
-      GalaxyModule is like a state handler. You can load a module via <code>Galaxy.load</code>.
+      GalaxyModule is container of add-ons. You can load a module via <code>Scope.load</code>.
     </p>
+    <blockquote>
+      <p>
+        You can use <code>Galaxy.load</code> to load module without any parent scope.
+      </p>
+    </blockquote>
     <pre class="prettyprint lang-js">
- Galaxy.load({
+ Scope.load({
     // id should be equals to the url # value
     // otherwise the module will be not registered
     id: 'my-module' 
@@ -36,10 +41,7 @@
     Galaxy.ui.setContent(element, module.scope.html);
 
     // Modules that are loaded via Galaxy.load method 
-    // will be not started automatically therefore you have to start them
-    if (module.start) {
       module.start();
-    }
 }); </pre>
     <p>
       A module will be activated when the # value of the url matches the id of that module.
@@ -51,35 +53,69 @@
     <pre class="prettyprint lang-js">
 var element = document.getElementsByTagName('body')[0];
 
-Galaxy.helpers.loadModuleInto({
+Scope.loadModuleInto({
   // id should be equals to the url # value
   // otherwise the module will be not registered
   id: 'my-module' 
   url: 'path/to/module.html'
 }, element); </pre>
     <p>
-      <code>Galaxy.helpers.loadModuleInto</code> will load the html of the loaded module into the passed element
-      and also start the module
-    </p>
-    <p>
-      In the module file you can access the state handler like this
+      Or in the case you have ui-view, then you can load the module into it like this
     </p>
     <pre class="prettyprint lang-js">
-var state = Scope.import('state');
+Scope.loadModuleInto({
+  // id should be equals to the url # value
+  // otherwise the module will be not registered
+  id: 'my-module'
+  url: 'path/to/module.html'
+}, Scope.views['ui-view-name']); </pre>
 
-state.onInit = function () { 
+    <h2>
+      Galaxy.GalaxyScope
+    </h2>
+    <ul>
+      <li>
+        <strong>systemId</strong>
+        The ID given to this module by the system
+      </li>
+      <li>
+        <strong>views</strong>
+        Reference to the ui-view elements
+      </li>
+      <li>
+        <strong>parentScope</strong>
+        Scope of the parent module or null if there is not parent module
+      </li>
+    </ul>
+    <p>
+      Scope is a part of module and it's the main point for interaction with module.
+    </p>
+    <p>
+      If you look at a module as like car, then the scope would be the driver space. Driver does not need to know how
+      the engine works. He/She only needs to push the gas pedal.
+    </p>
+    <p>
+      You can import add-on via <code>Scope.import</code>. This will create and add the add-on instance to the module and
+      also returns the add-on instance.
+    </p>
+    <pre class="prettyprint lang-js">
+// This line create state handler add-on for the current module
+var state = Scope.import('galaxy/scope-state'); // return the handler add-on
+
+state.onInit = function () {
   // Called first time the module is loaded
 };
 
-state.onStart = function () { 
+state.onStart = function () {
   // Called every time the module is started
 };
 
-state.onStop = function () { 
-  // Called every time the module is deactivated, 
-  // for example when the # value of url 
-  // changes to something other than the module id 
+state.onStop = function () {
+  // Called every time the module is deactivated,
+  // for example when the # value of url
+  // changes to something other than the module id
 }; </pre>
+
   </section>
 
   <section class="content">
@@ -90,20 +126,11 @@ state.onStop = function () {
 
     </p>
   </section>
-
-  <section class="content">
-    <h2>
-      Galaxy.GalaxyHelpers
-    </h2>
-    <p>
-
-    </p>
-  </section>
 </div>
 
 <script>
 
-  var state = Scope.import('state');
+  var state = Scope.import('galaxy/scope-state');
   var subSections = {
     'galaxy-system': {},
     'galaxy-module': {},
@@ -118,7 +145,7 @@ state.onStop = function () {
       if (subSections[ app ]) {
         console.log(full, app);
       } else if (app) {
-        Galaxy.helpers.loadModuleInto({
+        Scope.loadModuleInto({
           id: '404',
           url: 'modules/404/index.html'
         }, Scope.views[ 'main-content' ]);

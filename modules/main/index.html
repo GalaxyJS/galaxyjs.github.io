@@ -53,19 +53,32 @@
     }
   });
 
-  Galaxy.on('#', function (full, app) {
-    if (modules[ app ] && mainNav.currentApp !== app) {
-      mainNav.currentApp = app;
-      Galaxy.helpers.loadModuleInto(modules[ app ], Scope.views[ 'main-content' ]);
-    } else if (!modules[ app ]) {
-      mainNav.currentApp = null;
-      console.warn('Module not found: ' + app);
-      Galaxy.helpers.loadModuleInto({
-        id: '404',
-        url: 'modules/404/index.html'
-      }, Scope.views[ 'main-content' ]);
-    }
-  });
+//    Scope.loadModuleInto({
+//      id:'m1',
+//      url : 'modules/main/m1.html'
+//    }, Scope.views[ 'main-content' ]);
 
-  Galaxy.app.setParamIfNull('#', 'start');
+  var state = Scope.import('galaxy/scope-state');
+
+  state.onInit = function () {
+    state.on('#', function (full, app) {
+      if (modules[ app ] && mainNav.currentApp !== app) {
+        mainNav.currentApp = app;
+        Scope.loadModuleInto(modules[ app ], Scope.views[ 'main-content' ]);
+      } else if (!modules[ app ]) {
+        mainNav.currentApp = null;
+        console.warn('Module not found: ' + app);
+        Scope.loadModuleInto({
+          id: '404',
+          url: 'modules/404/index.html'
+        }, Scope.views[ 'main-content' ]);
+      }
+    });
+  }
+
+  state.onStop = function () {
+    console.log('main stop');
+  }
+
+  state.setParamIfNull('#', 'start');
 </script>

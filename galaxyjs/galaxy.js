@@ -10,112 +10,22 @@
    */
   Galaxy.GalaxySystem = System;
 
-  var entities = {};
   var importedLibraries = {};
 
   function System () {
     this.stateKey = '#';
-    this.registry = {};
+    this.bootModule = null;
     this.modules = {};
-    this.activities = {};
-    this.uiTemplates = {};
     this.onLoadQueue = [];
     this.notYetStarted = [];
-    this.activeRequests = {};
     this.onModuleLoaded = {};
-    this.services = {};
     this.modulesHashes = {};
     this.hashChecker = null;
     this.firstTime = false;
-    this.scopeServices = [];
+    this.addOnProviders = [];
     this.inited = false;
     this.app = null;
   }
-
-  System.prototype.createState = function (id) {
-    var module;
-    var domain = this;
-    if (!domain) {
-      throw 'Domain can NOT be null';
-    }
-    id = this.app.id + '/' + id;
-
-    if (domain.modules[ id ]) {
-      return domain.modules[ id ];
-    }
-
-    module = new Galaxy.GalaxyModule();
-    module.domain = domain;
-    module.id = id;
-    module.stateId = id.replace('system/', '');
-
-    domain.modules[ id ] = module;
-
-    return module;
-  };
-
-  System.prototype.state = function (id, handler) {
-    //return this.app.module(id, object, false);
-    var module, modulePath, moduleNavigation;
-    var domain = this;
-    if (!domain) {
-      throw 'Domain can NOT be null';
-    }
-    id = this.app.id + '/' + id;
-
-    //if forceReload is true, then init the module again
-    if (!handler/* && this.modules[id]*/) {
-      // Add the module to notYetStarted list so it can be started by startLastLoadedModule method
-      domain.notYetStarted.push(id);
-      return domain.modules[ id ];
-    }
-
-    if (domain.modules[ id ]) {
-      return domain.modules[ id ];
-    }
-
-    if (typeof (handler) === 'function') {
-      module = new Galaxy.GalaxyModule();
-      module.domain = domain;
-      module.id = id;
-      module.stateId = id.replace('system/', '');
-
-      handler.call(null, module);
-    } else {
-      module = Galaxy.utility.extend(new Galaxy.GalaxyModule(), handler || {});
-      module.domain = domain;
-      module.id = id;
-      module.stateId = id.replace('system/', '');
-    }
-
-    modulePath = domain.app.navigation[ module.stateKey ] ? domain.app.navigation[ module.stateKey ] : [];
-    moduleNavigation = Galaxy.utility.extend(true, {}, domain.app.navigation);
-    moduleNavigation[ module.stateKey ] = modulePath.slice(id.split("/").length - 1);
-
-    domain.modules[ id ] = module;
-    domain.notYetStarted.push(id);
-
-    // Set module hash for this module when its inited
-    // module hash will be set in the hashChanged method as well
-    // if current navigation path is equal to this module id
-    //module.hash = Galaxy.modulesHashes[id.replace("system/", "")] = module.stateKey + "=" + id.replace("system/", "");
-
-    module.init(moduleNavigation, domain.app.params);
-
-    return module;
-  };
-
-  System.prototype.newStateHandler = function (scope, handler) {
-    var app = this.getHashParam('#');
-
-    if (app.indexOf(scope.stateId) === 0) {
-      return this.state(scope.stateId, handler);
-    } else {
-      scope._doNotRegister = true;
-    }
-
-    return null;
-  };
 
   System.prototype.on = function (id, handler) {
     this.app.on.call(this.app, id, handler);
@@ -130,19 +40,19 @@
 
     var detect = function () {
       if (_this.app.oldHash !== window.location.hash || _this.app.newListenerAdded) {
-        var oldParesedHash = _this.parseHash(_this.app.oldHash);
+        var oldParsedHash = _this.parseHash(_this.app.oldHash);
         var parsedHash = _this.parseHash(window.location.hash);
 
         _this.setModuleHashValue(parsedHash.navigation, parsedHash.params, parsedHash.hash);
         // If the user changes only the app(#) parameter in the url, 
         // then the old hash of the requested module would be considered instead of the value of the url
         // if user make more changes, then the old hash of the requested module will be ignored and url value will be taken
-        if (oldParesedHash.params[ '#' ] !== parsedHash.params[ '#' ]) {
+        if (oldParsedHash.params[ '#' ] !== parsedHash.params[ '#' ]) {
           var temp = Galaxy.utility.clone(parsedHash.params);
-          delete oldParesedHash.params[ '#' ];
+          delete oldParsedHash.params[ '#' ];
           delete temp[ '#' ];
 
-          if (JSON.stringify(temp) === JSON.stringify(oldParesedHash.params) && JSON.stringify(temp) !== '{}') {
+          if (JSON.stringify(temp) === JSON.stringify(oldParsedHash.params) && JSON.stringify(temp) !== '{}') {
             return Galaxy.app.setParam('#', parsedHash.params[ '#' ]);
           } else {
             Galaxy.modulesHashes[ parsedHash.params[ '#' ] ] = parsedHash.hash;
@@ -210,24 +120,6 @@
       navigation: navigation,
       params: params
     };
-  };
-
-  System.prototype.init = function (mods) {
-    if (this.inited) {
-      throw new Error('Galaxy is initialized already');
-    }
-
-    var app = new Galaxy.GalaxyModule();
-    this.app = app;
-
-    app.domain = this;
-    app.stateKey = this.stateKey;
-    app.id = 'system';
-    app.installModules = mods || [];
-    app.init({}, {}, 'system');
-    app.oldHash = window.location.hash;
-    app.params = this.parseHash(window.location.hash).params;
-    this.inited = true;
   };
 
   var CONTENT_PARSERS = {};
@@ -310,15 +202,88 @@
     }
   };
 
+  System.prototype.compileModuleContent = function (module, moduleContent, invokers, onDone) {
+    var scopeUIViews = {};
+    Array.prototype.forEach.call(moduleContent.views, function (node, i) {
+      scopeUIViews[ node.getAttribute('ui-view') || 'view_' + i ] = node;
+    });
+
+    var scope = new Galaxy.GalaxyScope(module, moduleContent.html, scopeUIViews);
+    module = new Galaxy.GalaxyModule(module, scope);
+    Galaxy.modules[ module.systemId ] = module;
+    module.addOnProviders = [];
+
+    var imports = Array.prototype.slice.call(moduleContent.imports, 0);
+    var scriptContent = moduleContent.script || '';
+
+    // extract imports from the source code
+    scriptContent = scriptContent.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '');
+    moduleContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+      var query = path.match(/([\S]+)/gm);
+      imports.push({
+        url: query[ query.length - 1 ],
+        fresh: query.indexOf('new') !== -1
+      });
+
+      return "Scope.imports['" + query[ query.length - 1 ] + "']";
+    });
+
+    if (imports.length) {
+      var importsCopy = imports.slice(0);
+      imports.forEach(function (item, i) {
+        var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+        if (moduleAddOnProvider) {
+          var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
+          var addOnInstance = providerStages.pre();
+          importedLibraries[ item.url ] = {
+            name: item.url,
+            module: addOnInstance
+          };
+
+          module.registerAddOn(item.url, addOnInstance);
+          module.addOnProviders.push(providerStages);
+
+          doneImporting(module, scope, importsCopy, moduleContent);
+        } else if (importedLibraries[ item.url ] && !item.fresh) {
+          doneImporting(module, scope, importsCopy, moduleContent);
+        } else {
+          Galaxy.load({
+            name: item.name,
+            url: item.url,
+            fresh: item.fresh,
+            parentScope: scope,
+            invokers: invokers,
+            temporary: true
+          }, function (loaded) {
+            doneImporting(module, scope, importsCopy, moduleContent);
+          });
+        }
+      });
+
+      return false;
+    }
+
+    onDone(module, scope, moduleContent);
+
+    function doneImporting (module, scope, imports, moduleContent) {
+      imports.splice(imports.indexOf(module.url) - 1, 1);
+
+      if (imports.length === 0) {
+        // This will load the original initilizer
+        onDone(module, scope, moduleContent);
+      }
+    }
+  };
+
   System.prototype.load = function (module, onDone) {
     var _this = this;
     module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+    module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
-    Galaxy.onModuleLoaded[ 'system/' + module.id ] = onDone;
-    var moduleExist = Galaxy.modules[ 'system/' + module.id ];
+    Galaxy.onModuleLoaded[ module.systemId ] = onDone;
+    var moduleExist = Galaxy.modules[ module.systemId ];
 
     var invokers = [ module.url ];
-
     if (module.invokers) {
       if (module.invokers.indexOf(module.url) !== -1) {
         throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
@@ -329,117 +294,40 @@
     }
 
     if (moduleExist) {
-      var ol = Galaxy.onModuleLoaded[ 'system/' + module.id ];
+      var ol = Galaxy.onModuleLoaded[ module.systemId ];
       if ('function' === typeof (ol)) {
         window.requestAnimationFrame(function () {
           ol.call(_this, moduleExist, moduleExist.scope.html);
-          delete Galaxy.onModuleLoaded[ 'system/' + module.id ];
+          delete Galaxy.onModuleLoaded[ module.systemId ];
         });
       }
 
       return;
     }
 
-    if (Galaxy.onLoadQueue[ 'system/' + module.id ]) {
+    if (Galaxy.onLoadQueue[ module.systemId ]) {
       return;
     }
 
-    Galaxy.onLoadQueue[ 'system/' + module.id ] = true;
+    Galaxy.onLoadQueue[ module.systemId ] = true;
 
     fetch(module.url + '?' + Galaxy.utility.serialize(module.params || {})).then(function (response) {
       var contentType = response.headers.get('content-type').split(';')[ 0 ] || 'text/html';
       response.text().then(function (htmlText) {
         var parsedContent = _this.parseModuleContent(module, htmlText, contentType);
         window.requestAnimationFrame(function () {
-          compile(parsedContent);
+          _this.compileModuleContent(module, parsedContent, invokers, moduleLoaded);
         });
       });
     });
-
-    function compile (moduleContent) {
-      var scopeUIViews = {};
-      Array.prototype.forEach.call(moduleContent.views, function (node, i) {
-        var uiViewName = node.getAttribute('ui-view');
-        scopeUIViews[ uiViewName || 'view_' + i ] = node;
-      });
-
-      var scope = {
-        moduleId: 'system/' + module.id,
-        stateId: module.id,
-        parentScope: module.scope || null,
-        html: moduleContent.html,
-        views: scopeUIViews,
-        imports: {}
-      };
-
-      module.scopeServices = [];
-
-      var imports = Array.prototype.slice.call(moduleContent.imports, 0);
-      var scriptContent = moduleContent.script || '';
-
-      // extract imports from the source code
-      scriptContent = scriptContent.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '');
-      moduleContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
-        var query = path.match(/([\S]+)/gm);
-        imports.push({
-          url: query[ query.length - 1 ],
-          fresh: query.indexOf('new') !== -1
-        });
-
-        return "Scope.imports['" + query[ query.length - 1 ] + "']";
-      });
-
-      if (imports.length) {
-        var importsCopy = imports.slice(0);
-        imports.forEach(function (item, i) {
-
-          var scopeService = Galaxy.getScopeService(item.url);
-          if (scopeService) {
-            var scopeServiceHandler = scopeService.handler.call(null, scope);
-            importedLibraries[ item.url ] = {
-              name: item.url,
-              module: scopeServiceHandler.pre()
-            };
-            module.scopeServices.push(scopeServiceHandler);
-
-            doneImporting(module, scope, importsCopy, moduleContent);
-          } else if (importedLibraries[ item.url ] && !item.fresh) {
-            doneImporting(module, scope, importsCopy, moduleContent);
-          } else {
-            Galaxy.load({
-              id: (new Date()).valueOf() + '-' + performance.now(),
-              name: item.name,
-              url: item.url,
-              fresh: item.fresh,
-              scope: scope,
-              invokers: invokers,
-              temprory: true
-            }, function (loaded) {
-              doneImporting(module, scope, importsCopy, moduleContent);
-            });
-          }
-        });
-
-        return false;
-      }
-
-      moduleLoaded(module, scope, moduleContent);
-    }
-
-    function doneImporting (module, scope, imports, moduleContent) {
-      imports.splice(imports.indexOf(module.url) - 1, 1);
-
-      if (imports.length === 0) {
-        // This will load the original initilizer
-        moduleLoaded(module, scope, moduleContent);
-      }
-    }
 
     function moduleLoaded (module, scope, filtered) {
       for (var item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
           var asset = importedLibraries[ item ];
-          scope.imports[ asset.name ] = asset.module;
+          if (asset.module) {
+            scope.imports[ asset.name ] = asset.module;
+          }
         }
       }
 
@@ -454,12 +342,16 @@
       var currentComponentScripts = filtered.script;
       delete filtered.script;
 
+      module.scope = scope;
+
       var componentScript = new Function('Scope', currentComponentScripts);
       componentScript.call(null, scope);
 
-      module.scopeServices.forEach(function (item) {
+      module.addOnProviders.forEach(function (item) {
         item.post();
       });
+
+      delete module.addOnProviders;
 
       var htmlNodes = [];
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
@@ -477,25 +369,22 @@
       } else {
         scope.imports[ module.name ] = importedLibraries[ module.url ].module;
       }
-//        delete scope.export;
 
-      var currentModule = Galaxy.modules[ 'system/' + module.id ];
-
-      if (module.temprory || scope._doNotRegister) {
+      var currentModule = Galaxy.modules[ module.systemId ];
+      if (module.temporary || scope._doNotRegister) {
         delete scope._doNotRegister;
-        currentModule = {};
-      } else if (!currentModule) {
-        currentModule = Galaxy.modules[ 'system/' + module.id ] = {};
+        currentModule = {
+          id: module.id,
+          scope: scope
+        };
       }
 
-      currentModule.scope = scope;
-
-      if ('function' === typeof (Galaxy.onModuleLoaded[ 'system/' + module.id ])) {
-        Galaxy.onModuleLoaded[ 'system/' + module.id ].call(this, currentModule, scope.html);
-        delete Galaxy.onModuleLoaded[ 'system/' + module.id ];
+      if ('function' === typeof (Galaxy.onModuleLoaded[ module.systemId ])) {
+        Galaxy.onModuleLoaded[ module.systemId ].call(this, currentModule, scope.html);
+        delete Galaxy.onModuleLoaded[ module.systemId ];
       }
 
-      delete Galaxy.onLoadQueue[ 'system/' + module.id ];
+      delete Galaxy.onLoadQueue[ module.systemId ];
     }
   };
 
@@ -585,36 +474,74 @@
     this.app.setParamIfNull(param, value);
   };
 
-  System.prototype.loadDependecies = function (dependecies) {
-    for (var key in dependecies) {
-
-    }
-  };
-
-  System.prototype.getScopeService = function (name) {
-    return this.scopeServices.filter(function (service) {
+  System.prototype.getModuleAddOnProvider = function (name) {
+    return this.addOnProviders.filter(function (service) {
       return service.name === name;
     })[ 0 ];
   };
 
-  System.prototype.registerScopeService = function (name, handler) {
-    if (typeof handler !== 'function') {
-      throw 'scope service should be a function';
+  System.prototype.getModulesByAddOnId = function (addOnId) {
+    var modules = [];
+    var module;
+
+    for (var moduleId in this.modules) {
+      module = this.modules[ moduleId ];
+      if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
+        modules.push({
+          addOn: module.addOns[ addOnId ],
+          module: module
+        });
+      }
     }
 
-    this.scopeServices.push({
+    return modules;
+  }
+
+  System.prototype.registerAddOnProvider = function (name, handler) {
+    if (typeof handler !== 'function') {
+      throw 'Addon provider should be a function';
+    }
+
+    this.addOnProviders.push({
       name: name,
       handler: handler
     });
+  };
+
+  System.prototype.init = function (mods) {
+    if (this.inited) {
+      throw new Error('Galaxy is initialized already');
+    }
+
+    this.bootModule = new Galaxy.GalaxyModule({
+      id: 'system',
+      systemId: 'system',
+      domain: this
+    }, null);
+
+    this.app = new Galaxy.GalaxyStateHandler(this.bootModule);
+    this.app.oldHash = window.location.hash;
+    this.app.params = this.parseHash(window.location.hash).params;
+    this.app.init(mods);
+    this.app.started = true;
+    this.app.active = true;
+    this.inited = true;
   };
 
   System.prototype.boot = function (bootModule, onDone) {
     var _this = this;
     _this.init();
 
+    bootModule.domain = this;
+    bootModule.id = 'system';
+
     _this.load(bootModule, function (module) {
+      // Replace galaxy temporary  bootModule with user specified bootModule
+      _this.bootModule = module;
       onDone.call(null, module);
+      // Start galaxy
       _this.start();
+      _this.app = _this.bootModule.addOns[ 'galaxy/scope-state' ] || _this.app;
     });
   };
 
@@ -627,7 +554,7 @@
   galaxy.GalaxyUI = GalaxyUI;
   galaxy.ui = new galaxy.GalaxyUI();
 
-  function GalaxyUI() {
+  function GalaxyUI () {
   }
 
   GalaxyUI.prototype.setContent = function (parent, nodes) {
@@ -637,7 +564,8 @@
     }
 
     if (!parentNode) {
-      throw new Error('parent element can not be null: ' + parent + '\r\n try to set ui-view on your target element and refrence it via Scope.views');
+      throw new Error('parent element can not be null: ' + parent +
+        '\r\n try to set ui-view on your target element and refrence it via Scope.views');
     }
 
     var children = Array.prototype.slice.call(parentNode.childNodes);
@@ -647,21 +575,20 @@
     });
 
     if (!nodes.hasOwnProperty('length')) {
-      nodes = [nodes];
+      nodes = [ nodes ];
     }
 
     for (var i = 0, len = nodes.length; i < len; i++) {
-      var item = nodes[i];
+      var item = nodes[ i ];
       parentNode.appendChild(item);
     }
   };
-
 
   GalaxyUI.prototype.clone = function (obj) {
     var target = {};
     for (var i in obj) {
       if (obj.hasOwnProperty(i)) {
-        target[i] = obj[i];
+        target[ i ] = obj[ i ];
       }
     }
     return target;
@@ -692,16 +619,16 @@
     };
     var indexIndicator = {};
     for (var index in element.childNodes) {
-      var node = element.childNodes[index];
+      var node = element.childNodes[ index ];
 
       if (node.nodeType === Node.ELEMENT_NODE) {
         var key = node.nodeName.toLowerCase();
-        if (indexIndicator[key]) {
-          indexIndicator[key]++;
-          jsTree[key + '_' + indexIndicator[key]] = galaxy.ui.utility.toTreeObject(node);
+        if (indexIndicator[ key ]) {
+          indexIndicator[ key ]++;
+          jsTree[ key + '_' + indexIndicator[ key ] ] = galaxy.ui.utility.toTreeObject(node);
         } else {
-          indexIndicator[key] = 1;
-          jsTree[node.nodeName.toLowerCase()] = galaxy.ui.utility.toTreeObject(node);
+          indexIndicator[ key ] = 1;
+          jsTree[ node.nodeName.toLowerCase() ] = galaxy.ui.utility.toTreeObject(node);
         }
 
         jsTree._children.push(node);
@@ -722,17 +649,17 @@
     }
 
     for (var index = 0, length = children.length; index < length; index++) {
-      if (children[index].__ui_neutral) {
+      if (children[ index ].__ui_neutral) {
         continue;
       }
 
-      var cs = window.getComputedStyle(children[index], null);
+      var cs = window.getComputedStyle(children[ index ], null);
 
       if (cs.position === 'absolute') {
         continue;
       }
 
-      var dimension = children[index].offsetTop + children[index].offsetHeight;
+      var dimension = children[ index ].offsetTop + children[ index ].offsetHeight;
       var marginBottom = parseInt(cs.marginBottom || 0);
 
       height = dimension + marginBottom > height ? dimension + marginBottom : height;
@@ -763,6 +690,7 @@
   // ------ animations ------ //
   GalaxyUI.prototype.animations = {};
 }(Galaxy));
+
 /**
  * @link https://github.github.io/fetch/
  */
@@ -1237,349 +1165,44 @@
   }
   self.fetch.polyfill = true
 })(typeof self !== 'undefined' ? self : this);
-/* global Galaxy */
-
 (function () {
-  Galaxy.GalaxyHelpers = Helpers;
-  Galaxy.helpers = new Galaxy.GalaxyHelpers();
-
-  function Helpers() {
-  }
-
-  Helpers.prototype.loadModuleInto = function (module, element) {
-    Galaxy.load(module, function (module) {
-      Galaxy.ui.setContent(element, module.scope.html);
-
-      if (module.start) {
-        module.start();
-      }
-    });
-  };
-})();
-/* global Galaxy */
-
-(function () {
-  /** 
-   *  
-   * @returns {Galaxy.GalaxyModule}
+  /**
+   *
+   * @returns {Galaxy.GalaxyStateHandler}
    */
   Galaxy.GalaxyModule = GalaxyModule;
-  Galaxy.module = new Galaxy.GalaxyModule();
 
-  function GalaxyModule() {
-    this.domain = null;
-    this.inited = false;
-    this.started = false;
-    this.active = false;
-    this.stateKey = '#';
-    this.navigation = {};
-    this.params = {};
-    this.html = '';
-    this.installModules = [];
-    this.binds = {};
-    this.newListenerAdded = false;
-    this.onInit = null;
-    this.onStart = null;
-    this.onStop = null;
-    this.hashListeners = [];
-    this.globalHashListeners = [];
-    this.data = {};
+  function GalaxyModule(module, scope) {
+    this.id = module.id;
+    this.systemId = module.systemId;
+    this.url = module.url || null;
+    this.addOns = module.addOns || {};
+    this.domain = module.domain;
+    this.scope = scope;
   }
 
-  GalaxyModule.prototype.installModulesOnInit = function (modules) {
-    this.installModules = modules;
-  };
-
-  GalaxyModule.prototype.init = function (navigations, params, html) {
-    var _this = this;
-    this.inited = true;
-    this.trigger('onInit');
-
-    this.installModules.forEach(function (lib) {
-      _this.domain.loadModule(lib);
-    });
+  GalaxyModule.prototype.init = function () {
+    for (var key in this.addOns) {
+      var addOn = this.addOns[key];
+      if (typeof addOn.onModuleInit === 'function') {
+        addOn.onModuleInit();
+      }
+    }
   };
 
   GalaxyModule.prototype.start = function () {
-    this.started = true;
-    this.active = true;
-    this.trigger('onStart');
-    //this.triggerEvent('start');
-    // if (('system/' + this.domain.app.params[this.stateKey]).indexOf(this.id) <= -1) {
-    //   console.log(this.domain.app.params[this.stateKey]);
-    //   throw new Error('Could not find module `' + this.id + '` by state key `' + this.stateKey + '`');
-    // }
-    var newNav = Galaxy.utility.extend(true, {}, this.domain.app.navigation);
-    var st = 'system/' + this.domain.app.params[this.stateKey];
-    var napPath = st.indexOf(this.id) === 0 ? st.substr(this.id.length).split('/').filter(Boolean) : [];
-
-    newNav[this.stateKey] = napPath;
-    var nav = newNav;
-    var params = this.domain.app.params;
-    this.navigation = {};
-    this.params = {};
-    // Empty navigation and params before call the hashChanged method at the starting phase.
-    // This will force the module to call all its event handlers
-    //console.log("Module started: " + this.id, n, p);
-
-    // This code is commented because its bug prone
-    // hashChanged should be called only when the module params are inited with valid data
-    // in other word start should be called after hashChanged
-    this.hashChanged(nav, params, this.hash, this.domain.getHashNav(this.stateKey));
-
-    var index = this.domain.notYetStarted.indexOf(this.id);
-    if (index > -1) {
-      this.domain.notYetStarted.splice(index, 1);
-    }
-  };
-
-  GalaxyModule.prototype.dispose = function () { };
-
-  /** Register an state hanlder with the specified id
-   * 
-   * @param {String} id
-   * @param {Function} handler
-   */
-  GalaxyModule.prototype.on = function (id, handler) {
-    this.hashListeners.push({id: id, handler: handler});
-    this.newListenerAdded = true;
-  };
-
-  /** Register an state handler globaly with the specified id.
-   * Global state handlers will be called even if the mudole is not active
-   * 
-   * @param {String} id
-   * @param {Function} handler
-   */
-  GalaxyModule.prototype.onGlobal = function (id, handler) {
-    this.globalHashListeners.push({id: id, handler: handler});
-  };
-
-  GalaxyModule.prototype.getNav = function (key) {
-    return this.domain.getHashNav(key);
-  };
-
-  GalaxyModule.prototype.setNav = function (value, key) {
-    var pathKey = key || '#';
-    var pathValue = value === null || value === undefined ? '' : value;
-
-    this.setParam(pathKey, (this.id + '/').replace('system/', '') + pathValue);
-  };
-
-  GalaxyModule.prototype.getParam = function (key) {
-    return this.domain.getHashParam(key);
-  };
-
-  /**
-   * 
-   * @param {string} key Name of the parameter
-   * @param {string} value Value of the parameter
-   * @param {boolean} replace
-   */
-  GalaxyModule.prototype.setParam = function (key, value, replace) {
-    var paramObject = {};
-    paramObject[key] = value;
-    this.domain.setHashParameters(paramObject, replace);
-  };
-
-  /** Set value for param if the parameter does not exist in hash
-   * 
-   * @param {String} param
-   * @param {String} value
-   * @returns {undefined}
-   */
-  GalaxyModule.prototype.setParamIfNull = function (param, value) {
-    if (!this.domain.getHashParam(param)) {
-      var paramObject = {};
-      paramObject[param] = value;
-      this.domain.setHashParameters(paramObject, true);
-    }
-  };
-
-  /** Set value for param if the current value of param is not equal to the passed value
-   * 
-   * @param {staring} param
-   * @param {staring} value
-   * @returns {undefined}
-   */
-  GalaxyModule.prototype.setParamIfNot = function (param, value) {
-    if (this.domain.getHashParam(param) !== value) {
-      var paramObject = {};
-      paramObject[param] = value;
-      this.domain.setHashParameters(paramObject, true);
-    }
-  };
-
-  /**
-   * 
-   * @param {string} event name of module internal event
-   * @param {function} action the action that bind one to one to the specified event
-   * @returns {void}
-   */
-  GalaxyModule.prototype.bind = function (event, action) {
-    if ('string' === typeof (event) && 'function' === typeof (action)) {
-      this.binds[event] = action;
-    }
-  };
-
-  GalaxyModule.prototype.stage = function (event, action) {
-    if ('string' === typeof (event) && 'function' === typeof (action)) {
-      this.binds[event] = action;
-    }
-  };
-
-  /**
-   * Call the event function if exist and pass the args to it
-   * 
-   * @param {String} event
-   * @param {Array} args
-   * @returns {undefined}
-   */
-  GalaxyModule.prototype.trigger = function (event, args) {
-    if (typeof (this[event]) === 'function') {
-      this[event].apply(this, args);
-    }
-  };
-
-  GalaxyModule.prototype.hashChanged = function (navigation, params, hashValue, fullNav) {
-    var _this = this;
-    var moduleNavigation = navigation;
-    var fullNavPath = params[_this.stateKey];
-
-    for (var id in this.domain.modules) {
-      var module = this.domain.modules[id];
-      if (module.id !== 'system/' + fullNavPath && module.active) {
-        module.trigger('onStop');
-        module.active = false;
-      } else if (module.id === 'system/' + fullNavPath && module.active) {
-        this.domain.app.activeModule = module;
+    for (var key in this.addOns) {
+      var addOn = this.addOns[key];
+      if (typeof addOn.onModuleStart === 'function') {
+        addOn.onModuleStart();
       }
     }
-//    console.log(this.id);
-
-    this.hashHandler.call(this, navigation, params);
-    var allNavigations = Galaxy.utility.extend({}, this.navigation, navigation);
-
-    var tempNav = _this.navigation;
-
-    _this.navigation = navigation;
-    _this.params = params;
-
-    if (this.domain.app.activeModule && this.active && this.domain.app.activeModule.id === _this.id) {
-      for (var id in allNavigations) {
-        if (allNavigations.hasOwnProperty(id)) {
-          var stateHandlers = _this.hashListeners.filter(function (item) {
-            return item.id === id;
-          });
-
-          if (stateHandlers.length) {
-            if (tempNav[id]) {
-              var currentKeyValue = tempNav[id].join('/');
-              if (navigation[id] && currentKeyValue === navigation[id].join('/')) {
-                continue;
-              }
-            }
-
-            var parameters = [];
-            parameters.push(null);
-            var navigationValue = navigation[id];
-            if (navigationValue) {
-              parameters[0] = navigationValue.join('/');
-              for (var i = 0; i < navigationValue.length; i++) {
-                var arg = Galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
-
-                parameters.push(arg);
-              }
-            }
-
-            stateHandlers.forEach(function (item) {
-              item.handler.apply(_this, parameters);
-            });
-          }
-        }
-      }
-    } else if (!this.active) {
-      var keyStateHandlers = _this.hashListeners.filter(function (item) {
-        return item.id === _this.stateKey;
-      });
-
-      var stateKeyNavigationValue = navigation[_this.stateKey];
-
-      //if navHandler is null call sub module navHandler
-      if (keyStateHandlers.length && stateKeyNavigationValue) {
-        var currentKeyValue = tempNav[_this.stateKey] ? tempNav[_this.stateKey].join('/') : [];
-
-        if (currentKeyValue !== stateKeyNavigationValue.join('/')) {
-          var args = [];
-          args.push(stateKeyNavigationValue);
-
-          for (var i = 0, len = stateKeyNavigationValue.length; i < len; ++i) {
-            //i is always valid index in the arguments object
-            args.push(stateKeyNavigationValue[i]);
-          }
-
-          keyStateHandlers.forEach(function (item) {
-            item.handler.apply(_this, args);
-          });
-        }
-      }
-    }
-
-    for (var id in allNavigations) {
-      if (allNavigations.hasOwnProperty(id)) {
-        var globalStateHandlers = _this.globalHashListeners.filter(function (item) {
-          return item.id === id;
-        });
-
-        if (globalStateHandlers.length) {
-          if (tempNav[id]) {
-            var currentKeyValue = tempNav[id].join('/');
-            if (navigation[id] && currentKeyValue === navigation[id].join('/')) {
-              continue;
-            }
-          }
-
-          parameters = [];
-          parameters.push(null);
-
-          navigationValue = navigation[id];
-          if (navigationValue) {
-            parameters[0] = navigationValue.join('/');
-            for (var i = 0; i < navigationValue.length; i++) {
-              var arg = Galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
-
-              parameters.push(arg);
-            }
-          }
-
-          globalStateHandlers.forEach(function (item) {
-            item.handler.apply(_this, parameters);
-          });
-        }
-      }
-    }
-
-    // Set the app.activeModule according to the current navigation path
-    if (navigation[this.stateKey] && this.domain.modules[this.id + '/' + navigation[this.stateKey][0]]) {
-      this.domain.app.activeModule = this.domain.modules[this.id + '/' + navigation[this.stateKey][0]];
-    }
-
-    if (this.domain.app.activeModule && this.domain.app.activeModule.id === this.id + '/' + navigation[this.stateKey][0]) {
-      // Remove first part of navigation in order to force activeModule to only react to events at its level and higher 
-      moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
-      moduleNavigation[this.stateKey] = fullNav.slice(this.domain.app.activeModule.id.split('/').length - 1);
-      // Call module level events handlers
-      this.domain.app.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
-    }
   };
 
-  GalaxyModule.prototype.loadModule = function (module, onDone) {
-    Galaxy.loadModule(module, onDone, this.scope);
-  };
-
-  GalaxyModule.prototype.hashHandler = function (nav, params) {};
-
-})();
+  GalaxyModule.prototype.registerAddOn = function (id, object) {
+    this.addOns[id] = object;
+  }
+}());
 
 /**
  * @link https://github.com/taylorhakes/promise-polyfill
@@ -1819,25 +1442,377 @@
   }
 
 })(this);
+(function () {
+  /**
+   *
+   * @returns {Galaxy.GalaxyScope}
+   */
+  Galaxy.GalaxyScope = GalaxyScope;
+
+  function GalaxyScope (module, html, views) {
+    this.systemId = module.systemId;
+    this.parentScope = module.parentScope || null;
+    this.html = html;
+    this.views = views;
+    this.imports = {};
+  }
+
+  GalaxyScope.prototype.load = function (module, onDone) {
+    module.parentScope = this;
+    module.domain = module.domain || Galaxy;
+    Galaxy.load(module, onDone);
+  };
+
+  GalaxyScope.prototype.loadModuleInto = function (module, view) {
+    this.load(module, function (module) {
+      Galaxy.ui.setContent(view, module.scope.html);
+
+      module.start();
+    });
+  };
+
+}());
+
+/* global Galaxy */
+
+(function () {
+  /**
+   *
+   * @returns {Galaxy.GalaxyStateHandler}
+   */
+  Galaxy.GalaxyStateHandler = GalaxyStateHandler;
+
+  function GalaxyStateHandler (module) {
+    this.module = module;
+    this.id = module.id;
+    this.systemId = module.systemId;
+    this.domain = module.domain;
+    this.inited = false;
+    this.started = false;
+    this.active = false;
+    this.newListenerAdded = false;
+    this.stateKey = '#';
+    this.navigation = {};
+    this.params = {};
+    this.hashListeners = [];
+    this.globalHashListeners = [];
+    this.data = {};
+    this.html = '';
+    this.oldHash = '';
+
+    // Life cycle
+    this.onInit = null;
+    this.onStart = null;
+    this.onStop = null;
+  }
+
+  GalaxyStateHandler.prototype.onModuleStart = function () {
+    if (('system/' + this.domain.app.getParam(this.stateKey)).indexOf(this.module.systemId) === 0) {
+      this.start();
+    }
+  };
+
+  GalaxyStateHandler.prototype.init = function () {
+    this.inited = true;
+    this.trigger('onInit');
+  };
+
+  GalaxyStateHandler.prototype.start = function () {
+    this.started = true;
+    this.active = true;
+    this.trigger('onStart');
+    //this.triggerEvent('start');
+    // if (('system/' + this.domain.app.params[this.stateKey]).indexOf(this.id) <= -1) {
+    //   console.log(this.domain.app.params[this.stateKey]);
+    //   throw new Error('Could not find module `' + this.id + '` by state key `' + this.stateKey + '`');
+    // }
+    var newNav = Galaxy.utility.extend(true, {}, this.domain.app.navigation);
+    var st = 'system/' + this.domain.app.params[ this.stateKey ];
+    var napPath = st.indexOf(this.systemId) === 0 ? st.substr(this.systemId.length).split('/').filter(Boolean) : [];
+
+    newNav[ this.stateKey ] = napPath;
+
+    this.navigation = {};
+    this.params = {};
+    // Empty navigation and params before call the hashChanged method at the starting phase.
+    // This will force the module to call all its event handlers
+    //console.log("Module started: " + this.id, n, p);
+
+    // This code is commented because its bug prone
+    // hashChanged should be called only when the module params are inited with valid data
+    // in other word start should be called after hashChanged
+    // this.hashChanged(newNav, params, this.hash, this.domain.getHashNav(this.stateKey));
+
+    var index = this.domain.notYetStarted.indexOf(this.systemId);
+    if (index > -1) {
+      this.domain.notYetStarted.splice(index, 1);
+    }
+    this.domain.app.newListenerAdded = true;
+  };
+
+  GalaxyStateHandler.prototype.dispose = function () {
+  };
+
+  /** Register an state handler with the specified id
+   *
+   * @param {String} id
+   * @param {Function} handler
+   */
+  GalaxyStateHandler.prototype.on = function (id, handler) {
+    this.hashListeners.push({ id: id, handler: handler });
+    this.newListenerAdded = true;
+  };
+
+  /** Register an state handler globaly with the specified id.
+   * Global state handlers will be called even if the mudole is not active
+   *
+   * @param {String} id
+   * @param {Function} handler
+   */
+  GalaxyStateHandler.prototype.onGlobal = function (id, handler) {
+    this.globalHashListeners.push({ id: id, handler: handler });
+  };
+
+  GalaxyStateHandler.prototype.getNav = function (key) {
+    return this.domain.getHashNav(key);
+  };
+
+  GalaxyStateHandler.prototype.setNav = function (value, key) {
+    var pathKey = key || '#';
+    var pathValue = value === null || value === undefined ? '' : value;
+
+    this.setParam(pathKey, (this.systemId + '/').replace('system/', '') + pathValue);
+  };
+
+  GalaxyStateHandler.prototype.getParam = function (key) {
+    return this.domain.getHashParam(key);
+  };
+
+  /**
+   *
+   * @param {string} key Name of the parameter
+   * @param {string} value Value of the parameter
+   * @param {boolean} replace
+   */
+  GalaxyStateHandler.prototype.setParam = function (key, value, replace) {
+    var paramObject = {};
+    paramObject[ key ] = value;
+    this.domain.setHashParameters(paramObject, replace);
+  };
+
+  /** Set value for param if the parameter does not exist in hash
+   *
+   * @param {String} param
+   * @param {String} value
+   * @returns {undefined}
+   */
+  GalaxyStateHandler.prototype.setParamIfNull = function (param, value) {
+    if (!this.domain.getHashParam(param)) {
+      var paramObject = {};
+      paramObject[ param ] = value;
+      this.domain.setHashParameters(paramObject, true);
+    }
+  };
+
+  /** Set value for param if the current value of param is not equal to the passed value
+   *
+   * @param {staring} param
+   * @param {staring} value
+   * @returns {undefined}
+   */
+  GalaxyStateHandler.prototype.setParamIfNot = function (param, value) {
+    if (this.domain.getHashParam(param) !== value) {
+      var paramObject = {};
+      paramObject[ param ] = value;
+      this.domain.setHashParameters(paramObject, true);
+    }
+  };
+
+  /**
+   * Call the event function if exist and pass the args to it
+   *
+   * @param {String} event
+   * @param {Array} args
+   * @returns {undefined}
+   */
+  GalaxyStateHandler.prototype.trigger = function (event, args) {
+    if (typeof (this[ event ]) === 'function') {
+      this[ event ].apply(this, args);
+    }
+  };
+
+  GalaxyStateHandler.prototype.hashChanged = function (navigation, params, hashValue, fullNav) {
+    var _this = this;
+    if (_this.started === false) {
+      return;
+    }
+
+    var moduleNavigation = navigation;
+    var fullNavPath = params[ _this.stateKey ];
+    var modulesWithStateHandler = this.domain.getModulesByAddOnId('galaxy/scope-state');
+
+    modulesWithStateHandler.forEach(function (item) {
+      if (('system/' + fullNavPath).indexOf(item.module.systemId) !== 0 &&
+        item.addOn.active) {
+        item.addOn.trigger('onStop');
+        item.addOn.active = false;
+      }
+      else if (item.module.systemId === 'system/' + fullNavPath && item.addOn.active) {
+        _this.domain.app.activeModule = item.addOn;
+      }
+    });
+
+    this.hashHandler.call(this, navigation, params);
+    var allNavigation = Galaxy.utility.extend({}, this.navigation, navigation);
+
+    var tempNav = _this.navigation;
+
+    _this.navigation = navigation;
+    _this.params = params;
+
+    if (this.domain.app.activeModule && this.domain.app.activeModule.systemId === _this.systemId && this.active) {
+      for (var id in allNavigation) {
+        var stateHandlers = _this.hashListeners.filter(function (item) {
+          return item.id === id;
+        });
+
+        if (stateHandlers.length) {
+          var currentNav = navigation[ id ];
+          if (tempNav[ id ]) {
+            if (currentNav && currentNav.join('/') === tempNav[ id ].join('/')) {
+              continue;
+            }
+          }
+
+          var parameters = [];
+          parameters.push(null);
+          if (currentNav) {
+            parameters[ 0 ] = currentNav.join('/');
+            for (var i = 0, len = currentNav.length; i < len; i++) {
+              parameters.push(Galaxy.utility.isNumber(currentNav[ i ]) ?
+                parseFloat(currentNav[ i ]) :
+                currentNav[ i ]);
+            }
+          }
+
+          stateHandlers.forEach(function (item) {
+            item.handler.apply(_this, parameters);
+          });
+        }
+      }
+    } else if (this.active) {
+      var stateKeyNavigationValue = navigation[ _this.stateKey ];
+      var keyStateHandlers = _this.hashListeners.filter(function (item) {
+        return item.id === _this.stateKey;
+      });
+
+      //if navHandler is null call sub module navHandler
+      if (keyStateHandlers.length && stateKeyNavigationValue) {
+        var currentKeyValue = tempNav[ _this.stateKey ] ? tempNav[ _this.stateKey ].join('/') : [];
+
+        if (currentKeyValue !== stateKeyNavigationValue.join('/')) {
+          var args = [];
+          args.push(stateKeyNavigationValue);
+
+          for (var i = 0, len = stateKeyNavigationValue.length; i < len; ++i) {
+            //i is always valid index in the arguments object
+            args.push(stateKeyNavigationValue[ i ]);
+          }
+
+          keyStateHandlers.forEach(function (item) {
+            item.handler.apply(_this, args);
+          });
+        }
+      }
+
+      this.domain.app.activeModule = null;
+    }
+
+    for (var id in allNavigation) {
+      var globalStateHandlers = _this.globalHashListeners.filter(function (item) {
+        return item.id === id;
+      });
+
+      if (globalStateHandlers.length) {
+        var currentNav = navigation[ id ];
+        if (tempNav[ id ]) {
+          if (currentNav && currentNav.join('/') === tempNav[ id ].join('/')) {
+            continue;
+          }
+        }
+
+        parameters = [];
+        parameters.push(null);
+        if (currentNav) {
+          parameters[ 0 ] = currentNav.join('/');
+          for (var i = 0; i < currentNav.length; i++) {
+            parameters.push(Galaxy.utility.isNumber(currentNav[ i ]) ?
+              parseFloat(currentNav[ i ]) :
+              currentNav[ i ]);
+          }
+        }
+
+        globalStateHandlers.forEach(function (item) {
+          item.handler.apply(_this, parameters);
+        });
+      }
+    }
+
+    var domainActiveModule = this.domain.app.activeModule;
+    if (!domainActiveModule && navigation[ _this.stateKey ] && navigation[ _this.stateKey ].length) {
+      var path = 'system';
+      for (var i = 0, len = navigation[ _this.stateKey ].length; i < len; i++) {
+        path += '/' + navigation[ _this.stateKey ][ i ];
+        if (_this.domain.modules[ path ] && _this.domain.modules[ path ].addOns[ 'galaxy/scope-state' ]) {
+          domainActiveModule = _this.domain.app.activeModule = _this.domain.modules[ path ].addOns[ 'galaxy/scope-state' ];
+          if (domainActiveModule.started) {
+            domainActiveModule.active = true;
+          } else {
+            domainActiveModule.start();
+          }
+          moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
+          moduleNavigation[ _this.stateKey ] = fullNav.slice(domainActiveModule.systemId.split('/').length -
+            1);
+          // Call module level events handlers
+          domainActiveModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
+        }
+      }
+    } else if (domainActiveModule &&
+      domainActiveModule.systemId === this.systemId + '/' + navigation[ this.stateKey ][ 0 ]) {
+      moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
+      moduleNavigation[ _this.stateKey ] = fullNav.slice(domainActiveModule.systemId.split('/').length - 1);
+      // Call module level events handlers
+      domainActiveModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
+    }
+  };
+
+  GalaxyStateHandler.prototype.loadModule = function (module, onDone) {
+    Galaxy.loadModule(module, onDone, this.scope);
+  };
+
+  GalaxyStateHandler.prototype.hashHandler = function (nav, params) {
+  };
+
+})();
+
 /* global Galaxy */
 
 (function (galaxy) {
-  galaxy.registerScopeService('state', function (scope) {
-    var module = galaxy.createState(scope.stateId);
+  var addOnId = 'galaxy/scope-state';
+  galaxy.registerAddOnProvider(addOnId, function (scope, module) {
+    var stateModule = module.addOns[ addOnId ] || new Galaxy.GalaxyStateHandler(module);
+
     return {
       pre: function () {
-        return module;
+        return stateModule;
       },
       post: function () {
-        var modulePath = module.domain.app.navigation[module.stateKey] ? module.domain.app.navigation[module.stateKey] : [];
-        var moduleNavigation = Galaxy.utility.extend(true, {}, module.domain.app.navigation);
-        moduleNavigation[module.stateKey] = modulePath.slice(module.id.split('/').length - 1);
-
-        module.init(moduleNavigation, module.domain.app.params);
+        stateModule.init();
       }
     };
   });
 })(Galaxy);
+
 /* global Galaxy */
 
 (function (galaxy) {
