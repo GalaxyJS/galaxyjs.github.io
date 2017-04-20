@@ -168,14 +168,14 @@ project
 &lt;div ui-view="main-content"&gt; &lt;/div&gt;
 
 &lt;script&gt;
-  Galaxy.helpers.loadModuleInto({
+  Scope.loadModuleInto({
     url: 'modules/navigation/index.html'
   }, Scope.views['main-content']);
 &lt;/script&gt;       </pre>
 
     </section>
     <p>
-      <code>Galaxy.helper.loadModuleInto()</code> will load the module content into the specified element.
+      <code>Scope.loadModuleInto()</code> will load the module content into the specified element.
     </p>
     <p>
       Now you should be able see your navigation module content on the page.
