@@ -276,3 +276,39 @@ section > section {
 .btn-link:hover {
   color: #009688;
 }
+
+.field {
+  display: block;
+  font-size: 15px;
+}
+
+.field > label {
+  color: #666;
+  display: block;
+  font-weight: 500;
+  padding: 15px 0 5px;
+}
+
+.field > input, .field > select {
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  background-color: #eee;
+  width: 100%;
+  display: block;
+  padding: 10px 8px;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  outline: none;
+}
+
+.field[focus] > label {
+  /*color: #696fb4;*/
+  color:#009688;
+}
+
+.field[focus] > input , .field[focused] > select{
+  /*border-color: #696fb4;*/
+  border-color: #009688;
+}

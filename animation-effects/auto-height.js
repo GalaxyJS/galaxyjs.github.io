@@ -2,12 +2,12 @@
 
 (function () {
   GalaxyAnimation.effects['galaxy.auto-height'] = {
-    register: function (element) {
+    install: function (element) {
       return new AutoHeightAnimation(element);
     },
-    deregister: function (element) {
-      if (element.xtag.liveHeightAnimation) {
-        element.xtag.liveHeightAnimation.off();
+    uninstall: function (element) {
+      if (element.xtag.animations['galaxy.auto-height']) {
+        element.xtag.animations['galaxy.auto-height'].off();
       }
     }
   };
@@ -61,8 +61,6 @@
       window.addEventListener('resize', _this.resizeHandler);
       //window.addEventListener('galaxy-layout-repaint', _this.resizeHandler);
     }
-
-    _this.element.xtag.liveHeightAnimation = this;
   }
 
   AutoHeightAnimation.prototype.off = function () {

@@ -2,12 +2,12 @@
 
 (function () {
   GalaxyAnimation.effects['galaxy.zoom'] = {
-    register: function (element) {
+    install: function (element) {
       return new ZoomInAnimation(element);
     },
-    deregister: function (element) {
-      if (element.xtag.PopInAnimation) {
-        element.xtag.PopInAnimation.off();
+    uninstall: function (element) {
+      if (element.xtag.animations['galaxy.zoom']) {
+        element.xtag.animations['galaxy.zoom'].off();
       }
     }
   };
