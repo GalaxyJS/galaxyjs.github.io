@@ -9,6 +9,24 @@ h1 {
   cursor: default;
 }
 
+h2 > a {
+  float: right;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  line-height: 26px;
+  border-radius: 13px;
+  color: #fff;
+  background-color: #009688;
+  opacity: .86;
+  padding: 0 15px;
+}
+
+h3 > a:hover {
+  opacity: 1;
+}
+
 html, body {
   font-family: 'Rubik', sans-serif;
   font-size: 18px;
@@ -280,13 +298,34 @@ section > section {
 .field {
   display: block;
   font-size: 15px;
+  color: #5a5a5a;
+  position: relative;
+  padding-top: 38px;
+  font-weight: 500;
+  margin-bottom: 15px;
 }
 
 .field > label {
-  color: #666;
   display: block;
   font-weight: 500;
-  padding: 15px 0 5px;
+  padding: 13px 0 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: all .3s ease-in-out;
+}
+
+.field > span {
+  font-size: 13px;
+  color: #888;
+  display: block;
+  line-height: 20px;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0 2px;
+  text-align: right;
+  transition: all .3s ease-in-out;
 }
 
 .field > input, .field > select {
@@ -299,16 +338,34 @@ section > section {
   padding: 10px 8px;
   border: 2px solid transparent;
   border-radius: 5px;
-  margin-bottom: 15px;
+  margin-bottom: 5px;
   outline: none;
+}
+
+.field:not([empty]) > .not-empty {
+  color: #009926;
+  height: 20px;
+  opacity: 1;
+}
+
+.field[empty] > .empty {
+  height: 20px;
+  opacity: 1;
+}
+
+.field[empty] > label {
+  top: 38px;
+  left: 10px;
 }
 
 .field[focus] > label {
   /*color: #696fb4;*/
-  color:#009688;
+  color: #009688;
+  top: 0;
+  left: 0;
 }
 
-.field[focus] > input , .field[focused] > select{
+.field[focus] > input, .field[focused] > select {
   /*border-color: #696fb4;*/
   border-color: #009688;
 }
