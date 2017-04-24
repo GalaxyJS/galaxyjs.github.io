@@ -12,18 +12,18 @@ h1 {
 h2 > a {
   float: right;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  text-transform: uppercase;
+  text-transform: capitalize;
   line-height: 26px;
   border-radius: 13px;
   color: #fff;
   background-color: #009688;
-  opacity: .86;
+  opacity: .9;
   padding: 0 15px;
 }
 
-h3 > a:hover {
+h2 > a:hover {
   opacity: 1;
 }
 
