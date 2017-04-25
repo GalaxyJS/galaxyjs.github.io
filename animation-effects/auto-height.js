@@ -1,18 +1,18 @@
 /* global GalaxyAnimation, TweenLite, Galaxy */
 
 (function () {
-  GalaxyAnimation.effects['galaxy.auto-height'] = {
+  GalaxyAnimation.effects[ 'galaxy.auto-height' ] = {
     install: function (element) {
       return new AutoHeightAnimation(element);
     },
     uninstall: function (element) {
-      if (element.xtag.animations['galaxy.auto-height']) {
-        element.xtag.animations['galaxy.auto-height'].off();
+      if (element.xtag.animations[ 'galaxy.auto-height' ]) {
+        element.xtag.animations[ 'galaxy.auto-height' ].off();
       }
     }
   };
 
-  function AutoHeightAnimation(element) {
+  function AutoHeightAnimation (element) {
     var _this = this;
     _this.element = element;
 
@@ -23,11 +23,11 @@
         }
 
         mutations.forEach(function (item) {
-          if (item.addedNodes[0] && item.addedNodes[0].__ui_neutral) {
+          if (item.addedNodes[ 0 ] && item.addedNodes[ 0 ].__ui_neutral) {
             return null;
           }
 
-          if (item.removedNodes[0] && item.removedNodes[0].__ui_neutral) {
+          if (item.removedNodes[ 0 ] && item.removedNodes[ 0 ].__ui_neutral) {
             return null;
           }
         });
@@ -42,6 +42,8 @@
           height: _this.height
         });
 
+        _this.animate();
+
         if (_this.observer) {
           _this.observer.observe(_this.element, {
             attributes: false,
@@ -50,8 +52,6 @@
             subtree: true
           });
         }
-
-        _this.animate();
       });
 
       _this.resizeHandler = function () {

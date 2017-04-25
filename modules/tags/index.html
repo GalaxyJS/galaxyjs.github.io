@@ -1,5 +1,5 @@
 <div class="card big">
-  <galaxy-animation ui-view="main" effects="galaxy.in-out" in-out-item="content" duration="5">
+  <galaxy-animation ui-view="main" effects="galaxy.in-out,galaxy.auto-height" in-out-item="content" duration="5">
   </galaxy-animation>
 </div>
 
@@ -13,7 +13,7 @@
 
     state.on('#', function (full, tag) {
       var module = modules[ tag ] || {
-          url: 'modules/tags/default.html'
+          url: './modules/home/index.html'
         };
 
       if (module && selectedTag !== tag) {
