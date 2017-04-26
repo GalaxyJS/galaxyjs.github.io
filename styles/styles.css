@@ -125,6 +125,29 @@ a {
   min-height: 400px;
 }
 
+.card.info-pane {
+  background-color: #fff;
+  position: absolute;
+  margin: 0;
+  border-radius: 0;
+  width: 50%;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 5;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-shadow: 0 0 9px rgba(0, 0, 0, 0.04), -11px 0 23px rgba(0, 0, 0, .1);
+}
+
+.info-pane > .card.big {
+  width: auto;
+  background-color: transparent;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .content {
   margin-bottom: 2em;
   padding: 0 1.5em;
@@ -230,6 +253,17 @@ galaxy-animation {
 .card.out {
   opacity: 0;
   transform: translateY(100px);
+}
+
+.card.info-pane.out {
+  opacity: 1;
+  transform: translateX(100%);
+  box-shadow: 0 0 9px rgba(0, 0, 0, 0), -11px 0 23px rgba(0, 0, 0, 0);
+}
+
+.card.info-pane > .content.out {
+  opacity: 0;
+  transform: translateX(15%);
 }
 
 pre.prettyprint {

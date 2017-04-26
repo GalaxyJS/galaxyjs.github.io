@@ -1,40 +1,41 @@
-<section ui-view="main" class="content">
-  <h2>
-    galaxy-field
+<galaxy-animation class="card info-pane" ui-view="main" effects="galaxy.in-out" in-out-item="content">
+  <section ui-view="main" class="content">
+    <h2>
+      galaxy-field
 
-    <a href="#tags">
-      Return to tags
-    </a>
-  </h2>
-  <h3>
-    Make boring input tags great again
-  </h3>
-  <p>
-    <code>galaxy-field</code> reflects the state of its input as an attribute, therefore you can access them via CSS
-    selectors. Everything you see here is achieved by CSS.
-  </p>
-  <p>
-    <galaxy-field class="field">
-      <label>This is a galaxy-field</label>
-      <input title="This is a galaxy-field" type="text"/>
-      <span class="empty">
+      <a href="#tags">
+        Return to tags
+      </a>
+    </h2>
+    <h3>
+      Make boring input tags great again
+    </h3>
+    <p>
+      <code>galaxy-field</code> reflects the state of its input as an attribute, therefore you can access them via CSS
+      selectors. Everything you see here is achieved by CSS.
+    </p>
+    <p>
+      <galaxy-field class="field">
+        <label>This is a galaxy-field</label>
+        <input title="This is a galaxy-field" type="text"/>
+        <span class="empty">
         This text will go away when you fill in the text field
       </span>
-      <span class="not-empty">
+        <span class="not-empty">
         Text field is filled
       </span>
-    </galaxy-field>
-  </p>
+      </galaxy-field>
+    </p>
 
-  <p>
-    <code>galaxy-field</code> tries to provide a way to style different state of an input without using
-    Javascript.
-  </p>
+    <p>
+      <code>galaxy-field</code> tries to provide a way to style different state of an input without using
+      Javascript.
+    </p>
 
-  <p>
-    Here is the HTML and CSS for the above <code>galaxy-field</code>
-  </p>
-  <pre class="prettyprint lang-html">
+    <p>
+      Here is the HTML and CSS for the above <code>galaxy-field</code>
+    </p>
+    <pre class="prettyprint lang-html">
 &lt;galaxy-field&gt;
   &lt;label&gt;This is a galaxy-field&lt;/label&gt;
   &lt;input title="This is a galaxy-field" type="text"/&gt;
@@ -120,7 +121,8 @@
     border-color: #009688;
   }
 &lt;/style&gt;  </pre>
-</section>
+  </section>
+</galaxy-animation>
 
 <script>
   var state = Scope.import('galaxy/scope-state');

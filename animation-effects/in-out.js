@@ -1,15 +1,12 @@
-/* global GalaxyAnimation, TweenLite, Node, Galaxy */
+/* global GalaxyAnimation, xtag, TweenLite, Node, Galaxy, TimelineLite */
 
 (function () {
   GalaxyAnimation.effects[ 'galaxy.in-out' ] = {
     install: function (element) {
-      // element.__xtag__;
-      // debugger;
       return new ComeAndGo(element);
     },
     uninstall: function (element) {
       if (element.xtag.animations[ 'galaxy.in-out' ]) {
-        // debugger;
         element.xtag.animations[ 'galaxy.in-out' ].off();
       }
     }
@@ -36,7 +33,8 @@
 
         var addedNode = item.addedNodes[ 0 ];
         if (addedNode && addedNode.nodeType === Node.ELEMENT_NODE) {
-          if (addedNode.__ui_neutral || addedNode.__effects_in_out_active || !addedNode.classList.contains(_this.targetItem)) {
+          if (addedNode.__ui_neutral || addedNode.__effects_in_out_active ||
+            !addedNode.classList.contains(_this.targetItem)) {
             return null;
           }
 
@@ -126,7 +124,6 @@
     }
 
     if (_this.timeline) {
-      // _this.timeline.clear();
       _this.timeline.progress(1);
     }
 

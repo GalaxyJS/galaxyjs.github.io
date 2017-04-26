@@ -1,7 +1,8 @@
-<div class="card big">
-  <galaxy-animation ui-view="main" effects="galaxy.in-out,galaxy.auto-height" in-out-item="content" duration="5">
-  </galaxy-animation>
-</div>
+<galaxy-animation class="card big" ui-view="main" effects="galaxy.in-out" in-out-item="content">
+
+</galaxy-animation>
+
+<ui-view-outlet name="content"></ui-view-outlet>
 
 <script>
   var state = Scope.import('galaxy/scope-state');
@@ -10,15 +11,18 @@
 
   state.onInit = function () {
     console.log('tags->init');
+    Scope.loadModuleInto({
+      url: './modules/home/index.html'
+    }, Scope.views[ 'main' ]);
 
     state.on('#', function (full, tag) {
-      var module = modules[ tag ] || {
-          url: './modules/home/index.html'
-        };
+      var module = modules[ tag ];
 
-      if (module && selectedTag !== tag) {
+      if (module) {
         selectedTag = tag;
-        Scope.loadModuleInto(module, Scope.views[ 'main' ]);
+        Scope.loadModuleInto(module, Scope.views[ 'content' ]);
+      } else if (!module) {
+        Galaxy.ui.setContent(Scope.views[ 'content' ], []);
       }
     });
   };

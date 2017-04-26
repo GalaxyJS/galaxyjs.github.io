@@ -167,7 +167,7 @@
       html[ i ] = temp.appendChild(html[ i ]);
     }
     document.getElementsByTagName('body')[ 0 ].appendChild(temp);
-    var uiView = temp.querySelectorAll('ui-view,[ui-view]');
+    var uiView = temp.querySelectorAll('ui-view-outlet,[ui-view]');
     temp.parentNode.removeChild(temp);
 
     return {
@@ -206,10 +206,17 @@
     }
   };
 
+  System.prototype.uiViewDecorator = function (node) {
+    return node;
+  };
+
   System.prototype.compileModuleContent = function (module, moduleContent, invokers, onDone) {
+    var _this = this;
     var scopeUIViews = {};
     Array.prototype.forEach.call(moduleContent.views, function (node, i) {
-      scopeUIViews[ node.getAttribute('ui-view') || 'view_' + i ] = node;
+
+      scopeUIViews[ node.getAttribute('ui-view') || node.getAttribute('name') ||
+      'view_' + i ] = _this.uiViewDecorator(node);
     });
 
     var scope = new Galaxy.GalaxyScope(module, moduleContent.html, scopeUIViews);
@@ -572,24 +579,57 @@
         '\r\n try to set ui-view on your target element and reference it via Scope.views');
     }
 
-    var children = Array.prototype.slice.call(parentNode.childNodes);
-    var tweens = [];
-    children.forEach(function (child) {
-      tweens = TweenLite.getTweensOf(child);
-      tweens.forEach(function (item) {
-        item.progress(1);
-      });
-
-      parentNode.removeChild(child);
-    });
-
     if (!nodes.hasOwnProperty('length')) {
       nodes = [ nodes ];
     }
 
-    for (var i = 0, len = nodes.length; i < len; i++) {
-      var item = nodes[ i ];
-      parentNode.appendChild(item);
+    var item = null, i = 0, len = 0;
+    var children = [];
+    var tweens = [];
+    if (parentNode.tagName.toLowerCase() === 'ui-view-outlet' && parentNode.parentNode) {
+      children = parentNode.childNodesReferences || [];
+      children.forEach(function (child) {
+        if (nodes.indexOf(child) !== -1) {
+          return;
+        }
+
+        tweens = TweenLite.getTweensOf(child);
+        tweens.forEach(function (item) {
+          item.progress(1);
+        });
+
+        if (child.parentNode) {
+          parentNode.parentNode.removeChild(child);
+        }
+      });
+
+      parentNode.childNodesReferences = nodes;
+      var next = parentNode.nextSibling;
+      for (i = 0, len = nodes.length; i < len; i++) {
+        item = nodes[ i ];
+        parentNode.parentNode.insertBefore(item, next);
+        next = item.nextSibling;
+      }
+    } else {
+      children = Array.prototype.slice.call(parentNode.childNodes);
+
+      children.forEach(function (child) {
+        if (nodes.indexOf(child) !== -1) {
+          return;
+        }
+
+        tweens = TweenLite.getTweensOf(child);
+        tweens.forEach(function (item) {
+          item.progress(1);
+        });
+
+        parentNode.removeChild(child);
+      });
+
+      for (i = 0, len = nodes.length; i < len; i++) {
+        item = nodes[ i ];
+        parentNode.appendChild(item);
+      }
     }
   };
 
