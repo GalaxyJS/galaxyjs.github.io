@@ -2,7 +2,7 @@
   <img class="banner" src='modules/api/images/tools.jpg' alt='tools'/>
 
   <section class="content">
-    <h1>API</h1>
+    <h1 id="test-head">API</h1>
   </section>
 
   <section class="content">
@@ -33,14 +33,14 @@
  Scope.load({
     // id should be equals to the url # value
     // otherwise the module will be not registered
-    id: 'my-module' 
+    id: 'my-module'
     url: 'path/to/module.html'
   }, function (module) {
     // Set the html content of the module as the content of the element
     var element = document.getElementsByTagName('body')[0];
     Galaxy.ui.setContent(element, module.scope.html);
 
-    // Modules that are loaded via Galaxy.load method 
+    // Modules that are loaded via Galaxy.load method
       module.start();
 }); </pre>
     <p>
@@ -56,7 +56,7 @@ var element = document.getElementsByTagName('body')[0];
 Scope.loadModuleInto({
   // id should be equals to the url # value
   // otherwise the module will be not registered
-  id: 'my-module' 
+  id: 'my-module'
   url: 'path/to/module.html'
 }, element); </pre>
     <p>
@@ -95,7 +95,8 @@ Scope.loadModuleInto({
       the engine works. He/She only needs to push the gas pedal.
     </p>
     <p>
-      You can import add-on via <code>Scope.import</code>. This will create and add the add-on instance to the module and
+      You can import add-on via <code>Scope.import</code>. This will create and add the add-on instance to the module
+      and
       also returns the add-on instance.
     </p>
     <pre class="prettyprint lang-js">
@@ -127,9 +128,100 @@ state.onStop = function () {
     </p>
   </section>
 </div>
+};
+
+state.onStart = function () {
+  // Called every time the module is started
+};
+
+state.onStop = function () {
+  // Called every time the module is deactivated,
+  // for example when the # value of url
+  // changes to something other than the module id
+}; </pre>
+
+  </section>
+
+  <section class="content">
+    <h2>
+      Galaxy.GalaxyUI
+    </h2>
+    <p>
+
+    </p>
+  </section>
+</div>
+};
+
+state.onStart = function () {
+  // Called every time the module is started
+};
+
+state.onStop = function () {
+  // Called every time the module is deactivated,
+  // for example when the # value of url
+  // changes to something other than the module id
+}; </pre>
+
+  </section>
+
+  <section class="content">
+    <h2>
+      Galaxy.GalaxyUI
+    </h2>
+    <p>
+
+    </p>
+  </section>
+</div>
+};
+
+state.onStart = function () {
+  // Called every time the module is started
+};
+
+state.onStop = function () {
+  // Called every time the module is deactivated,
+  // for example when the # value of url
+  // changes to something other than the module id
+}; </pre>
+
+  </section>
+
+  <section class="content">
+    <h2>
+      Galaxy.GalaxyUI
+    </h2>
+    <p>
+
+    </p>
+  </section>
+</div>
+};
+
+state.onStart = function () {
+  // Called every time the module is started
+};
+
+state.onStop = function () {
+  // Called every time the module is deactivated,
+  // for example when the # value of url
+  // changes to something other than the module id
+}; </pre>
+
+  </section>
+
+  <section class="content">
+    <h2>
+      Galaxy.GalaxyUI
+    </h2>
+    <p>
+
+    </p>
+  </section>
+</div>
 
 <script>
-
   var state = Scope.import('galaxy/scope-state');
   var subSections = {
     'galaxy-system': {},
