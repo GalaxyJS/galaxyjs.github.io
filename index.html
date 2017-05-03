@@ -1,43 +1,38 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>GalaxyJS - Welcome</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="styles/images/favicon.ico">    
-    <script src="https://vuejs.org/js/vue.js"></script>
-    <script src="galaxyjs/galaxy.js"></script>
-    <script src="galaxyjs/galaxy-tags.js"></script>
+<head>
+  <title>GalaxyJS - Welcome</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="styles/images/favicon.ico">
+  <script src="https://vuejs.org/js/vue.js"></script>
+  <script src="galaxyjs/galaxy.js"></script>
+  <script src="galaxyjs/galaxy-tags.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenLite.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TimelineLite.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/easing/EasePack.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/plugins/CSSPlugin.min.js"></script>
-    
-    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
-    <script src="https://cdn.rawgit.com/google/code-prettify/760e6e73/src/lang-css.js"></script>
-    
-    <script src="animation-effects/auto-height.js"></script>
-    <script src="animation-effects/in-out.js"></script>
-    <script src="animation-effects/zoom.js"></script>
-    
-    <link rel="stylesheet" href="styles/styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenLite.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TimelineLite.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/easing/EasePack.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/plugins/CSSPlugin.min.js"></script>
 
-    <script>
-      (function () {
-        window.addEventListener('load', run);
+  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+  <script src="https://cdn.rawgit.com/google/code-prettify/760e6e73/src/lang-css.js"></script>
 
-        function run() {
-          Galaxy.boot({url: 'modules/main/index.html'}, function (module) {
-            Galaxy.ui.setContent('body', module.scope.html);
-            module.start();
-          });
-        }
+  <link rel="stylesheet" href="styles/styles.css"/>
 
-      })();
-    </script>
-  </head>
-  
-  <body>
+  <script>
+    (function () {
+      window.addEventListener('load', run);
 
-  </body>
+      function run() {
+        Galaxy.boot({url: 'modules/main/index.html'}).then(function (module) {
+          module.start();
+        });
+      }
+
+    })();
+  </script>
+</head>
+
+<body>
+
+</body>
 </html>
