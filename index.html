@@ -4,9 +4,7 @@
   <title>GalaxyJS - Welcome</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="styles/images/favicon.ico">
-  <script src="https://vuejs.org/js/vue.js"></script>
   <script src="galaxyjs/galaxy.js"></script>
-  <script src="galaxyjs/galaxy-tags.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenLite.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TimelineLite.min.js"></script>
@@ -23,7 +21,7 @@
       window.addEventListener('load', run);
 
       function run() {
-        Galaxy.boot({url: 'modules/main/index.html'}).then(function (module) {
+        Galaxy.boot({url: 'modules/main/index.js'}).then(function (module) {
           module.start();
         });
       }
