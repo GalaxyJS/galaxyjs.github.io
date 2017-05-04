@@ -1,5 +1,16 @@
 /* global Scope, View */
 
+Scope.navItems = [
+  {
+    title: 'Start',
+    link: '#start'
+  },
+  {
+    title: 'Guide',
+    link: '#guide'
+  }
+];
+
 Scope.navBarText = [ 'This is the main-nav' ];
 Scope.obj = {
   outside: 'Hooray Here Too!',
@@ -17,7 +28,13 @@ View.init({
       t: 'div',
       id: 'main-nav',
       class: 'main-nav',
-      bind_html: 'navBarText'
+      children: [
+        {
+          t: 'a',
+          href: '#start',
+          text: 'Start'
+        }
+      ]
     },
     {
       t: 'div',
@@ -31,7 +48,7 @@ View.init({
         },
         {
           t: 'h3',
-          bind_html: 'navBarText'
+          html: '[navBarText]'
         },
         {
           t: 'h4',
@@ -51,6 +68,6 @@ View.init({
   ]
 });
 
-setInterval(function () {
-  Scope.navBarText.push(' G');
-}, 1000);
+//setInterval(function () {
+//  Scope.navBarText.push(' G');
+//}, 1000);

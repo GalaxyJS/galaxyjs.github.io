@@ -1096,7 +1096,7 @@
     this.element = scope.element;
   }
 
-  GalaxyView.SCHEME_PROPERTY_MAP = {
+  GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
     id: {
       type: 'attr'
     },
@@ -1127,7 +1127,7 @@
     },
     text: {
       type: 'prop',
-      name: 'innerTEXT'
+      name: 'innerText'
     },
     value: {
       type: 'prop',
@@ -1170,7 +1170,7 @@
   };
 
   GalaxyView.prototype.setPropertyForNode = function (node, attributeName, value) {
-    var property = GalaxyView.SCHEME_PROPERTY_MAP[ attributeName ];
+    var property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[ attributeName ];
     if (!property) {
       return;
     }
@@ -1217,11 +1217,6 @@
         },
         set: function (newValue) {
           hostObject._binds[ propertyName ].value = newValue;
-
-          // if(typeof(newValue) === 'object' && newValue !== null) {
-          //   return;
-          // }
-
           _this.setValueFor(hostObject, attributeName, propertyName, newValue);
         },
         enumerable: true,
