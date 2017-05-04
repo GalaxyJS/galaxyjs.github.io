@@ -20,8 +20,8 @@
     (function () {
       window.addEventListener('load', run);
 
-      function run() {
-        Galaxy.boot({url: 'modules/main/index.js'}).then(function (module) {
+      function run () {
+        Galaxy.boot({ url: 'modules/main/index.js' }, document.getElementById('body')).then(function (module) {
           module.start();
         });
       }
@@ -30,7 +30,7 @@
   </script>
 </head>
 
-<body>
+<body id="body">
 
 </body>
 </html>
