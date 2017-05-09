@@ -10,24 +10,22 @@ Scope.navItems = [
     link: '#guide'
   },
   {
-    title: 'Test hide',
-    link: '#test-hide',
-    done: true
-  }, {
-    title: 'after',
-    link: '#after'
+    title: 'API',
+    link: '#api',
+    class: ['active','i']
   }
 ];
 
 setTimeout(function () {
-  // for (var i = 0; i < 5; i++) {
+  // for (var i = 0; i < 50000; i++) {
   //   Scope.navItems.push({
   //     title: 'new ' + i,
-  //     link: '#new'
+  //     link: '#new',
+  //     done: true
   //   });
   // }
 
-  Scope.navItems[ 3 ].done = true;
+  // Scope.navItems[ 3 ].done = true;
   // Scope.navItems.pop();
 
   var endTime = performance.now();
@@ -44,7 +42,7 @@ Scope.obj = {
 
 Scope.benchmark = {
   start: performance.now(),
-  end: 0
+  end: 'Waiting...'
 };
 
 View.init({
@@ -59,12 +57,13 @@ View.init({
       children: [
         {
           reactive: {
-            for: 'item in navItems',
-            if: 'item.done'
+            for: 'item in navItems'
+            // if: 'item.done'
           },
           t: 'a',
           href: '[item.link]',
-          text: '[item.title]'
+          text: '[item.title]',
+          class: '[item.class]'
         }
       ]
     },
@@ -77,17 +76,18 @@ View.init({
         //   t: 'h2',
         //   html: '[benchmark.start]'
         // },
-        // {
-        //   t: 'h3',
-        //   html: '[benchmark.end]'
-        // },
         {
-          reactive: {
-            for: 'item in navItems'
-          },
-          t: 'h4',
-          html: '[item.title]'
+          t: 'h3',
+          html: '[benchmark.end]'
         },
+        // {
+        //   reactive: {
+        //     for: 'item in navItems',
+        //     if: 'item.done'
+        //   },
+        //   t: 'h4',
+        //   html: '[item.title]'
+        // },
         // {
         //   t: 'h5',
         //   html: '[navBarText]'
