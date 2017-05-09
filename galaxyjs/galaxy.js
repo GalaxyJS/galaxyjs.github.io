@@ -1097,7 +1097,7 @@
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
    */
-  function GalaxyView (scope) {
+  function GalaxyView(scope) {
     this.scope = scope;
     this.element = scope.element;
   }
@@ -1240,7 +1240,7 @@
     }
   };
 
-  GalaxyView.prototype.addReactiveBehaviors = function (node, nodeSchema, nodeDataScope, behaviors) {
+  GalaxyView.prototype.addReactiveBehaviors = function (node, nodeSchema, nodeScopeData, behaviors) {
     for (var key in behaviors) {
       var behavior = GalaxyView.REACTIVE_BEHAVIORS[ key ];
 
@@ -1248,13 +1248,13 @@
         var value = behaviors[ key ];
         var matches = behavior.regex ? value.match(behavior.regex) : value;
 
-        node._galaxy_view.reactive[ key ] = (function (BEHAVIOR, MATCHES, NODE_SCHEMA) {
+        node._galaxy_view.reactive[ key ] = (function (BEHAVIOR, MATCHES, NODE_SCHEMA, NODE_SCOPE_DATA) {
           return function (_node, _value) {
-            return BEHAVIOR.onApply.call(this, _node, NODE_SCHEMA, _value, MATCHES);
+            return BEHAVIOR.onApply.call(this, _node, NODE_SCHEMA, _value, MATCHES, NODE_SCOPE_DATA);
           };
-        })(behavior, matches, nodeSchema);
+        })(behavior, matches, nodeSchema, nodeScopeData);
 
-        behavior.bind.call(this, node, nodeSchema, nodeDataScope, matches);
+        behavior.bind.call(this, node, nodeSchema, nodeScopeData, matches);
       }
     }
 
@@ -1419,7 +1419,7 @@
       node._galaxy_view.placeholder.nodeValue = JSON.stringify(nodeSchema, null, 2);
       this.makeBinding(node, nodeDataScope, 'reactive_for', matches[ 2 ]);
     },
-    onApply: function (node, nodeSchema, value, matches) {
+    onApply: function (node, nodeSchema, value, matches, scopeData) {
       var oldItems = node._galaxy_view.forItems || [];
       var newItems = [];
       oldItems.forEach(function (node) {
@@ -1432,7 +1432,7 @@
       var parentNode = node._galaxy_view.placeholder.parentNode;
 
       for (var index in value) {
-        var itemDataScope = {};
+        var itemDataScope = Object.assign({}, scopeData);
         itemDataScope[ matches[ 1 ] ] = value[ index ];
 
         newItems.push(this.append(newNodeSchema, itemDataScope, parentNode));

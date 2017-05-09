@@ -28,6 +28,8 @@ setTimeout(function () {
   // Scope.navItems[ 3 ].done = true;
   // Scope.navItems.pop();
 
+  Scope.obj.outside = 'Hooray after 2 sec';
+
   var endTime = performance.now();
   Scope.benchmark.end = endTime - Scope.benchmark.start;
 }, 2000);
@@ -62,7 +64,7 @@ View.init({
           },
           t: 'a',
           href: '[item.link]',
-          text: '[item.title]',
+          text: '[obj.outside]',
           class: '[item.class]'
         }
       ]
@@ -88,10 +90,10 @@ View.init({
         //   t: 'h4',
         //   html: '[item.title]'
         // },
-        // {
-        //   t: 'h5',
-        //   html: '[navBarText]'
-        // },
+         {
+           t: 'h5',
+           html: '[obj.outside]'
+         },
         // {
         //   t: 'h6',
         //   html: '[navBarText]'
