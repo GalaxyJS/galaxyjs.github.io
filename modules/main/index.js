@@ -55,7 +55,7 @@ Scope.countries = [
 ];
 
 setTimeout(function () {
-  for (var i = 0; i < 500; i++) {
+  for (var i = 0; i < 5; i++) {
     Scope.countries[ 1 ].cities.push({
       title: 'New City #' + i
     });
@@ -140,10 +140,12 @@ View.init({
               children: [
                 {
                   reactive: {
-                    if: 'country.show'
+                    if: 'country.cities.length'
                   },
                   t: 'h3',
-                  text: '[country.title]'
+                  //text: function () {
+                  //  console.info('asdasd')
+                  //}
                 },
                 {
                   t: 'ul',
