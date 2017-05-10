@@ -1,4 +1,8 @@
 /* global Scope, View */
+Scope.benchmark = {
+  start: performance.now(),
+  end: 'Waiting...'
+};
 
 Scope.navItems = [
   {
@@ -12,23 +16,62 @@ Scope.navItems = [
   {
     title: 'API',
     link: '#api',
-    class: ['active','i']
+    class: [ 'active', 'i' ]
+  }
+];
+
+Scope.city = 'aaaaaaaaaaaaaaaa';
+Scope.countries = [
+  {
+    title: 'Iran',
+    show: true,
+    cities: [
+      {
+        title: 'Tehran'
+      },
+      {
+        title: 'Mashhad'
+      }
+    ]
+  },
+  {
+    title: 'Netherlands',
+    show: true,
+    cities: [
+      {
+        title: 'Utrecht'
+      },
+      {
+        title: 'Amsterdam'
+      },
+      {
+        title: 'Hilversum'
+      },
+      {
+        title: 'Almere'
+      }
+    ]
   }
 ];
 
 setTimeout(function () {
-  // for (var i = 0; i < 50000; i++) {
-  //   Scope.navItems.push({
-  //     title: 'new ' + i,
-  //     link: '#new',
-  //     done: true
-  //   });
-  // }
+  for (var i = 0; i < 500; i++) {
+    Scope.countries[ 1 ].cities.push({
+      title: 'New City #' + i
+    });
+  }
+
+  Scope.countries[ 1 ].show = true;
 
   // Scope.navItems[ 3 ].done = true;
   // Scope.navItems.pop();
 
   Scope.obj.outside = 'Hooray after 2 sec';
+
+  // Scope.country = {
+  //   cities: [],
+  //   title: 'No Way'
+  // };
 
   var endTime = performance.now();
   Scope.benchmark.end = endTime - Scope.benchmark.start;
@@ -42,11 +85,6 @@ Scope.obj = {
   }
 };
 
-Scope.benchmark = {
-  start: performance.now(),
-  end: 'Waiting...'
-};
-
 View.init({
   t: 'div',
   id: 'app-pane',
@@ -57,16 +95,16 @@ View.init({
       id: 'main-nav',
       class: 'main-nav',
       children: [
-        {
-          reactive: {
-            for: 'item in navItems'
-            // if: 'item.done'
-          },
-          t: 'a',
-          href: '[item.link]',
-          text: '[obj.outside]',
-          class: '[item.class]'
-        }
+        // {
+        //   reactive: {
+        //     for: 'item in navItems'
+        //     // if: 'item.done'
+        //   },
+        //   t: 'a',
+        //   href: '[item.link]',
+        //   text: '[obj.outside]',
+        //   class: '[item.class]'
+        // }
       ]
     },
     {
@@ -90,10 +128,40 @@ View.init({
         //   t: 'h4',
         //   html: '[item.title]'
         // },
-         {
-           t: 'h5',
-           html: '[obj.outside]'
-         },
+        {
+
+          t: 'ol',
+          children: [
+            {
+              reactive: {
+                for: 'country in countries'
+              },
+              t: 'li',
+              children: [
+                {
+                  reactive: {
+                    if: 'country.show'
+                  },
+                  t: 'h3',
+                  text: '[country.title]'
+                },
+                {
+                  t: 'ul',
+                  children: [
+                    {
+                      reactive: {
+                        for: 'city in country.cities',
+                        if: 'country.show'
+                      },
+                      t: 'li',
+                      text: '[city.title]'
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
         // {
         //   t: 'h6',
         //   html: '[navBarText]'
