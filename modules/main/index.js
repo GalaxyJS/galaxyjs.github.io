@@ -60,8 +60,8 @@ setTimeout(function () {
       title: 'New City #' + i
     });
   }
-
-  Scope.countries[ 1 ].show = true;
+  //
+  // Scope.countries[ 1 ].show = true;
 
   // Scope.navItems[ 3 ].done = true;
   // Scope.navItems.pop();
@@ -139,13 +139,14 @@ View.init({
               t: 'li',
               children: [
                 {
-                  reactive: {
-                    if: 'country.cities.length'
+                  mutator: {
+                    text: function (value) {
+                      console.info(this.__galaxyView__, '<-->', value);
+                      return 'Mutated: ' + value;
+                    }
                   },
                   t: 'h3',
-                  //text: function () {
-                  //  console.info('asdasd')
-                  //}
+                  text: '[country.title]'
                 },
                 {
                   t: 'ul',
