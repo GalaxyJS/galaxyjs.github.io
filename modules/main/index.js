@@ -55,7 +55,7 @@ Scope.countries = [
 ];
 
 setTimeout(function () {
-  for (var i = 0; i < 5; i++) {
+  for (var i = 0; i < 50; i++) {
     Scope.countries[ 1 ].cities.push({
       title: 'New City #' + i
     });
@@ -95,16 +95,16 @@ View.init({
       id: 'main-nav',
       class: 'main-nav',
       children: [
-        // {
-        //   reactive: {
-        //     for: 'item in navItems'
-        //     // if: 'item.done'
-        //   },
-        //   t: 'a',
-        //   href: '[item.link]',
-        //   text: '[obj.outside]',
-        //   class: '[item.class]'
-        // }
+        {
+          reactive: {
+            for: 'item in navItems'
+            // if: 'item.done'
+          },
+          t: 'a',
+          href: '[item.link]',
+          text: '[item.title]',
+          class: '[item.class]'
+        }
       ]
     },
     {
@@ -120,51 +120,55 @@ View.init({
           t: 'h3',
           html: '[benchmark.end]'
         },
-        // {
-        //   reactive: {
-        //     for: 'item in navItems',
-        //     if: 'item.done'
-        //   },
-        //   t: 'h4',
-        //   html: '[item.title]'
-        // },
         {
-
-          t: 'ol',
-          children: [
-            {
-              reactive: {
-                for: 'country in countries'
-              },
-              t: 'li',
-              children: [
-                {
-                  mutator: {
-                    text: function (value) {
-                      console.info(this.__galaxyView__, '<-->', value);
-                      return 'Mutated: ' + value;
-                    }
-                  },
-                  t: 'h3',
-                  text: '[country.title]'
-                },
-                {
-                  t: 'ul',
-                  children: [
-                    {
-                      reactive: {
-                        for: 'city in country.cities',
-                        if: 'country.show'
-                      },
-                      t: 'li',
-                      text: '[city.title]'
-                    }
-                  ]
-                }
-              ]
+          reactive: {
+            for: 'item in navItems'
+            //if: 'item.done'
+          },
+          mutator: {
+            text: function (value) {
+              return 'h4:' + value;
             }
-          ]
+          },
+          t: 'h4',
+          text: '[item.title]'
         },
+        //{
+        //  t: 'ol',
+        //  children: [
+        //    {
+        //      reactive: {
+        //        for: 'country in countries'
+        //      },
+        //      t: 'li',
+        //      children: [
+        //        {
+        //          mutator: {
+        //            text: function (value) {
+        //              console.info(this.__galaxyView__, '<-->', value);
+        //              return 'Mutated: ' + value;
+        //            }
+        //          },
+        //          t: 'h3',
+        //          text: '[country.title]'
+        //        },
+        //        {
+        //          t: 'ul',
+        //          children: [
+        //            {
+        //              reactive: {
+        //                for: 'city in country.cities',
+        //                if: 'country.show'
+        //              },
+        //              t: 'li',
+        //              text: '[city.title]'
+        //            }
+        //          ]
+        //        }
+        //      ]
+        //    }
+        //  ]
+        //},
         // {
         //   t: 'h6',
         //   html: '[navBarText]'

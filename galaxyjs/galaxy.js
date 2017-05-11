@@ -1,291 +1,3 @@
-/* global Galaxy, Promise */
-
-(function (root) {
-  root.Galaxy = new Core();
-
-  /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
-   *
-   * @returns {Galaxy.GalaxySystem}
-   */
-  Galaxy.GalaxyCore = Core;
-
-  var importedLibraries = {};
-
-  function Core () {
-    this.bootModule = null;
-    this.modules = {};
-    this.onLoadQueue = [];
-    this.onModuleLoaded = {};
-    this.addOnProviders = [];
-    this.app = null;
-    this.rootElement = null;
-  }
-
-  Core.prototype.extend = function (out) {
-    out = out || {};
-
-    for (var i = 1; i < arguments.length; i++) {
-      var obj = arguments[ i ];
-
-      if (!obj)
-        continue;
-
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          if (obj[ key ] instanceof Array)
-            out[ key ] = this.extend(out[ key ] || [], obj[ key ]);
-          else if (typeof obj[ key ] === 'object' && obj[ key ] !== null)
-            out[ key ] = this.extend(out[ key ] || {}, obj[ key ]);
-          else
-            out[ key ] = obj[ key ];
-        }
-      }
-    }
-
-    return out;
-  };
-
-  Core.prototype.boot = function (bootModule, rootElement) {
-    var _this = this;
-    _this.rootElement = rootElement;
-
-    bootModule.domain = this;
-    bootModule.id = 'system';
-
-    var promise = new Promise(function (resolve, reject) {
-      _this.load(bootModule).then(function (module) {
-        // Replace galaxy temporary  bootModule with user specified bootModule
-        _this.bootModule = module;
-        resolve(module);
-        // Start galaxy
-        // _this.app = _this.bootModule.addOns[ 'galaxy/scope-state' ] || _this.app;
-      });
-    });
-
-    return promise;
-  };
-
-  Core.prototype.convertToURIString = function (obj, prefix) {
-    var _this = this;
-    var str = [], p;
-    for (p in obj) {
-      if (obj.hasOwnProperty(p)) {
-        var k = prefix ? prefix + '[' + p + ']' : p, v = obj[ p ];
-        str.push((v !== null && typeof v === 'object') ?
-          _this.convertToURIString(v, k) :
-          encodeURIComponent(k) + '=' + encodeURIComponent(v));
-      }
-    }
-
-    return str.join('&');
-  };
-
-  Core.prototype.load = function (module) {
-    var _this = this;
-    var promise = new Promise(function (resolve, reject) {
-      module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
-      module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
-
-      root.Galaxy.onModuleLoaded[ module.systemId ] = resolve;
-      var moduleExist = Galaxy.modules[ module.systemId ];
-
-      var invokers = [ module.url ];
-      if (module.invokers) {
-        if (module.invokers.indexOf(module.url) !== -1) {
-          throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
-        }
-
-        invokers = module.invokers;
-        invokers.push(module.url);
-      }
-
-      if (moduleExist) {
-        var ol = Galaxy.onModuleLoaded[ module.systemId ];
-        if ('function' === typeof (ol)) {
-          ol(moduleExist);
-          delete Galaxy.onModuleLoaded[ module.systemId ];
-        }
-
-        return;
-      }
-
-      if (Galaxy.onLoadQueue[ module.systemId ]) {
-        return;
-      }
-
-      Galaxy.onLoadQueue[ module.systemId ] = true;
-
-      fetch(module.url + '?' + _this.convertToURIString(module.params || {})).then(function (response) {
-        // var contentType = response.headers.get('content-type').split(';')[ 0 ] || 'text/html';
-        response.text().then(function (moduleContent) {
-          _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {
-            _this.executeCompiledModule(module);
-          });
-        });
-      });
-    });
-
-    return promise;
-  };
-
-  Core.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
-    var _this = this;
-    var promise = new Promise(function (resolve, reject) {
-      var doneImporting = function (module, imports) {
-        imports.splice(imports.indexOf(module.url) - 1, 1);
-
-        if (imports.length === 0) {
-          // This will load the original initilizer
-          resolve(module);
-        }
-      };
-
-      var imports = [];
-      // extract imports from the source code
-      var moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:]|^)\n?\/\/.*\n?$/gm, '');
-      moduleContent = moduleContentWithoutComments.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
-        var query = path.match(/([\S]+)/gm);
-        imports.push({
-          url: query[ query.length - 1 ],
-          fresh: query.indexOf('new') !== -1
-        });
-
-        return 'Scope.imports[\'' + query[ query.length - 1 ] + '\']';
-      });
-
-      var scope = new Galaxy.GalaxyScope(moduleMetaData,
-        moduleMetaData.parentScope ? moduleMetaData.parentScope.element || _this.rootElement : _this.rootElement);
-      var view = new Galaxy.GalaxyView(scope);
-      // Create module from moduleMetaData
-      var module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope, view);
-      Galaxy.modules[ module.systemId ] = module;
-
-      if (imports.length) {
-        var importsCopy = imports.slice(0);
-        imports.forEach(function (item) {
-          var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
-          if (moduleAddOnProvider) {
-            var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
-            var addOnInstance = providerStages.pre();
-            importedLibraries[ item.url ] = {
-              name: item.url,
-              module: addOnInstance
-            };
-
-            module.registerAddOn(item.url, addOnInstance);
-            module.addOnProviders.push(providerStages);
-
-            doneImporting(module, importsCopy);
-          } else if (importedLibraries[ item.url ] && !item.fresh) {
-            doneImporting(module, importsCopy);
-          } else {
-            Galaxy.load({
-              name: item.name,
-              url: item.url,
-              fresh: item.fresh,
-              parentScope: scope,
-              invokers: invokers,
-              temporary: true
-            }).then(function () {
-              doneImporting(module, importsCopy);
-            });
-          }
-        });
-
-        return promise;
-      }
-
-      resolve(module);
-    });
-
-    return promise;
-  };
-
-  Core.prototype.executeCompiledModule = function (module) {
-    for (var item in importedLibraries) {
-      if (importedLibraries.hasOwnProperty(item)) {
-        var asset = importedLibraries[ item ];
-        if (asset.module) {
-          module.scope.imports[ asset.name ] = asset.module;
-        }
-      }
-    }
-
-    var moduleSource = new Function('Scope', 'View', module.source);
-    moduleSource.call(null, module.scope, module.view);
-
-    delete module.source;
-
-    module.addOnProviders.forEach(function (item) {
-      item.post();
-    });
-
-    delete module.addOnProviders;
-
-    if (!importedLibraries[ module.url ]) {
-      importedLibraries[ module.url ] = {
-        name: module.name || module.url,
-        module: module.scope.export
-      };
-    } else if (module.fresh) {
-      importedLibraries[ module.url ].module = module.scope.export;
-    } else {
-      module.scope.imports[ module.name ] = importedLibraries[ module.url ].module;
-    }
-
-    var currentModule = Galaxy.modules[ module.systemId ];
-    if (module.temporary || module.scope._doNotRegister) {
-      delete module.scope._doNotRegister;
-      currentModule = {
-        id: module.id,
-        scope: module.scope
-      };
-    }
-
-    if ('function' === typeof (Galaxy.onModuleLoaded[ module.systemId ])) {
-      Galaxy.onModuleLoaded[ module.systemId ](currentModule);
-      delete Galaxy.onModuleLoaded[ module.systemId ];
-    }
-
-    delete Galaxy.onLoadQueue[ module.systemId ];
-  };
-
-  Core.prototype.getModuleAddOnProvider = function (name) {
-    return this.addOnProviders.filter(function (service) {
-      return service.name === name;
-    })[ 0 ];
-  };
-
-  Core.prototype.getModulesByAddOnId = function (addOnId) {
-    var modules = [];
-    var module;
-
-    for (var moduleId in this.modules) {
-      module = this.modules[ moduleId ];
-      if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
-        modules.push({
-          addOn: module.addOns[ addOnId ],
-          module: module
-        });
-      }
-    }
-
-    return modules;
-  };
-
-  Core.prototype.registerAddOnProvider = function (name, handler) {
-    if (typeof handler !== 'function') {
-      throw 'Addon provider should be a function';
-    }
-
-    this.addOnProviders.push({
-      name: name,
-      handler: handler
-    });
-  };
-
-}(this));
-
 /* eslint-disable */
 /**
  * @link https://github.github.io/fetch/
@@ -762,57 +474,6 @@
   self.fetch.polyfill = true;
 })(typeof self !== 'undefined' ? self : this);
 
-/* global Galaxy */
-
-(function () {
-  /**
-   *
-   * @returns {Galaxy.GalaxyModule}
-   */
-  Galaxy.GalaxyModule = GalaxyModule;
-
-  /**
-   *
-   * @param {Object} module
-   * @param {Galaxy.GalaxyScope} scope
-   * @constructor
-   */
-  function GalaxyModule (module, source, scope, view) {
-    this.id = module.id;
-    this.systemId = module.systemId;
-    this.source = source;
-    this.url = module.url || null;
-    this.addOns = module.addOns || {};
-    this.domain = module.domain;
-    this.addOnProviders = [];
-
-    this.scope = scope;
-    this.view = view;
-  }
-
-  GalaxyModule.prototype.init = function () {
-    for (var key in this.addOns) {
-      var addOn = this.addOns[ key ];
-      if (typeof addOn.onModuleInit === 'function') {
-        addOn.onModuleInit();
-      }
-    }
-  };
-
-  GalaxyModule.prototype.start = function () {
-    for (var key in this.addOns) {
-      var addOn = this.addOns[ key ];
-      if (typeof addOn.onModuleStart === 'function') {
-        addOn.onModuleStart();
-      }
-    }
-  };
-
-  GalaxyModule.prototype.registerAddOn = function (id, object) {
-    this.addOns[ id ] = object;
-  };
-}());
-
 /* eslint-disable */
 /**
  * @link https://github.com/taylorhakes/promise-polyfill
@@ -1053,16 +714,358 @@
 
 })(this);
 
+/* global Galaxy, Promise */
+
+(function (root) {
+  root.Galaxy = root.Galaxy || new Core();
+
+  /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
+   *
+   * @returns {Galaxy.GalaxySystem}
+   */
+  Galaxy.GalaxyCore = Core;
+
+  var importedLibraries = {};
+
+  function Core () {
+    this.bootModule = null;
+    this.modules = {};
+    this.onLoadQueue = [];
+    this.onModuleLoaded = {};
+    this.addOnProviders = [];
+    this.app = null;
+    this.rootElement = null;
+  }
+
+  Core.prototype.extend = function (out) {
+    out = out || {};
+
+    for (var i = 1; i < arguments.length; i++) {
+      var obj = arguments[ i ];
+
+      if (!obj)
+        continue;
+
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          if (obj[ key ] instanceof Array)
+            out[ key ] = this.extend(out[ key ] || [], obj[ key ]);
+          else if (typeof obj[ key ] === 'object' && obj[ key ] !== null)
+            out[ key ] = this.extend(out[ key ] || {}, obj[ key ]);
+          else
+            out[ key ] = obj[ key ];
+        }
+      }
+    }
+
+    return out;
+  };
+
+  Core.prototype.boot = function (bootModule, rootElement) {
+    var _this = this;
+    _this.rootElement = rootElement;
+
+    bootModule.domain = this;
+    bootModule.id = 'system';
+
+    var promise = new Promise(function (resolve, reject) {
+      _this.load(bootModule).then(function (module) {
+        // Replace galaxy temporary  bootModule with user specified bootModule
+        _this.bootModule = module;
+        resolve(module);
+        // Start galaxy
+        // _this.app = _this.bootModule.addOns[ 'galaxy/scope-state' ] || _this.app;
+      });
+    });
+
+    return promise;
+  };
+
+  Core.prototype.convertToURIString = function (obj, prefix) {
+    var _this = this;
+    var str = [], p;
+    for (p in obj) {
+      if (obj.hasOwnProperty(p)) {
+        var k = prefix ? prefix + '[' + p + ']' : p, v = obj[ p ];
+        str.push((v !== null && typeof v === 'object') ?
+          _this.convertToURIString(v, k) :
+          encodeURIComponent(k) + '=' + encodeURIComponent(v));
+      }
+    }
+
+    return str.join('&');
+  };
+
+  Core.prototype.load = function (module) {
+    var _this = this;
+    var promise = new Promise(function (resolve, reject) {
+      module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+      module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
+
+      root.Galaxy.onModuleLoaded[ module.systemId ] = resolve;
+      var moduleExist = Galaxy.modules[ module.systemId ];
+
+      var invokers = [ module.url ];
+      if (module.invokers) {
+        if (module.invokers.indexOf(module.url) !== -1) {
+          throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
+        }
+
+        invokers = module.invokers;
+        invokers.push(module.url);
+      }
+
+      if (moduleExist) {
+        var ol = Galaxy.onModuleLoaded[ module.systemId ];
+        if ('function' === typeof (ol)) {
+          ol(moduleExist);
+          delete Galaxy.onModuleLoaded[ module.systemId ];
+        }
+
+        return;
+      }
+
+      if (Galaxy.onLoadQueue[ module.systemId ]) {
+        return;
+      }
+
+      Galaxy.onLoadQueue[ module.systemId ] = true;
+
+      fetch(module.url + '?' + _this.convertToURIString(module.params || {})).then(function (response) {
+        // var contentType = response.headers.get('content-type').split(';')[ 0 ] || 'text/html';
+        response.text().then(function (moduleContent) {
+          _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {
+            _this.executeCompiledModule(module);
+          });
+        });
+      });
+    });
+
+    return promise;
+  };
+
+  Core.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
+    var _this = this;
+    var promise = new Promise(function (resolve, reject) {
+      var doneImporting = function (module, imports) {
+        imports.splice(imports.indexOf(module.url) - 1, 1);
+
+        if (imports.length === 0) {
+          // This will load the original initilizer
+          resolve(module);
+        }
+      };
+
+      var imports = [];
+      // extract imports from the source code
+      var moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:]|^)\n?\/\/.*\n?$/gm, '');
+      moduleContent = moduleContentWithoutComments.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+        var query = path.match(/([\S]+)/gm);
+        imports.push({
+          url: query[ query.length - 1 ],
+          fresh: query.indexOf('new') !== -1
+        });
+
+        return 'Scope.imports[\'' + query[ query.length - 1 ] + '\']';
+      });
+
+      var scope = new Galaxy.GalaxyScope(moduleMetaData,
+        moduleMetaData.parentScope ? moduleMetaData.parentScope.element || _this.rootElement : _this.rootElement);
+      var view = new Galaxy.GalaxyView(scope);
+      // Create module from moduleMetaData
+      var module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope, view);
+      Galaxy.modules[ module.systemId ] = module;
+
+      if (imports.length) {
+        var importsCopy = imports.slice(0);
+        imports.forEach(function (item) {
+          var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+          if (moduleAddOnProvider) {
+            var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
+            var addOnInstance = providerStages.pre();
+            importedLibraries[ item.url ] = {
+              name: item.url,
+              module: addOnInstance
+            };
+
+            module.registerAddOn(item.url, addOnInstance);
+            module.addOnProviders.push(providerStages);
+
+            doneImporting(module, importsCopy);
+          } else if (importedLibraries[ item.url ] && !item.fresh) {
+            doneImporting(module, importsCopy);
+          } else {
+            Galaxy.load({
+              name: item.name,
+              url: item.url,
+              fresh: item.fresh,
+              parentScope: scope,
+              invokers: invokers,
+              temporary: true
+            }).then(function () {
+              doneImporting(module, importsCopy);
+            });
+          }
+        });
+
+        return promise;
+      }
+
+      resolve(module);
+    });
+
+    return promise;
+  };
+
+  Core.prototype.executeCompiledModule = function (module) {
+    for (var item in importedLibraries) {
+      if (importedLibraries.hasOwnProperty(item)) {
+        var asset = importedLibraries[ item ];
+        if (asset.module) {
+          module.scope.imports[ asset.name ] = asset.module;
+        }
+      }
+    }
+
+    var moduleSource = new Function('Scope', 'View', module.source);
+    moduleSource.call(null, module.scope, module.view);
+
+    delete module.source;
+
+    module.addOnProviders.forEach(function (item) {
+      item.post();
+    });
+
+    delete module.addOnProviders;
+
+    if (!importedLibraries[ module.url ]) {
+      importedLibraries[ module.url ] = {
+        name: module.name || module.url,
+        module: module.scope.export
+      };
+    } else if (module.fresh) {
+      importedLibraries[ module.url ].module = module.scope.export;
+    } else {
+      module.scope.imports[ module.name ] = importedLibraries[ module.url ].module;
+    }
+
+    var currentModule = Galaxy.modules[ module.systemId ];
+    if (module.temporary || module.scope._doNotRegister) {
+      delete module.scope._doNotRegister;
+      currentModule = {
+        id: module.id,
+        scope: module.scope
+      };
+    }
+
+    if ('function' === typeof (Galaxy.onModuleLoaded[ module.systemId ])) {
+      Galaxy.onModuleLoaded[ module.systemId ](currentModule);
+      delete Galaxy.onModuleLoaded[ module.systemId ];
+    }
+
+    delete Galaxy.onLoadQueue[ module.systemId ];
+  };
+
+  Core.prototype.getModuleAddOnProvider = function (name) {
+    return this.addOnProviders.filter(function (service) {
+      return service.name === name;
+    })[ 0 ];
+  };
+
+  Core.prototype.getModulesByAddOnId = function (addOnId) {
+    var modules = [];
+    var module;
+
+    for (var moduleId in this.modules) {
+      module = this.modules[ moduleId ];
+      if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
+        modules.push({
+          addOn: module.addOns[ addOnId ],
+          module: module
+        });
+      }
+    }
+
+    return modules;
+  };
+
+  Core.prototype.registerAddOnProvider = function (name, handler) {
+    if (typeof handler !== 'function') {
+      throw 'Addon provider should be a function';
+    }
+
+    this.addOnProviders.push({
+      name: name,
+      handler: handler
+    });
+  };
+
+}(this));
+
 /* global Galaxy */
 
-(function () {
+(function (root, G) {
+
+  root.Galaxy = G;
+  /**
+   *
+   * @returns {Galaxy.GalaxyModule}
+   */
+  G.GalaxyModule = GalaxyModule;
+
+  /**
+   *
+   * @param {Object} module
+   * @param {Galaxy.GalaxyScope} scope
+   * @constructor
+   */
+  function GalaxyModule(module, source, scope, view) {
+    this.id = module.id;
+    this.systemId = module.systemId;
+    this.source = source;
+    this.url = module.url || null;
+    this.addOns = module.addOns || {};
+    this.domain = module.domain;
+    this.addOnProviders = [];
+
+    this.scope = scope;
+    this.view = view;
+  }
+
+  GalaxyModule.prototype.init = function () {
+    for (var key in this.addOns) {
+      var addOn = this.addOns[ key ];
+      if (typeof addOn.onModuleInit === 'function') {
+        addOn.onModuleInit();
+      }
+    }
+  };
+
+  GalaxyModule.prototype.start = function () {
+    for (var key in this.addOns) {
+      var addOn = this.addOns[ key ];
+      if (typeof addOn.onModuleStart === 'function') {
+        addOn.onModuleStart();
+      }
+    }
+  };
+
+  GalaxyModule.prototype.registerAddOn = function (id, object) {
+    this.addOns[ id ] = object;
+  };
+}(this, Galaxy || {}));
+
+/* global Galaxy */
+
+(function (root, G) {
+  root.Galaxy = G;
   /**
    *
    * @returns {Galaxy.GalaxyScope}
    */
-  Galaxy.GalaxyScope = GalaxyScope;
+  G.GalaxyScope = GalaxyScope;
 
-  function GalaxyScope (module, element) {
+  function GalaxyScope(module, element) {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;
     this.element = element || null;
@@ -1079,7 +1082,7 @@
   GalaxyScope.prototype.load = function (module, onDone) {
     module.parentScope = this;
     module.domain = module.domain || Galaxy;
-    Galaxy.load(module, onDone);
+    G.load(module, onDone);
   };
 
   GalaxyScope.prototype.loadModuleInto = function (module, view) {
@@ -1088,47 +1091,30 @@
     }
 
     this.load(module, function (module) {
-      Galaxy.ui.setContent(view, module.scope.html);
+      G.ui.setContent(view, module.scope.html);
 
       module.start();
     });
   };
 
-}());
+}(this, Galaxy || {}));
 
 /* global Galaxy */
 
-(function () {
-
-  function BoundProperty (view) {
-    this.view = view;
-    this.hosts = [];
-    this.value = null;
-  }
-
-  BoundProperty.prototype.setValue = function (attributeName, value) {
-    var _this = this;
-    _this.hosts.forEach(function (node) {
-      if (_this.view.mutator[ attributeName ]) {
-        _this.view.root.setPropertyForNode(node, attributeName, _this.view.mutator[ attributeName ].call(node, value));
-      } else {
-        _this.view.root.setPropertyForNode(node, attributeName, value);
-      }
-    });
-  };
-
+(function (root, G) {
+  root.Galaxy = G;
   /**
    *
    * @returns {Galaxy.GalaxyView}
    */
-  Galaxy.GalaxyView = GalaxyView;
+  G.GalaxyView = GalaxyView;
 
   /**
    *
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
    */
-  function GalaxyView (scope) {
+  function GalaxyView(scope) {
     this.scope = scope;
     this.element = scope.element;
   }
@@ -1191,64 +1177,19 @@
    * @param {Object} nodeScopeData
    * @param {Element} parentNode
    */
-  GalaxyView.prototype.append = function (nodeSchema, nodeScopeData, parentNode, n2) {
+  GalaxyView.prototype.append = function (nodeSchema, nodeScopeData, parentNode) {
     var _this = this;
     if (nodeSchema instanceof Array) {
       nodeSchema.forEach(function (nodeSchema) {
         _this.append(nodeSchema, nodeScopeData, parentNode);
       });
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
-      var node = document.createElement(nodeSchema.t || 'div');
-      var nodePlaceholder = document.createComment(node.tagName);
-      node.__galaxyView__ = {
-        root: _this,
-        scope: {},
-        mutator: {},
-        node: node,
-        nodeSchema: nodeSchema,
-        _template: false,
-        toTemplate: function () {
-          this.placeholder.nodeValue = JSON.stringify(this.nodeSchema, null, 2);
-          this._template = true;
-        },
-        placeholder: nodePlaceholder,
-        _hosts: [],
-        addHost: function (item) {
-          this._hosts.push(item);
-        },
-        _inDOM: true,
-        setInDOM: function (flag) {
-          this._inDOM = flag;
-          if (flag && !node.parentNode && !this._template) {
-            node.__galaxyView__.placeholder.parentNode.insertBefore(node, node.__galaxyView__.placeholder.nextSibling);
-          } else if (!flag && node.parentNode) {
-            node.parentNode.removeChild(node);
-          }
-        },
-        destroy: function () {
-          if (this._inDOM) {
-            node.parentNode.removeChild(this.placeholder);
-            node.parentNode.removeChild(node);
-          } else {
-            this.placeholder.parentNode.removeChild(this.placeholder);
-          }
+      var viewNode = new GalaxyView.ViewNode(_this, nodeSchema);
 
-          var nodeIndexInTheHost = -1;
-          this._hosts.forEach(function (host) {
-            nodeIndexInTheHost = host.indexOf(node);
-            if (nodeIndexInTheHost !== -1) {
-              host.splice(nodeIndexInTheHost, 1);
-            }
-          });
+      parentNode.appendChild(viewNode.placeholder);
 
-          this._hosts = [];
-        }
-      };
-
-      parentNode.appendChild(node.__galaxyView__.placeholder);
-
-      if (!node.__galaxyView__.hasOwnProperty('reactive')) {
-        Object.defineProperty(node.__galaxyView__, 'reactive', {
+      if (!viewNode.hasOwnProperty('reactive')) {
+        Object.defineProperty(viewNode, 'reactive', {
           enumerable: true,
           configurable: false,
           value: {}
@@ -1258,11 +1199,11 @@
       var parentScopeData = nodeScopeData;
 
       if (nodeSchema[ 'mutator' ]) {
-        node.__galaxyView__.mutator = nodeSchema[ 'mutator' ];
+        viewNode.mutator = nodeSchema[ 'mutator' ];
       }
 
       if (nodeSchema[ 'reactive' ]) {
-        parentScopeData = _this.addReactiveBehaviors(node, nodeSchema, nodeScopeData, nodeSchema[ 'reactive' ]);
+        parentScopeData = _this.addReactiveBehaviors(viewNode, nodeSchema, nodeScopeData, nodeSchema[ 'reactive' ]);
       }
 
       for (var attributeName in nodeSchema) {
@@ -1285,53 +1226,53 @@
         }
 
         if (bind) {
-          _this.makeBinding(node, nodeScopeData, attributeName, bind[ 1 ]);
+          _this.makeBinding(viewNode, nodeScopeData, attributeName, bind[ 1 ]);
         } else {
-          _this.setPropertyForNode(node, attributeName, decodeURI(attributeValue));
+          _this.setPropertyForNode(viewNode, attributeName, decodeURI(attributeValue));
         }
       }
 
-      if (!node.__galaxyView__._template) {
-        if (node.__galaxyView__._inDOM) {
-          parentNode.appendChild(node);
+      if (!viewNode.template) {
+        if (viewNode.inDOM) {
+          parentNode.appendChild(viewNode.node);
         }
 
-        _this.append(nodeSchema.children, parentScopeData, node);
+        _this.append(nodeSchema.children, parentScopeData, viewNode.node);
       }
 
-      return node;
+      return viewNode;
     }
   };
 
-  GalaxyView.prototype.addReactiveBehaviors = function (node, nodeSchema, nodeScopeData, behaviors) {
+  GalaxyView.prototype.addReactiveBehaviors = function (viewNode, nodeSchema, nodeScopeData, behaviors) {
     var allScopeData = Object.assign({}, nodeScopeData);
 
     for (var key in behaviors) {
       var behavior = GalaxyView.REACTIVE_BEHAVIORS[ key ];
 
       if (behavior) {
-        node.__galaxyView__.scope[ key ] = allScopeData;
+        viewNode.scope[ key ] = allScopeData;
         var value = behaviors[ key ];
         var matches = behavior.regex ? value.match(behavior.regex) : value;
 
-        node.__galaxyView__.reactive[ key ] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
-          return function (_galaxyView, _value) {
-            return BEHAVIOR.onApply.call(this, _galaxyView, _value, MATCHES, BEHAVIOR_SCOPE_DATA);
+        viewNode.reactive[ key ] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
+          return function (_viewNode, _value) {
+            return BEHAVIOR.onApply.call(this, _viewNode, _value, MATCHES, BEHAVIOR_SCOPE_DATA);
           };
         })(behavior, matches, allScopeData);
 
-        behavior.bind.call(this, node.__galaxyView__, nodeScopeData, matches);
+        behavior.bind.call(this, viewNode, nodeScopeData, matches);
       }
     }
 
     return allScopeData;
   };
 
-  GalaxyView.prototype.setPropertyForNode = function (node, attributeName, value) {
+  GalaxyView.prototype.setPropertyForNode = function (viewNode, attributeName, value) {
     if (attributeName.indexOf('reactive_') === 0) {
       var reactiveBehaviorName = attributeName.substring(9);
-      if (node.__galaxyView__.reactive[ reactiveBehaviorName ]) {
-        node.__galaxyView__.reactive[ reactiveBehaviorName ].call(this, node.__galaxyView__, value);
+      if (viewNode.reactive[ reactiveBehaviorName ]) {
+        viewNode.reactive[ reactiveBehaviorName ].call(this, viewNode, value);
       }
 
       return;
@@ -1346,16 +1287,23 @@
 
     switch (property.type) {
       case 'attr':
-        node.setAttribute(attributeName, value);
+        viewNode.node.setAttribute(attributeName, value);
         break;
 
       case 'prop':
-        node[ property.name ] = value;
+        viewNode.node[ property.name ] = value;
         break;
     }
   };
 
-  GalaxyView.prototype.makeBinding = function (node, dataHostObject, attributeName, propertyValue) {
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} viewNode
+   * @param {Object} dataHostObject
+   * @param {String} attributeName
+   * @param propertyValue
+   */
+  GalaxyView.prototype.makeBinding = function (viewNode, dataHostObject, attributeName, propertyValue) {
     var _this = this;
 
     if (typeof dataHostObject !== 'object') {
@@ -1382,17 +1330,19 @@
     }
 
     var referenceName = '[' + propertyName + ']';
+    var boundProperty = dataHostObject[referenceName];
     if (!dataHostObject.hasOwnProperty(referenceName)) {
+      boundProperty = new GalaxyView.BoundProperty();
+
       Object.defineProperty(dataHostObject, referenceName, {
         enumerable: false,
         configurable: false,
-        value: new BoundProperty(node.__galaxyView__)
+        value: boundProperty
       });
     }
 
     var initValue = dataHostObject[ propertyName ];
 
-    // if (!dataHostObject[ referenceName ]) {
     var enumerable = true;
 
     if (propertyName === 'length' && dataHostObject instanceof Array) {
@@ -1415,23 +1365,19 @@
       configurable: true
     });
 
-    // }
 
     if (dataHostObject[ referenceName ]) {
-      if (dataHostObject[ referenceName ].hosts.indexOf(node) === -1 && !childProperty) {
-        dataHostObject[ referenceName ].hosts.push(node);
-        node.__galaxyView__.addHost(dataHostObject[ referenceName ].hosts);
-        // node.__galaxyView__.binds = dataHostObject._binds[ propertyName ];
+      if (dataHostObject[ referenceName ].hosts.indexOf(viewNode) === -1 && !childProperty) {
+        dataHostObject[ referenceName ].hosts.push(viewNode);
+        viewNode.addHostNode(dataHostObject[ referenceName ].hosts);
+        boundProperty.addNode(viewNode);
       }
 
-      // if (typeof(initValue) !== 'undefined') {
-      //   dataHostObject[ propertyName ] = initValue;
-      // }
       dataHostObject[ referenceName ].value = initValue;
     }
 
     if (childProperty) {
-      _this.makeBinding(node, dataHostObject[ propertyName ] || {}, attributeName, childProperty);
+      _this.makeBinding(viewNode, dataHostObject[ propertyName ] || {}, attributeName, childProperty);
     } else if (typeof dataHostObject === 'object') {
       _this.setValueFor(dataHostObject, attributeName, propertyName, initValue);
     }
@@ -1499,30 +1445,135 @@
     boundProperty.setValue(attributeName, value);
 
   };
-}());
+}(this, Galaxy || {}));
 
+(function (GV) {
+
+  GV.BoundProperty = BoundProperty;
+
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} viewNode
+   * @constructor
+   */
+  function BoundProperty() {
+    this.hosts = [];
+    this.value = null;
+    this.nodes = [];
+  }
+
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   */
+  BoundProperty.prototype.addNode = function (node) {
+    if (this.nodes.indexOf(node) === -1) {
+      this.nodes.push(node);
+    }
+  };
+
+  BoundProperty.prototype.setValue = function (attributeName, value) {
+    var _this = this;
+    _this.nodes.forEach(function (node) {
+      if (node.mutator[ attributeName ]) {
+        node.root.setPropertyForNode(node, attributeName, node.mutator[ attributeName ].call(node, value));
+      } else {
+        node.root.setPropertyForNode(node, attributeName, value);
+      }
+    });
+  };
+})(Galaxy.GalaxyView);
+(function (GV) {
+  GV.ViewNode = ViewNode;
+
+  /**
+   *
+   * @param {Galaxy.GalaxyView} root
+   * @param node
+   * @param nodeSchema
+   * @constructor
+   */
+  function ViewNode(root, nodeSchema) {
+    this.root = root;
+    this.node = document.createElement(nodeSchema.t || 'div');
+    this.nodeSchema = nodeSchema;
+    this.scope = {};
+    this.mutator = {};
+    this.template = false;
+    this.placeholder = document.createComment(this.node.tagName);
+    this.parents = [];
+    this.inDOM = true;
+
+    this.node.__galaxyView__ = this;
+  }
+
+  ViewNode.prototype.toTemplate = function () {
+    this.placeholder.nodeValue = JSON.stringify(this.nodeSchema, null, 2);
+    this.template = true;
+  };
+
+  ViewNode.prototype.setInDOM = function (flag) {
+    this.inDOM = flag;
+    if (flag && !this.node.parentNode && !this.template) {
+      this.placeholder.parentNode.insertBefore(this.node, this.placeholder.nextSibling);
+    } else if (!flag && this.node.parentNode) {
+      this.node.parentNode.removeChild(this.node);
+    }
+  };
+
+  ViewNode.prototype.addHostNode = function (item) {
+    if (this.parents.indexOf(item) === -1) {
+      this.parents.push(item);
+    }
+  };
+
+  ViewNode.prototype.destroy = function () {
+    var _this = this;
+
+    if (_this.inDOM) {
+      _this.node.parentNode.removeChild(_this.placeholder);
+      _this.node.parentNode.removeChild(_this.node);
+    } else {
+      _this.placeholder.parentNode.removeChild(_this.placeholder);
+    }
+
+    var nodeIndexInTheHost = -1;
+    _this.parents.forEach(function (host) {
+      nodeIndexInTheHost = host.indexOf(_this);
+      if (nodeIndexInTheHost !== -1) {
+        host.splice(nodeIndexInTheHost, 1);
+      }
+    });
+
+    _this.parents = [];
+  }
+
+})(Galaxy.GalaxyView);
 /* global Galaxy */
 
-(function () {
-  Galaxy.GalaxyView.REACTIVE_BEHAVIORS[ 'for' ] = {
+(function (GV) {
+  GV.REACTIVE_BEHAVIORS[ 'for' ] = {
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    bind: function (galaxyView, nodeScopeData, matches) {
-      galaxyView.toTemplate();
-      this.makeBinding(galaxyView.node, nodeScopeData, 'reactive_for', matches[ 2 ]);
+    bind: function (viewNode, nodeScopeData, matches) {
+      viewNode.toTemplate();
+      this.makeBinding(viewNode, nodeScopeData, 'reactive_for', matches[ 2 ]);
     },
-    onApply: function (galaxyView, value, matches, nodeScopeData) {
-      var oldItems = galaxyView.forItems || [];
+    onApply: function (viewNode, value, matches, nodeScopeData) {
+      var oldItems = viewNode.forItems || [];
       var newItems = [];
+
+      console.info(oldItems)
+
       oldItems.forEach(function (node) {
-        node.__galaxyView__.destroy();
+        node.destroy();
       });
 
       // var newNodeSchema2 = JSON.parse(JSON.stringify(galaxyView.nodeSchema));
-      var newNodeSchema = Galaxy.extend({}, galaxyView.nodeSchema);
+      var newNodeSchema = Galaxy.extend({}, viewNode.nodeSchema);
 
 
       delete newNodeSchema.reactive.for;
-      var parentNode = galaxyView.placeholder.parentNode;
+      var parentNode = viewNode.placeholder.parentNode;
 
       for (var index in value) {
         var itemDataScope = Object.assign({}, nodeScopeData);
@@ -1530,45 +1581,29 @@
         newItems.push(this.append(newNodeSchema, itemDataScope, parentNode));
       }
 
-      galaxyView.forItems = newItems;
+      console.info(newItems)
+
+      viewNode.forItems = newItems;
     }
   };
-})();
+})(Galaxy.GalaxyView);
 
 
 /* global Galaxy */
 
-(function () {
-
-  Galaxy.GalaxyView.REACTIVE_BEHAVIORS[ 'if' ] = {
+(function (GV) {
+  GV.REACTIVE_BEHAVIORS[ 'if' ] = {
     regex: null,
-    bind: function (galaxyView, nodeScopeData, matches) {
-      this.makeBinding(galaxyView.node, nodeScopeData, 'reactive_if', matches);
+    bind: function (viewNode, nodeScopeData, matches) {
+      this.makeBinding(viewNode, nodeScopeData, 'reactive_if', matches);
     },
-    onApply: function (galaxyView, value) {
+    onApply: function (viewNode, value) {
       if (value) {
-        galaxyView.setInDOM(true);
+        viewNode.setInDOM(true);
       } else {
-        galaxyView.setInDOM(false);
+        viewNode.setInDOM(false);
       }
     }
   };
-})();
+})(Galaxy.GalaxyView);
 
-
-/* global Galaxy */
-
-(function () {
-  /**
-   *
-   * @returns {Galaxy.GalaxyView.ReactiveBehavior}
-   */
-  Galaxy.GalaxyView.ReactiveBehavior = ReactiveBehavior;
-
-  function ReactiveBehavior (node, schema, scopeData, matches) {
-    this.node = node;
-    this.schema = schema;
-    this.scopeData = scopeData;
-    this.matches = matches;
-  }
-});
