@@ -13,60 +13,60 @@ Scope.navItems = [
     title: 'Guide',
     link: '#guide'
   },
-  {
-    title: 'API',
-    link: '#api',
-    class: [ 'active', 'i' ]
-  }
+  // {
+  //   title: 'API',
+  //   link: '#api'
+  // }
 ];
 
-Scope.city = 'aaaaaaaaaaaaaaaa';
-Scope.countries = [
-  {
-    title: 'Iran',
-    show: true,
-    cities: [
-      {
-        title: 'Tehran'
-      },
-      {
-        title: 'Mashhad'
-      }
-    ]
-  },
-  {
-    title: 'Netherlands',
-    show: true,
-    cities: [
-      {
-        title: 'Utrecht'
-      },
-      {
-        title: 'Amsterdam'
-      },
-      {
-        title: 'Hilversum'
-      },
-      {
-        title: 'Almere'
-      }
-    ]
-  }
-];
+// Scope.city = 'aaaaaaaaaaaaaaaa';
+// Scope.countries = [
+//   {
+//     title: 'Iran',
+//     show: true,
+//     cities: [
+//       {
+//         title: 'Tehran'
+//       },
+//       {
+//         title: 'Mashhad'
+//       }
+//     ]
+//   },
+//   {
+//     title: 'Netherlands',
+//     show: true,
+//     cities: [
+//       {
+//         title: 'Utrecht'
+//       },
+//       {
+//         title: 'Amsterdam'
+//       },
+//       {
+//         title: 'Hilversum'
+//       },
+//       {
+//         title: 'Almere'
+//       }
+//     ]
+//   }
+// ];
 
 setTimeout(function () {
-  for (var i = 0; i < 50; i++) {
-    Scope.countries[ 1 ].cities.push({
-      title: 'New City #' + i
+  for (var i = 0; i < 1000; i++) {
+    Scope.navItems.push({
+      title: 'New City #' + i,
+      link: '#new-city'
     });
   }
   //
   // Scope.countries[ 1 ].show = true;
 
-  // Scope.navItems[ 3 ].done = true;
+  // Scope.navItems[1].title = 'changed';
   // Scope.navItems.pop();
 
-  Scope.obj.outside = 'Hooray after 2 sec';
+  // Scope.obj.outside = 'Hooray after 2 sec';
 
   // Scope.country = {
   //   cities: [],
@@ -74,16 +74,17 @@ setTimeout(function () {
   // };
 
   var endTime = performance.now();
-  Scope.benchmark.end = endTime - Scope.benchmark.start;
-}, 2000);
+  Scope.benchmark.end = endTime - Scope.benchmark.start - 200;
+  console.info('benchmark:', Scope.benchmark.end);
+}, 200);
 
-Scope.navBarText = [ 'This is the main-nav' ];
-Scope.obj = {
-  outside: 'Hooray Here Too!',
-  inside: {
-    value: 'Hooray!'
-  }
-};
+// Scope.navBarText = ['This is the main-nav'];
+// Scope.obj = {
+//   outside: 'Hooray Here Too!',
+//   inside: {
+//     value: 'Hooray!'
+//   }
+// };
 
 View.init({
   t: 'div',
@@ -95,16 +96,15 @@ View.init({
       id: 'main-nav',
       class: 'main-nav',
       children: [
-        {
-          reactive: {
-            for: 'item in navItems'
-            // if: 'item.done'
-          },
-          t: 'a',
-          href: '[item.link]',
-          text: '[item.title]',
-          class: '[item.class]'
-        }
+        // {
+        //   reactive: {
+        //     for: 'item in navItems'
+        //     // if: 'item.done'
+        //   },
+        //   t: 'a',
+        //   href: '[item.link]',
+        //   text: '[item.title]'
+        // }
       ]
     },
     {
@@ -123,11 +123,10 @@ View.init({
         {
           reactive: {
             for: 'item in navItems'
-            //if: 'item.done'
           },
           mutator: {
             text: function (value) {
-              return 'h4:' + value;
+              return 'h4 ' + value + ' h4';
             }
           },
           t: 'h4',
