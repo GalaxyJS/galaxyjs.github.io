@@ -1,6 +1,8 @@
 /* global Scope, View */
+var ft = performance.now();
+
 Scope.benchmark = {
-  start: performance.now(),
+  start: ft,
   end: 'Waiting...'
 };
 
@@ -13,10 +15,10 @@ Scope.navItems = [
     title: 'Guide',
     link: '#guide'
   },
-  // {
-  //   title: 'API',
-  //   link: '#api'
-  // }
+  {
+    title: 'API',
+    link: '#api'
+  }
 ];
 
 // Scope.city = 'aaaaaaaaaaaaaaaa';
@@ -56,15 +58,30 @@ Scope.navItems = [
 setTimeout(function () {
   for (var i = 0; i < 1000; i++) {
     Scope.navItems.push({
-      title: 'New City #' + i,
+      title: 'New City ' + i,
       link: '#new-city'
     });
+
+    // if (i % 100 === 0) {
+    //   Scope.navItems.pop();
+    // }
   }
   //
   // Scope.countries[ 1 ].show = true;
 
   // Scope.navItems[1].title = 'changed';
-  // Scope.navItems.pop();
+  // Scope.navItems.splice(1, 1, {
+  //   title: 'Added via splice',
+  //   link: '#'
+  // });
+
+  Scope.navItems.sort(function (a, b) {
+    return a.title.localeCompare(b.title);
+  });
+
+  // Scope.navItems.unshift({
+  //   title: 'un shifted'
+  // });
 
   // Scope.obj.outside = 'Hooray after 2 sec';
 
@@ -74,9 +91,9 @@ setTimeout(function () {
   // };
 
   var endTime = performance.now();
-  Scope.benchmark.end = endTime - Scope.benchmark.start - 200;
+  Scope.benchmark.end = endTime - Scope.benchmark.start - 1000;
   console.info('benchmark:', Scope.benchmark.end);
-}, 200);
+}, 1000);
 
 // Scope.navBarText = ['This is the main-nav'];
 // Scope.obj = {
@@ -112,10 +129,6 @@ View.init({
       id: 'main-content',
       class: 'main-content',
       children: [
-        // {
-        //   t: 'h2',
-        //   html: '[benchmark.start]'
-        // },
         {
           t: 'h3',
           html: '[benchmark.end]'
@@ -125,9 +138,9 @@ View.init({
             for: 'item in navItems'
           },
           mutator: {
-            text: function (value) {
-              return 'h4 ' + value + ' h4';
-            }
+            // text: function (value) {
+            //   return 'h4 ' + value + ' h4';
+            // }
           },
           t: 'h4',
           text: '[item.title]'
