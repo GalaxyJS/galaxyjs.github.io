@@ -91,9 +91,9 @@ setTimeout(function () {
   // };
 
   var endTime = performance.now();
-  Scope.benchmark.end = endTime - Scope.benchmark.start - 1000;
+  Scope.benchmark.end = endTime - Scope.benchmark.start - 500;
   console.info('benchmark:', Scope.benchmark.end);
-}, 1000);
+}, 500);
 
 // Scope.navBarText = ['This is the main-nav'];
 // Scope.obj = {
