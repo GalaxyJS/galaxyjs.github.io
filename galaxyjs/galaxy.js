@@ -1124,6 +1124,8 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy */
 
 (function (root, G) {
+  var defineProp = Object.defineProperty;
+
   root.Galaxy = G;
   /**
    *
@@ -1181,7 +1183,7 @@ if (typeof Object.assign != 'function') {
     },
     text: {
       type: 'prop',
-      name: 'innerText'
+      name: 'textContent'
     },
     value: {
       type: 'prop',
@@ -1259,7 +1261,8 @@ if (typeof Object.assign != 'function') {
         _this.append(nodeSchema.children, parentScopeData, viewNode.node);
 
         if (viewNode.inDOM) {
-          parentNode.insertBefore(viewNode.node, position);
+          // parentNode.insertBefore(viewNode.node, position);
+          viewNode.setInDOM(true);
         }
       }
 
@@ -1309,9 +1312,7 @@ if (typeof Object.assign != 'function') {
         break;
 
       case 'reactive':
-        // if (viewNode.reactive[property.name]) {
-        viewNode.reactive[property.name].call(this, viewNode, newValue);
-        // }
+        viewNode.reactive[property.name](viewNode, newValue);
         break;
     }
   };
@@ -1333,13 +1334,15 @@ if (typeof Object.assign != 'function') {
       case 'prop':
         return function (value) {
           var newValue = property.parser ? property.parser(value) : value;
+          // requestAnimationFrame(function (p1) {
           viewNode.node[property.name] = newValue;
+          // });
         };
 
       case 'reactive':
         return function (value) {
           var newValue = property.parser ? property.parser(value) : value;
-          viewNode.reactive[property.name].call(this, viewNode, newValue);
+          viewNode.reactive[property.name](viewNode, newValue);
         };
     }
   };
@@ -1377,20 +1380,12 @@ if (typeof Object.assign != 'function') {
       }
     }
 
-    if (typeof dataHostObject.__schemas__ === 'undefined') {
-      Object.defineProperty(dataHostObject, '__schemas__', {
-        enumerable: false,
-        configurable: false,
-        value: []
-      });
-    }
-
     var referenceName = '[' + propertyName + ']';
     var boundProperty = dataHostObject[referenceName];
-    if (typeof dataHostObject[referenceName] === 'undefined') {
+    if (typeof boundProperty === 'undefined') {
       boundProperty = new GalaxyView.BoundProperty(propertyName);
 
-      Object.defineProperty(dataHostObject, referenceName, {
+      defineProp(dataHostObject, referenceName, {
         enumerable: false,
         configurable: false,
         value: boundProperty
@@ -1405,7 +1400,7 @@ if (typeof Object.assign != 'function') {
       enumerable = false;
     }
 
-    Object.defineProperty(dataHostObject, propertyName, {
+    defineProp(dataHostObject, propertyName, {
       get: function () {
         return boundProperty.value;
       },
@@ -1423,10 +1418,6 @@ if (typeof Object.assign != 'function') {
       boundProperty.value = initValue;
       if (!childProperty) {
         boundProperty.addNode(viewNode, attributeName);
-
-        if (viewNode.nodeSchema.mother && dataHostObject.__schemas__.indexOf(viewNode.nodeSchema.mother) === -1) {
-          dataHostObject.__schemas__.push(viewNode.nodeSchema.mother);
-        }
       }
     }
 
@@ -1632,7 +1623,9 @@ if (typeof Object.assign != 'function') {
     this.inDOM = flag;
     if (flag && !this.node.parentNode && !this.template) {
       this.placeholder.parentNode.insertBefore(this.node, this.placeholder.nextSibling);
+      this.placeholder.parentNode.removeChild(this.placeholder);
     } else if (!flag && this.node.parentNode) {
+      this.node.parentNode.insertBefore(this.placeholder, this.node);
       this.node.parentNode.removeChild(this.node);
     }
   };
@@ -1666,7 +1659,7 @@ if (typeof Object.assign != 'function') {
       }
     }
 
-    _this.properties = [];
+    _this.properties = {};
   };
 
 })(Galaxy.GalaxyView);

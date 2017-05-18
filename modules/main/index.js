@@ -75,9 +75,9 @@ setTimeout(function () {
   //   link: '#'
   // });
 
-  Scope.navItems.sort(function (a, b) {
-    return a.title.localeCompare(b.title);
-  });
+  // Scope.navItems.sort(function (a, b) {
+  //   return a.title.localeCompare(b.title);
+  // });
 
   // Scope.navItems.unshift({
   //   title: 'un shifted'
