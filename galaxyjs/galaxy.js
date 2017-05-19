@@ -785,12 +785,21 @@ if (typeof Object.assign != 'function') {
     return result;
   };
 
+  /**
+   *
+   * @param bootModule
+   * @param {Element} rootElement
+   */
   Core.prototype.boot = function (bootModule, rootElement) {
     var _this = this;
     _this.rootElement = rootElement;
 
     bootModule.domain = this;
     bootModule.id = 'system';
+
+    if(!rootElement) {
+      throw new Error('Second argument is mandatory');
+    }
 
     var promise = new Promise(function (resolve, reject) {
       _this.load(bootModule).then(function (module) {
@@ -952,6 +961,8 @@ if (typeof Object.assign != 'function') {
     var moduleSource = new Function('Scope', 'View', module.source);
     moduleSource.call(null, module.scope, module.view);
 
+    // console.info(moduleSource.toString());
+
     delete module.source;
 
     module.addOnProviders.forEach(function (item) {
@@ -1097,7 +1108,7 @@ if (typeof Object.assign != 'function') {
     urlParser.href = module.url;
     var myRegexp = /([^\t\n]+)\//g;
     var match = myRegexp.exec(urlParser.pathname);
-    this.path = match[ 0 ];
+    this.path = match ? match[0] : '/';
     this.parsedURL = urlParser.href;
   }
 
@@ -1196,7 +1207,11 @@ if (typeof Object.assign != 'function') {
     reactive_if: {
       type: 'reactive',
       name: 'if'
-    }
+    },
+    // t: {
+    //   type: 'reactive',
+    //   name: 'tag'
+    // }
   };
 
   GalaxyView.prototype.init = function (schema) {
@@ -1226,6 +1241,12 @@ if (typeof Object.assign != 'function') {
         viewNode.mutator = nodeSchema['mutator'];
       }
 
+      var behaviors = Object.keys(nodeSchema).filter(function (key) {
+        return key.indexOf('$') === 0;
+      });
+
+      debugger;
+
       if (nodeSchema['reactive']) {
         parentScopeData = _this.addReactiveBehaviors(viewNode, nodeSchema, nodeScopeData, nodeSchema['reactive']);
       }
@@ -1241,6 +1262,8 @@ if (typeof Object.assign != 'function') {
         attributeValue = nodeSchema[attributeName];
         bind = null;
         type = typeof(attributeValue);
+
+        // register behavior if the attributeName refer to a behavior
 
         if (type === 'string') {
           bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);

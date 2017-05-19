@@ -56,7 +56,7 @@ Scope.navItems = [
 // ];
 
 setTimeout(function () {
-  for (var i = 0; i < 1000; i++) {
+  for (var i = 0; i < 1; i++) {
     Scope.navItems.push({
       title: 'New City ' + i,
       link: '#new-city'
@@ -134,57 +134,43 @@ View.init({
           html: '[benchmark.end]'
         },
         {
-          reactive: {
-            for: 'item in navItems'
-          },
-          mutator: {
-            // text: function (value) {
-            //   return 'h4 ' + value + ' h4';
-            // }
-          },
-          t: 'h4',
-          text: '[item.title]'
+          // reactive: {
+          //   for: 'item in navItems'
+          // },
+          // mutator: {
+          //   text: function (value) {
+          //     return 'h4 ' + value + ' h4';
+          //   }
+          // },
+          // $if: '[item.done]',
+          // $for: 'item in navItems',
+          // t: 'h4',
+          // text: '[item.title]'
         },
-        //{
-        //  t: 'ol',
-        //  children: [
-        //    {
-        //      reactive: {
-        //        for: 'country in countries'
-        //      },
-        //      t: 'li',
-        //      children: [
-        //        {
-        //          mutator: {
-        //            text: function (value) {
-        //              console.info(this.__galaxyView__, '<-->', value);
-        //              return 'Mutated: ' + value;
-        //            }
-        //          },
-        //          t: 'h3',
-        //          text: '[country.title]'
-        //        },
-        //        {
-        //          t: 'ul',
-        //          children: [
-        //            {
-        //              reactive: {
-        //                for: 'city in country.cities',
-        //                if: 'country.show'
-        //              },
-        //              t: 'li',
-        //              text: '[city.title]'
-        //            }
-        //          ]
-        //        }
-        //      ]
-        //    }
-        //  ]
-        //},
-        // {
-        //   t: 'h6',
-        //   html: '[navBarText]'
-        // }
+        {
+          tag: 'ol',
+          children: [
+            {
+              reactive: {
+                for: 'item in navItems'
+              },
+              $for: 'item in navItems',
+              tag: 'li',
+              children: [
+                {
+                  mutator: {
+                    text: function (value) {
+                      console.info(this.__galaxyView__, '<-->', value);
+                      return 'Mutated: ' + value;
+                    }
+                  },
+                  t: 'h3',
+                  text: '[item.title]'
+                }
+              ]
+            }
+          ]
+        }
       ]
     }
   ]
