@@ -1,10 +1,7 @@
 /* global Scope, View */
-var ft = performance.now();
 
-Scope.benchmark = {
-  start: ft,
-  end: 'Waiting...'
-};
+var ft = performance.now();
+Scope.benchmark = 'Waiting...';
 
 Scope.navItems = [
   {
@@ -56,7 +53,8 @@ Scope.navItems = [
 // ];
 
 setTimeout(function () {
-  for (var i = 0; i < 1; i++) {
+
+  for (var i = 0; i < 1000; i++) {
     Scope.navItems.push({
       title: 'New City ' + i,
       link: '#new-city'
@@ -91,9 +89,9 @@ setTimeout(function () {
   // };
 
   var endTime = performance.now();
-  Scope.benchmark.end = endTime - Scope.benchmark.start - 500;
-  console.info('benchmark:', Scope.benchmark.end);
-}, 500);
+  Scope.benchmark = endTime - ft - 200;
+  console.info('benchmark:', Scope.benchmark);
+}, 200);
 
 // Scope.navBarText = ['This is the main-nav'];
 // Scope.obj = {
@@ -131,7 +129,7 @@ View.init({
       children: [
         {
           t: 'h3',
-          html: '[benchmark.end]'
+          html: '[benchmark]'
         },
         {
           // reactive: {
@@ -148,19 +146,15 @@ View.init({
           // text: '[item.title]'
         },
         {
-          tag: 'ol',
+          t: 'ul',
           children: [
             {
-              reactive: {
-                for: 'item in navItems'
-              },
               $for: 'item in navItems',
-              tag: 'li',
+              t: 'li',
               children: [
                 {
                   mutator: {
                     text: function (value) {
-                      console.info(this.__galaxyView__, '<-->', value);
                       return 'Mutated: ' + value;
                     }
                   },
