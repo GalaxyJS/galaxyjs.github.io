@@ -3,21 +3,33 @@
 var ft = performance.now();
 Scope.benchmark = 'Waiting...';
 
-Scope.activeModule = {
-  id: 'start',
-  url: './modules/start/index.js'
-};
+Scope.modules = [
+  {
+    id: 'start',
+    url: 'modules/start/index.js'
+  }
+];
+
+Scope.activeModule = null;
 
 Scope.flag = false;
 
 Scope.navItems = [
   {
     title: 'Start',
-    link: '#start'
+    link: '#start',
+    module: {
+      id: 'start',
+      url: 'modules/start/index.js'
+    }
   },
   {
     title: 'Guide',
-    link: '#guide'
+    link: '#guide',
+    module: {
+      id: 'guide',
+      url: 'modules/guide/index.js'
+    }
   },
   {
     title: 'API',
@@ -67,7 +79,8 @@ setTimeout(function () {
   //   });
   // }
 
-  Scope.flag = true;
+  // Scope.flag = true;
+  // Scope.activeModule = Scope.modules[0];
   var endTime = performance.now();
   Scope.benchmark = endTime - ft - 500;
   console.info('benchmark:', Scope.benchmark);
@@ -85,10 +98,17 @@ View.init({
       children: [
         {
           $for: 'item in navItems',
-          $if: '[flag]',
+          // $if: '[flag]',
           tag: 'a',
           href: '[item.link]',
-          text: '[item.title]'
+          text: '[item.title]',
+          click: function (event) {
+            Scope.activeModule = this.data.item.module;
+          },
+          children: {
+            tag: 'p',
+            text: '[item.module.url]'
+          }
         }
       ]
     },

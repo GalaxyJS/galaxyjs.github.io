@@ -1,15 +1,16 @@
 /* globals View */
-
+Scope;
+// debugger;
 View.init([
   {
     tag: 'h2',
-    text: 'Module Header'
+    text: 'Guide'
   },
   // {
   //   content: '*'
   // },
   {
-    tag: 'h3',
-    text: 'Module footer'
+    tag: 'p',
+    text: 'I\'m the guide module!'
   }
 ]);
