@@ -1,7 +1,8 @@
-/* globals View */
-Scope;
+/* globals Scope */
+
 // debugger;
-View.init([
+var view = Scope.import('galaxy/view');
+view.init([
   {
     tag: 'h2',
     text: 'Guide'

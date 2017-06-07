@@ -1,8 +1,8 @@
-/* global Scope, View */
+/* global Scope */
 
 
 var view = Scope.import('galaxy/view');
-console.info(view);
+
 var ft = performance.now();
 Scope.benchmark = 'Waiting...';
 
@@ -89,7 +89,7 @@ setTimeout(function () {
   console.info('benchmark:', Scope.benchmark);
 }, 500);
 
-View.init([
+view.init([
   {
     tag: 'div',
     id: 'main-nav',
@@ -104,10 +104,6 @@ View.init([
         click: function (event) {
           Scope.activeModule = this.data.item.module;
           console.info(this);
-        },
-        children: {
-          tag: 'p',
-          text: '[item.module.url]'
         }
       }
     ]
