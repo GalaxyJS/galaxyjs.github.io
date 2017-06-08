@@ -81,13 +81,23 @@ setTimeout(function () {
   //     link: '#new-city'
   //   });
   // }
-
+  Scope.moduleInputs = {
+    title: 'Even more passed',
+    content: 'new content',
+    yes: 'not good',
+    no: 'maybe good'
+  };
   // Scope.flag = true;
   // Scope.activeModule = Scope.modules[0];
   var endTime = performance.now();
   Scope.benchmark = endTime - ft - 500;
   console.info('benchmark:', Scope.benchmark);
-}, 500);
+}, 2500);
+
+Scope.moduleInputs = {
+  title: 'asdasd',
+  content: 'This is the default content'
+};
 
 view.init([
   {
@@ -115,15 +125,20 @@ view.init([
     children: [
       {
         tag: 'h3',
-        html: '[benchmark]'
+        text: '[moduleInputs.title]'
       },
       {
-        module: '[activeModule]',
-        children: {
-          tag: 'p',
-          text: 'No content at the moment!'
-        }
-      }
+        tag: 'p',
+        html: '[moduleInputs]'
+      },
+      // {
+      //   module: '[activeModule]',
+      //   inputs: '[moduleInputs]',
+      //   children: {
+      //     tag: 'p',
+      //     text: 'No content at the moment!'
+      //   }
+      // }
     ]
   }
 ]);
