@@ -904,14 +904,21 @@ if (typeof Object.assign != 'function') {
       // var fetcher = root.Galaxy.onModuleLoaded[url];
       var fetcherContent = root.Galaxy.moduleContents[url];
 
-      if (!fetcherContent) {
+      if (!fetcherContent || module.fresh) {
+        // root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
+        //   return response.text();
+        // }).then(function (moduleContent) {
+        //   return _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {
+        //     return _this.executeCompiledModule(module);
+        //   });
+        // });
+
         root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
-          // debugger;
-          // var contentType = response.headers.get('content-type').split(';')[ 0 ] || 'text/html';
           return response.text();
         });
       }
 
+      // fetcherContent.then(resolve);
       fetcherContent.then(function (moduleContent) {
         _this.moduleContents[module.systemId] = moduleContent;
         _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {
@@ -1257,6 +1264,7 @@ if (typeof Object.assign != 'function') {
    */
   function GalaxyView(scope) {
     this.scope = scope;
+    this.dataRepos = {};
     var rootElement;
 
     if (scope.element instanceof GalaxyView.ViewNode) {
@@ -1272,6 +1280,10 @@ if (typeof Object.assign != 'function') {
   }
 
   GalaxyView.nextTick = nextTick;
+
+  GalaxyView.cleanProperty = function (obj, key) {
+    delete obj[key];
+  };
 
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
@@ -1332,6 +1344,10 @@ if (typeof Object.assign != 'function') {
       type: 'event',
       name: 'click'
     }
+  };
+
+  GalaxyView.prototype.setupRepos = function (repos) {
+    this.dataRepos = repos;
   };
 
   GalaxyView.prototype.init = function (schema) {
@@ -1558,15 +1574,15 @@ if (typeof Object.assign != 'function') {
                 return visible.indexOf(key) === -1;
               });
 
-              // newVisible.forEach(function (key) {
-              //   if (hidden.indexOf('[' + key + ']') !== -1) {
-              //     descriptors['[' + key + ']'].value.value = newValue[key];
-              //     // descriptors['[' + key + ']'].value.setValue(newValue[key]);
-              //     debugger;
-              //     defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
-              //     defineProp(newValue, key, descriptors[key]);
-              //   }
-              // });
+              newVisible.forEach(function (key) {
+                if (hidden.indexOf('[' + key + ']') !== -1) {
+                  descriptors['[' + key + ']'].value.value = newValue[key];
+                  descriptors['[' + key + ']'].value.setValue(newValue[key]);
+
+                  defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
+                  defineProp(newValue, key, descriptors[key]);
+                }
+              });
             }
 
             boundProperty.setValue(newValue);
@@ -1622,8 +1638,8 @@ if (typeof Object.assign != 'function') {
     var arr = value;
     var i = 0;
     var args;
-    var updateValue = function (attr, changes) {
-      boundProperty.updateValue(attr, changes);
+    var updateValue = function (changes) {
+      boundProperty.updateValue(changes);
     };
 
     methods.forEach(function (method) {
@@ -1645,7 +1661,7 @@ if (typeof Object.assign != 'function') {
           changes.type = method;
           changes.params = args;
 
-          updateValue(attributeName, changes);
+          updateValue(changes);
 
           return result;
         },
@@ -1984,7 +2000,7 @@ if (typeof Object.assign != 'function') {
       if (newItems instanceof Array) {
         for (var i = 0, len = newItems.length; i < len; i++) {
           valueEntity = newItems[i];
-
+          GV.cleanProperty(itemDataScope, p);
           itemDataScope[p] = valueEntity;
           var vn = vr.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
@@ -2059,6 +2075,7 @@ if (typeof Object.assign != 'function') {
         }).then(function (module) {
           viewNode.node.setAttribute('module', module.systemId);
           viewNode.root.append(viewNode.schema.children, scopeData, viewNode);
+          module.start();
         });
       } else if (!moduleMeta) {
         viewNode.empty();

@@ -3,6 +3,7 @@
 // debugger;
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
+
 // console.info(inputs, Scope);
 view.init([
   {
@@ -20,5 +21,5 @@ view.init([
 
 
 setTimeout(function () {
-  // inputs.content = 'some others';
+  inputs.content = 'some others';
 }, 5500);

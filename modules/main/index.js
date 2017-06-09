@@ -75,12 +75,14 @@ Scope.navItems = [
 // ];
 
 setTimeout(function () {
-  // for (var i = 0; i < 1000; i++) {
+  // for (var i = 0; i < 1; i++) {
   //   Scope.navItems.push({
-  //     title: 'New City ' + i,
+  //     title: 'New City ' + (i + 1),
   //     link: '#new-city'
   //   });
   // }
+
+  // Scope.navItems[0].title = 'CHANGED!';
   Scope.moduleInputs = {
     title: 'Even more passed',
     content: 'new content',
@@ -90,7 +92,7 @@ setTimeout(function () {
   // Scope.flag = true;
   // Scope.activeModule = Scope.modules[0];
   var endTime = performance.now();
-  Scope.benchmark = endTime - ft - 500;
+  Scope.benchmark = endTime - ft - 2500;
   console.info('benchmark:', Scope.benchmark);
 }, 2500);
 
@@ -107,7 +109,6 @@ view.init([
     children: [
       {
         $for: 'item in navItems',
-        // $if: '[flag]',
         tag: 'a',
         href: '[item.link]',
         text: '[item.title]',
@@ -125,20 +126,16 @@ view.init([
     children: [
       {
         tag: 'h3',
-        text: '[moduleInputs.title]'
+        text: '[moduleInputs.content]'
       },
       {
-        tag: 'p',
-        html: '[moduleInputs]'
-      },
-      // {
-      //   module: '[activeModule]',
-      //   inputs: '[moduleInputs]',
-      //   children: {
-      //     tag: 'p',
-      //     text: 'No content at the moment!'
-      //   }
-      // }
+        module: '[activeModule]',
+        inputs: '[moduleInputs]',
+        children: {
+          tag: 'p',
+          text: 'No content at the moment!'
+        }
+      }
     ]
   }
 ]);
