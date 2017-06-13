@@ -75,7 +75,7 @@ Scope.navItems = [
 // ];
 
 setTimeout(function () {
-  // for (var i = 0; i < 1; i++) {
+  // for (var i = 0; i < 1000; i++) {
   //   Scope.navItems.push({
   //     title: 'New City ' + (i + 1),
   //     link: '#new-city'
@@ -84,8 +84,8 @@ setTimeout(function () {
 
   // Scope.navItems[0].title = 'CHANGED!';
   Scope.moduleInputs = {
-    title: 'Even more passed',
-    content: 'new content',
+    title: 'Even more TITLE',
+    content: 'End of the new content',
     yes: 'not good',
     no: 'maybe good'
   };
@@ -125,16 +125,22 @@ view.init([
     class: 'main-content',
     children: [
       {
-        tag: 'h3',
-        text: '[moduleInputs.content]'
-      },
-      {
         module: '[activeModule]',
         inputs: '[moduleInputs]',
-        children: {
-          tag: 'p',
-          text: 'No content at the moment!'
-        }
+        children: [
+          {
+            tag: 'p',
+            text: 'No content at the moment!'
+          },
+          {
+            tag: 'p',
+            text: '[moduleInputs.content]'
+          },
+          {
+            tag: 'p',
+            text: 'Some more paragraph in between just to test content'
+          }
+        ]
       }
     ]
   }

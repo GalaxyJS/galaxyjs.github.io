@@ -1387,7 +1387,6 @@ if (typeof Object.assign != 'function') {
 
         bind = null;
         type = typeof(attributeValue);
-        // register behavior if the attributeName refer to a behavior
 
         if (type === 'string') {
           bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
@@ -1782,6 +1781,11 @@ if (typeof Object.assign != 'function') {
    */
   GV.ViewNode = ViewNode;
 
+  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
+    type: 'none'
+  };
+
+
   /**
    *
    * @param {Galaxy.GalaxyView} root
@@ -1807,6 +1811,7 @@ if (typeof Object.assign != 'function') {
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
+    this.schema.node = this.node;
   }
 
   ViewNode.prototype.cloneSchema = function () {
@@ -1880,8 +1885,20 @@ if (typeof Object.assign != 'function') {
     _this.properties = {};
   };
 
+  var empty = function (nodes) {
+    if (nodes instanceof Array) {
+      nodes.forEach(function (node) {
+        empty(node);
+      });
+    } else if (nodes) {
+      nodes.node = null;
+      empty(nodes.children);
+    }
+  };
+
   ViewNode.prototype.empty = function () {
     this.node.innerHTML = '';
+    // empty(this.schema);
   };
 
 })(Galaxy.GalaxyView);
@@ -1938,6 +1955,40 @@ if (typeof Object.assign != 'function') {
     };
   });
 })(Galaxy);
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['content'] = {
+    type: 'reactive',
+    name: 'content'
+  };
+
+  GV.REACTIVE_BEHAVIORS['content'] = {
+    regex: null,
+    bind: function (viewNode) {
+      viewNode.toTemplate();
+    },
+    getCache: function (viewNode) {
+      return {
+        module: null,
+        scope: viewNode.root.scope
+      };
+    },
+    onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
+      if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
+        var allContent = scopeData.element.schema.children;
+        var parentNode = viewNode.parent.node;
+
+        allContent.forEach(function (node) {
+          parentNode.insertBefore(node.node, viewNode.placeholder);
+        });
+      }
+
+    }
+  };
+})(Galaxy.GalaxyView);
+
 
 /* global Galaxy */
 
@@ -2002,6 +2053,7 @@ if (typeof Object.assign != 'function') {
           valueEntity = newItems[i];
           GV.cleanProperty(itemDataScope, p);
           itemDataScope[p] = valueEntity;
+          cns.node = cns.node.cloneNode();
           var vn = vr.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);
@@ -2070,11 +2122,12 @@ if (typeof Object.assign != 'function') {
     onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
       if (!viewNode.template && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
         viewNode.empty();
+        // debugger;
         cache.scope.load(moduleMeta, {
           element: viewNode
         }).then(function (module) {
           viewNode.node.setAttribute('module', module.systemId);
-          viewNode.root.append(viewNode.schema.children, scopeData, viewNode);
+          // viewNode.root.append(viewNode.schema.children, scopeData, viewNode);
           module.start();
         });
       } else if (!moduleMeta) {
