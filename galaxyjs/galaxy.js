@@ -742,6 +742,18 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy, Promise */
 
 (function (root) {
+  Array.prototype.unique = function () {
+    var a = this.concat();
+    for (var i = 0; i < a.length; ++i) {
+      for (var j = i + 1; j < a.length; ++j) {
+        if (a[i] === a[j])
+          a.splice(j--, 1);
+      }
+    }
+
+    return a;
+  };
+
   root.Galaxy = root.Galaxy || new Core();
 
   /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
@@ -803,7 +815,10 @@ if (typeof Object.assign != 'function') {
       return out;
     }
 
-    for (var key in out) {
+    var outKeys = Object.keys(out);
+    var keys = outKeys.concat(Object.keys(value)).unique();
+    for (var i = 0, len = keys.length; i < len; i++) {
+      var key = keys[i];
       if (value.hasOwnProperty(key)) {
         out[key] = this.resetObjectTo(out[key], value[key]);
       }
@@ -1975,13 +1990,15 @@ if (typeof Object.assign != 'function') {
         scope: viewNode.root.scope
       };
     },
-    onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
+    onApply: function (cache, viewNode, selector, matches, scopeData) {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
         var allContent = scopeData.element.schema.children;
         var parentNode = viewNode.parent.node;
 
         allContent.forEach(function (node) {
-          parentNode.insertBefore(node.node, viewNode.placeholder);
+          if (selector === '*' || selector.toLowerCase() === node.node.tagName.toLowerCase()) {
+            parentNode.insertBefore(node.node, viewNode.placeholder);
+          }
         });
       }
 
@@ -2122,12 +2139,10 @@ if (typeof Object.assign != 'function') {
     onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
       if (!viewNode.template && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
         viewNode.empty();
-        // debugger;
         cache.scope.load(moduleMeta, {
           element: viewNode
         }).then(function (module) {
           viewNode.node.setAttribute('module', module.systemId);
-          // viewNode.root.append(viewNode.schema.children, scopeData, viewNode);
           module.start();
         });
       } else if (!moduleMeta) {

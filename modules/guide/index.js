@@ -3,7 +3,6 @@
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
 
-// console.info(inputs, Scope);
 view.init({
   class: 'card big',
   children: [
@@ -27,7 +26,7 @@ view.init({
           children: [
             {
               tag: 'p',
-              text: '[inputs.content]'
+              text: '[inputs.no]'
             }
           ]
         }
