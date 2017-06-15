@@ -125,6 +125,51 @@ view.init([
     class: 'main-content',
     children: [
       {
+        tag: 'div',
+        class: 'card',
+        children: [
+          {
+            tag: 'section',
+            class: 'content',
+            children: [
+              {
+                tag: 'h2',
+                text: '[benchmark]'
+              },
+              {
+                tag: 'p',
+                class: 'field',
+                children: [
+                  {
+                    tag: 'label',
+                    text: 'Input title'
+                  },
+                  {
+                    tag: 'input',
+                    value: '[moduleInputs.title]'
+                  }
+                ]
+              },
+              {
+                $for: 'item in navItems',
+                tag: 'p',
+                class: 'field',
+                children: [
+                  {
+                    tag: 'label',
+                    text: '[item.title]'
+                  },
+                  {
+                    tag: 'input',
+                    value: '[item.title]'
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
         module: '[activeModule]',
         inputs: '[moduleInputs]',
         children: [
