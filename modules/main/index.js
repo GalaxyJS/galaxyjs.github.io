@@ -3,9 +3,6 @@
 
 var view = Scope.import('galaxy/view');
 
-var ft = performance.now();
-Scope.benchmark = 'Waiting...';
-
 Scope.modules = [
   {
     id: 'start',
@@ -40,61 +37,6 @@ Scope.navItems = [
   }
 ];
 
-// Scope.city = 'aaaaaaaaaaaaaaaa';
-// Scope.countries = [
-//   {
-//     title: 'Iran',
-//     show: true,
-//     cities: [
-//       {
-//         title: 'Tehran'
-//       },
-//       {
-//         title: 'Mashhad'
-//       }
-//     ]
-//   },
-//   {
-//     title: 'Netherlands',
-//     show: true,
-//     cities: [
-//       {
-//         title: 'Utrecht'
-//       },
-//       {
-//         title: 'Amsterdam'
-//       },
-//       {
-//         title: 'Hilversum'
-//       },
-//       {
-//         title: 'Almere'
-//       }
-//     ]
-//   }
-// ];
-
-setTimeout(function () {
-  // for (var i = 0; i < 1000; i++) {
-  //   Scope.navItems.push({
-  //     title: 'New City ' + (i + 1),
-  //     link: '#new-city'
-  //   });
-  // }
-
-  // Scope.navItems[0].title = 'CHANGED!';
-  Scope.moduleInputs = {
-    title: 'Even more TITLE',
-    content: 'End of the new content',
-    yes: 'not good',
-    no: 'maybe good'
-  };
-  // Scope.flag = true;
-  // Scope.activeModule = Scope.modules[0];
-  var endTime = performance.now();
-  Scope.benchmark = endTime - ft - 2500;
-  console.info('benchmark:', Scope.benchmark);
-}, 2500);
 
 Scope.moduleInputs = {
   title: 'asdasd',
@@ -152,19 +94,29 @@ view.init([
               },
               {
                 $for: 'item in navItems',
-                tag: 'p',
                 class: 'field',
-                children: [
-                  {
-                    tag: 'label',
-                    text: '[item.title]'
-                  },
-                  {
-                    tag: 'input',
-                    value: '[item.title]'
-                  }
-                ]
-              }
+
+                module: {
+                  url: 'modules/text-field.js'
+                },
+                inputs: {
+                  label: '[item.title]',
+                  value: '[item.title]'
+                }
+
+                // tag: 'p',
+                // children: [
+                //   {
+                //     tag: 'label',
+                //     text: '[item.title]'
+                //   },
+                //   {
+                //     tag: 'input',
+                //     value: '[item.title]'
+                //   }
+                // ]
+              },
+              {}
             ]
           }
         ]
@@ -190,7 +142,3 @@ view.init([
     ]
   }
 ]);
-
-// setInterval(function () {
-//   Scope.navBarText.push(' G');
-// }, 1000);

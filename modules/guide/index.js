@@ -2,7 +2,7 @@
 
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
-
+debugger;
 view.init({
   class: 'card big',
   children: [
@@ -35,7 +35,6 @@ view.init({
   ]
 });
 
-//
 // setTimeout(function () {
 //   inputs.content = 'End -> some others';
 // }, 5500);
