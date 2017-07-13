@@ -1320,6 +1320,20 @@ if (typeof Object.assign != 'function') {
     return result;
   };
 
+  GalaxyView.createClone = function (source) {
+    var cloned = Object.assign({}, source);
+
+    for (var key in source) {
+      if (source.hasOwnProperty('[' + key + ']')) {
+        boundPropertyReference.value = source['[' + key + ']'];
+        defineProp(cloned, '[' + key + ']', boundPropertyReference);
+        defineProp(cloned, key, Object.getOwnPropertyDescriptor(source, key));
+      }
+    }
+
+    return cloned;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -1528,8 +1542,8 @@ if (typeof Object.assign != 'function') {
         };
 
       case 'custom':
-        return function (value) {
-          property.handler(viewNode, attributeName, value);
+        return function (value, scopeData) {
+          property.handler(viewNode, attributeName, value, scopeData);
         };
 
       default:
@@ -1601,7 +1615,7 @@ if (typeof Object.assign != 'function') {
         }
       };
 
-      return defineProp(target,  targetKeyName, setterAndGetter);
+      return defineProp(target, targetKeyName, setterAndGetter);
     }
 
     if (typeof boundProperty === 'undefined') {
@@ -1665,7 +1679,7 @@ if (typeof Object.assign != 'function') {
       if (initValue instanceof Array) {
         this.setArrayValue(boundProperty, targetKeyName, initValue, target);
       } else {
-        boundProperty.setValueFor(target, targetKeyName, initValue);
+        boundProperty.setValueFor(target, targetKeyName, initValue, data);
       }
     }
   };
@@ -1787,7 +1801,7 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  BoundProperty.prototype.setValueFor = function (node, attributeName, value) {
+  BoundProperty.prototype.setValueFor = function (node, attributeName, value, scopeData) {
     var newValue = value;
 
     if (node instanceof Galaxy.GalaxyView.ViewNode) {
@@ -1803,7 +1817,7 @@ if (typeof Object.assign != 'function') {
         debugger
       }
 
-      node.setters[attributeName](newValue);
+      node.setters[attributeName](newValue, scopeData);
     } else {
       node[attributeName] = newValue;
     }
@@ -1973,6 +1987,10 @@ if (typeof Object.assign != 'function') {
     type: 'custom',
     name: 'inputs',
     handler: function (viewNode, attr, value, scopeData) {
+      if (viewNode.template) {
+        return;
+      }
+
       if (typeof value !== 'object' || value === null) {
         throw new Error('Inputs must be an object');
       }
@@ -1982,7 +2000,7 @@ if (typeof Object.assign != 'function') {
       var attributeName;
       var attributeValue;
       var type;
-      var clone = Object.assign({} , value);
+      var clone = G.GalaxyView.createClone(value);
       for (var i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
         attributeValue = value[attributeName];
@@ -2002,7 +2020,7 @@ if (typeof Object.assign != 'function') {
         }
       }
 
-      if (viewNode.hasOwnProperty('__inputs__') && value !== viewNode.__inputs__) {
+      if (viewNode.hasOwnProperty('__inputs__') && clone !== viewNode.__inputs__) {
         Galaxy.resetObjectTo(viewNode.__inputs__, clone);
       } else if (!viewNode.hasOwnProperty('__inputs__')) {
         Object.defineProperty(viewNode, '__inputs__', {

@@ -99,10 +99,11 @@ view.init([
                 module: {
                   url: 'modules/text-field.js'
                 },
-                inputs: {
-                  label: '[item.title]',
-                  value: '[item.title]'
-                }
+                inputs: '[item]'
+                // inputs: {
+                //   label: '[item.title]',
+                //   value: '[item.title]'
+                // }
 
                 // tag: 'p',
                 // children: [
