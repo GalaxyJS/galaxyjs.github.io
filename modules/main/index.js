@@ -34,13 +34,26 @@ Scope.navItems = [
   {
     title: 'API',
     link: '#api'
-  }
+  },
+  {
+    title: 'ToDo - Demo',
+    link: '#todo-demo',
+    module: {
+      id: 'todo-demo',
+      url: 'modules/todo/index.js'
+    }
+  },
 ];
 
 
 Scope.moduleInputs = {
   title: 'asdasd',
   content: 'This is the default content'
+};
+
+Scope.newItem = {
+  title: '',
+  link: ''
 };
 
 view.init([
@@ -95,29 +108,50 @@ view.init([
               {
                 $for: 'item in navItems',
                 class: 'field',
-
                 module: {
                   url: 'modules/text-field.js'
                 },
-                inputs: '[item]'
-                // inputs: {
-                //   label: '[item.title]',
-                //   value: '[item.title]'
-                // }
-
-                // tag: 'p',
-                // children: [
-                //   {
-                //     tag: 'label',
-                //     text: '[item.title]'
-                //   },
-                //   {
-                //     tag: 'input',
-                //     value: '[item.title]'
-                //   }
-                // ]
+                inputs: {
+                  label: '[item.link]',
+                  value: '[item.title]'
+                }
               },
-              {}
+              {
+                tag: 'h2',
+                text: 'Add New Item'
+              },
+              {
+                class: 'field',
+                module: {
+                  url: 'modules/text-field.js'
+                },
+                inputs: {
+                  label: 'Title',
+                  value: '[newItem.title]'
+                }
+              },
+              {
+                class: 'field',
+                module: {
+                  url: 'modules/text-field.js'
+                },
+                inputs: {
+                  label: 'Link',
+                  value: '[newItem.link]'
+                }
+              },
+              {
+                tag: 'button',
+                text: 'Save',
+                click: function (event) {
+                  console.info(Scope.newItem);
+                  Scope.navItems.push(Object.assign({}, Scope.newItem));
+                  Scope.newItem = {
+                    title: '',
+                    link: ''
+                  };
+                }
+              }
             ]
           }
         ]
