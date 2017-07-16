@@ -3,14 +3,17 @@
 
 var view = Scope.import('galaxy/view');
 
-Scope.modules = [
-  {
-    id: 'start',
-    url: 'modules/start/index.js'
-  }
-];
+// Scope.modules = [
+//   {
+//     id: 'start',
+//     url: 'modules/start/index.js'
+//   }
+// ];
 
-Scope.activeModule = null;
+Scope.activeModule = {
+  id: 'guide',
+  url: 'modules/guide/index.js'
+};
 
 Scope.flag = false;
 
@@ -47,8 +50,9 @@ Scope.navItems = [
 
 
 Scope.moduleInputs = {
-  title: 'asdasd',
-  content: 'This is the default content'
+  text: 'asdasd',
+  content: 'This is the default content',
+  items: '[navItems]'
 };
 
 Scope.newItem = {
@@ -70,6 +74,11 @@ view.init([
         click: function (event) {
           Scope.activeModule = this.data.item.module;
           console.info(this);
+        },
+        onDataChange: {
+          'item.title': function () {
+
+          }
         }
       }
     ]
@@ -166,14 +175,16 @@ view.init([
           },
           {
             tag: 'p',
-            text: '[moduleInputs.content]'
+            text: '[moduleInputs.text]'
           },
           {
             tag: 'p',
-            text: 'Some more paragraph in between just to test content'
+            text: '[moduleInputs.content]'
           }
         ]
       }
     ]
   }
 ]);
+
+console.info(Scope);

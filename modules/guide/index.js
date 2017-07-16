@@ -25,8 +25,9 @@ view.init({
           tag: 'blockquote',
           children: [
             {
+              $for: 'item in inputs.items',
               tag: 'p',
-              text: '[inputs.no]'
+              text: '[item.title]'
             }
           ]
         }
@@ -34,7 +35,3 @@ view.init({
     }
   ]
 });
-
-// setTimeout(function () {
-//   inputs.content = 'End -> some others';
-// }, 5500);
