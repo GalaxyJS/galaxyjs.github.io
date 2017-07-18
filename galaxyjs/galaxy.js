@@ -1354,7 +1354,11 @@ if (typeof Object.assign != 'function') {
       type: 'attr'
     },
     style: {
-      type: 'attr'
+      type: 'prop'
+    },
+    css: {
+      type: 'attr',
+      name: 'style'
     },
     html: {
       type: 'prop',
@@ -1363,6 +1367,9 @@ if (typeof Object.assign != 'function') {
     text: {
       type: 'prop',
       name: 'textContent'
+    },
+    checked: {
+      type: 'prop'
     },
     click: {
       type: 'event',
@@ -1517,7 +1524,7 @@ if (typeof Object.assign != 'function') {
 
     if (!property) {
       return function (value) {
-        debugger;
+        setAttr.call(viewNode.node, attributeName, value);
       };
     }
 

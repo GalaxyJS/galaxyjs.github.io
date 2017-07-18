@@ -45,14 +45,20 @@ Scope.navItems = [
       id: 'todo-demo',
       url: 'modules/todo/index.js'
     }
-  },
+  }
 ];
 
+Scope.todos = [
+  {
+    title: 'Should add new item to todos',
+    done: false
+  }
+];
 
 Scope.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
-  items: '[navItems]'
+  items: '[todos]'
 };
 
 Scope.newItem = {
@@ -98,33 +104,31 @@ view.init([
             children: [
               {
                 tag: 'h2',
-                text: '[benchmark]'
+                text: 'ToDos List'
               },
               {
+                $for: 'item in todos',
                 tag: 'p',
-                class: 'field',
+                text: '[item.done]',
                 children: [
                   {
-                    tag: 'label',
-                    text: 'Input title'
-                  },
-                  {
                     tag: 'input',
-                    value: '[moduleInputs.title]'
+                    type: 'checkbox',
+                    checked: '[item.done]'
                   }
                 ]
               },
-              {
-                $for: 'item in navItems',
-                class: 'field',
-                module: {
-                  url: 'modules/text-field.js'
-                },
-                inputs: {
-                  label: '[item.link]',
-                  value: '[item.title]'
-                }
-              },
+              // {
+              //   $for: 'item in todos',
+              //   class: 'field',
+              //   module: {
+              //     url: 'modules/text-field.js'
+              //   },
+              //   inputs: {
+              //     label: '[item.link]',
+              //     value: '[item.title]'
+              //   }
+              // },
               {
                 tag: 'h2',
                 text: 'Add New Item'
@@ -154,10 +158,10 @@ view.init([
                 text: 'Save',
                 click: function (event) {
                   console.info(Scope.newItem);
-                  Scope.navItems.push(Object.assign({}, Scope.newItem));
-                  Scope.newItem = {
+                  Scope.todos.push(Object.assign({}, Scope.newItem));
+                  Scope.todos = {
                     title: '',
-                    link: ''
+                    done: false
                   };
                 }
               }
