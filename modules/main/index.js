@@ -63,7 +63,7 @@ Scope.moduleInputs = {
 
 Scope.newItem = {
   title: '',
-  link: ''
+  done: false
 };
 
 view.init([
@@ -109,7 +109,7 @@ view.init([
               {
                 $for: 'item in todos',
                 tag: 'p',
-                text: '[item.done]',
+                text: '[item.title]',
                 children: [
                   {
                     tag: 'input',
@@ -119,7 +119,7 @@ view.init([
                 ]
               },
               // {
-              //   $for: 'item in todos',
+              //   $for: 'item in navItems',
               //   class: 'field',
               //   module: {
               //     url: 'modules/text-field.js'
@@ -156,13 +156,15 @@ view.init([
               {
                 tag: 'button',
                 text: 'Save',
-                click: function (event) {
+                click: function () {
                   console.info(Scope.newItem);
-                  Scope.todos.push(Object.assign({}, Scope.newItem));
-                  Scope.todos = {
-                    title: '',
-                    done: false
-                  };
+                  if (Scope.newItem.title.trim()) {
+                    Scope.todos.push(Object.assign({}, Scope.newItem));
+                    Scope.newItem = {
+                      title: '',
+                      done: false
+                    };
+                  }
                 }
               }
             ]

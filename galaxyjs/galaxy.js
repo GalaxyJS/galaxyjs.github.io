@@ -1313,6 +1313,22 @@ if (typeof Object.assign != 'function') {
     return cloned;
   };
 
+  GalaxyView.getPropertyContainer = function (data, propertyName) {
+    var container = data;
+    var tempData = data.hasOwnProperty(propertyName);
+
+    while (tempData.__parent__) {
+      if (tempData.__parent__.hasOwnProperty(propertyName)) {
+        container = tempData.__parent__;
+        break;
+      }
+
+      tempData = data.__parent__;
+    }
+
+    return container;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -1365,8 +1381,17 @@ if (typeof Object.assign != 'function') {
       name: 'innerHTML'
     },
     text: {
-      type: 'prop',
-      name: 'textContent'
+      type: 'custom',
+      handler: function (viewNode, attr, value) {
+        var textNode = viewNode.node['[textNode]'];
+        var textValue = typeof value === 'undefined' ? '' : value;
+        if (textNode) {
+          textNode.textContent = textValue;
+        } else {
+          viewNode.node['[textNode]'] = document.createTextNode(textValue);
+          viewNode.node.insertBefore(viewNode.node['[textNode]'], viewNode.node.firstChild);
+        }
+      }
     },
     checked: {
       type: 'prop'
@@ -1545,6 +1570,11 @@ if (typeof Object.assign != 'function') {
 
       case 'reactive':
         var reactiveFunction = viewNode.properties.__reactive__[property.name];
+
+        if (!reactiveFunction) {
+          console.error('Reactive handler not found for: ' + property.name);
+        }
+
         return function (value) {
           reactiveFunction(viewNode, value);
         };
@@ -1942,9 +1972,9 @@ if (typeof Object.assign != 'function') {
     this.inDOM = flag;
     if (flag && !this.node.parentNode && !this.template) {
       insertBefore(this.placeholder.parentNode, this.node, this.placeholder.nextSibling);
-      // removeChild(this.placeholder.parentNode, this.placeholder);
+      removeChild(this.placeholder.parentNode, this.placeholder);
     } else if (!flag && this.node.parentNode) {
-      // insertBefore(this.node.parentNode, this.placeholder, this.node);
+      insertBefore(this.node.parentNode, this.placeholder, this.node);
       removeChild(this.node.parentNode, this.node);
     }
   };
@@ -1979,10 +2009,20 @@ if (typeof Object.assign != 'function') {
       removeChild(_this.placeholder.parentNode, _this.placeholder);
     }
 
-    var nodeIndexInTheHost, property;
+    var nodeIndexInTheHost, property, properties = _this.properties;
 
-    for (var propertyName in _this.properties) {
-      property = _this.properties[propertyName];
+    for (var propertyName in properties) {
+      property = properties[propertyName];
+      nodeIndexInTheHost = property.nodes.indexOf(_this);
+      if (nodeIndexInTheHost !== -1) {
+        property.nodes.splice(nodeIndexInTheHost, 1);
+      }
+    }
+
+    properties = _this.properties.__reactive__;
+
+    for (propertyName in properties) {
+      property = properties[propertyName];
       nodeIndexInTheHost = property.nodes.indexOf(_this);
       if (nodeIndexInTheHost !== -1) {
         property.nodes.splice(nodeIndexInTheHost, 1);
@@ -2102,6 +2142,34 @@ if (typeof Object.assign != 'function') {
     };
   });
 })(Galaxy);
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
+    type: 'reactive',
+    name: 'checked'
+  };
+
+  GV.REACTIVE_BEHAVIORS['checked'] = {
+    regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    bind: function (viewNode, nodeScopeData, matches) {
+      var parts = matches[1].split('.');
+      var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
+      viewNode.node.addEventListener('change', function () {
+        setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.checked);
+      });
+    },
+    onApply: function (cache, viewNode, value) {
+      if (viewNode.node.checked === value) {
+        return;
+      }
+
+      viewNode.node.checked = value || false;
+    }
+  };
+})(Galaxy.GalaxyView);
+
 
 /* global Galaxy */
 
@@ -2301,15 +2369,13 @@ if (typeof Object.assign != 'function') {
   GV.REACTIVE_BEHAVIORS['value'] = {
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
     bind: function (viewNode, nodeScopeData, matches) {
-      var parts = matches[1].split('.');
-      var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
-      viewNode.node.addEventListener('keyup', function () {
-        if (nodeScopeData.hasOwnProperty(parts[0])) {
-          setter.call(null, nodeScopeData, viewNode.node.value);
-        } else if (nodeScopeData.hasOwnProperty('__parent__')) {
-          setter.call(null, nodeScopeData.__parent__, viewNode.node.value);
-        }
-      });
+      if (viewNode.node.type === 'text') {
+        var parts = matches[1].split('.');
+        var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
+        viewNode.node.addEventListener('keyup', function () {
+          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.value);
+        });
+      }
     },
     onApply: function (cache, viewNode, value) {
       if (document.activeElement === viewNode.node && viewNode.node.value === value) {
