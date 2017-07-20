@@ -984,6 +984,7 @@ if (typeof Object.assign != 'function') {
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
+
         var importsCopy = imports.slice(0);
         imports.forEach(function (item) {
           var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
@@ -1025,6 +1026,7 @@ if (typeof Object.assign != 'function') {
    */
   Core.prototype.executeCompiledModule = function (module) {
     var promise = new Promise(function (resolve, reject) {
+
       for (var item in module.addOns) {
         module.scope.imports[item] = module.addOns[item];
       }
@@ -1329,6 +1331,23 @@ if (typeof Object.assign != 'function') {
     return container;
   };
 
+  GalaxyView.getAllViewNodes = function (node) {
+    var item, viewNodes = [];
+
+    for (var i = 0, len = node.childNodes.length; i < len; i++) {
+      item = node.childNodes[i];
+      viewNodes = viewNodes.concat(GalaxyView.getAllViewNodes(item));
+
+      if (item.hasOwnProperty('__viewNode__')) {
+        viewNodes.push(item.__viewNode__);
+      }
+    }
+
+    return viewNodes.filter(function (value, index, self) {
+      return self.indexOf(value) === index;
+    });
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -1417,8 +1436,8 @@ if (typeof Object.assign != 'function') {
     } else {
       rootElement = new GalaxyView.ViewNode(this, {
         tag: scope.element.tagName,
-        node: scope.element
-      });
+        // node: scope.element
+      }, scope.element);
     }
 
     this.container = rootElement;
@@ -1923,14 +1942,14 @@ if (typeof Object.assign != 'function') {
    * @param schema
    * @constructor
    */
-  function ViewNode(root, schema) {
+  function ViewNode(root, schema,node) {
     /**
      *
      * @public
      * @type {Galaxy.GalaxyView}
      */
     this.root = root;
-    this.node = schema.node || createElem(schema.tag || 'div');
+    this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
     this.data = {};
     this.mutator = {};
@@ -1946,13 +1965,28 @@ if (typeof Object.assign != 'function') {
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
-    this.schema.node = this.node;
+    // this.schema.node = this.node;
+
+    Object.defineProperty(this.schema, '__node__', {
+      value: this.node,
+      configurable: false,
+      enumerable: false
+    });
+
+    var referenceToThis = {
+      value: this,
+      configurable: false,
+      enumerable: false
+    };
+
+    Object.defineProperty(this.node, '__viewNode__', referenceToThis);
+    Object.defineProperty(this.placeholder, '__viewNode__', referenceToThis);
   }
 
   ViewNode.prototype.cloneSchema = function () {
     var clone = Object.assign({}, this.schema);
     empty(clone);
-    clone.node = this.node.cloneNode();
+    clone.node = this.node.cloneNode(false);
     Object.defineProperty(clone, 'mother', {
       value: this.schema,
       writable: false,
@@ -1966,6 +2000,7 @@ if (typeof Object.assign != 'function') {
   ViewNode.prototype.toTemplate = function () {
     this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
     this.template = true;
+    this.setInDOM(false);
   };
 
   ViewNode.prototype.setInDOM = function (flag) {
@@ -2003,11 +2038,10 @@ if (typeof Object.assign != 'function') {
     var _this = this;
 
     if (_this.inDOM) {
-      removeChild(_this.node.parentNode, _this.placeholder);
       removeChild(_this.node.parentNode, _this.node);
-    } else {
-      removeChild(_this.placeholder.parentNode, _this.placeholder);
     }
+
+    _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
 
     var nodeIndexInTheHost, property, properties = _this.properties;
 
@@ -2016,18 +2050,20 @@ if (typeof Object.assign != 'function') {
       nodeIndexInTheHost = property.nodes.indexOf(_this);
       if (nodeIndexInTheHost !== -1) {
         property.nodes.splice(nodeIndexInTheHost, 1);
+        property.props.splice(nodeIndexInTheHost, 1);
       }
     }
 
-    properties = _this.properties.__reactive__;
-
-    for (propertyName in properties) {
-      property = properties[propertyName];
-      nodeIndexInTheHost = property.nodes.indexOf(_this);
-      if (nodeIndexInTheHost !== -1) {
-        property.nodes.splice(nodeIndexInTheHost, 1);
-      }
-    }
+    // properties = _this.properties.__reactive__;
+    //
+    // for (propertyName in properties) {
+    //   property = properties[propertyName];
+    //   nodeIndexInTheHost = property.nodes ? property.nodes.indexOf(_this) : -1;
+    //   if (nodeIndexInTheHost !== -1) {
+    //     property.nodes.splice(nodeIndexInTheHost, 1);
+    //     property.props.splice(nodeIndexInTheHost, 1);
+    //   }
+    // }
 
     _this.inDOM = false;
     _this.properties = {};
@@ -2045,8 +2081,19 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.empty = function () {
-    this.node.innerHTML = '';
-    // empty(this.schema);
+    var toBeRemoved = [], node;
+    for (var i = 0, len = this.node.childNodes.length; i < len; i++) {
+      node = this.node.childNodes[i];
+      toBeRemoved = toBeRemoved.concat(GV.getAllViewNodes(node));
+
+      if (node.hasOwnProperty('__viewNode__')) {
+        toBeRemoved.push(node.__viewNode__);
+      }
+    }
+
+    toBeRemoved.forEach(function (viewNode) {
+      viewNode.destroy();
+    });
   };
 
   ViewNode.prototype.getPlaceholder = function () {
@@ -2195,9 +2242,9 @@ if (typeof Object.assign != 'function') {
         var allContent = scopeData.element.schema.children;
         var parentNode = viewNode.parent.node;
 
-        allContent.forEach(function (node) {
-          if (selector === '*' || selector.toLowerCase() === node.node.tagName.toLowerCase()) {
-            parentNode.insertBefore(node.node, viewNode.placeholder);
+        allContent.forEach(function (content) {
+          if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
+            parentNode.insertBefore(content.__node__, viewNode.placeholder);
           }
         });
       }

@@ -15,6 +15,10 @@ Scope.activeModule = {
   url: 'modules/guide/index.js'
 };
 
+// Scope.activeModule = {
+// };
+
+
 Scope.flag = false;
 
 Scope.navItems = [

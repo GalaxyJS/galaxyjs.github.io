@@ -2,7 +2,7 @@
 
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
-
+// debugger;
 view.init({
   class: 'card big',
   children: [
