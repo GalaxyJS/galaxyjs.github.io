@@ -2,7 +2,7 @@
 
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
-// debugger;
+
 view.init({
   class: 'card big',
   children: [
@@ -27,7 +27,14 @@ view.init({
             {
               $for: 'item in inputs.items',
               tag: 'p',
-              text: '[item.title]'
+              text: '[item.title]',
+              children: [
+                {
+                  tag: 'input',
+                  type: 'checkbox',
+                  checked: '[item.done]'
+                }
+              ]
             }
           ]
         }

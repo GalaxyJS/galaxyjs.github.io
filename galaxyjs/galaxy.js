@@ -1402,13 +1402,13 @@ if (typeof Object.assign != 'function') {
     text: {
       type: 'custom',
       handler: function (viewNode, attr, value) {
-        var textNode = viewNode.node['[textNode]'];
+        var textNode = viewNode.node['[text]'];
         var textValue = typeof value === 'undefined' ? '' : value;
         if (textNode) {
           textNode.textContent = textValue;
         } else {
-          viewNode.node['[textNode]'] = document.createTextNode(textValue);
-          viewNode.node.insertBefore(viewNode.node['[textNode]'], viewNode.node.firstChild);
+          viewNode.node['[text]'] = document.createTextNode(textValue);
+          viewNode.node.insertBefore(viewNode.node['[text]'], viewNode.node.firstChild);
         }
       }
     },
@@ -1942,7 +1942,7 @@ if (typeof Object.assign != 'function') {
    * @param schema
    * @constructor
    */
-  function ViewNode(root, schema,node) {
+  function ViewNode(root, schema, node) {
     /**
      *
      * @public
@@ -1986,7 +1986,7 @@ if (typeof Object.assign != 'function') {
   ViewNode.prototype.cloneSchema = function () {
     var clone = Object.assign({}, this.schema);
     empty(clone);
-    clone.node = this.node.cloneNode(false);
+
     Object.defineProperty(clone, 'mother', {
       value: this.schema,
       writable: false,
@@ -2054,19 +2054,21 @@ if (typeof Object.assign != 'function') {
       }
     }
 
-    // properties = _this.properties.__reactive__;
-    //
-    // for (propertyName in properties) {
-    //   property = properties[propertyName];
-    //   nodeIndexInTheHost = property.nodes ? property.nodes.indexOf(_this) : -1;
-    //   if (nodeIndexInTheHost !== -1) {
-    //     property.nodes.splice(nodeIndexInTheHost, 1);
-    //     property.props.splice(nodeIndexInTheHost, 1);
-    //   }
-    // }
-
     _this.inDOM = false;
-    _this.properties = {};
+    // _this.properties = {};
+    // _this.node = null;
+    // _this.placeholder = null;
+  };
+
+  ViewNode.prototype.refreshBinds = function (data) {
+    var property;
+    for (var propertyName in this.properties) {
+      property = this.properties[propertyName];
+      if (property.nodes.indexOf(this) === -1) {
+        property.nodes.push(this);
+        property.props.push(propertyName);
+      }
+    }
   };
 
   var empty = function (nodes) {
@@ -2075,7 +2077,7 @@ if (typeof Object.assign != 'function') {
         empty(node);
       });
     } else if (nodes) {
-      nodes.node = null;
+      nodes.__node__ = null;
       empty(nodes.children);
     }
   };
@@ -2091,7 +2093,7 @@ if (typeof Object.assign != 'function') {
       }
     }
 
-    toBeRemoved.forEach(function (viewNode) {
+    toBeRemoved.forEach(function (viewNode, i) {
       viewNode.destroy();
     });
   };
@@ -2244,6 +2246,7 @@ if (typeof Object.assign != 'function') {
 
         allContent.forEach(function (content) {
           if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
+            content.__node__.__viewNode__.refreshBinds(scopeData);
             parentNode.insertBefore(content.__node__, viewNode.placeholder);
           }
         });

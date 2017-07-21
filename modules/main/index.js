@@ -147,16 +147,16 @@ view.init([
                   value: '[newItem.title]'
                 }
               },
-              {
-                class: 'field',
-                module: {
-                  url: 'modules/text-field.js'
-                },
-                inputs: {
-                  label: 'Link',
-                  value: '[newItem.link]'
-                }
-              },
+              // {
+              //   class: 'field',
+              //   module: {
+              //     url: 'modules/text-field.js'
+              //   },
+              //   inputs: {
+              //     label: 'Link',
+              //     value: '[newItem.link]'
+              //   }
+              // },
               {
                 tag: 'button',
                 text: 'Save',
