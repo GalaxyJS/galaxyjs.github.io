@@ -1215,6 +1215,36 @@ if (typeof Object.assign != 'function') {
 
 /* global Galaxy, Promise */
 
+(function (G) {
+  /**
+   *
+   * @returns {Galaxy.GalaxyScope}
+   */
+  G.GalaxySequence = GalaxySequence;
+
+  function GalaxySequence() {
+    this.line = Promise.resolve();
+  }
+
+  GalaxySequence.prototype.next = function (action) {
+    var thunk;
+    var promise = new Promise(function (resolve, reject) {
+      thunk = function () {
+        action(resolve, reject);
+      };
+    });
+
+    this.line.then(thunk).catch(thunk);
+    this.line = promise;
+
+    return promise;
+  };
+
+
+})(Galaxy);
+
+/* global Galaxy, Promise */
+
 (function (root, G) {
   var defineProp = Object.defineProperty;
   var setterAndGetter = {
@@ -1945,7 +1975,7 @@ if (typeof Object.assign != 'function') {
 
 })(Galaxy.GalaxyView);
 
-/* global Galaxy */
+/* global Galaxy, Promise */
 (function (GV) {
 
   function createElem(t) {
@@ -2003,6 +2033,7 @@ if (typeof Object.assign != 'function') {
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
+    this.domManipulationSequence = new Galaxy.GalaxySequence();
 
     GV.defineProp(this.schema, '__node__', {
       value: this.node,
@@ -2047,19 +2078,36 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.setInDOM = function (flag) {
-    this.inDOM = flag;
-    if (flag && !this.node.parentNode && !this.template) {
-      insertBefore(this.placeholder.parentNode, this.node, this.placeholder.nextSibling);
-      removeChild(this.placeholder.parentNode, this.placeholder);
-    } else if (!flag && this.node.parentNode) {
-      insertBefore(this.node.parentNode, this.placeholder, this.node);
-      removeChild(this.node.parentNode, this.node);
+    var _this = this;
+    _this.inDOM = flag;
+    if (flag && !_this.node.parentNode && !_this.template) {
+      _this.domManipulationSequence.next(function (done) {
+        setTimeout(done, 2000);
+        // debugger
+      });
+      _this.domManipulationSequence.next(function (done) {
+        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        removeChild(_this.placeholder.parentNode, _this.placeholder);
+
+        done();
+      });
+
+    } else if (!flag && _this.node.parentNode) {
+      _this.domManipulationSequence.next(function (done) {
+        insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+        removeChild(_this.node.parentNode, _this.node);
+        done();
+      });
     }
   };
 
   ViewNode.prototype.append = function (viewNode, position) {
-    viewNode.parent = this;
-    this.node.insertBefore(viewNode.placeholder, position);
+    var _this = this;
+    viewNode.parent = _this;
+    _this.domManipulationSequence.next(function (done) {
+      _this.node.insertBefore(viewNode.placeholder, position);
+      done();
+    });
   };
 
   /**
@@ -2393,14 +2441,18 @@ if (typeof Object.assign != 'function') {
     },
     onApply: function (cache, viewNode, selector, matches, scopeData) {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
-        var allContent = scopeData.element.schema.children;
-        var parentNode = viewNode.parent.node;
+        viewNode.domManipulationSequence.next(function (done) {
+          var allContent = scopeData.element.schema.children;
+          var parentNode = viewNode.parent.node;
 
-        allContent.forEach(function (content) {
-          if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
-            content.__node__.__viewNode__.refreshBinds(scopeData);
-            parentNode.insertBefore(content.__node__, viewNode.placeholder);
-          }
+          allContent.forEach(function (content) {
+            if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
+              content.__node__.__viewNode__.refreshBinds(scopeData);
+              parentNode.insertBefore(content.__node__, viewNode.placeholder);
+            }
+          });
+
+          done();
         });
       }
 
