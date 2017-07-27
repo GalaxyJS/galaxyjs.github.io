@@ -114,6 +114,9 @@ view.init([
                 $for: 'item in todos',
                 tag: 'p',
                 text: '[item.title]',
+                class: {
+                  done: '[item.done]'
+                },
                 children: [
                   {
                     tag: 'input',

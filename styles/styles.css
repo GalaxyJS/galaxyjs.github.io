@@ -1,4 +1,4 @@
-/* 
+/*
     Created on : Nov 10, 2016, 8:04:25 PM
     Author     : Eeliya
 */
@@ -402,4 +402,8 @@ section > section {
 .field[focus] > input, .field[focused] > select {
   /*border-color: #696fb4;*/
   border-color: #009688;
+}
+
+.done {
+  opacity: .3;
 }
