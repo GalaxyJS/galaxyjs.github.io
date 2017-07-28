@@ -2,8 +2,6 @@
 
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
-
-console.log(inputs);
 Scope.newItem = {
   title: '',
   done: false
@@ -12,7 +10,19 @@ Scope.newItem = {
 view.init({
   tag: 'div',
   class: 'card',
-  animation: {},
+  animation: {
+    enter: {
+      from: {
+        y: 100,
+        opacity: 0
+      },
+      to: {
+        y: 0,
+        opacity: 1
+      },
+      duration: .5
+    }
+  },
   children: [
     {
       tag: 'section',

@@ -1223,8 +1223,25 @@ if (typeof Object.assign != 'function') {
   G.GalaxySequence = GalaxySequence;
 
   function GalaxySequence() {
-    this.line = Promise.resolve();
+    this.line = null;
+    this.firstStepResolve = null;
+    this.reset();
   }
+
+  GalaxySequence.prototype.start = function () {
+    this.firstStepResolve();
+    return this;
+  };
+
+  GalaxySequence.prototype.reset = function () {
+    var _this = this;
+
+    _this.line = new Promise(function (resolve) {
+      _this.firstStepResolve = resolve;
+    });
+
+    return _this;
+  };
 
   GalaxySequence.prototype.next = function (action) {
     var thunk;
@@ -1238,6 +1255,10 @@ if (typeof Object.assign != 'function') {
     this.line = promise;
 
     return promise;
+  };
+
+  GalaxySequence.prototype.finish = function (action) {
+    this.line.then(action);
   };
 
 
@@ -1502,7 +1523,7 @@ if (typeof Object.assign != 'function') {
    *
    * @param {Object} nodeSchema
    * @param {Object} nodeScopeData
-   * @param {Element} parentViewNode
+   * @param {GalaxyView.ViewNode} parentViewNode
    */
   GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position) {
     var _this = this;
@@ -1547,14 +1568,20 @@ if (typeof Object.assign != 'function') {
         }
       }
 
-      if (!viewNode.template) {
-        _this.append(nodeSchema.children, parentScopeData, viewNode);
-
+      if (!viewNode.virtual) {
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
+
+        _this.append(nodeSchema.children, parentScopeData, viewNode);
       }
 
+      // viewNode.onReady promise will be resolved after all the dom manipulations are done
+      // this make sure that the viewNode and its children elements are rendered
+      viewNode.domManipulationSequence.next(function (done) {
+        viewNode.ready();
+        done();
+      });
       return viewNode;
     }
   };
@@ -2025,7 +2052,7 @@ if (typeof Object.assign != 'function') {
     this.schema = schema;
     this.data = {};
     this.mutator = {};
-    this.template = false;
+    this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
     this.values = {};
@@ -2033,7 +2060,16 @@ if (typeof Object.assign != 'function') {
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
-    this.domManipulationSequence = new Galaxy.GalaxySequence();
+    this.domManipulationSequence = new Galaxy.GalaxySequence().start();
+    this.sequences = {
+      'leave': new Galaxy.GalaxySequence(),
+      'enter': new Galaxy.GalaxySequence().start()
+    };
+
+    var _this = this;
+    this.onReady = new Promise(function (ready) {
+      _this.ready = ready;
+    });
 
     GV.defineProp(this.schema, '__node__', {
       value: this.node,
@@ -2073,30 +2109,28 @@ if (typeof Object.assign != 'function') {
 
   ViewNode.prototype.toTemplate = function () {
     this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
-    this.template = true;
+    this.virtual = true;
     this.setInDOM(false);
   };
 
   ViewNode.prototype.setInDOM = function (flag) {
     var _this = this;
     _this.inDOM = flag;
-    if (flag && !_this.node.parentNode && !_this.template) {
-      _this.domManipulationSequence.next(function (done) {
-        setTimeout(done, 2000);
-        // debugger
-      });
+    if (flag && !_this.node.parentNode && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
-
-        done();
+        _this.sequences['enter'].finish(done);
       });
 
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
-        insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-        removeChild(_this.node.parentNode, _this.node);
-        done();
+        _this.sequences['leave'].start().finish(function () {
+          insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+          removeChild(_this.node.parentNode, _this.node);
+          done();
+          _this.sequences['leave'].reset();
+        });
       });
     }
   };
@@ -2104,10 +2138,7 @@ if (typeof Object.assign != 'function') {
   ViewNode.prototype.append = function (viewNode, position) {
     var _this = this;
     viewNode.parent = _this;
-    _this.domManipulationSequence.next(function (done) {
-      _this.node.insertBefore(viewNode.placeholder, position);
-      done();
-    });
+    _this.node.insertBefore(viewNode.placeholder, position);
   };
 
   /**
@@ -2129,21 +2160,25 @@ if (typeof Object.assign != 'function') {
     var _this = this;
 
     if (_this.inDOM) {
-      removeChild(_this.node.parentNode, _this.node);
+      _this.domManipulationSequence.next(function (done) {
+        _this.sequences['leave'].start().finish(function () {
+          removeChild(_this.node.parentNode, _this.node);
+          done();
+          _this.sequences['leave'].reset();
+        });
+      });
     }
 
-    _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
+    _this.domManipulationSequence.next(function (done) {
+      _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
+      done();
+    });
 
     var property, properties = _this.properties;
 
     for (var propertyName in properties) {
       property = properties[propertyName];
       property.removeNode(_this);
-      // nodeIndexInTheHost = property.nodes.indexOf(_this);
-      // if (nodeIndexInTheHost !== -1) {
-      //   property.nodes.splice(nodeIndexInTheHost, 1);
-      //   property.props.splice(nodeIndexInTheHost, 1);
-      // }
     }
 
     _this.inDOM = false;
@@ -2153,9 +2188,6 @@ if (typeof Object.assign != 'function') {
         property.removeNode(item);
       });
     });
-    // _this.properties = {};
-    // _this.node = null;
-    // _this.placeholder = null;
   };
 
   ViewNode.prototype.addDependedObject = function (item) {
@@ -2219,7 +2251,7 @@ if (typeof Object.assign != 'function') {
     type: 'custom',
     name: 'inputs',
     handler: function (viewNode, attr, value, scopeData) {
-      if (viewNode.template) {
+      if (viewNode.virtual) {
         return;
       }
 
@@ -2293,6 +2325,84 @@ if (typeof Object.assign != 'function') {
   });
 })(Galaxy);
 
+/* global Galaxy, TweenLite, TimelineLite */
+
+(function (G) {
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
+    type: 'custom',
+    name: 'animation',
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param attr
+     * @param config
+     * @param scopeData
+     */
+    handler: function (viewNode, attr, config, scopeData) {
+      if (!viewNode.virtual) {
+        if (config['enter']) {
+          viewNode.sequences['enter'].next(function (done) {
+            var enterAnimationConfig = config['enter'];
+            var to = Object.assign({}, enterAnimationConfig.to || {});
+            to.onComplete = done;
+            to.clearProps = 'all';
+
+            if (enterAnimationConfig.sequence) {
+              var timeline = enterAnimationConfig.__timeline__ || new TimelineLite({
+                autoRemoveChildren: true
+              });
+
+              if (timeline.getChildren().length > 0) {
+                timeline.add(TweenLite.fromTo(viewNode.node,
+                  enterAnimationConfig.duration || 0,
+                  enterAnimationConfig.from || {},
+                  to), enterAnimationConfig.position || null);
+              } else {
+                timeline.add(TweenLite.fromTo(viewNode.node,
+                  enterAnimationConfig.duration || 0,
+                  enterAnimationConfig.from || {},
+                  to), null);
+              }
+
+              enterAnimationConfig.__timeline__ = timeline;
+            } else {
+              TweenLite.fromTo(viewNode.node,
+                enterAnimationConfig.duration || 0,
+                enterAnimationConfig.from || {},
+                to);
+            }
+          });
+        }
+
+        if (config['leave']) {
+          viewNode.sequences['leave'].next(function (done) {
+            var leaveAnimationConfig = config['leave'];
+            var to = Object.assign({}, leaveAnimationConfig.to || {});
+            to.onComplete = done;
+            to.clearProps = 'all';
+
+            if (leaveAnimationConfig.sequence) {
+              var timeline = leaveAnimationConfig.__timeline__ || new TimelineLite();
+
+              timeline.add(TweenLite.fromTo(viewNode.node,
+                leaveAnimationConfig.duration || 0,
+                leaveAnimationConfig.from || {},
+                to), leaveAnimationConfig.position || null);
+
+              leaveAnimationConfig.__timeline__ = timeline;
+            } else {
+              TweenLite.fromTo(viewNode.node,
+                leaveAnimationConfig.duration || 0,
+                leaveAnimationConfig.from || {},
+                to);
+            }
+          });
+        }
+      }
+    }
+  };
+})(Galaxy);
+
 /* global Galaxy */
 
 (function (G) {
@@ -2303,7 +2413,7 @@ if (typeof Object.assign != 'function') {
       if (events !== null && typeof events === 'object') {
         for (var name in events) {
           if (events.hasOwnProperty(name)) {
-            viewNode.node.addEventListener(name, events[name]);
+            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
           }
         }
       }
@@ -2352,7 +2462,7 @@ if (typeof Object.assign != 'function') {
     bind: function (viewNode, scopeData, matches) {
     },
     onApply: function (cache, viewNode, value, matches, scopeData) {
-      if (viewNode.template) {
+      if (viewNode.virtual) {
         return;
       }
 
@@ -2443,12 +2553,12 @@ if (typeof Object.assign != 'function') {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
         viewNode.domManipulationSequence.next(function (done) {
           var allContent = scopeData.element.schema.children;
-          var parentNode = viewNode.parent.node;
-
+          var parentViewNode = viewNode.parent;
           allContent.forEach(function (content) {
             if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
               content.__node__.__viewNode__.refreshBinds(scopeData);
-              parentNode.insertBefore(content.__node__, viewNode.placeholder);
+              parentViewNode.append(content.__node__.__viewNode__, viewNode.placeholder);
+              content.__node__.__viewNode__.setInDOM(true);
             }
           });
 
@@ -2517,8 +2627,8 @@ if (typeof Object.assign != 'function') {
       } else if (changes.type === 'splice') {
         var removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
         newItems = changes.params.slice(2);
-        removedItems.forEach(function (viewNode) {
-          viewNode.destroy();
+        removedItems.forEach(function (node) {
+          node.destroy();
         });
       } else if (changes.type === 'pop') {
         cache.nodes.pop().destroy();
@@ -2597,15 +2707,17 @@ if (typeof Object.assign != 'function') {
       };
     },
     onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
-      if (!viewNode.template && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
-        viewNode.empty();
-        cache.scope.load(moduleMeta, {
-          element: viewNode
-        }).then(function (module) {
-          viewNode.node.setAttribute('module', module.systemId);
-          module.start();
-        }).catch(function (response) {
-          console.error(response);
+      if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
+        viewNode.onReady.then(function () {
+          viewNode.empty();
+          cache.scope.load(moduleMeta, {
+            element: viewNode
+          }).then(function (module) {
+            viewNode.node.setAttribute('module', module.systemId);
+            module.start();
+          }).catch(function (response) {
+            console.error(response);
+          });
         });
       } else if (!moduleMeta) {
         viewNode.empty();

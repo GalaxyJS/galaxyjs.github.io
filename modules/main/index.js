@@ -56,8 +56,35 @@ Scope.todos = [
   {
     title: 'Should add new item to todos',
     done: false
+  },
+  {
+    title: 'Should add new item to todos 2',
+    done: false
+  },
+  {
+    title: 'Should add new item to todos 3',
+    done: false
+  },
+  {
+    title: 'Should add new item to todos 4',
+    done: false
+  },
+  {
+    title: 'Should add new item to todos 5',
+    done: false
+  },
+  {
+    title: 'Should add new item to todos 6',
+    done: false
   }
 ];
+
+for (var i = 0; i < 10; i++) {
+  Scope.todos.push({
+    title: 'Dynamic item ' + i,
+    done: (i % 3 === 0)
+  });
+}
 
 Scope.moduleInputs = {
   text: 'asdasd',
@@ -81,9 +108,10 @@ view.init([
         tag: 'a',
         href: '[item.link]',
         text: '[item.title]',
-        click: function (event) {
-          Scope.activeModule = this.data.item.module;
-          console.info(this);
+        on: {
+          click: function () {
+            Scope.activeModule = this.data.item.module;
+          }
         },
         onDataChange: {
           'item.title': function () {
@@ -110,12 +138,43 @@ view.init([
                 tag: 'h2',
                 text: 'ToDos List'
               },
-              {
+              /*{
                 $for: 'item in todos',
                 tag: 'p',
+                animation: {
+                  enter: {
+                    sequence: true,
+                    from: {
+                      x: -100,
+                      opacity: 0
+                    },
+                    to: {
+                      x: 0,
+                      opacity: 1
+                    },
+                    position: '-=.9',
+                    duration: 1
+                  },
+                  leave: {
+                    to: {
+                      height: 0,
+                      marginTop: 0,
+                      overflow: 'hidden'
+                    },
+                    duration: .3
+                  }
+                },
                 text: '[item.title]',
                 class: {
                   done: '[item.done]'
+                },
+                on: {
+                  click: function () {
+                    var index = Scope.todos.indexOf(this.data.item);
+                    if (index !== -1) {
+                      Scope.todos.splice(index, 1);
+                    }
+                  }
                 },
                 children: [
                   {
@@ -124,7 +183,7 @@ view.init([
                     checked: '[item.done]'
                   }
                 ]
-              },
+              },*/
               // {
               //   $for: 'item in navItems',
               //   class: 'field',

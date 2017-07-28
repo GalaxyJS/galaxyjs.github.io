@@ -4,6 +4,10 @@
 */
 @import url('https://fonts.googleapis.com/css?family=Rubik:300,400,500,700');
 
+p {
+  margin: 15px 0;
+}
+
 h1 {
   font-size: 1.9em;
   cursor: default;
