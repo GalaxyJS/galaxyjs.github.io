@@ -58,7 +58,8 @@ view.init({
                     opacity: 0
                   },
                   duration: .3
-                }
+                },
+                class: {}
               },
               tag: 'p',
               text: '[item.title]',

@@ -2034,6 +2034,24 @@ if (typeof Object.assign != 'function') {
   };
 
 
+  var referenceToThis = {
+    value: this,
+    configurable: false,
+    enumerable: false
+  };
+
+  var __node__ = {
+    value: null,
+    configurable: false,
+    enumerable: false
+  };
+
+  var __behaviors__ = {
+    value: {},
+    enumerable: false,
+    writable: false
+  };
+
   /**
    *
    * @param {Galaxy.GalaxyView} root
@@ -2061,34 +2079,23 @@ if (typeof Object.assign != 'function') {
     this.parent = null;
     this.dependedObjects = [];
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
-    this.sequences = {
-      'leave': new Galaxy.GalaxySequence(),
-      'enter': new Galaxy.GalaxySequence().start()
-    };
+    this.sequences = {};
 
     var _this = this;
     this.onReady = new Promise(function (ready) {
       _this.ready = ready;
     });
 
-    GV.defineProp(this.schema, '__node__', {
-      value: this.node,
-      configurable: false,
-      enumerable: false
-    });
+    this.createSequence(':enter', true);
+    this.createSequence(':leave', false);
 
-    GV.defineProp(this.properties, '__behaviors__', {
-      value: {},
-      enumerable: false,
-      writable: false
-    });
+    __node__.value = this.node;
+    GV.defineProp(this.schema, '__node__', __node__);
 
-    var referenceToThis = {
-      value: this,
-      configurable: false,
-      enumerable: false
-    };
+    __behaviors__.value = {};
+    GV.defineProp(this.properties, '__behaviors__', __behaviors__);
 
+    referenceToThis.value = this;
     GV.defineProp(this.node, '__viewNode__', referenceToThis);
     GV.defineProp(this.placeholder, '__viewNode__', referenceToThis);
   }
@@ -2107,6 +2114,24 @@ if (typeof Object.assign != 'function') {
     return clone;
   };
 
+  /**
+   *
+   * @param name
+   * @param start
+   * @returns {Galaxy.GalaxySequence}
+   */
+  ViewNode.prototype.createSequence = function (name, start) {
+    if (!this.sequences[name]) {
+      this.sequences[name] = new Galaxy.GalaxySequence();
+
+      if (start) {
+        this.sequences[name].start();
+      }
+    }
+
+    return this.sequences[name];
+  };
+
   ViewNode.prototype.toTemplate = function () {
     this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
     this.virtual = true;
@@ -2120,16 +2145,15 @@ if (typeof Object.assign != 'function') {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
-        _this.sequences['enter'].finish(done);
+        _this.sequences[':enter'].finish(done);
       });
-
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
-        _this.sequences['leave'].start().finish(function () {
+        _this.sequences[':leave'].start().finish(function () {
           insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
           removeChild(_this.node.parentNode, _this.node);
           done();
-          _this.sequences['leave'].reset();
+          _this.sequences[':leave'].reset();
         });
       });
     }
@@ -2161,10 +2185,10 @@ if (typeof Object.assign != 'function') {
 
     if (_this.inDOM) {
       _this.domManipulationSequence.next(function (done) {
-        _this.sequences['leave'].start().finish(function () {
+        _this.sequences[':leave'].start().finish(function () {
           removeChild(_this.node.parentNode, _this.node);
           done();
-          _this.sequences['leave'].reset();
+          _this.sequences[':leave'].reset();
         });
       });
     }
@@ -2229,7 +2253,7 @@ if (typeof Object.assign != 'function') {
       }
     }
 
-    toBeRemoved.forEach(function (viewNode, i) {
+    toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy();
     });
   };
@@ -2340,9 +2364,10 @@ if (typeof Object.assign != 'function') {
      */
     handler: function (viewNode, attr, config, scopeData) {
       if (!viewNode.virtual) {
-        if (config['enter']) {
-          viewNode.sequences['enter'].next(function (done) {
-            var enterAnimationConfig = config['enter'];
+        var enter = config['enter'];
+        if (enter) {
+          viewNode.sequences[':enter'].next(function (done) {
+            var enterAnimationConfig = enter;
             var to = Object.assign({}, enterAnimationConfig.to || {});
             to.onComplete = done;
             to.clearProps = 'all';
@@ -2374,9 +2399,10 @@ if (typeof Object.assign != 'function') {
           });
         }
 
-        if (config['leave']) {
-          viewNode.sequences['leave'].next(function (done) {
-            var leaveAnimationConfig = config['leave'];
+        var leave = config['leave'];
+        if (leave) {
+          viewNode.sequences[':leave'].next(function (done) {
+            var leaveAnimationConfig = leave;
             var to = Object.assign({}, leaveAnimationConfig.to || {});
             to.onComplete = done;
             to.clearProps = 'all';
@@ -2397,6 +2423,18 @@ if (typeof Object.assign != 'function') {
                 to);
             }
           });
+        }
+
+        if (config['class']) {
+          console.info([viewNode.node]);
+          G.GalaxyView.defineProp(viewNode.node, 'classList', {
+            configurable: true,
+            enumerable: false,
+            value: function (val) {
+              console.info(val);
+            }
+          });
+
         }
       }
     }
@@ -2459,7 +2497,14 @@ if (typeof Object.assign != 'function') {
 
   GV.REACTIVE_BEHAVIORS['class'] = {
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param scopeData
+     * @param matches
+     */
     bind: function (viewNode, scopeData, matches) {
+      var sequence = viewNode.createSequence('class', true);
     },
     onApply: function (cache, viewNode, value, matches, scopeData) {
       if (viewNode.virtual) {
@@ -2512,7 +2557,6 @@ if (typeof Object.assign != 'function') {
 
   function setValue(value, oldValue, classes) {
     if (oldValue === value) return;
-    // debugger;
 
     if (typeof classes === 'string') {
       this.node.setAttribute('class', classes);
@@ -2524,7 +2568,11 @@ if (typeof Object.assign != 'function') {
         if (classes.hasOwnProperty(key) && classes[key]) temp.push(key);
       }
 
-      this.node.setAttribute('class', temp.join(' '));
+      var _this = this;
+      _this.sequences['class'].finish(function () {
+        _this.node.setAttribute('class', temp.join(' '));
+      });
+
     }
   }
 })(Galaxy.GalaxyView);
@@ -2591,6 +2639,14 @@ if (typeof Object.assign != 'function') {
         nodes: []
       };
     },
+    /**
+     *
+     * @param cache
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param changes
+     * @param matches
+     * @param nodeScopeData
+     */
     onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
       var parentNode = viewNode.parent;
       var position = null;

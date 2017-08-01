@@ -36,6 +36,9 @@ view.init({
           tag: 'ul',
           children: {
             $for: 'item in inputs.items',
+            animation: {
+              class: {}
+            },
             tag: 'li',
             class: {
               done: '[item.done]'
