@@ -1389,11 +1389,12 @@ if (typeof Object.assign != 'function') {
 
     for (var i = 0, len = node.childNodes.length; i < len; i++) {
       item = node.childNodes[i];
-      viewNodes = viewNodes.concat(GalaxyView.getAllViewNodes(item));
 
       if (item.hasOwnProperty('__viewNode__')) {
         viewNodes.push(item.__viewNode__);
       }
+
+      viewNodes = viewNodes.concat(GalaxyView.getAllViewNodes(item));
     }
 
     return viewNodes.filter(function (value, index, self) {
@@ -2088,6 +2089,7 @@ if (typeof Object.assign != 'function') {
 
     this.createSequence(':enter', true);
     this.createSequence(':leave', false);
+    this.createSequence(':class', true);
 
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
@@ -2243,18 +2245,31 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.empty = function () {
-    var toBeRemoved = [], node;
+    var toBeRemoved = [], node, _this = this;
     for (var i = 0, len = this.node.childNodes.length; i < len; i++) {
       node = this.node.childNodes[i];
-      toBeRemoved = toBeRemoved.concat(GV.getAllViewNodes(node));
 
       if (node.hasOwnProperty('__viewNode__')) {
         toBeRemoved.push(node.__viewNode__);
       }
+
+      toBeRemoved = toBeRemoved.concat(GV.getAllViewNodes(node));
     }
 
+    var domManipulationSequence = this.domManipulationSequence;
     toBeRemoved.forEach(function (viewNode) {
-      viewNode.destroy();
+      console.info(viewNode.node);
+      if (viewNode.parent === _this) {
+        domManipulationSequence = viewNode.domManipulationSequence;
+        viewNode.destroy();
+      } else if (viewNode.parent) {
+        domManipulationSequence.next(function (done) {
+          viewNode.destroy();
+          done();
+        });
+      } else {
+        viewNode.destroy();
+      }
     });
   };
 
@@ -2352,6 +2367,8 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy, TweenLite, TimelineLite */
 
 (function (G) {
+  var TIMELINES ={};
+
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
     type: 'custom',
     name: 'animation',
@@ -2373,7 +2390,7 @@ if (typeof Object.assign != 'function') {
             to.clearProps = 'all';
 
             if (enterAnimationConfig.sequence) {
-              var timeline = enterAnimationConfig.__timeline__ || new TimelineLite({
+              var timeline = TIMELINES[enterAnimationConfig.sequence] || new TimelineLite({
                 autoRemoveChildren: true
               });
 
@@ -2389,7 +2406,7 @@ if (typeof Object.assign != 'function') {
                   to), null);
               }
 
-              enterAnimationConfig.__timeline__ = timeline;
+              TIMELINES[enterAnimationConfig.sequence] = timeline;
             } else {
               TweenLite.fromTo(viewNode.node,
                 enterAnimationConfig.duration || 0,
@@ -2408,14 +2425,16 @@ if (typeof Object.assign != 'function') {
             to.clearProps = 'all';
 
             if (leaveAnimationConfig.sequence) {
-              var timeline = leaveAnimationConfig.__timeline__ || new TimelineLite();
+              var timeline = TIMELINES[leaveAnimationConfig.sequence] || new TimelineLite({
+                autoRemoveChildren: true
+              });
 
               timeline.add(TweenLite.fromTo(viewNode.node,
                 leaveAnimationConfig.duration || 0,
                 leaveAnimationConfig.from || {},
                 to), leaveAnimationConfig.position || null);
 
-              leaveAnimationConfig.__timeline__ = timeline;
+              TIMELINES[leaveAnimationConfig.sequence] = timeline;
             } else {
               TweenLite.fromTo(viewNode.node,
                 leaveAnimationConfig.duration || 0,
@@ -2425,20 +2444,52 @@ if (typeof Object.assign != 'function') {
           });
         }
 
-        if (config['class']) {
-          console.info([viewNode.node]);
-          G.GalaxyView.defineProp(viewNode.node, 'classList', {
-            configurable: true,
-            enumerable: false,
-            value: function (val) {
-              console.info(val);
-            }
-          });
-
-        }
+        // parseAnimationConfig(config);
+        // var _class = config['class'];
+        // if (_class) {
+        //   viewNode.sequences[':class'].next(function (done) {
+        //     var classAnimationConfig = _class;
+        //     var to = Object.assign({}, {className: classAnimationConfig.to || ''});
+        //     to.onComplete = done;
+        //     to.clearProps = 'all';
+        //
+        //     if (classAnimationConfig.sequence) {
+        //       var timeline = classAnimationConfig.__timeline__ || new TimelineLite();
+        //
+        //       timeline.add(TweenLite.fromTo(viewNode.node,
+        //         classAnimationConfig.duration || 0,
+        //         {
+        //           className: classAnimationConfig.from || ''
+        //         },
+        //         to), classAnimationConfig.position || null);
+        //
+        //       classAnimationConfig.__timeline__ = timeline;
+        //     } else {
+        //       TweenLite.fromTo(viewNode.node,
+        //         classAnimationConfig.duration || 0,
+        //         classAnimationConfig.from || {},
+        //         to);
+        //     }
+        //   });
+        //
+        // }
       }
     }
   };
+
+  function parseAnimationConfig(config) {
+    for (var key in config) {
+      if (config.hasOwnProperty(key)) {
+        var groups = key.match(/([^\s]*)\s+to\s+([^\s]*)/);
+        console.info(groups);
+      }
+    }
+
+    return [];
+  }
+  function getAnimationConfigOf(name, config) {
+
+  }
 })(Galaxy);
 
 /* global Galaxy */
@@ -2504,7 +2555,7 @@ if (typeof Object.assign != 'function') {
      * @param matches
      */
     bind: function (viewNode, scopeData, matches) {
-      var sequence = viewNode.createSequence('class', true);
+
     },
     onApply: function (cache, viewNode, value, matches, scopeData) {
       if (viewNode.virtual) {
@@ -2569,8 +2620,9 @@ if (typeof Object.assign != 'function') {
       }
 
       var _this = this;
-      _this.sequences['class'].finish(function () {
+      _this.sequences[':class'].finish(function () {
         _this.node.setAttribute('class', temp.join(' '));
+        // _this.sequences[':class'].reset();
       });
 
     }

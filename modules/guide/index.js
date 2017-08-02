@@ -7,6 +7,7 @@ view.init({
   class: 'card big',
   animation: {
     enter: {
+      sequence: 'card',
       from: {
         y: 100,
         opacity: 0
@@ -16,6 +17,16 @@ view.init({
         opacity: 1
       },
       duration: .5
+    },
+    leave: {
+      sequence: 'card',
+      from: {
+        opacity: 1
+      },
+      to: {
+        opacity: 0
+      },
+      duration: 2
     }
   },
   children: [
@@ -41,7 +52,7 @@ view.init({
               $for: 'item in inputs.items',
               animation: {
                 enter: {
-                  sequence: true,
+                  sequence: 'card',
                   from: {
                     x: 100,
                     opacity: 0
@@ -59,7 +70,11 @@ view.init({
                   },
                   duration: .3
                 },
-                class: {}
+                '* to done': {
+                  from: '',
+                  to: 'done',
+                  duration: 3
+                }
               },
               tag: 'p',
               text: '[item.title]',

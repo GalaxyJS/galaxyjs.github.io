@@ -12,6 +12,7 @@ view.init({
   class: 'card',
   animation: {
     enter: {
+      sequence: 'card',
       from: {
         y: 100,
         opacity: 0

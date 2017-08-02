@@ -79,12 +79,12 @@ Scope.todos = [
   }
 ];
 
-for (var i = 0; i < 10; i++) {
-  Scope.todos.push({
-    title: 'Dynamic item ' + i,
-    done: (i % 3 === 0)
-  });
-}
+// for (var i = 0; i < 10; i++) {
+//   Scope.todos.push({
+//     title: 'Dynamic item ' + i,
+//     done: (i % 3 === 0)
+//   });
+// }
 
 Scope.moduleInputs = {
   text: 'asdasd',
