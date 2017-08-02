@@ -1225,11 +1225,15 @@ if (typeof Object.assign != 'function') {
   function GalaxySequence() {
     this.line = null;
     this.firstStepResolve = null;
+    this.started = false;
     this.reset();
   }
 
   GalaxySequence.prototype.start = function () {
+    if(this.started) return this;
+
     this.firstStepResolve();
+    this.started = true;
     return this;
   };
 
@@ -1240,6 +1244,7 @@ if (typeof Object.assign != 'function') {
       _this.firstStepResolve = resolve;
     });
 
+    this.started = false;
     return _this;
   };
 
@@ -2089,6 +2094,7 @@ if (typeof Object.assign != 'function') {
 
     this.createSequence(':enter', true);
     this.createSequence(':leave', false);
+    this.createSequence(':destroy', false);
     this.createSequence(':class', true);
 
     __node__.value = this.node;
@@ -2182,23 +2188,54 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  ViewNode.prototype.destroy = function () {
+  ViewNode.prototype.destroy = function (sequence, source) {
     var _this = this;
 
-    if (_this.inDOM) {
-      _this.domManipulationSequence.next(function (done) {
-        _this.sequences[':leave'].start().finish(function () {
-          removeChild(_this.node.parentNode, _this.node);
-          done();
-          _this.sequences[':leave'].reset();
+    if (!source) {
+      if (_this.inDOM) {
+        _this.domManipulationSequence.next(function (done) {
+          _this.empty(_this.sequences[':destroy'], true);
+          _this.sequences[':destroy'].start().finish(function () {
+            _this.sequences[':leave'].start().finish(function () {
+              removeChild(_this.node.parentNode, _this.node);
+              _this.sequences[':leave'].reset();
+            });
+
+            done();
+            _this.sequences[':destroy'].reset();
+          });
         });
-      });
+      }
+    } else if (source) {
+      if (_this.inDOM) {
+        sequence.next(function (done) {
+          _this.sequences[':leave'].start().finish(function () {
+            _this.sequences[':leave'].reset();
+          });
+
+          done();
+        });
+      }
+
+      _this.empty(sequence, true);
+    } else {
+      if (_this.inDOM) {
+        _this.domManipulationSequence.next(function (done) {
+          _this.sequences[':leave'].start().finish(function () {
+            removeChild(_this.node.parentNode, _this.node);
+            done();
+            _this.sequences[':leave'].reset();
+          });
+        });
+      }
+      _this.empty(sequence, true);
     }
 
     _this.domManipulationSequence.next(function (done) {
       _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
       done();
     });
+
 
     var property, properties = _this.properties;
 
@@ -2208,12 +2245,14 @@ if (typeof Object.assign != 'function') {
     }
 
     _this.inDOM = false;
-    this.dependedObjects.forEach(function (item) {
+    _this.dependedObjects.forEach(function (item) {
       var temp = GV.getBoundProperties(item);
       temp.forEach(function (property) {
         property.removeNode(item);
       });
     });
+
+
   };
 
   ViewNode.prototype.addDependedObject = function (item) {
@@ -2244,33 +2283,25 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  ViewNode.prototype.empty = function () {
-    var toBeRemoved = [], node, _this = this;
-    for (var i = 0, len = this.node.childNodes.length; i < len; i++) {
+  ViewNode.prototype.empty = function (sequence, source) {
+    var toBeRemoved = [], node;
+    for (var i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
       node = this.node.childNodes[i];
 
       if (node.hasOwnProperty('__viewNode__')) {
         toBeRemoved.push(node.__viewNode__);
       }
-
-      toBeRemoved = toBeRemoved.concat(GV.getAllViewNodes(node));
     }
 
-    var domManipulationSequence = this.domManipulationSequence;
+    var domManipulationSequence;
+
     toBeRemoved.forEach(function (viewNode) {
-      console.info(viewNode.node);
-      if (viewNode.parent === _this) {
-        domManipulationSequence = viewNode.domManipulationSequence;
-        viewNode.destroy();
-      } else if (viewNode.parent) {
-        domManipulationSequence.next(function (done) {
-          viewNode.destroy();
-          done();
-        });
-      } else {
-        viewNode.destroy();
-      }
+      viewNode.destroy(sequence, source);
+      domManipulationSequence = viewNode.domManipulationSequence;
     });
+
+
+    return domManipulationSequence || this.domManipulationSequence;
   };
 
   ViewNode.prototype.getPlaceholder = function () {
@@ -2367,7 +2398,7 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy, TweenLite, TimelineLite */
 
 (function (G) {
-  var TIMELINES ={};
+  var ANIMATIONS = {};
 
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
     type: 'custom',
@@ -2381,33 +2412,21 @@ if (typeof Object.assign != 'function') {
      */
     handler: function (viewNode, attr, config, scopeData) {
       if (!viewNode.virtual) {
-        var enter = config['enter'];
-        if (enter) {
+        var enterAnimationConfig = config[':enter'];
+        if (enterAnimationConfig) {
           viewNode.sequences[':enter'].next(function (done) {
-            var enterAnimationConfig = enter;
-            var to = Object.assign({}, enterAnimationConfig.to || {});
-            to.onComplete = done;
-            to.clearProps = 'all';
-
             if (enterAnimationConfig.sequence) {
-              var timeline = TIMELINES[enterAnimationConfig.sequence] || new TimelineLite({
-                autoRemoveChildren: true
-              });
+              var animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
 
-              if (timeline.getChildren().length > 0) {
-                timeline.add(TweenLite.fromTo(viewNode.node,
-                  enterAnimationConfig.duration || 0,
-                  enterAnimationConfig.from || {},
-                  to), enterAnimationConfig.position || null);
-              } else {
-                timeline.add(TweenLite.fromTo(viewNode.node,
-                  enterAnimationConfig.duration || 0,
-                  enterAnimationConfig.from || {},
-                  to), null);
+              if (enterAnimationConfig.group) {
+                animationMeta = animationMeta.getGroup(enterAnimationConfig.group);
               }
 
-              TIMELINES[enterAnimationConfig.sequence] = timeline;
+              animationMeta.add(viewNode.node, enterAnimationConfig, done);
             } else {
+              var to = Object.assign({}, enterAnimationConfig.to || {});
+              to.onComplete = done;
+              to.clearProps = 'all';
               TweenLite.fromTo(viewNode.node,
                 enterAnimationConfig.duration || 0,
                 enterAnimationConfig.from || {},
@@ -2416,26 +2435,56 @@ if (typeof Object.assign != 'function') {
           });
         }
 
-        var leave = config['leave'];
-        if (leave) {
+        var leaveAnimationConfig = config[':leave'];
+        if (leaveAnimationConfig) {
+          viewNode.sequences[':destroy'].next(function (done) {
+            viewNode._destroyed = true;
+            done();
+          });
+
           viewNode.sequences[':leave'].next(function (done) {
-            var leaveAnimationConfig = leave;
-            var to = Object.assign({}, leaveAnimationConfig.to || {});
-            to.onComplete = done;
-            to.clearProps = 'all';
-
             if (leaveAnimationConfig.sequence) {
-              var timeline = TIMELINES[leaveAnimationConfig.sequence] || new TimelineLite({
-                autoRemoveChildren: true
-              });
+              var animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
 
-              timeline.add(TweenLite.fromTo(viewNode.node,
-                leaveAnimationConfig.duration || 0,
-                leaveAnimationConfig.from || {},
-                to), leaveAnimationConfig.position || null);
+              // if the animation has order it will be added to the queue according to its order.
+              // No order means lowest order
+              if (typeof leaveAnimationConfig.order === 'number') {
+                if (!animationMeta.queue[leaveAnimationConfig.order]) animationMeta.queue[leaveAnimationConfig.order] = [];
 
-              TIMELINES[leaveAnimationConfig.sequence] = timeline;
+                animationMeta.queue[leaveAnimationConfig.order].push(function () {
+                  if (leaveAnimationConfig.group) {
+                    animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+                  }
+
+                  animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+
+                });
+
+                // When viewNode is the one which is destroyed, then run the queue
+                // The queue will never run if the destroyed viewNode has the lowest order
+                if (viewNode._destroyed) {
+                  for (var key in animationMeta.queue) {
+                    animationMeta.queue[key].forEach(function (item) {
+                      item();
+                    });
+                  }
+
+                  animationMeta.queue = {};
+                  delete viewNode._destroyed;
+                }
+
+                return;
+              }
+
+              if (leaveAnimationConfig.group) {
+                animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+              }
+
+              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
             } else {
+              var to = Object.assign({}, leaveAnimationConfig.to || {});
+              to.onComplete = done;
+              to.clearProps = 'all';
               TweenLite.fromTo(viewNode.node,
                 leaveAnimationConfig.duration || 0,
                 leaveAnimationConfig.from || {},
@@ -2477,6 +2526,62 @@ if (typeof Object.assign != 'function') {
     }
   };
 
+  function AnimationMeta() {
+    this.timeline = new TimelineLite({
+      autoRemoveChildren: true
+    });
+    this.groups = {};
+    this.queue = {};
+  }
+
+  AnimationMeta.get = function (name) {
+    if (!ANIMATIONS[name]) {
+      ANIMATIONS[name] = new AnimationMeta();
+    }
+
+
+    return ANIMATIONS[name];
+  };
+
+  AnimationMeta.prototype.getGroup = function (name) {
+    if (!this.groups[name]) {
+      this.groups[name] = new AnimationMeta();
+    }
+
+    if (this.timeline.getChildren().indexOf(this.groups[name].timelin) === -1) {
+      this.timeline.add(this.groups[name].timeline);
+    }
+
+    return this.groups[name];
+  };
+
+  AnimationMeta.prototype.add = function (node, config, onComplete) {
+    var to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+    // to.clearProps = 'all';
+
+    if (this.timeline.getChildren().length > 0) {
+      this.timeline.add(TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to), config.position || null);
+    } else {
+      this.timeline.add(TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to), null);
+    }
+  };
+
+  function getSequenceTimeline(name) {
+    if (!ANIMATIONS[name]) {
+      ANIMATIONS[name] = new AnimationMeta();
+    }
+
+
+    return ANIMATIONS[name];
+  }
+
   function parseAnimationConfig(config) {
     for (var key in config) {
       if (config.hasOwnProperty(key)) {
@@ -2487,6 +2592,7 @@ if (typeof Object.assign != 'function') {
 
     return [];
   }
+
   function getAnimationConfigOf(name, config) {
 
   }
@@ -2817,14 +2923,16 @@ if (typeof Object.assign != 'function') {
     onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
       if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
         viewNode.onReady.then(function () {
-          viewNode.empty();
-          cache.scope.load(moduleMeta, {
-            element: viewNode
-          }).then(function (module) {
-            viewNode.node.setAttribute('module', module.systemId);
-            module.start();
-          }).catch(function (response) {
-            console.error(response);
+          viewNode.empty().next(function (done) {
+            done();
+            cache.scope.load(moduleMeta, {
+              element: viewNode
+            }).then(function (module) {
+              viewNode.node.setAttribute('module', module.systemId);
+              module.start();
+            }).catch(function (response) {
+              console.error(response);
+            });
           });
         });
       } else if (!moduleMeta) {

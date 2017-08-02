@@ -1,12 +1,12 @@
 /* globals Scope */
 
 var view = Scope.import('galaxy/view');
-var inputs = Scope.import('galaxy/inputs');
+Scope.import('galaxy/inputs');
 
 view.init({
   class: 'card big',
   animation: {
-    enter: {
+    ':enter': {
       sequence: 'card',
       from: {
         y: 100,
@@ -18,15 +18,14 @@ view.init({
       },
       duration: .5
     },
-    leave: {
+    ':leave': {
       sequence: 'card',
-      from: {
-        opacity: 1
-      },
+      order: 100,
       to: {
+        y: 100,
         opacity: 0
       },
-      duration: 2
+      duration: .5
     }
   },
   children: [
@@ -36,11 +35,33 @@ view.init({
       children: [
         {
           tag: 'h1',
-          text: 'Guide Page'
+          text: 'Guide Page',
+          // animation: {
+          //   ':leave': {
+          //     sequence: 'card',
+          //     group: 'h1',
+          //     order: 10,
+          //     to: {
+          //       color: 'green'
+          //     },
+          //     duration: 1
+          //   }
+          // }
         },
         {
           tag: 'h3',
-          text: '[inputs.title]'
+          text: 'Secondary title',
+          // animation: {
+          //   ':leave': {
+          //     sequence: 'card',
+          //     group: 'h3',
+          //     order: 5,
+          //     to: {
+          //       color: 'red'
+          //     },
+          //     duration: 1
+          //   }
+          // }
         },
         {
           content: '*'
@@ -51,8 +72,9 @@ view.init({
             {
               $for: 'item in inputs.items',
               animation: {
-                enter: {
+                ':enter': {
                   sequence: 'card',
+                  group: 'items',
                   from: {
                     x: 100,
                     opacity: 0
@@ -61,13 +83,18 @@ view.init({
                     x: 0,
                     opacity: 1
                   },
-                  position: '-=.9',
-                  duration: 1
+                  position: '-=.25',
+                  duration: .3
                 },
-                leave: {
+                ':leave': {
+                  sequence: 'card',
+                  group: 'items',
+                  order: 1,
                   to: {
+                    x: 100,
                     opacity: 0
                   },
+                  position: '-=.25',
                   duration: .3
                 },
                 '* to done': {

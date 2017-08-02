@@ -11,7 +11,7 @@ view.init({
   tag: 'div',
   class: 'card',
   animation: {
-    enter: {
+    ':enter': {
       sequence: 'card',
       from: {
         y: 100,
@@ -20,6 +20,14 @@ view.init({
       to: {
         y: 0,
         opacity: 1
+      },
+      duration: .5
+    },
+    ':leave': {
+      sequence: 'card',
+      to: {
+        y: 100,
+        opacity: 0
       },
       duration: .5
     }
