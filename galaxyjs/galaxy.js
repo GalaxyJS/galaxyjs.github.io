@@ -894,40 +894,12 @@ if (typeof Object.assign != 'function') {
         invokers.push(module.url);
       }
 
-      // if (moduleExist) {
-      //   _this.compileModuleContent(module, moduleExist, invokers).then(function (module) {
-      //
-      //     _this.executeCompiledModule(module).then(resolve);
-      //   });
-      //   // resolve(moduleExist);
-      //   // var ol = Galaxy.onModuleLoaded[module.systemId];
-      //
-      //   // if ('function' === typeof (ol)) {
-      //   //   ol(moduleExist);
-      //   //   delete Galaxy.onModuleLoaded[module.systemId];
-      //   // }
-      //
-      //   return;
-      // }
-
-      // if (Galaxy.onLoadQueue[module.systemId]) {
-      //   return;
-      // }
-
       Galaxy.onLoadQueue[module.systemId] = true;
       var url = module.url + '?' + _this.convertToURIString(module.params || {});
       // var fetcher = root.Galaxy.onModuleLoaded[url];
       var fetcherContent = root.Galaxy.moduleContents[url];
 
       if (!fetcherContent || module.fresh) {
-        // root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
-        //   return response.text();
-        // }).then(function (moduleContent) {
-        //   return _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {
-        //     return _this.executeCompiledModule(module);
-        //   });
-        // });
-
         root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
           if (response.status !== 200) {
             reject(response);
@@ -1026,7 +998,6 @@ if (typeof Object.assign != 'function') {
    */
   Core.prototype.executeCompiledModule = function (module) {
     var promise = new Promise(function (resolve, reject) {
-
       for (var item in module.addOns) {
         module.scope.imports[item] = module.addOns[item];
       }
@@ -1189,6 +1160,7 @@ if (typeof Object.assign != 'function') {
     var match = myRegexp.exec(urlParser.pathname);
     this.path = match ? match[0] : '/';
     this.parsedURL = urlParser.href;
+    this.uri = urlParser;
   }
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
@@ -1508,9 +1480,9 @@ if (typeof Object.assign != 'function') {
     if (scope.element instanceof GalaxyView.ViewNode) {
       rootElement = scope.element;
     } else {
+      scope.element.innerHTML = '';
       rootElement = new GalaxyView.ViewNode(this, {
         tag: scope.element.tagName
-        // node: scope.element
       }, scope.element);
     }
 
@@ -2149,7 +2121,7 @@ if (typeof Object.assign != 'function') {
   ViewNode.prototype.setInDOM = function (flag) {
     var _this = this;
     _this.inDOM = flag;
-    if (flag && !_this.node.parentNode && !_this.virtual) {
+    if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
@@ -2353,10 +2325,10 @@ if (typeof Object.assign != 'function') {
         }
       }
 
-      if (viewNode.hasOwnProperty('__inputs__') && clone !== viewNode.__inputs__) {
-        Galaxy.resetObjectTo(viewNode.__inputs__, clone);
-      } else if (!viewNode.hasOwnProperty('__inputs__')) {
-        Object.defineProperty(viewNode, '__inputs__', {
+      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]']) {
+        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], clone);
+      } else if (!viewNode.hasOwnProperty('[addon/inputs]')) {
+        Object.defineProperty(viewNode, '[addon/inputs]', {
           value: clone,
           enumerable: false
         });
@@ -2367,7 +2339,7 @@ if (typeof Object.assign != 'function') {
   G.registerAddOnProvider('galaxy/inputs', function (scope) {
     return {
       create: function () {
-        scope.inputs = scope.element.__inputs__;
+        scope.inputs = scope.element['[addon/inputs]'];
 
         return scope.inputs;
       },
@@ -2696,10 +2668,10 @@ if (typeof Object.assign != 'function') {
         }
       }
 
-      if (viewNode.hasOwnProperty('__class__') && clone !== viewNode.__class__) {
-        Galaxy.resetObjectTo(viewNode.__class__, clone);
-      } else if (!viewNode.hasOwnProperty('__class__')) {
-        Object.defineProperty(viewNode, '__class__', {
+      if (viewNode.hasOwnProperty('[reactive/class]') && clone !== viewNode['[reactive/class]']) {
+        Galaxy.resetObjectTo(viewNode['[reactive/class]'], clone);
+      } else if (!viewNode.hasOwnProperty('[reactive/class]')) {
+        Object.defineProperty(viewNode, '[reactive/class]', {
           value: clone,
           enumerable: false
         });
@@ -2771,7 +2743,6 @@ if (typeof Object.assign != 'function') {
           done();
         });
       }
-
     }
   };
 })(Galaxy.GalaxyView);
@@ -2905,6 +2876,8 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy */
 
 (function (GV) {
+  var URL_PARSER = document.createElement('a');
+
   GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
     type: 'reactive',
     name: 'module'
@@ -2925,6 +2898,19 @@ if (typeof Object.assign != 'function') {
         viewNode.onReady.then(function () {
           viewNode.empty().next(function (done) {
             done();
+
+            // Check for circular module loading
+            URL_PARSER.href = moduleMeta.url;
+            var root = viewNode.root;
+            while (root.scope) {
+              if (URL_PARSER.href === root.scope.parsedURL) {
+                URL_PARSER.href = '';
+                return console.error('Circular module loading detected and stopped. \n' + cache.scope.parsedURL + ' tries to load itself.');
+              }
+
+              root = root.container;
+            }
+
             cache.scope.load(moduleMeta, {
               element: viewNode
             }).then(function (module) {
