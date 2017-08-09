@@ -79,31 +79,31 @@ view.init({
                     x: 100,
                     opacity: 0
                   },
-                  to: {
-                    x: 0,
-                    opacity: 1
-                  },
                   position: '-=.25',
-                  duration: .3
+                  duration: .4
                 },
                 ':leave': {
                   sequence: 'card',
                   group: 'items',
-                  order: 1,
+                  order: 10,
                   to: {
                     x: 100,
                     opacity: 0
                   },
                   position: '-=.25',
-                  duration: .3
+                  duration: .4
                 },
-                '* to done': {
-                  from: '',
-                  to: 'done',
-                  duration: 3
+                '.done': {
+                  sequence: 'card',
+                  group: 'items',
+                  order: 1,
+                  duration: .3
                 }
               },
               tag: 'p',
+              class: {
+                done: '[item.done]'
+              },
               text: '[item.title]',
               children: [
                 {

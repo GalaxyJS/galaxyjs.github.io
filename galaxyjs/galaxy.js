@@ -1316,6 +1316,11 @@ if (typeof Object.assign != 'function') {
 
   GalaxyView.defineProp = defineProp;
 
+  GalaxyView.setAttr = function (viewNode, name, value, oldValue) {
+    viewNode.callWatchers(name, value);
+    setAttr.call(viewNode.node, name, value, oldValue);
+  };
+
   GalaxyView.cleanProperty = function (obj, key) {
     delete obj[key];
   };
@@ -1566,10 +1571,10 @@ if (typeof Object.assign != 'function') {
 
   GalaxyView.prototype.addReactiveBehavior = function (viewNode, nodeSchema, nodeScopeData, key) {
     var behavior = GalaxyView.REACTIVE_BEHAVIORS[key];
-    var value = nodeSchema[key];
+    var bindTo = nodeSchema[key];
 
     if (behavior) {
-      var matches = behavior.regex ? (typeof(value) === 'string' ? value.match(behavior.regex) : value) : value;
+      var matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
       viewNode.properties.__behaviors__[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
         var CACHE = {};
@@ -1577,8 +1582,8 @@ if (typeof Object.assign != 'function') {
           CACHE = BEHAVIOR.getCache(viewNode, MATCHES, BEHAVIOR_SCOPE_DATA);
         }
 
-        return function (_viewNode, _value) {
-          return BEHAVIOR.onApply(CACHE, _viewNode, _value, MATCHES, BEHAVIOR_SCOPE_DATA);
+        return function (vn, value, oldValue) {
+          return BEHAVIOR.onApply(CACHE, vn, value, oldValue, MATCHES, BEHAVIOR_SCOPE_DATA);
         };
       })(behavior, matches, nodeScopeData);
 
@@ -1593,16 +1598,17 @@ if (typeof Object.assign != 'function') {
     switch (property.type) {
       case 'attr':
         newValue = property.parser ? property.parser(value) : value;
-        viewNode.node.setAttribute(attributeName, newValue);
+        GalaxyView.setAttr(viewNode, attributeName, newValue, null);
         break;
 
       case 'prop':
         newValue = property.parser ? property.parser(value) : value;
+        viewNode.callWatchers(property.name, value, null);
         viewNode.node[property.name] = newValue;
         break;
 
       case 'reactive':
-        viewNode.properties.__behaviors__[property.name](viewNode, newValue);
+        viewNode.properties.__behaviors__[property.name](viewNode, newValue, null);
         break;
 
       case 'event':
@@ -1610,7 +1616,7 @@ if (typeof Object.assign != 'function') {
         break;
 
       case 'custom':
-        property.handler(viewNode, attributeName, value, scopeData);
+        property.handler(viewNode, attributeName, value, null, scopeData);
         break;
     }
   };
@@ -1628,15 +1634,16 @@ if (typeof Object.assign != 'function') {
 
     switch (property.type) {
       case 'attr':
-        return function (value) {
+        return function (value, oldValue) {
           var newValue = parser ? parser(value) : value;
-          setAttr.call(viewNode.node, attributeName, newValue);
+          GalaxyView.setAttr(viewNode, attributeName, newValue, oldValue);
         };
 
       case 'prop':
-        return function (value) {
+        return function (value, oldValue) {
           var newValue = parser ? parser(value) : value;
           viewNode.node[property.name] = newValue;
+          viewNode.callWatchers(property.name, newValue, oldValue);
         };
 
       case 'reactive':
@@ -1646,19 +1653,19 @@ if (typeof Object.assign != 'function') {
           console.error('Reactive handler not found for: ' + property.name);
         }
 
-        return function (value) {
-          reactiveFunction(viewNode, value);
+        return function (value, oldValue) {
+          reactiveFunction(viewNode, value, oldValue);
         };
 
       case 'custom':
-        return function (value, scopeData) {
-          property.handler(viewNode, attributeName, value, scopeData);
+        return function (value, oldValue, scopeData) {
+          property.handler(viewNode, attributeName, value, oldValue, scopeData);
         };
 
       default:
-        return function (value) {
+        return function (value, oldValue) {
           var newValue = parser ? parser(value) : value;
-          setAttr.call(viewNode.node, attributeName, newValue);
+          GalaxyView.setAttr(viewNode, attributeName, newValue, oldValue);
         };
     }
   };
@@ -1963,10 +1970,10 @@ if (typeof Object.assign != 'function') {
         console.info(host, attributeName, newValue);
       }
 
-      host.setters[attributeName](newValue, scopeData);
+      host.setters[attributeName](newValue, oldValue, scopeData);
     } else {
       host[attributeName] = newValue;
-      host.__onChange__(newValue, oldValue, host);
+      host.__onChange__(attributeName, newValue, oldValue, host);
     }
   };
 
@@ -1974,7 +1981,7 @@ if (typeof Object.assign != 'function') {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
     } else {
-      host.__onUpdate__(changes, host);
+      host.__onUpdate__(attributeName, changes, host);
     }
   };
 
@@ -2054,13 +2061,14 @@ if (typeof Object.assign != 'function') {
     this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
+    this.watchers = {};
     this.parent = null;
     this.dependedObjects = [];
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
 
     var _this = this;
-    this.onReady = new Promise(function (ready) {
+    this.rendered = new Promise(function (ready) {
       _this.ready = ready;
     });
 
@@ -2223,8 +2231,6 @@ if (typeof Object.assign != 'function') {
         property.removeNode(item);
       });
     });
-
-
   };
 
   ViewNode.prototype.addDependedObject = function (item) {
@@ -2284,7 +2290,261 @@ if (typeof Object.assign != 'function') {
     return this.placeholder;
   };
 
+  ViewNode.prototype.watch = function (name, callback) {
+    this.watchers[name] = callback.bind(this);
+  };
+
+  ViewNode.prototype.callWatchers = function (name, value, oldValue) {
+    if (this.watchers.hasOwnProperty(name)) {
+      this.watchers[name](value, oldValue);
+    }
+  };
+
 })(Galaxy.GalaxyView);
+
+/* global Galaxy, TweenLite, TimelineLite */
+
+(function (G) {
+  var ANIMATIONS = {};
+
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
+    type: 'custom',
+    name: 'animation',
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param attr
+     * @param config
+     * @param scopeData
+     */
+    handler: function (viewNode, attr, config, oldConfig, scopeData) {
+      viewNode.rendered.then(function () {
+        if (!viewNode.virtual) {
+          var enterAnimationConfig = config[':enter'];
+          if (enterAnimationConfig) {
+            viewNode.sequences[':enter'].next(function (done) {
+              if (enterAnimationConfig.sequence) {
+                var animationMeta = AnimationMeta.GET(enterAnimationConfig.sequence);
+
+                if (enterAnimationConfig.group) {
+                  animationMeta = animationMeta.getGroup(enterAnimationConfig.group);
+                }
+
+                var lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+                lastStep.clearProps = 'all';
+                animationMeta.add(viewNode.node, enterAnimationConfig, done);
+              } else {
+                AnimationMeta.CREATE_TWEEN(viewNode.node, enterAnimationConfig, done);
+              }
+            });
+          }
+
+          var leaveAnimationConfig = config[':leave'];
+          if (leaveAnimationConfig) {
+            viewNode.sequences[':destroy'].next(function (done) {
+              viewNode._destroyed = true;
+              done();
+            });
+
+            viewNode.sequences[':leave'].next(function (done) {
+              if (leaveAnimationConfig.sequence) {
+                var animationMeta = AnimationMeta.GET(leaveAnimationConfig.sequence);
+
+                // if the animation has order it will be added to the queue according to its order.
+                // No order means lowest order
+                if (typeof leaveAnimationConfig.order === 'number') {
+                  if (!animationMeta.queue[leaveAnimationConfig.order]) animationMeta.queue[leaveAnimationConfig.order] = [];
+
+                  animationMeta.queue[leaveAnimationConfig.order].push(function () {
+                    if (leaveAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+                    }
+
+                    animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+                  });
+
+                  // When viewNode is the one which is destroyed, then run the queue
+                  // The queue will never run if the destroyed viewNode has the lowest order
+                  if (viewNode._destroyed) {
+                    for (var key in animationMeta.queue) {
+                      animationMeta.queue[key].forEach(function (item) {
+                        item();
+                      });
+                    }
+
+                    animationMeta.queue = {};
+                    delete viewNode._destroyed;
+                  }
+
+                  return;
+                }
+
+                if (leaveAnimationConfig.group) {
+                  animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+                }
+
+                animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+              } else {
+                AnimationMeta.CREATE_TWEEN(viewNode.node, leaveAnimationConfig, done);
+              }
+            });
+          }
+
+          viewNode.watch('class', function (value, oldValue) {
+            value.forEach(function (item) {
+              if (oldValue.indexOf(item) === -1) {
+                var _config = config['.' + item];
+                if (_config) {
+                  viewNode.sequences[':class'].next(function (done) {
+                    var classAnimationConfig = _config;
+                    classAnimationConfig.to = {className: '+=' + item || ''};
+
+                    if (classAnimationConfig.sequence) {
+                      var animationMeta = AnimationMeta.GET(classAnimationConfig.sequence);
+
+                      if (classAnimationConfig.group) {
+                        animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                      }
+
+                      animationMeta.add(viewNode.node, classAnimationConfig, done);
+                    } else {
+                      AnimationMeta.CREATE_TWEEN(viewNode.node, classAnimationConfig, done);
+                    }
+                  });
+                }
+              }
+            });
+
+            oldValue.forEach(function (item) {
+              if (value.indexOf(item) === -1) {
+                var _config = config['.' + item];
+                if (_config) {
+                  viewNode.sequences[':class'].next(function (done) {
+                    var classAnimationConfig = _config;
+                    classAnimationConfig.to = {className: '-=' + item || ''};
+
+                    if (classAnimationConfig.sequence) {
+                      var animationMeta = AnimationMeta.GET(classAnimationConfig.sequence);
+
+                      if (classAnimationConfig.group) {
+                        animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                      }
+
+                      animationMeta.add(viewNode.node, classAnimationConfig, done);
+                    } else {
+                      AnimationMeta.CREATE_TWEEN(viewNode.node, classAnimationConfig, done);
+                    }
+                  });
+                }
+              }
+            });
+          });
+        }
+      });
+    }
+  };
+
+  function AnimationMeta() {
+    this.timeline = new TimelineLite({
+      autoRemoveChildren: true
+    });
+    this.groups = {};
+    this.queue = {};
+  }
+
+  AnimationMeta.GET = function (name) {
+    if (!ANIMATIONS[name]) {
+      ANIMATIONS[name] = new AnimationMeta();
+    }
+
+
+    return ANIMATIONS[name];
+  };
+
+  AnimationMeta.CREATE_TWEEN = function (node, config, onComplete) {
+    var to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+    var tween = null;
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      var from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+    return tween;
+  };
+
+  AnimationMeta.prototype.getGroup = function (name) {
+    if (!this.groups[name]) {
+      this.groups[name] = new AnimationMeta();
+    }
+
+    if (this.timeline.getChildren().indexOf(this.groups[name].timelin) === -1) {
+      this.timeline.add(this.groups[name].timeline);
+    }
+
+    return this.groups[name];
+  };
+
+  AnimationMeta.prototype.add = function (node, config, onComplete) {
+    var to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+    var tween = null;
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      var from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+    if (this.timeline.getChildren().length > 0) {
+      this.timeline.add(tween, config.position || null);
+    } else {
+      this.timeline.add(tween, null);
+    }
+  };
+})(Galaxy);
+
+/* global Galaxy */
+
+(function (G) {
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
+    type: 'custom',
+    name: 'on',
+    handler: function (viewNode, attr, events, oldEvents, scopeData) {
+      if (events !== null && typeof events === 'object') {
+        for (var name in events) {
+          if (events.hasOwnProperty(name)) {
+            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
+          }
+        }
+      }
+    }
+  };
+})(Galaxy);
 
 /* global Galaxy */
 
@@ -2292,7 +2552,7 @@ if (typeof Object.assign != 'function') {
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
     type: 'custom',
     name: 'inputs',
-    handler: function (viewNode, attr, value, scopeData) {
+    handler: function (viewNode, attr, value, oldValue, scopeData) {
       if (viewNode.virtual) {
         return;
       }
@@ -2367,227 +2627,6 @@ if (typeof Object.assign != 'function') {
   });
 })(Galaxy);
 
-/* global Galaxy, TweenLite, TimelineLite */
-
-(function (G) {
-  var ANIMATIONS = {};
-
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
-    type: 'custom',
-    name: 'animation',
-    /**
-     *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param attr
-     * @param config
-     * @param scopeData
-     */
-    handler: function (viewNode, attr, config, scopeData) {
-      if (!viewNode.virtual) {
-        var enterAnimationConfig = config[':enter'];
-        if (enterAnimationConfig) {
-          viewNode.sequences[':enter'].next(function (done) {
-            if (enterAnimationConfig.sequence) {
-              var animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
-
-              if (enterAnimationConfig.group) {
-                animationMeta = animationMeta.getGroup(enterAnimationConfig.group);
-              }
-
-              animationMeta.add(viewNode.node, enterAnimationConfig, done);
-            } else {
-              var to = Object.assign({}, enterAnimationConfig.to || {});
-              to.onComplete = done;
-              to.clearProps = 'all';
-              TweenLite.fromTo(viewNode.node,
-                enterAnimationConfig.duration || 0,
-                enterAnimationConfig.from || {},
-                to);
-            }
-          });
-        }
-
-        var leaveAnimationConfig = config[':leave'];
-        if (leaveAnimationConfig) {
-          viewNode.sequences[':destroy'].next(function (done) {
-            viewNode._destroyed = true;
-            done();
-          });
-
-          viewNode.sequences[':leave'].next(function (done) {
-            if (leaveAnimationConfig.sequence) {
-              var animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-
-              // if the animation has order it will be added to the queue according to its order.
-              // No order means lowest order
-              if (typeof leaveAnimationConfig.order === 'number') {
-                if (!animationMeta.queue[leaveAnimationConfig.order]) animationMeta.queue[leaveAnimationConfig.order] = [];
-
-                animationMeta.queue[leaveAnimationConfig.order].push(function () {
-                  if (leaveAnimationConfig.group) {
-                    animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-                  }
-
-                  animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-
-                });
-
-                // When viewNode is the one which is destroyed, then run the queue
-                // The queue will never run if the destroyed viewNode has the lowest order
-                if (viewNode._destroyed) {
-                  for (var key in animationMeta.queue) {
-                    animationMeta.queue[key].forEach(function (item) {
-                      item();
-                    });
-                  }
-
-                  animationMeta.queue = {};
-                  delete viewNode._destroyed;
-                }
-
-                return;
-              }
-
-              if (leaveAnimationConfig.group) {
-                animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-              }
-
-              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-            } else {
-              var to = Object.assign({}, leaveAnimationConfig.to || {});
-              to.onComplete = done;
-              to.clearProps = 'all';
-              TweenLite.fromTo(viewNode.node,
-                leaveAnimationConfig.duration || 0,
-                leaveAnimationConfig.from || {},
-                to);
-            }
-          });
-        }
-
-        // parseAnimationConfig(config);
-        // var _class = config['class'];
-        // if (_class) {
-        //   viewNode.sequences[':class'].next(function (done) {
-        //     var classAnimationConfig = _class;
-        //     var to = Object.assign({}, {className: classAnimationConfig.to || ''});
-        //     to.onComplete = done;
-        //     to.clearProps = 'all';
-        //
-        //     if (classAnimationConfig.sequence) {
-        //       var timeline = classAnimationConfig.__timeline__ || new TimelineLite();
-        //
-        //       timeline.add(TweenLite.fromTo(viewNode.node,
-        //         classAnimationConfig.duration || 0,
-        //         {
-        //           className: classAnimationConfig.from || ''
-        //         },
-        //         to), classAnimationConfig.position || null);
-        //
-        //       classAnimationConfig.__timeline__ = timeline;
-        //     } else {
-        //       TweenLite.fromTo(viewNode.node,
-        //         classAnimationConfig.duration || 0,
-        //         classAnimationConfig.from || {},
-        //         to);
-        //     }
-        //   });
-        //
-        // }
-      }
-    }
-  };
-
-  function AnimationMeta() {
-    this.timeline = new TimelineLite({
-      autoRemoveChildren: true
-    });
-    this.groups = {};
-    this.queue = {};
-  }
-
-  AnimationMeta.get = function (name) {
-    if (!ANIMATIONS[name]) {
-      ANIMATIONS[name] = new AnimationMeta();
-    }
-
-
-    return ANIMATIONS[name];
-  };
-
-  AnimationMeta.prototype.getGroup = function (name) {
-    if (!this.groups[name]) {
-      this.groups[name] = new AnimationMeta();
-    }
-
-    if (this.timeline.getChildren().indexOf(this.groups[name].timelin) === -1) {
-      this.timeline.add(this.groups[name].timeline);
-    }
-
-    return this.groups[name];
-  };
-
-  AnimationMeta.prototype.add = function (node, config, onComplete) {
-    var to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
-    // to.clearProps = 'all';
-
-    if (this.timeline.getChildren().length > 0) {
-      this.timeline.add(TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to), config.position || null);
-    } else {
-      this.timeline.add(TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to), null);
-    }
-  };
-
-  function getSequenceTimeline(name) {
-    if (!ANIMATIONS[name]) {
-      ANIMATIONS[name] = new AnimationMeta();
-    }
-
-
-    return ANIMATIONS[name];
-  }
-
-  function parseAnimationConfig(config) {
-    for (var key in config) {
-      if (config.hasOwnProperty(key)) {
-        var groups = key.match(/([^\s]*)\s+to\s+([^\s]*)/);
-        console.info(groups);
-      }
-    }
-
-    return [];
-  }
-
-  function getAnimationConfigOf(name, config) {
-
-  }
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
-    type: 'custom',
-    name: 'on',
-    handler: function (viewNode, attr, events, scopeData) {
-      if (events !== null && typeof events === 'object') {
-        for (var name in events) {
-          if (events.hasOwnProperty(name)) {
-            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
-          }
-        }
-      }
-    }
-  };
-})(Galaxy);
-
 /* global Galaxy */
 
 (function (GV) {
@@ -2635,7 +2674,7 @@ if (typeof Object.assign != 'function') {
     bind: function (viewNode, scopeData, matches) {
 
     },
-    onApply: function (cache, viewNode, value, matches, scopeData) {
+    onApply: function (cache, viewNode, value, oldValue, matches, scopeData) {
       if (viewNode.virtual) {
         return;
       }
@@ -2677,32 +2716,40 @@ if (typeof Object.assign != 'function') {
         });
       }
 
-      clone.__onChange__ = setValue.bind(viewNode);
-      clone.__onChange__(true, false, clone);
-
+      viewNode.node.setAttribute('class', getClasses(clone).join(' '));
+      clone.__onChange__ = toggles.bind(viewNode);
+      clone.__onChange__(null, true, false, clone);
       viewNode.addDependedObject(clone);
     }
   };
 
-  function setValue(value, oldValue, classes) {
+  function toggles(name, value, oldValue, classes) {
     if (oldValue === value) return;
+    var oldClasses = this.node.getAttribute('class');
+    oldClasses = oldClasses ? oldClasses.split(' ') : [];
+    var newClasses = getClasses(classes);
+    var _this = this;
 
+    _this.callWatchers('class', newClasses, oldClasses);
+    _this.sequences[':class'].start().finish(function () {
+      _this.node.setAttribute('class', newClasses.join(' '));
+      _this.sequences[':class'].reset();
+    });
+
+  }
+
+  function getClasses(obj) {
     if (typeof classes === 'string') {
-      this.node.setAttribute('class', classes);
-    } else if (classes instanceof Array) {
-      this.node.setAttribute('class', classes.join(' '));
-    } else if (classes !== null && typeof classes === 'object') {
-      var temp = [];
-      for (var key in classes) {
-        if (classes.hasOwnProperty(key) && classes[key]) temp.push(key);
+      return [obj];
+    } else if (obj instanceof Array) {
+      return obj;
+    } else if (obj !== null && typeof obj === 'object') {
+      var newClasses = [];
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key) && obj[key]) newClasses.push(key);
       }
 
-      var _this = this;
-      _this.sequences[':class'].finish(function () {
-        _this.node.setAttribute('class', temp.join(' '));
-        // _this.sequences[':class'].reset();
-      });
-
+      return newClasses;
     }
   }
 })(Galaxy.GalaxyView);
@@ -2727,7 +2774,7 @@ if (typeof Object.assign != 'function') {
         scope: viewNode.root.scope
       };
     },
-    onApply: function (cache, viewNode, selector, matches, scopeData) {
+    onApply: function (cache, viewNode, selector, oldSelector, matches, scopeData) {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
         viewNode.domManipulationSequence.next(function (done) {
           var allContent = scopeData.element.schema.children;
@@ -2776,7 +2823,7 @@ if (typeof Object.assign != 'function') {
      * @param matches
      * @param nodeScopeData
      */
-    onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
+    onApply: function (cache, viewNode, changes, oldChanges, matches, nodeScopeData) {
       var parentNode = viewNode.parent;
       var position = null;
       var newItems = [];
@@ -2893,9 +2940,9 @@ if (typeof Object.assign != 'function') {
         scope: viewNode.root.scope
       };
     },
-    onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
+    onApply: function (cache, viewNode, moduleMeta) {
       if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
-        viewNode.onReady.then(function () {
+        viewNode.rendered.then(function () {
           viewNode.empty().next(function (done) {
             done();
 
