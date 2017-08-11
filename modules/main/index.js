@@ -97,11 +97,18 @@ Scope.newItem = {
   done: false
 };
 
+var mi = {
+  text: 'asdasdasd',
+  content: 'This is the default content',
+  items: '[todos]'
+};
+
 view.init([
   {
     tag: 'div',
     id: 'main-nav',
     class: 'main-nav',
+    // text: '[moduleInputs.text]',
     children: [
       {
         $for: 'item in navItems',
@@ -127,136 +134,29 @@ view.init([
     class: 'main-content',
     children: [
       {
-        tag: 'div',
-        class: 'card',
-        children: [
-          {
-            tag: 'section',
-            class: 'content',
-            children: [
-              {
-                tag: 'h2',
-                text: 'ToDos List'
-              },
-              /*{
-                $for: 'item in todos',
-                tag: 'p',
-                animation: {
-                  enter: {
-                    sequence: true,
-                    from: {
-                      x: -100,
-                      opacity: 0
-                    },
-                    to: {
-                      x: 0,
-                      opacity: 1
-                    },
-                    position: '-=.9',
-                    duration: 1
-                  },
-                  leave: {
-                    to: {
-                      height: 0,
-                      marginTop: 0,
-                      overflow: 'hidden'
-                    },
-                    duration: .3
-                  }
-                },
-                text: '[item.title]',
-                class: {
-                  done: '[item.done]'
-                },
-                on: {
-                  click: function () {
-                    var index = Scope.todos.indexOf(this.data.item);
-                    if (index !== -1) {
-                      Scope.todos.splice(index, 1);
-                    }
-                  }
-                },
-                children: [
-                  {
-                    tag: 'input',
-                    type: 'checkbox',
-                    checked: '[item.done]'
-                  }
-                ]
-              },*/
-              // {
-              //   $for: 'item in navItems',
-              //   class: 'field',
-              //   module: {
-              //     url: 'modules/text-field.js'
-              //   },
-              //   inputs: {
-              //     label: '[item.link]',
-              //     value: '[item.title]'
-              //   }
-              // },
-              {
-                tag: 'h2',
-                text: 'Add New Item'
-              },
-              {
-                class: 'field',
-                module: {
-                  url: 'modules/text-field.js'
-                },
-                inputs: {
-                  label: 'Title',
-                  value: '[newItem.title]'
-                }
-              },
-              // {
-              //   class: 'field',
-              //   module: {
-              //     url: 'modules/text-field.js'
-              //   },
-              //   inputs: {
-              //     label: 'Link',
-              //     value: '[newItem.link]'
-              //   }
-              // },
-              {
-                tag: 'button',
-                text: 'Save',
-                click: function () {
-                  console.info(Scope.newItem);
-                  if (Scope.newItem.title.trim()) {
-                    Scope.todos.push(Object.assign({}, Scope.newItem));
-                    Scope.newItem = {
-                      title: '',
-                      done: false
-                    };
-                  }
-                }
-              }
-            ]
-          }
-        ]
-      },
-      {
         module: '[activeModule]',
-        inputs: '[moduleInputs]',
-        children: [
-          {
-            tag: 'p',
-            text: 'No content at the moment!'
-          },
-          {
-            tag: 'p',
-            text: '[moduleInputs.text]'
-          },
-          {
-            tag: 'p',
-            text: '[moduleInputs.content]'
-          }
-        ]
+        // inputs: {}
+        inputs: mi,
+        // children: [
+        //   {
+        //     tag: 'p',
+        //     text: 'No content at the moment!'
+        //   },
+        //   {
+        //     tag: 'p',
+        //     text: '[moduleInputs.text]'
+        //   },
+        //   {
+        //     tag: 'p',
+        //     text: '[moduleInputs.content]'
+        //   }
+        // ]
       }
     ]
   }
 ]);
 
-console.info(Scope);
+console.info(mi);
+setTimeout(function () {
+  mi.text = 'This has been changed after 3 seconds!';
+}, 3000);

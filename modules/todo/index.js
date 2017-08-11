@@ -2,6 +2,9 @@
 
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
+
+// inputs.__onChange__ = null
+
 Scope.newItem = {
   title: '',
   done: false
@@ -52,7 +55,18 @@ view.init({
             class: {
               done: '[item.done]'
             },
-            text: '[item.title]'
+            children: [
+              {
+                tag: 'span',
+                text: '[item.title]'
+              },
+              {
+                tag: 'input',
+                type: 'checkbox',
+                checked: '[item.done]'
+              }
+            ]
+
           }
         },
         {
@@ -72,13 +86,10 @@ view.init({
         {
           tag: 'button',
           text: 'Add',
-          // click: function () {
-          //   Scope.newItem.done = !Scope.newItem.done;
-          // }
-          // on: '[newItem.title]'
           on: {
             click: function () {
-              if (Scope.newItem) {
+              Scope.newItem.title = Scope.newItem.title.trim();
+              if (Scope.newItem.title.trim()) {
                 Scope.inputs.items.push(Object.assign({}, Scope.newItem));
                 Scope.newItem = {
                   title: '',

@@ -1339,15 +1339,19 @@ if (typeof Object.assign != 'function') {
   GalaxyView.createClone = function (source) {
     var cloned = Object.assign({}, source);
 
-    for (var key in source) {
-      if (source.hasOwnProperty('[' + key + ']')) {
-        boundPropertyReference.value = source['[' + key + ']'];
-        defineProp(cloned, '[' + key + ']', boundPropertyReference);
-        defineProp(cloned, key, Object.getOwnPropertyDescriptor(source, key));
-      }
-    }
+    GalaxyView.link(source, cloned);
 
     return cloned;
+  };
+
+  GalaxyView.link = function (from, to) {
+    for (var key in from) {
+      if (from.hasOwnProperty('[' + key + ']')) {
+        boundPropertyReference.value = from['[' + key + ']'];
+        defineProp(to, '[' + key + ']', boundPropertyReference);
+        defineProp(to, key, Object.getOwnPropertyDescriptor(from, key));
+      }
+    }
   };
 
   GalaxyView.getPropertyContainer = function (data, propertyName) {
@@ -1804,6 +1808,8 @@ if (typeof Object.assign != 'function') {
       params: value
     };
 
+    var oldChanges = Object.assign({}, changes);
+
     if (value.hasOwnProperty('[live]')) {
       return changes;
     }
@@ -1844,7 +1850,8 @@ if (typeof Object.assign != 'function') {
           changes.type = method;
           changes.params = args;
 
-          onUpdate(changes);
+          onUpdate(changes, oldChanges);
+          oldChanges = Object.assign({}, changes);
 
           return result;
         },
@@ -1896,15 +1903,32 @@ if (typeof Object.assign != 'function') {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
         node.addProperty(this, attributeName);
       } else {
+        var onChange = (function () {
+          var whens = {};
+          var on = function (key, value, oldValue, context) {
+            if (whens.hasOwnProperty(key)) {
+              whens[key].call(context, value, oldValue);
+            }
+          };
+
+          function f(key, value, oldValue, context) {
+            on.call(this, key, value, oldValue, context);
+          }
+
+          f.when = function (key, action) {
+            whens[key] = action;
+          };
+
+          return f;
+        })();
+
         var handler = {
-          value: function () {
-          },
+          value: onChange,
           writable: true,
           configurable: true
         };
 
         GV.defineProp(node, '__onChange__', handler);
-        GV.defineProp(node, '__onUpdate__', handler);
       }
       this.props.push(attributeName);
       this.nodes.push(node);
@@ -1938,8 +1962,8 @@ if (typeof Object.assign != 'function') {
       var oldValue = this.value;
       this.value = value;
       if (value instanceof Array) {
-        GV.createActiveArray(value, this.updateValue.bind(this));
-        this.updateValue({type: 'reset', params: value, original: value}, value);
+        var oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
+        this.updateValue({type: 'reset', params: value, original: value}, oldChanges);
       } else {
         for (var i = 0, len = this.nodes.length; i < len; i++) {
           this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
@@ -1948,10 +1972,10 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  BoundProperty.prototype.updateValue = function (changes, original) {
+  BoundProperty.prototype.updateValue = function (changes, oldChanges) {
     for (var i = 0, len = this.nodes.length; i < len; i++) {
-      this.nodes[i].value = original;
-      this.setUpdateFor(this.nodes[i], this.props[i], changes);
+      this.nodes[i].value = changes.original;
+      this.setUpdateFor(this.nodes[i], this.props[i], changes, oldChanges);
     }
   };
 
@@ -1977,11 +2001,11 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes) {
+  BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
     } else {
-      host.__onUpdate__(attributeName, changes, host);
+      host.__onChange__(attributeName, changes, oldChanges, host);
     }
   };
 
@@ -2045,11 +2069,6 @@ if (typeof Object.assign != 'function') {
    * @constructor
    */
   function ViewNode(root, schema, node) {
-    /**
-     *
-     * @public
-     * @type {Galaxy.GalaxyView}
-     */
     this.root = root;
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
@@ -2302,11 +2321,109 @@ if (typeof Object.assign != 'function') {
 
 })(Galaxy.GalaxyView);
 
+/* global Galaxy */
+
+(function (G) {
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
+    type: 'reactive',
+    name: 'inputs'
+  };
+  // G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
+  G.GalaxyView.REACTIVE_BEHAVIORS['inputs'] = {
+    regex: null,
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param scopeData
+     * @param value
+     */
+    bind: function (viewNode, scopeData, value) {
+      if (value !== null && typeof  value !== 'object') {
+        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(viewNode.schema, null, '  '));
+      }
+
+
+    },
+    onApply: function (cache, viewNode, value, oldValue, matches, context) {
+      if (viewNode.virtual) return;
+
+      var keys = Object.keys(value);
+      var bind;
+      var attributeName;
+      var attributeValue;
+      var type;
+      var clone = G.GalaxyView.createClone(value);
+
+      for (var i = 0, len = keys.length; i < len; i++) {
+        attributeName = keys[i];
+        attributeValue = value[attributeName];
+        bind = null;
+        type = typeof(attributeValue);
+
+        if (type === 'string') {
+          bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
+        } else {
+          bind = null;
+        }
+
+        if (bind) {
+          viewNode.root.makeBinding(clone, context, attributeName, bind[1]);
+        }
+      }
+
+      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]'].clone) {
+        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], {
+          clone: clone,
+          original: value
+        });
+      } else if (!viewNode.hasOwnProperty('[addon/inputs]')) {
+        Object.defineProperty(viewNode, '[addon/inputs]', {
+          value: {
+            clone: clone,
+            original: value
+          },
+          enumerable: false
+        });
+      }
+
+      viewNode.addDependedObject(clone);
+    }
+  };
+
+  G.registerAddOnProvider('galaxy/inputs', function (scope) {
+    return {
+      create: function () {
+        scope.inputs = scope.element['[addon/inputs]'].clone;
+
+        return scope.inputs;
+      },
+      finalize: function () {
+        G.GalaxyView.link(scope.element['[addon/inputs]'].clone, scope.element['[addon/inputs]'].original);
+      }
+    };
+  });
+})(Galaxy);
+
+/* global Galaxy */
+
+(function (G) {
+  G.registerAddOnProvider('galaxy/view', function (scope) {
+    return {
+      create: function () {
+        var view = new Galaxy.GalaxyView(scope);
+
+        return view;
+      },
+      finalize: function () {
+
+      }
+    };
+  });
+})(Galaxy);
+
 /* global Galaxy, TweenLite, TimelineLite */
 
 (function (G) {
-  var ANIMATIONS = {};
-
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
     type: 'custom',
     name: 'animation',
@@ -2353,9 +2470,7 @@ if (typeof Object.assign != 'function') {
                 // if the animation has order it will be added to the queue according to its order.
                 // No order means lowest order
                 if (typeof leaveAnimationConfig.order === 'number') {
-                  if (!animationMeta.queue[leaveAnimationConfig.order]) animationMeta.queue[leaveAnimationConfig.order] = [];
-
-                  animationMeta.queue[leaveAnimationConfig.order].push(function () {
+                  animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, function () {
                     if (leaveAnimationConfig.group) {
                       animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
                     }
@@ -2366,10 +2481,22 @@ if (typeof Object.assign != 'function') {
                   // When viewNode is the one which is destroyed, then run the queue
                   // The queue will never run if the destroyed viewNode has the lowest order
                   if (viewNode._destroyed) {
+                    var finishImmediately = false;
                     for (var key in animationMeta.queue) {
-                      animationMeta.queue[key].forEach(function (item) {
-                        item();
-                      });
+                      var item;
+                      for (var i = 0, len = animationMeta.queue[key].length; i < len; i++) {
+                        item = animationMeta.queue[key][i];
+                        item.operation();
+
+                        // If the the current queue item.node is the destroyed node, then all the animations in
+                        // queue should be ignored
+                        if (item.node === viewNode.node) {
+                          finishImmediately = true;
+                          break;
+                        }
+                      }
+
+                      if (finishImmediately) break;
                     }
 
                     animationMeta.queue = {};
@@ -2452,13 +2579,14 @@ if (typeof Object.assign != 'function') {
     this.queue = {};
   }
 
+  AnimationMeta.ANIMATIONS = {};
+
   AnimationMeta.GET = function (name) {
-    if (!ANIMATIONS[name]) {
-      ANIMATIONS[name] = new AnimationMeta();
+    if (!AnimationMeta.ANIMATIONS[name]) {
+      AnimationMeta.ANIMATIONS[name] = new AnimationMeta();
     }
 
-
-    return ANIMATIONS[name];
+    return AnimationMeta.ANIMATIONS[name];
   };
 
   AnimationMeta.CREATE_TWEEN = function (node, config, onComplete) {
@@ -2500,8 +2628,16 @@ if (typeof Object.assign != 'function') {
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
     var to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
+
     var tween = null;
+    // var onStart = function () {
+    //   console.info(node.offsetParent);
+    //   if (node.offsetParent === null) {
+    //     tween.progress(1);
+    //   }
+    // };
+
+    to.onComplete = onComplete;
 
     if (config.from && config.to) {
       tween = TweenLite.fromTo(node,
@@ -2526,6 +2662,19 @@ if (typeof Object.assign != 'function') {
       this.timeline.add(tween, null);
     }
   };
+
+  /**
+   *
+   * @param {number} order
+   * @param {callback} operation
+   */
+  AnimationMeta.prototype.addToQueue = function (order, node, operation) {
+    if (!this.queue[order]) {
+      this.queue[order] = [];
+    }
+
+    this.queue[order].push({node: node, operation: operation});
+  };
 })(Galaxy);
 
 /* global Galaxy */
@@ -2544,87 +2693,6 @@ if (typeof Object.assign != 'function') {
       }
     }
   };
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
-    type: 'custom',
-    name: 'inputs',
-    handler: function (viewNode, attr, value, oldValue, scopeData) {
-      if (viewNode.virtual) {
-        return;
-      }
-
-      if (typeof value !== 'object' || value === null) {
-        throw new Error('Inputs must be an object');
-      }
-
-      var keys = Object.keys(value);
-      var bind;
-      var attributeName;
-      var attributeValue;
-      var type;
-      var clone = G.GalaxyView.createClone(value);
-
-      for (var i = 0, len = keys.length; i < len; i++) {
-        attributeName = keys[i];
-        attributeValue = value[attributeName];
-        bind = null;
-        type = typeof(attributeValue);
-
-        if (type === 'string') {
-          bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
-        } else {
-          bind = null;
-        }
-
-        if (bind) {
-          viewNode.root.makeBinding(clone, scopeData, attributeName, bind[1]);
-        }
-      }
-
-      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]']) {
-        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], clone);
-      } else if (!viewNode.hasOwnProperty('[addon/inputs]')) {
-        Object.defineProperty(viewNode, '[addon/inputs]', {
-          value: clone,
-          enumerable: false
-        });
-      }
-    }
-  };
-
-  G.registerAddOnProvider('galaxy/inputs', function (scope) {
-    return {
-      create: function () {
-        scope.inputs = scope.element['[addon/inputs]'];
-
-        return scope.inputs;
-      },
-      finalize: function () {
-
-      }
-    };
-  });
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.registerAddOnProvider('galaxy/view', function (scope) {
-    return {
-      create: function () {
-        var view = new Galaxy.GalaxyView(scope);
-
-        return view;
-      },
-      finalize: function () {
-
-      }
-    };
-  });
 })(Galaxy);
 
 /* global Galaxy */
@@ -2718,12 +2786,12 @@ if (typeof Object.assign != 'function') {
 
       viewNode.node.setAttribute('class', getClasses(clone).join(' '));
       clone.__onChange__ = toggles.bind(viewNode);
-      clone.__onChange__(null, true, false, clone);
+      toggles.call(viewNode, null, true, false, clone);
       viewNode.addDependedObject(clone);
     }
   };
 
-  function toggles(name, value, oldValue, classes) {
+  function toggles(key, value, oldValue, classes) {
     if (oldValue === value) return;
     var oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];

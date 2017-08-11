@@ -1,7 +1,12 @@
 /* globals Scope */
 
 var view = Scope.import('galaxy/view');
-Scope.import('galaxy/inputs');
+var inputs = Scope.import('galaxy/inputs');
+console.info(inputs);
+inputs.__onChange__.when('items', function (value, oldValue) {
+  console.info('Text has changed from `' + oldValue + '` to `' + value + '`');
+});
+
 
 view.init({
   class: 'card big',
@@ -20,7 +25,7 @@ view.init({
     },
     ':leave': {
       sequence: 'card',
-      order: 100,
+      order: 1,
       to: {
         y: 100,
         opacity: 0
@@ -49,8 +54,22 @@ view.init({
           // }
         },
         {
+          tag: 'div',
+          class: 'field',
+          children: [
+            {
+              tag: 'label',
+              text: 'Text'
+            },
+            {
+              tag: 'input',
+              value: '[inputs.text]'
+            }
+          ]
+        },
+        {
           tag: 'h3',
-          text: 'Secondary title',
+          text: '[inputs.text]',
           // animation: {
           //   ':leave': {
           //     sequence: 'card',
