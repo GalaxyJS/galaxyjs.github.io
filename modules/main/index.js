@@ -108,7 +108,14 @@ view.init([
     tag: 'div',
     id: 'main-nav',
     class: 'main-nav',
-    // text: '[moduleInputs.text]',
+    text: [
+      'activeModule.id',
+      'moduleInputs.text',
+      function (id, text) {
+        // debugger;
+        return id + ' changed';
+      }
+    ],
     children: [
       {
         $for: 'item in navItems',
@@ -136,7 +143,7 @@ view.init([
       {
         module: '[activeModule]',
         // inputs: {}
-        inputs: mi,
+        inputs: Scope.moduleInputs,
         // children: [
         //   {
         //     tag: 'p',
@@ -158,5 +165,5 @@ view.init([
 
 console.info(mi);
 setTimeout(function () {
-  mi.text = 'This has been changed after 3 seconds!';
-}, 3000);
+  Scope.moduleInputs.text = 'This has been changed after 3 seconds!';
+}, 2000);

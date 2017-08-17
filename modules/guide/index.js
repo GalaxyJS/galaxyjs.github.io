@@ -2,7 +2,7 @@
 
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
-console.info(Scope);
+console.info(inputs);
 // inputs.__onChange__.when('items', function (value, oldValue) {
 //   console.info('Text has changed from `' + oldValue + '` to `' + value + '`');
 // });

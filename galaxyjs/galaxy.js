@@ -1043,6 +1043,8 @@ if (typeof Object.assign != 'function') {
         };
       }
 
+      currentModule.init();
+
       resolve(currentModule);
 
       delete Galaxy.onLoadQueue[module.systemId];
@@ -1122,6 +1124,8 @@ if (typeof Object.assign != 'function') {
         addOn.onModuleInit();
       }
     }
+
+    this.scope.trigger('module.init');
   };
 
   GalaxyModule.prototype.start = function () {
@@ -1131,6 +1135,19 @@ if (typeof Object.assign != 'function') {
         addOn.onModuleStart();
       }
     }
+
+    this.scope.trigger('module.start');
+  };
+
+  GalaxyModule.prototype.destroy = function () {
+    for (var key in this.addOns) {
+      var addOn = this.addOns[key];
+      if (typeof addOn.onModuleDestroy === 'function') {
+        addOn.onModuleDestroy();
+      }
+    }
+
+    this.scope.trigger('module.destroy');
   };
 
   GalaxyModule.prototype.registerAddOn = function (id, object) {
@@ -1161,10 +1178,11 @@ if (typeof Object.assign != 'function') {
     this.path = match ? match[0] : '/';
     this.parsedURL = urlParser.href;
     this.uri = urlParser;
+    this.eventHandlers = {};
   }
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
-    var newModuleMetaData = Object.assign({}, moduleMeta,config || {});
+    var newModuleMetaData = Object.assign({}, moduleMeta, config || {});
     if (newModuleMetaData.url.indexOf('./') === 0) {
       newModuleMetaData.url = this.path + moduleMeta.url.substr(2);
     }
@@ -1181,6 +1199,32 @@ if (typeof Object.assign != 'function') {
       module.start();
       return module;
     });
+  };
+
+  GalaxyScope.prototype.watch = function () {
+
+  };
+
+  /**
+   *
+   * @param {string} event
+   */
+  GalaxyScope.prototype.on = function (event, handler) {
+    if (!this.eventHandlers[event]) {
+      this.eventHandlers[event] = [];
+    }
+
+    if (this.eventHandlers[event].indexOf(handler) === -1) {
+      this.eventHandlers[event].push(handler);
+    }
+  };
+
+  GalaxyScope.prototype.trigger = function (event, data) {
+    if (this.eventHandlers[event]) {
+      this.eventHandlers[event].forEach(function (handler) {
+        handler.call(null, data);
+      });
+    }
   };
 
 }(this, Galaxy || {}));
@@ -1402,6 +1446,12 @@ if (typeof Object.assign != 'function') {
     return properties;
   };
 
+  GalaxyView.NON_VARIABLE_NAMES = [
+    'true',
+    'false',
+    'undefined'
+  ];
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -1528,7 +1578,7 @@ if (typeof Object.assign != 'function') {
       }
 
       var keys = Object.keys(nodeSchema);
-      var attributeValue, bind, type, attributeName;
+      var attributeValue, bind, onApply, type, attributeName;
       for (i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
         attributeValue = nodeSchema[attributeName];
@@ -1538,18 +1588,24 @@ if (typeof Object.assign != 'function') {
         }
 
         bind = null;
+        onApply = null;
         type = typeof(attributeValue);
 
         if (type === 'string') {
           bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
-        } else if (type === 'function') {
-          // bind = [0, attributeValue];
+          bind = bind ? bind[1] : null;
+        }
+        // else if (type === 'function') {
+        // }
+        else if (attributeValue instanceof Array && typeof attributeValue[attributeValue.length - 1] === 'function') {
+          onApply = attributeValue.pop();
+          bind = attributeValue;
         } else {
           bind = null;
         }
 
         if (bind) {
-          _this.makeBinding(viewNode, parentScopeData, attributeName, bind[1]);
+          _this.makeBinding(viewNode, parentScopeData, attributeName, bind, onApply);
         } else {
           _this.setPropertyForNode(viewNode, attributeName, attributeValue, parentScopeData);
         }
@@ -1679,125 +1735,156 @@ if (typeof Object.assign != 'function') {
    * @param {Galaxy.GalaxyView.ViewNode | Object} target
    * @param {Object} dataHostObject
    * @param {String} targetKeyName
-   * @param dataValueKey
+   * @param {string|Array<string>} variableNamePaths
    */
-  GalaxyView.prototype.makeBinding = function (target, data, targetKeyName, dataValueKey) {
+  GalaxyView.prototype.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression) {
     var _this = this;
     var dataObject = data;
     if (typeof dataObject !== 'object') {
       return;
     }
 
-    var propertyName = dataValueKey;
-    var childProperty = null;
+    var variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
 
-    if (typeof dataValueKey === 'function') {
-      propertyName = '[mutator]';
-      dataObject[propertyName] = dataObject[propertyName] || [];
-      dataObject[propertyName].push({
-        for: targetKeyName,
-        action: dataValueKey
-      });
-      return;
-    } else {
-      var items = dataValueKey.split('.');
-      if (items.length > 1) {
-        propertyName = items.shift();
-        childProperty = items.join('.');
-      }
+    var onApply = {};
+    if (expression && typeof expression === 'function') {
+      var functionContent = 'return [';
+      functionContent += variables.map(function (path) {
+        return 'scope.' + path;
+      }).join(',');
+
+      functionContent += ']';
+      var realExp = new Function('scope', functionContent);
+      onApply = {
+        handler: (function (scope) {
+          return function () {
+            var args = realExp(scope);
+            return expression.apply(target, args);
+          };
+        })(data)
+      };
+    } else if (expression && typeof expression === 'object') {
+      onApply = expression;
     }
 
-    if (!dataObject.hasOwnProperty(propertyName)) {
-      var tempData = dataObject;
+    var variableNamePath;
+    var propertyName = null;
+    var childProperty = null;
+    var initValue = null;
 
-      while (tempData.__parent__) {
-        if (tempData.__parent__.hasOwnProperty(propertyName)) {
-          dataObject = tempData.__parent__;
-          break;
+    for (var i = 0, len = variables.length; i < len; i++) {
+      variableNamePath = variables[i];
+      propertyName = variableNamePath;
+
+      var variableName = variableNamePath.split('.');
+      if (variableName.length > 1) {
+        propertyName = variableName.shift();
+        childProperty = variableName.join('.');
+      }
+
+      if (!dataObject.hasOwnProperty(propertyName)) {
+        var tempData = dataObject;
+
+        while (tempData.__parent__) {
+          if (tempData.__parent__.hasOwnProperty(propertyName)) {
+            dataObject = tempData.__parent__;
+            break;
+          }
+
+          tempData = dataObject.__parent__;
+        }
+      }
+
+      initValue = dataObject[propertyName];
+      var enumerable = true;
+      if (propertyName === 'length' && dataObject instanceof Array) {
+        propertyName = '_length';
+        enumerable = false;
+      }
+
+      var referenceName = '[' + propertyName + ']';
+      var boundProperty = dataObject[referenceName];
+
+      if (typeof boundProperty === 'undefined') {
+        boundProperty = new GalaxyView.BoundProperty(propertyName, initValue);
+        boundPropertyReference.value = boundProperty;
+        defineProp(dataObject, referenceName, boundPropertyReference);
+
+        setterAndGetter.enumerable = enumerable;
+        setterAndGetter.get = (function (bp) {
+          return function () {
+            return bp.value;
+          };
+        })(boundProperty);
+
+        if (childProperty) {
+          setterAndGetter.set = (function (bp) {
+            return function (newValue) {
+              if (bp.value !== newValue) {
+                if (newValue !== null && typeof bp.value === 'object') {
+                  var all = Object.getOwnPropertyNames(bp.value);
+                  var visible = Object.keys(bp.value);
+                  var newVisible = Object.keys(newValue);
+                  var descriptors = {};
+                  var hidden = all.filter(function (key) {
+                    descriptors[key] = Object.getOwnPropertyDescriptor(bp.value || {}, key);
+                    return visible.indexOf(key) === -1;
+                  });
+
+                  newVisible.forEach(function (key) {
+                    if (hidden.indexOf('[' + key + ']') !== -1) {
+                      descriptors['[' + key + ']'].value.setValue(newValue[key], data);
+
+                      defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
+                      defineProp(newValue, key, descriptors[key]);
+                    }
+                  });
+                }
+
+                bp.setValue(newValue, data);
+              }
+            };
+          })(boundProperty);
+        } else {
+          setterAndGetter.set = (function (bp) {
+            return function (value) {
+              bp.setValue(value, data);
+            };
+          })(boundProperty);
         }
 
-        tempData = dataObject.__parent__;
+        defineProp(dataObject, propertyName, setterAndGetter);
       }
-    }
 
-    var initValue = dataObject[propertyName];
-    var enumerable = true;
-    if (propertyName === 'length' && dataObject instanceof Array) {
-      propertyName = '_length';
-      enumerable = false;
-    }
+      if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
+        boundPropertyReference.value = boundProperty;
+        defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
 
-    var referenceName = '[' + propertyName + ']';
-    var boundProperty = dataObject[referenceName];
+        setterAndGetter.enumerable = enumerable;
+        setterAndGetter.get = (function (bp) {
+          return function () {
+            return bp.value;
+          };
+        })(boundProperty);
 
-    if (typeof boundProperty === 'undefined') {
-      boundProperty = new GalaxyView.BoundProperty(propertyName, initValue);
-      boundPropertyReference.value = boundProperty;
-      defineProp(dataObject, referenceName, boundPropertyReference);
+        setterAndGetter.set = (function (bp) {
+          return function (value) {
+            bp.setValue(value, data);
+          };
+        })(boundProperty);
 
-      setterAndGetter.enumerable = enumerable;
-      setterAndGetter.get = function () {
-        return boundProperty.value;
-      };
+        defineProp(target, targetKeyName, setterAndGetter);
+      }
+
+      if (!childProperty /*&& target instanceof Galaxy.GalaxyView.ViewNode*/) {
+        boundProperty.addNode(target, targetKeyName, onApply.handler);
+      }
 
       if (childProperty) {
-        setterAndGetter.set = function (newValue) {
-          if (boundProperty.value !== newValue) {
-            if (newValue !== null && typeof boundProperty.value === 'object') {
-              var all = Object.getOwnPropertyNames(boundProperty.value);
-              var visible = Object.keys(boundProperty.value);
-              var newVisible = Object.keys(newValue);
-              var descriptors = {};
-              var hidden = all.filter(function (key) {
-                descriptors[key] = Object.getOwnPropertyDescriptor(boundProperty.value || {}, key);
-                return visible.indexOf(key) === -1;
-              });
-
-              newVisible.forEach(function (key) {
-                if (hidden.indexOf('[' + key + ']') !== -1) {
-                  descriptors['[' + key + ']'].value.setValue(newValue[key], data);
-
-                  defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
-                  defineProp(newValue, key, descriptors[key]);
-                }
-              });
-            }
-
-            boundProperty.setValue(newValue, data);
-          }
-        };
-      } else {
-        setterAndGetter.set = function (value) {
-          boundProperty.setValue(value, data);
-        };
+        _this.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty, onApply);
+      } else if (typeof dataObject === 'object') {
+        boundProperty.initValueFor(target, targetKeyName, initValue, data);
       }
-
-      defineProp(dataObject, propertyName, setterAndGetter);
-    }
-
-    if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
-      boundPropertyReference.value = boundProperty;
-      defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
-
-      setterAndGetter.enumerable = enumerable;
-      setterAndGetter.get = function () {
-        return boundProperty.value;
-      };
-      setterAndGetter.set = function (value) {
-        boundProperty.setValue(value, data);
-      };
-
-      defineProp(target, targetKeyName, setterAndGetter);
-    }
-
-    if (!childProperty /*&& target instanceof Galaxy.GalaxyView.ViewNode*/) {
-      boundProperty.addNode(target, targetKeyName);
-    }
-
-    if (childProperty) {
-      _this.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty);
-    } else if (typeof dataObject === 'object') {
-      boundProperty.initValueFor(target, targetKeyName, initValue, data);
     }
   };
 
@@ -1889,6 +1976,7 @@ if (typeof Object.assign != 'function') {
     this.name = name;
     this.value = value;
     this.props = [];
+    this.expr = [];
     this.nodes = [];
   }
 
@@ -1898,7 +1986,7 @@ if (typeof Object.assign != 'function') {
    * @param {String} attributeName
    * @public
    */
-  BoundProperty.prototype.addNode = function (node, attributeName) {
+  BoundProperty.prototype.addNode = function (node, attributeName, expression) {
     if (this.nodes.indexOf(node) === -1) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
         node.addProperty(this, attributeName);
@@ -1930,6 +2018,8 @@ if (typeof Object.assign != 'function') {
 
         GV.defineProp(node, '__onChange__', handler);
       }
+      // var f = new Function('','return '+expression)
+      this.expr.push(expression);
       this.props.push(attributeName);
       this.nodes.push(node);
     }
@@ -1966,7 +2056,11 @@ if (typeof Object.assign != 'function') {
         this.updateValue({type: 'reset', params: value, original: value}, oldChanges);
       } else {
         for (var i = 0, len = this.nodes.length; i < len; i++) {
-          this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
+          if (this.expr[i]) {
+            this.setValueFor(this.nodes[i], this.props[i], this.expr[i].call(), oldValue, scopeData);
+          } else {
+            this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
+          }
         }
       }
     }
@@ -1983,11 +2077,11 @@ if (typeof Object.assign != 'function') {
     var newValue = value;
 
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      var mutator = host.mutator[attributeName];
-
-      if (mutator) {
-        newValue = mutator.call(host, value, host.values[attributeName]);
-      }
+      // var mutator = host.mutator[attributeName];
+      //
+      // if (mutator) {
+      //   newValue = mutator.call(host, value, host.values[attributeName]);
+      // }
 
       host.values[attributeName] = newValue;
       if (!host.setters[attributeName]) {
@@ -2073,7 +2167,7 @@ if (typeof Object.assign != 'function') {
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
     this.data = {};
-    this.mutator = {};
+    // this.mutator = {};
     this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
