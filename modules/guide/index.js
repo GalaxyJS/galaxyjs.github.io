@@ -2,11 +2,19 @@
 
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
-console.info(inputs);
-// inputs.__onChange__.when('items', function (value, oldValue) {
-//   console.info('Text has changed from `' + oldValue + '` to `' + value + '`');
-// });
+console.info(Scope);
 
+Scope.on('module.init', function () {
+  console.info('Module guide initialized');
+});
+
+Scope.on('module.start', function () {
+  console.info('Module guide started');
+});
+
+Scope.on('module.destroy', function () {
+  console.info('Module guide destroyed');
+});
 
 view.init({
   class: 'card big',
@@ -123,7 +131,13 @@ view.init({
               class: {
                 done: '[item.done]'
               },
-              text: '[item.title]',
+              text: [
+                'item.title',
+                'inputs.text',
+                function (title, text) {
+                  return title + ', text length: ' + text.length;
+                }
+              ],
               children: [
                 {
                   tag: 'input',

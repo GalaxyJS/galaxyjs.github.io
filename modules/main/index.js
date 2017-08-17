@@ -3,21 +3,10 @@
 
 var view = Scope.import('galaxy/view');
 
-// Scope.modules = [
-//   {
-//     id: 'start',
-//     url: 'modules/start/index.js'
-//   }
-// ];
-
 Scope.activeModule = {
   id: 'guide',
   url: 'modules/guide/index.js'
 };
-
-// Scope.activeModule = {
-// };
-
 
 Scope.flag = false;
 
@@ -97,12 +86,6 @@ Scope.newItem = {
   done: false
 };
 
-var mi = {
-  text: 'asdasdasd',
-  content: 'This is the default content',
-  items: '[todos]'
-};
-
 view.init([
   {
     tag: 'div',
@@ -112,8 +95,7 @@ view.init([
       'activeModule.id',
       'moduleInputs.text',
       function (id, text) {
-        // debugger;
-        return id + ' changed';
+        return 'Active Module ID:' + id + '\n text length:' + text.length;
       }
     ],
     children: [
@@ -163,7 +145,6 @@ view.init([
   }
 ]);
 
-console.info(mi);
 setTimeout(function () {
   Scope.moduleInputs.text = 'This has been changed after 3 seconds!';
 }, 2000);
