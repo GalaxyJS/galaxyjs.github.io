@@ -1457,6 +1457,25 @@ if (typeof Object.assign != 'function') {
     };
   };
 
+  GalaxyView.propertyLookup = function (data, property) {
+    property = property.split('.')[0];
+    var target = data;
+    var temp = data;
+
+    if (!data.hasOwnProperty(property)) {
+      while (temp.__parent__) {
+        if (temp.__parent__.hasOwnProperty(property)) {
+          target = temp.__parent__;
+          break;
+        }
+
+        temp = data.__parent__;
+      }
+    }
+
+    return target;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -1806,20 +1825,25 @@ if (typeof Object.assign != 'function') {
     if (expression === true) {
       var handler = variables[variables.length - 1];
       variables = variables.slice(0, variables.length - 1);
-      var functionContent = 'this;return [';
+      var functionContent = 'return [';
       functionContent += variables.map(function (path) {
-        return 'scope.' + path;
-      }).join(',');
+        return 'prop(scope, "' + path + '").' + path;
+      }).join(', ');
       functionContent += ']';
 
       // Generate expression arguments
-      var getExpressionArguments = new Function('scope', functionContent);
-      expression = (function (scope) {
-        return function () {
-          var args = getExpressionArguments.call(target, scope);
-          return handler.apply(target, args);
-        };
-      })(dataObject);
+      try {
+        var getExpressionArguments = new Function('prop, scope', functionContent);
+        expression = (function (scope) {
+          return function () {
+            var args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);
+            return handler.apply(target, args);
+          };
+        })(dataObject);
+      }
+      catch (expection) {
+        throw console.error(expection.message + '\n', variables);
+      }
     }
 
     var variableNamePath;
@@ -1837,18 +1861,7 @@ if (typeof Object.assign != 'function') {
         childProperty = variableName.join('.');
       }
 
-      if (!dataObject.hasOwnProperty(propertyName)) {
-        var tempData = dataObject;
-
-        while (tempData.__parent__) {
-          if (tempData.__parent__.hasOwnProperty(propertyName)) {
-            dataObject = tempData.__parent__;
-            break;
-          }
-
-          tempData = dataObject.__parent__;
-        }
-      }
+      dataObject = GalaxyView.propertyLookup(dataObject, propertyName);
 
       initValue = dataObject[propertyName];
 
@@ -1865,16 +1878,25 @@ if (typeof Object.assign != 'function') {
         boundProperty = this.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
       }
 
+      // When target is not a ViewNode, then add target['[targetKeyName]']
       if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
         boundPropertyReference.value = boundProperty;
         defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
 
         setterAndGetter.enumerable = enumerable;
-        setterAndGetter.get = (function (BOUND_PROPERTY) {
+        setterAndGetter.get = (function (BOUND_PROPERTY, EXPRESSION) {
+          // If there is an expression for the property, then apply it on get because target is not ViewNode
+          // and can not have any setter for its properties
+          if (EXPRESSION) {
+            return function () {
+              return EXPRESSION();
+            };
+          }
+
           return function () {
             return BOUND_PROPERTY.value;
           };
-        })(boundProperty);
+        })(boundProperty, expression);
 
         setterAndGetter.set = (function (BOUND_PROPERTY, DATA) {
           return function (value) {
@@ -1886,7 +1908,7 @@ if (typeof Object.assign != 'function') {
       }
 
       if (!childProperty) {
-        boundProperty.addNode(target, targetKeyName,  expression);
+        boundProperty.addNode(target, targetKeyName, expression);
       }
 
       if (childProperty) {
@@ -2019,13 +2041,12 @@ if (typeof Object.assign != 'function') {
           return f;
         })();
 
-        var handler = {
+
+        GV.defineProp(node, '__onChange__', {
           value: onChange,
           writable: true,
           configurable: true
-        };
-
-        GV.defineProp(node, '__onChange__', handler);
+        });
       }
 
       this.props.push(attributeName);
@@ -2086,6 +2107,9 @@ if (typeof Object.assign != 'function') {
 
       host.setters[attributeName](value, oldValue, scopeData);
     } else {
+      // var exp = host.__expressions__[attributeName];
+      // var val = exp ? exp() : value;
+      // debugger;
       host[attributeName] = value;
       host.__onChange__(attributeName, value, oldValue, host);
     }
@@ -2382,7 +2406,7 @@ if (typeof Object.assign != 'function') {
       }
     }
 
-    var domManipulationSequence;
+    var domManipulationSequence = this.domManipulationSequence;
 
     toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy(sequence, source);
@@ -2390,7 +2414,7 @@ if (typeof Object.assign != 'function') {
     });
 
 
-    return domManipulationSequence || this.domManipulationSequence;
+    return domManipulationSequence;
   };
 
   ViewNode.prototype.getPlaceholder = function () {
@@ -2504,6 +2528,382 @@ if (typeof Object.assign != 'function') {
     };
   });
 })(Galaxy);
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
+    type: 'reactive',
+    name: 'checked'
+  };
+
+  GV.REACTIVE_BEHAVIORS['checked'] = {
+    regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    bind: function (viewNode, nodeScopeData, matches) {
+      var parts = matches[1].split('.');
+      var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
+      viewNode.node.addEventListener('change', function () {
+        setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.checked);
+      });
+    },
+    onApply: function (cache, viewNode, value) {
+      if (viewNode.node.checked === value) {
+        return;
+      }
+
+      viewNode.node.checked = value || false;
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['class'] = {
+    type: 'reactive',
+    name: 'class'
+  };
+
+  GV.REACTIVE_BEHAVIORS['class'] = {
+    regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param scopeData
+     * @param matches
+     */
+    bind: function (viewNode, scopeData, matches) {
+
+    },
+    onApply: function (cache, viewNode, value, oldValue, matches, scopeData) {
+      if (viewNode.virtual) {
+        return;
+      }
+
+      if (typeof value !== 'object' || value === null) {
+        return viewNode.node.setAttribute('class', value);
+      }
+
+      var keys = Object.keys(value);
+      var attributeName;
+      var attributeValue;
+      var clone = GV.createClone(value);
+
+      for (var i = 0, len = keys.length; i < len; i++) {
+        attributeName = keys[i];
+        attributeValue = value[attributeName];
+
+        var bindings = GV.getBindings(attributeValue);
+        if (bindings.variableNamePaths) {
+          viewNode.root.makeBinding(clone, scopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
+        }
+      }
+
+      if (viewNode.hasOwnProperty('[reactive/class]') && clone !== viewNode['[reactive/class]']) {
+        Galaxy.resetObjectTo(viewNode['[reactive/class]'], clone);
+      } else if (!viewNode.hasOwnProperty('[reactive/class]')) {
+        Object.defineProperty(viewNode, '[reactive/class]', {
+          value: clone,
+          enumerable: false
+        });
+      }
+
+      viewNode.node.setAttribute('class', getClasses(clone).join(' '));
+      clone.__onChange__ = toggles.bind(viewNode);
+      toggles.call(viewNode, null, true, false, clone);
+      viewNode.addDependedObject(clone);
+    }
+  };
+
+  function toggles(key, value, oldValue, classes) {
+    if (oldValue === value) return;
+    var oldClasses = this.node.getAttribute('class');
+    oldClasses = oldClasses ? oldClasses.split(' ') : [];
+    var newClasses = getClasses(classes);
+    var _this = this;
+
+    _this.callWatchers('class', newClasses, oldClasses);
+    _this.sequences[':class'].start().finish(function () {
+      _this.node.setAttribute('class', newClasses.join(' '));
+      _this.sequences[':class'].reset();
+    });
+
+  }
+
+  function getClasses(obj) {
+    if (typeof classes === 'string') {
+      return [obj];
+    } else if (obj instanceof Array) {
+      return obj;
+    } else if (obj !== null && typeof obj === 'object') {
+      var newClasses = [];
+
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key) && obj[key]) newClasses.push(key);
+      }
+
+      return newClasses;
+    }
+  }
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['content'] = {
+    type: 'reactive',
+    name: 'content'
+  };
+
+  GV.REACTIVE_BEHAVIORS['content'] = {
+    regex: null,
+    bind: function (viewNode) {
+      viewNode.toTemplate();
+    },
+    getCache: function (viewNode) {
+      return {
+        module: null,
+        scope: viewNode.root.scope
+      };
+    },
+    onApply: function (cache, viewNode, selector, oldSelector, matches, scopeData) {
+      if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
+        viewNode.domManipulationSequence.next(function (done) {
+          var allContent = scopeData.element.schema.children;
+          var parentViewNode = viewNode.parent;
+          allContent.forEach(function (content) {
+            if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
+              content.__node__.__viewNode__.refreshBinds(scopeData);
+              parentViewNode.append(content.__node__.__viewNode__, viewNode.placeholder);
+              content.__node__.__viewNode__.setInDOM(true);
+            }
+          });
+
+          done();
+        });
+      }
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
+    type: 'reactive',
+    name: '$for'
+  };
+
+  GV.REACTIVE_BEHAVIORS['$for'] = {
+    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
+    bind: function (viewNode, nodeScopeData, matches) {
+      viewNode.toTemplate();
+      viewNode.root.makeBinding(viewNode, nodeScopeData, '$for', matches[2]);
+    },
+    getCache: function (viewNode, matches) {
+      return {
+        propName: matches[1],
+        nodes: []
+      };
+    },
+    /**
+     *
+     * @param cache
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param changes
+     * @param matches
+     * @param nodeScopeData
+     */
+    onApply: function (cache, viewNode, changes, oldChanges, matches, nodeScopeData) {
+      var parentNode = viewNode.parent;
+      var position = null;
+      var newItems = [];
+      var action = Array.prototype.push;
+
+      if (!changes) {
+        return;
+      }
+
+      if (changes.type === 'reset') {
+        cache.nodes.forEach(function (viewNode) {
+          viewNode.destroy();
+        });
+
+        cache.nodes = [];
+        changes = Object.assign({}, changes);
+        changes.type = 'push';
+      }
+
+      if (changes.type === 'push') {
+        var length = cache.nodes.length;
+        if (length) {
+          position = cache.nodes[length - 1].getPlaceholder().nextSibling;
+        } else {
+          position = viewNode.placeholder.nextSibling;
+        }
+
+        newItems = changes.params;
+      } else if (changes.type === 'unshift') {
+        position = cache.nodes[0] ? cache.nodes[0].placeholder : null;
+        newItems = changes.params;
+        action = Array.prototype.unshift;
+      } else if (changes.type === 'splice') {
+        var removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
+        newItems = changes.params.slice(2);
+        removedItems.forEach(function (node) {
+          node.destroy();
+        });
+      } else if (changes.type === 'pop') {
+        cache.nodes.pop().destroy();
+      } else if (changes.type === 'shift') {
+        cache.nodes.shift().destroy();
+      } else if (changes.type === 'sort' || changes.type === 'reverse') {
+        cache.nodes.forEach(function (viewNode) {
+          viewNode.destroy();
+        });
+
+        cache.nodes = [];
+        newItems = changes.original;
+      }
+
+      var valueEntity, itemDataScope = nodeScopeData;
+      var p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
+
+      if (newItems instanceof Array) {
+        for (var i = 0, len = newItems.length; i < len; i++) {
+          valueEntity = newItems[i];
+          itemDataScope = GV.createMirror(nodeScopeData);
+          itemDataScope[p] = valueEntity;
+          cns = viewNode.cloneSchema();
+          delete cns.$for;
+          var vn = root.append(cns, itemDataScope, parentNode, position);
+          vn.data[p] = valueEntity;
+          action.call(n, vn);
+        }
+      }
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['$if'] = {
+    type: 'reactive',
+    name: '$if'
+  };
+
+  GV.REACTIVE_BEHAVIORS['$if'] = {
+    regex: null,
+    bind: function (viewNode, nodeScopeData, matches) {
+      // debugger;
+    },
+    onApply: function (cache, viewNode, value) {
+      // console.info('apply $if', value);
+      if (value) {
+        viewNode.setInDOM(true);
+      } else {
+        viewNode.setInDOM(false);
+      }
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
+    type: 'reactive',
+    name: 'module'
+  };
+
+  GV.REACTIVE_BEHAVIORS['module'] = {
+    regex: null,
+    bind: function (viewNode, nodeScopeData, matches) {
+    },
+    getCache: function (viewNode) {
+      return {
+        module: null,
+        moduleMeta: null,
+        scope: viewNode.root.scope
+      };
+    },
+    onApply: function (cache, viewNode, moduleMeta) {
+      if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
+        viewNode.rendered.then(function () {
+          viewNode.empty().next(function (done) {
+            if(cache.module) {
+              cache.module.destroy();
+            }
+
+            done();
+
+            // Check for circular module loading
+            var tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
+            var root = viewNode.root;
+            while (root.scope) {
+              if (tempURI.parsedURL === root.scope.uri.paresdURL) {
+                return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
+              }
+
+              root = root.container;
+            }
+
+            cache.scope.load(moduleMeta, {
+              element: viewNode
+            }).then(function (module) {
+              cache.module = module;
+              viewNode.node.setAttribute('module', module.systemId);
+              module.start();
+            }).catch(function (response) {
+              console.error(response);
+            });
+          });
+        });
+      } else if (!moduleMeta) {
+        viewNode.empty();
+      }
+
+      cache.moduleMeta = moduleMeta;
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
+    type: 'reactive',
+    name: 'value'
+  };
+
+  GV.REACTIVE_BEHAVIORS['value'] = {
+    regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    bind: function (viewNode, nodeScopeData, matches) {
+      if (viewNode.node.type === 'text') {
+        var parts = matches[1].split('.');
+        var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
+        viewNode.node.addEventListener('keyup', function () {
+          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.value);
+        });
+      }
+    },
+    onApply: function (cache, viewNode, value) {
+      if (document.activeElement === viewNode.node && viewNode.node.value === value) {
+        return;
+      }
+
+      viewNode.node.value = value || '';
+    }
+  };
+})(Galaxy.GalaxyView);
+
 
 /* global Galaxy, TweenLite, TimelineLite */
 
@@ -2778,379 +3178,3 @@ if (typeof Object.assign != 'function') {
     }
   };
 })(Galaxy);
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
-    type: 'reactive',
-    name: 'checked'
-  };
-
-  GV.REACTIVE_BEHAVIORS['checked'] = {
-    regex: /^\[\s*([^\[\]]*)\s*\]$/,
-    bind: function (viewNode, nodeScopeData, matches) {
-      var parts = matches[1].split('.');
-      var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
-      viewNode.node.addEventListener('change', function () {
-        setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.checked);
-      });
-    },
-    onApply: function (cache, viewNode, value) {
-      if (viewNode.node.checked === value) {
-        return;
-      }
-
-      viewNode.node.checked = value || false;
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['class'] = {
-    type: 'reactive',
-    name: 'class'
-  };
-
-  GV.REACTIVE_BEHAVIORS['class'] = {
-    regex: /^\[\s*([^\[\]]*)\s*\]$/,
-    /**
-     *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param scopeData
-     * @param matches
-     */
-    bind: function (viewNode, scopeData, matches) {
-
-    },
-    onApply: function (cache, viewNode, value, oldValue, matches, scopeData) {
-      if (viewNode.virtual) {
-        return;
-      }
-
-      if (typeof value !== 'object' || value === null) {
-        return viewNode.node.setAttribute('class', value);
-      }
-
-      var keys = Object.keys(value);
-      var attributeName;
-      var attributeValue;
-      var clone = GV.createClone(value);
-
-      for (var i = 0, len = keys.length; i < len; i++) {
-        attributeName = keys[i];
-        attributeValue = value[attributeName];
-
-        var bindings = GV.getBindings(attributeValue);
-
-        if (bindings.variableNamePaths) {
-          viewNode.root.makeBinding(clone, scopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
-        }
-      }
-
-      if (viewNode.hasOwnProperty('[reactive/class]') && clone !== viewNode['[reactive/class]']) {
-        Galaxy.resetObjectTo(viewNode['[reactive/class]'], clone);
-      } else if (!viewNode.hasOwnProperty('[reactive/class]')) {
-        Object.defineProperty(viewNode, '[reactive/class]', {
-          value: clone,
-          enumerable: false
-        });
-      }
-
-      viewNode.node.setAttribute('class', getClasses(clone).join(' '));
-      clone.__onChange__ = toggles.bind(viewNode);
-      toggles.call(viewNode, null, true, false, clone);
-      viewNode.addDependedObject(clone);
-    }
-  };
-
-  function toggles(key, value, oldValue, classes) {
-    if (oldValue === value) return;
-    var oldClasses = this.node.getAttribute('class');
-    oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    var newClasses = getClasses(classes);
-    var _this = this;
-
-    _this.callWatchers('class', newClasses, oldClasses);
-    _this.sequences[':class'].start().finish(function () {
-      _this.node.setAttribute('class', newClasses.join(' '));
-      _this.sequences[':class'].reset();
-    });
-
-  }
-
-  function getClasses(obj) {
-    if (typeof classes === 'string') {
-      return [obj];
-    } else if (obj instanceof Array) {
-      return obj;
-    } else if (obj !== null && typeof obj === 'object') {
-      var newClasses = [];
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key) && obj[key]) newClasses.push(key);
-      }
-
-      return newClasses;
-    }
-  }
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['content'] = {
-    type: 'reactive',
-    name: 'content'
-  };
-
-  GV.REACTIVE_BEHAVIORS['content'] = {
-    regex: null,
-    bind: function (viewNode) {
-      viewNode.toTemplate();
-    },
-    getCache: function (viewNode) {
-      return {
-        module: null,
-        scope: viewNode.root.scope
-      };
-    },
-    onApply: function (cache, viewNode, selector, oldSelector, matches, scopeData) {
-      if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
-        viewNode.domManipulationSequence.next(function (done) {
-          var allContent = scopeData.element.schema.children;
-          var parentViewNode = viewNode.parent;
-          allContent.forEach(function (content) {
-            if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
-              content.__node__.__viewNode__.refreshBinds(scopeData);
-              parentViewNode.append(content.__node__.__viewNode__, viewNode.placeholder);
-              content.__node__.__viewNode__.setInDOM(true);
-            }
-          });
-
-          done();
-        });
-      }
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
-    type: 'reactive',
-    name: '$for'
-  };
-
-  GV.REACTIVE_BEHAVIORS['$for'] = {
-    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    bind: function (viewNode, nodeScopeData, matches) {
-      viewNode.toTemplate();
-      viewNode.root.makeBinding(viewNode, nodeScopeData, '$for', matches[2]);
-    },
-    getCache: function (viewNode, matches) {
-      return {
-        propName: matches[1],
-        nodes: []
-      };
-    },
-    /**
-     *
-     * @param cache
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param changes
-     * @param matches
-     * @param nodeScopeData
-     */
-    onApply: function (cache, viewNode, changes, oldChanges, matches, nodeScopeData) {
-      var parentNode = viewNode.parent;
-      var position = null;
-      var newItems = [];
-      var action = Array.prototype.push;
-
-      if (!changes) {
-        return;
-      }
-
-      if (changes.type === 'reset') {
-        cache.nodes.forEach(function (viewNode) {
-          viewNode.destroy();
-        });
-
-        cache.nodes = [];
-        changes = Object.assign({}, changes);
-        changes.type = 'push';
-      }
-
-      if (changes.type === 'push') {
-        var length = cache.nodes.length;
-        if (length) {
-          position = cache.nodes[length - 1].getPlaceholder().nextSibling;
-        } else {
-          position = viewNode.placeholder.nextSibling;
-        }
-
-        newItems = changes.params;
-      } else if (changes.type === 'unshift') {
-        position = cache.nodes[0] ? cache.nodes[0].placeholder : null;
-        newItems = changes.params;
-        action = Array.prototype.unshift;
-      } else if (changes.type === 'splice') {
-        var removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
-        newItems = changes.params.slice(2);
-        removedItems.forEach(function (node) {
-          node.destroy();
-        });
-      } else if (changes.type === 'pop') {
-        cache.nodes.pop().destroy();
-      } else if (changes.type === 'shift') {
-        cache.nodes.shift().destroy();
-      } else if (changes.type === 'sort' || changes.type === 'reverse') {
-        cache.nodes.forEach(function (viewNode) {
-          viewNode.destroy();
-        });
-
-        cache.nodes = [];
-        newItems = changes.original;
-      }
-
-      var valueEntity, itemDataScope = nodeScopeData;
-      var p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
-
-      if (newItems instanceof Array) {
-        for (var i = 0, len = newItems.length; i < len; i++) {
-          valueEntity = newItems[i];
-          itemDataScope = GV.createMirror(nodeScopeData);
-          itemDataScope[p] = valueEntity;
-          cns = viewNode.cloneSchema();
-          delete cns.$for;
-          var vn = root.append(cns, itemDataScope, parentNode, position);
-          vn.data[p] = valueEntity;
-          action.call(n, vn);
-        }
-      }
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['$if'] = {
-    type: 'reactive',
-    name: '$if'
-  };
-
-  GV.REACTIVE_BEHAVIORS['$if'] = {
-    regex: null,
-    bind: function (viewNode, nodeScopeData, matches) {
-      // debugger;
-    },
-    onApply: function (cache, viewNode, value) {
-      // console.info('apply $if', value);
-      if (value) {
-        viewNode.setInDOM(true);
-      } else {
-        viewNode.setInDOM(false);
-      }
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
-    type: 'reactive',
-    name: 'module'
-  };
-
-  GV.REACTIVE_BEHAVIORS['module'] = {
-    regex: null,
-    bind: function (viewNode, nodeScopeData, matches) {
-    },
-    getCache: function (viewNode) {
-      return {
-        module: null,
-        moduleMeta: null,
-        scope: viewNode.root.scope
-      };
-    },
-    onApply: function (cache, viewNode, moduleMeta) {
-      if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
-        viewNode.rendered.then(function () {
-          viewNode.empty().next(function (done) {
-            if(cache.module) {
-              cache.module.destroy();
-            }
-
-            done();
-
-            // Check for circular module loading
-            var tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
-            var root = viewNode.root;
-            while (root.scope) {
-              if (tempURI.parsedURL === root.scope.uri.paresdURL) {
-                return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
-              }
-
-              root = root.container;
-            }
-
-            cache.scope.load(moduleMeta, {
-              element: viewNode
-            }).then(function (module) {
-              cache.module = module;
-              viewNode.node.setAttribute('module', module.systemId);
-              module.start();
-            }).catch(function (response) {
-              console.error(response);
-            });
-          });
-        });
-      } else if (!moduleMeta) {
-        viewNode.empty();
-      }
-
-      cache.moduleMeta = moduleMeta;
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
-    type: 'reactive',
-    name: 'value'
-  };
-
-  GV.REACTIVE_BEHAVIORS['value'] = {
-    regex: /^\[\s*([^\[\]]*)\s*\]$/,
-    bind: function (viewNode, nodeScopeData, matches) {
-      if (viewNode.node.type === 'text') {
-        var parts = matches[1].split('.');
-        var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
-        viewNode.node.addEventListener('keyup', function () {
-          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.value);
-        });
-      }
-    },
-    onApply: function (cache, viewNode, value) {
-      if (document.activeElement === viewNode.node && viewNode.node.value === value) {
-        return;
-      }
-
-      viewNode.node.value = value || '';
-    }
-  };
-})(Galaxy.GalaxyView);
-

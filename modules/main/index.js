@@ -68,13 +68,6 @@ Scope.todos = [
   }
 ];
 
-// for (var i = 0; i < 10; i++) {
-//   Scope.todos.push({
-//     title: 'Dynamic item ' + i,
-//     done: (i % 3 === 0)
-//   });
-// }
-
 Scope.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
@@ -111,7 +104,6 @@ view.init([
         },
         onDataChange: {
           'item.title': function () {
-
           }
         }
       }
@@ -147,4 +139,10 @@ view.init([
 
 setTimeout(function () {
   Scope.moduleInputs.text = 'This has been changed after 3 seconds!';
+  // for (var i = 0; i < 1000; i++) {
+  //   Scope.todos.push({
+  //     title: 'Dynamic item ' + i,
+  //     done: (i % 3 === 0)
+  //   });
+  // }
 }, 2000);

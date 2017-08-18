@@ -2,7 +2,7 @@
 
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
-console.info(Scope);
+console.info(inputs);
 
 Scope.on('module.init', function () {
   console.info('Module guide initialized');
@@ -97,29 +97,30 @@ view.init({
           tag: 'blockquote',
           children: [
             {
+              tag: 'p',
               $for: 'item in inputs.items',
               animation: {
-                ':enter': {
-                  sequence: 'card',
-                  group: 'items',
-                  from: {
-                    x: 100,
-                    opacity: 0
-                  },
-                  position: '-=.25',
-                  duration: .4
-                },
-                ':leave': {
-                  sequence: 'card',
-                  group: 'items',
-                  order: 10,
-                  to: {
-                    x: 100,
-                    opacity: 0
-                  },
-                  position: '-=.25',
-                  duration: .4
-                },
+                // ':enter': {
+                //   sequence: 'card',
+                //   group: 'items',
+                //   from: {
+                //     x: 100,
+                //     opacity: 0
+                //   },
+                //   position: '-=.25',
+                //   duration: .4
+                // },
+                // ':leave': {
+                //   sequence: 'card',
+                //   group: 'items',
+                //   order: 10,
+                //   to: {
+                //     x: 100,
+                //     opacity: 0
+                //   },
+                //   position: '-=.25',
+                //   duration: .4
+                // },
                 '.done': {
                   sequence: 'card',
                   group: 'items',
@@ -127,9 +128,13 @@ view.init({
                   duration: .3
                 }
               },
-              tag: 'p',
               class: {
-                done: '[item.done]'
+                done: [
+                  'item.done',
+                  function (done) {
+                    return !done;
+                  }
+                ]
               },
               text: [
                 'item.title',
