@@ -3,7 +3,13 @@
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
 
-// inputs.__onChange__ = null
+Scope.count = 0;
+
+var observer = Scope.observe(inputs.data);
+observer.on('count', function (value, oldValue) {
+});
+
+console.info(inputs);
 
 Scope.newItem = {
   title: '',
@@ -42,7 +48,7 @@ view.init({
       children: [
         {
           tag: 'h2',
-          text: 'ToDos Widget'
+          text: '[inputs.data.count]'
         },
         {
           tag: 'ul',
@@ -91,6 +97,7 @@ view.init({
               Scope.newItem.title = Scope.newItem.title.trim();
               if (Scope.newItem.title.trim()) {
                 Scope.inputs.items.push(Object.assign({}, Scope.newItem));
+                Scope.inputs.data.count += 1;
                 Scope.newItem = {
                   title: '',
                   done: false

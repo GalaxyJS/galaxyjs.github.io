@@ -9,6 +9,7 @@ Scope.activeModule = {
 };
 
 Scope.flag = false;
+Scope.count = 10;
 
 Scope.navItems = [
   {
@@ -71,7 +72,10 @@ Scope.todos = [
 Scope.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
-  items: '[todos]'
+  items: '[todos]',
+  data: {
+    count: '[count]'
+  }
 };
 
 Scope.newItem = {

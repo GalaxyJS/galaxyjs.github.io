@@ -3,6 +3,7 @@
 var view = Scope.import('galaxy/view');
 var inputs = Scope.import('galaxy/inputs');
 console.info(inputs);
+console.info(Scope);
 
 Scope.on('module.init', function () {
   console.info('Module guide initialized');
@@ -16,8 +17,13 @@ Scope.on('module.destroy', function () {
   console.info('Module guide destroyed');
 });
 
+var observer = Scope.observe(inputs);
+observer.on('items', function (value, oldValue) {
+  debugger;
+});
+
 view.init({
-  class: 'card big',
+  class: ['card', 'big'],
   animation: {
     ':enter': {
       sequence: 'card',
