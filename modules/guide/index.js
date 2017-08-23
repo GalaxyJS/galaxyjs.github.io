@@ -1,9 +1,8 @@
 /* globals Scope */
+Scope.import('galaxy/inputs');
 
 var view = Scope.import('galaxy/view');
-var inputs = Scope.import('galaxy/inputs');
-console.info(inputs);
-console.info(Scope);
+var animations = Scope.import('services/animations.js');
 
 Scope.on('module.init', function () {
   console.info('Module guide initialized');
@@ -17,55 +16,31 @@ Scope.on('module.destroy', function () {
   console.info('Module guide destroyed');
 });
 
-var observer = Scope.observe(inputs);
-observer.on('items', function (value, oldValue) {
-  debugger;
-});
+// var observer = Scope.observe(inputs);
+// observer.on('items', function (value, oldValue) {
+//   debugger;
+// });
 
 view.init({
-  class: ['card', 'big'],
-  animation: {
-    ':enter': {
-      sequence: 'card',
-      from: {
-        y: 100,
-        opacity: 0
-      },
-      to: {
-        y: 0,
-        opacity: 1
-      },
-      duration: .5
-    },
-    ':leave': {
-      sequence: 'card',
-      order: 1,
-      to: {
-        y: 100,
-        opacity: 0
-      },
-      duration: .5
-    }
-  },
+  class: 'card big',
+  animation: animations.cardInOut,
   children: [
+    {
+      tag: 'img',
+      class: 'banner',
+      src: 'assets/images/guide.jpg'
+    },
     {
       class: 'content',
       tag: 'section',
       children: [
         {
           tag: 'h1',
-          text: 'Guide Page',
-          // animation: {
-          //   ':leave': {
-          //     sequence: 'card',
-          //     group: 'h1',
-          //     order: 10,
-          //     to: {
-          //       color: 'green'
-          //     },
-          //     duration: 1
-          //   }
-          // }
+          text: 'Guide Page'
+        },
+        {
+          tag: 'h2',
+          text: 'Installation'
         },
         {
           tag: 'div',

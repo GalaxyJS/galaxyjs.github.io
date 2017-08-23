@@ -30,7 +30,11 @@ Scope.navItems = [
   },
   {
     title: 'API',
-    link: '#api'
+    link: '#api',
+    module: {
+      id: 'api',
+      url: 'modules/api/index.js'
+    }
   },
   {
     title: 'ToDo - Demo',
@@ -88,13 +92,6 @@ view.init([
     tag: 'div',
     id: 'main-nav',
     class: 'main-nav',
-    text: [
-      'activeModule.id',
-      'moduleInputs.text',
-      function (id, text) {
-        return 'Active Module ID:' + id + '\n text length:' + text.length;
-      }
-    ],
     children: [
       {
         $for: 'item in navItems',
@@ -142,7 +139,7 @@ view.init([
 ]);
 
 setTimeout(function () {
-  Scope.moduleInputs.text = 'This has been changed after 3 seconds!';
+  // Scope.moduleInputs.text = 'This has been changed after 3 seconds!';
   // for (var i = 0; i < 1000; i++) {
   //   Scope.todos.push({
   //     title: 'Dynamic item ' + i,

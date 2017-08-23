@@ -1,15 +1,15 @@
 /* global Scope */
 
+Scope.import('galaxy/inputs');
+
 var view = Scope.import('galaxy/view');
-var inputs = Scope.import('galaxy/inputs');
+var animations = Scope.import('services/animations.js');
 
 Scope.count = 0;
 
-var observer = Scope.observe(inputs.data);
+var observer = Scope.observe(Scope.inputs.data);
 observer.on('count', function (value, oldValue) {
 });
-
-console.info(inputs);
 
 Scope.newItem = {
   title: '',
@@ -19,28 +19,7 @@ Scope.newItem = {
 view.init({
   tag: 'div',
   class: 'card',
-  animation: {
-    ':enter': {
-      sequence: 'card',
-      from: {
-        y: 100,
-        opacity: 0
-      },
-      to: {
-        y: 0,
-        opacity: 1
-      },
-      duration: .5
-    },
-    ':leave': {
-      sequence: 'card',
-      to: {
-        y: 100,
-        opacity: 0
-      },
-      duration: .5
-    }
-  },
+  animation: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -48,7 +27,12 @@ view.init({
       children: [
         {
           tag: 'h2',
-          text: '[inputs.data.count]'
+          text: [
+            'inputs.items.length',
+            function (items) {
+              return 'ToDos, Count: ' + items;
+            }
+          ]
         },
         {
           tag: 'ul',
