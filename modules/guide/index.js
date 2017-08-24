@@ -1,4 +1,4 @@
-/* globals Scope */
+/* globals Scope, Promise */
 Scope.import('galaxy/inputs');
 
 var view = Scope.import('galaxy/view');
@@ -20,6 +20,12 @@ Scope.on('module.destroy', function () {
 // observer.on('items', function (value, oldValue) {
 //   debugger;
 // });
+
+var contentPromise = new Promise(function (resolve) {
+  setTimeout(function () {
+    resolve('Content after 3 sec');
+  }, 3000);
+});
 
 view.init({
   class: 'card big',
@@ -43,96 +49,20 @@ view.init({
           text: 'Installation'
         },
         {
-          tag: 'div',
-          class: 'field',
-          children: [
-            {
-              tag: 'label',
-              text: 'Text'
-            },
-            {
-              tag: 'input',
-              value: '[inputs.text]'
-            }
-          ]
-        },
-        {
-          tag: 'h3',
-          text: '[inputs.text]',
-          // animation: {
-          //   ':leave': {
-          //     sequence: 'card',
-          //     group: 'h3',
-          //     order: 5,
-          //     to: {
-          //       color: 'red'
-          //     },
-          //     duration: 1
+          tag: 'p',
+          // text: [
+          //   'inputs.text',
+          //   function (text) {
+          //     var content = new Promise(function (resolve) {
+          //       setTimeout(function () {
+          //         resolve(text + ', After 3 sec');
+          //       }, 3000);
+          //     });
+          //
+          //     return content;
           //   }
-          // }
-        },
-        {
-          content: '*'
-        },
-        {
-          tag: 'blockquote',
-          children: [
-            {
-              tag: 'p',
-              $for: 'item in inputs.items',
-              animation: {
-                // ':enter': {
-                //   sequence: 'card',
-                //   group: 'items',
-                //   from: {
-                //     x: 100,
-                //     opacity: 0
-                //   },
-                //   position: '-=.25',
-                //   duration: .4
-                // },
-                // ':leave': {
-                //   sequence: 'card',
-                //   group: 'items',
-                //   order: 10,
-                //   to: {
-                //     x: 100,
-                //     opacity: 0
-                //   },
-                //   position: '-=.25',
-                //   duration: .4
-                // },
-                '.done': {
-                  sequence: 'card',
-                  group: 'items',
-                  order: 1,
-                  duration: .3
-                }
-              },
-              class: {
-                done: [
-                  'item.done',
-                  function (done) {
-                    return !done;
-                  }
-                ]
-              },
-              text: [
-                'item.title',
-                'inputs.text',
-                function (title, text) {
-                  return title + ', text length: ' + text.length;
-                }
-              ],
-              children: [
-                {
-                  tag: 'input',
-                  type: 'checkbox',
-                  checked: '[item.done]'
-                }
-              ]
-            }
-          ]
+          // ]
+          text: contentPromise
         }
       ]
     }

@@ -1733,6 +1733,49 @@ if (typeof Object.assign != 'function') {
     return subjectsClone;
   };
 
+  GalaxyView.createPropertySetter = function (node, property) {
+    return function (value, oldValue) {
+      if (value instanceof Promise) {
+        value.then(function (asyncValue) {
+          var newValue = property.parser ? property.parser(asyncValue) : asyncValue;
+          node.node[property.name] = newValue;
+          node.notifyObserver(property.name, newValue, oldValue);
+        });
+      } else {
+        var newValue = property.parser ? property.parser(value) : value;
+        node.node[property.name] = newValue;
+        node.notifyObserver(property.name, newValue, oldValue);
+      }
+    };
+  };
+
+  GalaxyView.createCustomSetter = function (node, attributeName, property) {
+    return function (value, oldValue, scopeData) {
+      if (value instanceof Promise) {
+        value.then(function (asyncValue) {
+          property.handler(node, attributeName, asyncValue, oldValue, scopeData);
+        });
+      } else {
+        property.handler(node, attributeName, value, oldValue, scopeData);
+      }
+    };
+  };
+
+  GalaxyView.createDefaultSetter = function (node, attributeName, parser) {
+    return function (value, oldValue) {
+      if (value instanceof Promise) {
+        value.then(function (asyncValue) {
+          var newValue = parser ? parser(asyncValue) : asyncValue;
+          GalaxyView.setAttr(node, attributeName, newValue, oldValue);
+        });
+      } else {
+        var newValue = parser ? parser(value) : value;
+        GalaxyView.setAttr(node, attributeName, newValue, oldValue);
+      }
+    };
+  };
+
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -1912,14 +1955,11 @@ if (typeof Object.assign != 'function') {
 
     switch (property.type) {
       case 'attr':
-        newValue = property.parser ? property.parser(value) : value;
-        GalaxyView.setAttr(viewNode, attributeName, newValue, null);
+        GalaxyView.createDefaultSetter(viewNode, attributeName, property.parser)(newValue, null);
         break;
 
       case 'prop':
-        newValue = property.parser ? property.parser(value) : value;
-        viewNode.notifyObserver(property.name, value, null);
-        viewNode.node[property.name] = newValue;
+        GalaxyView.createPropertySetter(viewNode, property)(newValue, null);
         break;
 
       case 'reactive':
@@ -1931,7 +1971,7 @@ if (typeof Object.assign != 'function') {
         break;
 
       case 'custom':
-        property.handler(viewNode, attributeName, value, null, scopeData);
+        GalaxyView.createCustomSetter(viewNode, attributeName, property)(value, null, scopeData);
         break;
     }
   };
@@ -1946,23 +1986,20 @@ if (typeof Object.assign != 'function') {
     }
 
     var parser = property.parser;
+    var setter;
 
     switch (property.type) {
       case 'prop':
+        setter = GalaxyView.createPropertySetter(viewNode, property);
+
         if (expression) {
           return function (none, oldValue) {
-            var value = expression(none);
-            var newValue = parser ? parser(value) : value;
-            viewNode.node[property.name] = newValue;
-            viewNode.notifyObserver(property.name, newValue, oldValue);
+            var expressionValue = expression(none);
+            setter(expressionValue, oldValue);
           };
         }
 
-        return function (value, oldValue) {
-          var newValue = parser ? parser(value) : value;
-          viewNode.node[property.name] = newValue;
-          viewNode.notifyObserver(property.name, newValue, oldValue);
-        };
+        return setter;
 
       case 'reactive':
         var reactiveFunction = viewNode.properties.__behaviors__[property.name];
@@ -1976,29 +2013,27 @@ if (typeof Object.assign != 'function') {
         };
 
       case 'custom':
+        setter = GalaxyView.createCustomSetter(viewNode, attributeName, property);
+
         if (expression) {
           return function (none, oldValue, scopeData) {
-            property.handler(viewNode, attributeName, expression(none), oldValue, scopeData);
+            var expressionValue = expression(none);
+            setter(expressionValue, oldValue, scopeData);
           };
         }
 
-        return function (value, oldValue, scopeData) {
-          property.handler(viewNode, attributeName, value, oldValue, scopeData);
-        };
+        return setter;
 
       default:
+        setter = GalaxyView.createDefaultSetter(viewNode, attributeName, parser);
         if (expression) {
           return function (none, oldValue) {
-            var value = expression(none);
-            var newValue = parser ? parser(value) : value;
-            GalaxyView.setAttr(viewNode, attributeName, newValue, oldValue);
+            var expressionValue = expression(none);
+            setter(expressionValue, oldValue);
           };
         }
 
-        return function (value, oldValue) {
-          var newValue = parser ? parser(value) : value;
-          GalaxyView.setAttr(viewNode, attributeName, newValue, oldValue);
-        };
+        return setter;
     }
   };
 
@@ -2488,6 +2523,82 @@ if (typeof Object.assign != 'function') {
   };
 
 })(Galaxy.GalaxyView);
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
+    type: 'reactive',
+    name: 'inputs'
+  };
+
+  GV.REACTIVE_BEHAVIORS['inputs'] = {
+    regex: null,
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param scopeData
+     * @param value
+     */
+    bind: function (viewNode, scopeData, value) {
+      if (value !== null && typeof  value !== 'object') {
+        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(viewNode.schema, null, '  '));
+      }
+    },
+    onApply: function (cache, viewNode, value, oldValue, matches, context) {
+      if (viewNode.virtual) return;
+
+      var clone = GV.bindSubjectsToData(value, context, true);
+
+      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]'].clone) {
+        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], {
+          clone: clone,
+          original: value
+        });
+      } else if (!viewNode.hasOwnProperty('[addon/inputs]')) {
+        Object.defineProperty(viewNode, '[addon/inputs]', {
+          value: {
+            clone: clone,
+            original: value
+          },
+          enumerable: false
+        });
+      }
+
+      viewNode.addDependedObject(clone);
+    }
+  };
+
+  Galaxy.registerAddOnProvider('galaxy/inputs', function (scope) {
+    return {
+      create: function () {
+        scope.inputs = scope.element['[addon/inputs]'].clone;
+
+        return scope.inputs;
+      },
+      finalize: function () {
+        GV.link(scope.element['[addon/inputs]'].clone, scope.element['[addon/inputs]'].original);
+      }
+    };
+  });
+})(Galaxy.GalaxyView);
+
+/* global Galaxy */
+
+(function (G) {
+  G.registerAddOnProvider('galaxy/view', function (scope) {
+    return {
+      create: function () {
+        var view = new Galaxy.GalaxyView(scope);
+
+        return view;
+      },
+      finalize: function () {
+
+      }
+    };
+  });
+})(Galaxy);
 
 /* global Galaxy, TweenLite, TimelineLite */
 
@@ -3132,79 +3243,3 @@ if (typeof Object.assign != 'function') {
   };
 })(Galaxy.GalaxyView);
 
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
-    type: 'reactive',
-    name: 'inputs'
-  };
-
-  GV.REACTIVE_BEHAVIORS['inputs'] = {
-    regex: null,
-    /**
-     *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param scopeData
-     * @param value
-     */
-    bind: function (viewNode, scopeData, value) {
-      if (value !== null && typeof  value !== 'object') {
-        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(viewNode.schema, null, '  '));
-      }
-    },
-    onApply: function (cache, viewNode, value, oldValue, matches, context) {
-      if (viewNode.virtual) return;
-
-      var clone = GV.bindSubjectsToData(value, context, true);
-
-      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]'].clone) {
-        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], {
-          clone: clone,
-          original: value
-        });
-      } else if (!viewNode.hasOwnProperty('[addon/inputs]')) {
-        Object.defineProperty(viewNode, '[addon/inputs]', {
-          value: {
-            clone: clone,
-            original: value
-          },
-          enumerable: false
-        });
-      }
-
-      viewNode.addDependedObject(clone);
-    }
-  };
-
-  Galaxy.registerAddOnProvider('galaxy/inputs', function (scope) {
-    return {
-      create: function () {
-        scope.inputs = scope.element['[addon/inputs]'].clone;
-
-        return scope.inputs;
-      },
-      finalize: function () {
-        GV.link(scope.element['[addon/inputs]'].clone, scope.element['[addon/inputs]'].original);
-      }
-    };
-  });
-})(Galaxy.GalaxyView);
-
-/* global Galaxy */
-
-(function (G) {
-  G.registerAddOnProvider('galaxy/view', function (scope) {
-    return {
-      create: function () {
-        var view = new Galaxy.GalaxyView(scope);
-
-        return view;
-      },
-      finalize: function () {
-
-      }
-    };
-  });
-})(Galaxy);
