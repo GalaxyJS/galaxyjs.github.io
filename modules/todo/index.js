@@ -35,13 +35,25 @@ view.init({
           ]
         },
         {
+          tag: 'button',
+          text: 'Check All',
+          on: {
+            click: function () {
+              Scope.inputs.items.forEach(function (item) {
+                item.done = true;
+              });
+            }
+          }
+        },
+        {
           tag: 'ul',
           children: {
-            $for: 'item in inputs.items',
-            animation: {
-              class: {}
-            },
             tag: 'li',
+            $for: 'item in inputs.items',
+            animation: animations.itemInOut,
+            renderConfig: {
+              applyClassListAfterRender: true
+            },
             class: {
               done: '[item.done]'
             },

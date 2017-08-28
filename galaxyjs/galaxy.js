@@ -1736,11 +1736,12 @@ if (typeof Object.assign != 'function') {
   GalaxyView.createPropertySetter = function (node, property) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
-        value.then(function (asyncValue) {
+        var asyncCall = function (asyncValue) {
           var newValue = property.parser ? property.parser(asyncValue) : asyncValue;
           node.node[property.name] = newValue;
           node.notifyObserver(property.name, newValue, oldValue);
-        });
+        };
+        value.then(asyncCall).catch(asyncCall);
       } else {
         var newValue = property.parser ? property.parser(value) : value;
         node.node[property.name] = newValue;
@@ -1752,9 +1753,10 @@ if (typeof Object.assign != 'function') {
   GalaxyView.createCustomSetter = function (node, attributeName, property) {
     return function (value, oldValue, scopeData) {
       if (value instanceof Promise) {
-        value.then(function (asyncValue) {
+        var asyncCall = function (asyncValue) {
           property.handler(node, attributeName, asyncValue, oldValue, scopeData);
-        });
+        };
+        value.then(asyncCall).catch(asyncCall);
       } else {
         property.handler(node, attributeName, value, oldValue, scopeData);
       }
@@ -1764,10 +1766,11 @@ if (typeof Object.assign != 'function') {
   GalaxyView.createDefaultSetter = function (node, attributeName, parser) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
-        value.then(function (asyncValue) {
+        var asyncCall = function (asyncValue) {
           var newValue = parser ? parser(asyncValue) : asyncValue;
           GalaxyView.setAttr(node, attributeName, newValue, oldValue);
-        });
+        };
+        value.then(asyncCall).catch(asyncCall);
       } else {
         var newValue = parser ? parser(value) : value;
         GalaxyView.setAttr(node, attributeName, newValue, oldValue);
@@ -1934,7 +1937,7 @@ if (typeof Object.assign != 'function') {
     if (behavior) {
       var matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
-      viewNode.properties.__behaviors__[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
+      viewNode.properties.behaviors[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
         var CACHE = {};
         if (BEHAVIOR.getCache) {
           CACHE = BEHAVIOR.getCache(viewNode, MATCHES, BEHAVIOR_SCOPE_DATA);
@@ -1963,7 +1966,7 @@ if (typeof Object.assign != 'function') {
         break;
 
       case 'reactive':
-        viewNode.properties.__behaviors__[property.name](viewNode, newValue, null);
+        viewNode.properties.behaviors[property.name](viewNode, newValue, null);
         break;
 
       case 'event':
@@ -2002,7 +2005,7 @@ if (typeof Object.assign != 'function') {
         return setter;
 
       case 'reactive':
-        var reactiveFunction = viewNode.properties.__behaviors__[property.name];
+        var reactiveFunction = viewNode.properties.behaviors[property.name];
 
         if (!reactiveFunction) {
           console.error('Reactive handler not found for: ' + property.name);
@@ -2263,10 +2266,14 @@ if (typeof Object.assign != 'function') {
     enumerable: false
   };
 
-  var __behaviors__ = {
-    value: {},
-    enumerable: false,
-    writable: false
+  GV.NODE_SCHEMA_PROPERTY_MAP['lifeCycle'] = {
+    type: 'prop',
+    name: 'lifeCycle'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['renderConfig'] = {
+    type: 'prop',
+    name: 'renderConfig'
   };
 
   /**
@@ -2283,7 +2290,9 @@ if (typeof Object.assign != 'function') {
     this.data = {};
     this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
-    this.properties = {};
+    this.properties = {
+      behaviors: {}
+    };
     this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
@@ -2296,6 +2305,7 @@ if (typeof Object.assign != 'function') {
     var _this = this;
     this.rendered = new Promise(function (ready) {
       _this.ready = ready;
+      _this.callLifeCycleEvent('rendered');
     });
 
     this.createSequence(':enter', true);
@@ -2306,13 +2316,18 @@ if (typeof Object.assign != 'function') {
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
 
-    __behaviors__.value = {};
-    GV.defineProp(this.properties, '__behaviors__', __behaviors__);
-
     referenceToThis.value = this;
     GV.defineProp(this.node, '__viewNode__', referenceToThis);
     GV.defineProp(this.placeholder, '__viewNode__', referenceToThis);
+
+    this.callLifeCycleEvent('created');
   }
+
+  ViewNode.prototype.callLifeCycleEvent = function (id) {
+    if (this.schema.lifeCycle && typeof this.schema.lifeCycle[id] === 'function') {
+      this.schema.lifeCycle[id].call(this);
+    }
+  };
 
   ViewNode.prototype.cloneSchema = function () {
     var clone = Object.assign({}, this.schema);
@@ -2360,6 +2375,7 @@ if (typeof Object.assign != 'function') {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
         _this.sequences[':enter'].finish(done);
+        _this.callLifeCycleEvent('inserted');
       });
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
@@ -2368,6 +2384,7 @@ if (typeof Object.assign != 'function') {
           removeChild(_this.node.parentNode, _this.node);
           done();
           _this.sequences[':leave'].reset();
+          _this.callLifeCycleEvent('removed');
         });
       });
     }
@@ -2407,10 +2424,12 @@ if (typeof Object.assign != 'function') {
             _this.sequences[':leave'].start().finish(function () {
               removeChild(_this.node.parentNode, _this.node);
               _this.sequences[':leave'].reset();
+              _this.callLifeCycleEvent('removed');
             });
 
             done();
             _this.sequences[':destroy'].reset();
+            _this.callLifeCycleEvent('destroyed');
           });
         });
       }
@@ -2419,6 +2438,8 @@ if (typeof Object.assign != 'function') {
         sequence.next(function (done) {
           _this.sequences[':leave'].start().finish(function () {
             _this.sequences[':leave'].reset();
+            _this.callLifeCycleEvent('removed');
+            _this.callLifeCycleEvent('destroyed');
           });
 
           done();
@@ -2433,6 +2454,8 @@ if (typeof Object.assign != 'function') {
             removeChild(_this.node.parentNode, _this.node);
             done();
             _this.sequences[':leave'].reset();
+            _this.callLifeCycleEvent('removed');
+            _this.callLifeCycleEvent('destroyed');
           });
         });
       }
@@ -2449,7 +2472,10 @@ if (typeof Object.assign != 'function') {
 
     for (var propertyName in properties) {
       property = properties[propertyName];
-      property.removeNode(_this);
+
+      if (property instanceof GV.BoundProperty) {
+        property.removeNode(_this);
+      }
     }
 
     _this.inDOM = false;
@@ -2615,147 +2641,155 @@ if (typeof Object.assign != 'function') {
      */
     handler: function (viewNode, attr, config, oldConfig, scopeData) {
       viewNode.rendered.then(function () {
-        if (!viewNode.virtual) {
-          var enterAnimationConfig = config[':enter'];
-          if (enterAnimationConfig) {
-            viewNode.sequences[':enter'].next(function (done) {
-              if (enterAnimationConfig.sequence) {
-                var animationMeta = AnimationMeta.GET(enterAnimationConfig.sequence);
+        if (viewNode.virtual) {
+          return;
+        }
 
-                if (enterAnimationConfig.group) {
-                  animationMeta = animationMeta.getGroup(enterAnimationConfig.group);
-                }
+        var enterAnimationConfig = config[':enter'];
+        if (enterAnimationConfig) {
+          viewNode.sequences[':enter'].next(function (done) {
+            if (enterAnimationConfig.sequence) {
+              var animationMeta = AnimationMeta.GET(enterAnimationConfig.sequence);
 
-                var lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
-                lastStep.clearProps = 'all';
-                animationMeta.add(viewNode.node, enterAnimationConfig, done);
-              } else {
-                AnimationMeta.CREATE_TWEEN(viewNode.node, enterAnimationConfig, done);
+              if (enterAnimationConfig.group) {
+                animationMeta = animationMeta.getGroup(enterAnimationConfig.group);
               }
-            });
-          }
 
-          var leaveAnimationConfig = config[':leave'];
-          if (leaveAnimationConfig) {
-            viewNode.sequences[':destroy'].next(function (done) {
-              viewNode._destroyed = true;
-              done();
-            });
-
-            viewNode.sequences[':leave'].next(function (done) {
-              if (leaveAnimationConfig.sequence) {
-                var animationMeta = AnimationMeta.GET(leaveAnimationConfig.sequence);
-
-                // if the animation has order it will be added to the queue according to its order.
-                // No order means lowest order
-                if (typeof leaveAnimationConfig.order === 'number') {
-                  animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, function () {
-                    if (leaveAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-                    }
-
-                    animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-                  });
-
-                  // When viewNode is the one which is destroyed, then run the queue
-                  // The queue will never run if the destroyed viewNode has the lowest order
-                  if (viewNode._destroyed) {
-                    var finishImmediately = false;
-                    for (var key in animationMeta.queue) {
-                      var item;
-                      for (var i = 0, len = animationMeta.queue[key].length; i < len; i++) {
-                        item = animationMeta.queue[key][i];
-                        item.operation();
-
-                        // If the the current queue item.node is the destroyed node, then all the animations in
-                        // queue should be ignored
-                        if (item.node === viewNode.node) {
-                          finishImmediately = true;
-                          break;
-                        }
-                      }
-
-                      if (finishImmediately) break;
-                    }
-
-                    animationMeta.queue = {};
-                    delete viewNode._destroyed;
-                  }
-
-                  return;
-                }
-
-                if (leaveAnimationConfig.group) {
-                  animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-                }
-
-                animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-              } else {
-                AnimationMeta.CREATE_TWEEN(viewNode.node, leaveAnimationConfig, done);
-              }
-            });
-          }
-
-          viewNode.observer.on('class', function (value, oldValue) {
-            value.forEach(function (item) {
-              if (oldValue.indexOf(item) === -1) {
-                var _config = config['.' + item];
-                if (_config) {
-                  viewNode.sequences[':class'].next(function (done) {
-                    var classAnimationConfig = _config;
-                    classAnimationConfig.to = {className: '+=' + item || ''};
-
-                    if (classAnimationConfig.sequence) {
-                      var animationMeta = AnimationMeta.GET(classAnimationConfig.sequence);
-
-                      if (classAnimationConfig.group) {
-                        animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                      }
-
-                      animationMeta.add(viewNode.node, classAnimationConfig, done);
-                    } else {
-                      AnimationMeta.CREATE_TWEEN(viewNode.node, classAnimationConfig, done);
-                    }
-                  });
-                }
-              }
-            });
-
-            oldValue.forEach(function (item) {
-              if (value.indexOf(item) === -1) {
-                var _config = config['.' + item];
-                if (_config) {
-                  viewNode.sequences[':class'].next(function (done) {
-                    var classAnimationConfig = _config;
-                    classAnimationConfig.to = {className: '-=' + item || ''};
-
-                    if (classAnimationConfig.sequence) {
-                      var animationMeta = AnimationMeta.GET(classAnimationConfig.sequence);
-
-                      if (classAnimationConfig.group) {
-                        animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                      }
-
-                      animationMeta.add(viewNode.node, classAnimationConfig, done);
-                    } else {
-                      AnimationMeta.CREATE_TWEEN(viewNode.node, classAnimationConfig, done);
-                    }
-                  });
-                }
-              }
-            });
+              var lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              lastStep.clearProps = 'all';
+              animationMeta.add(viewNode.node, enterAnimationConfig, done);
+            } else {
+              AnimationMeta.CREATE_TWEEN(viewNode.node, enterAnimationConfig, done);
+            }
           });
         }
+
+        var leaveAnimationConfig = config[':leave'];
+        if (leaveAnimationConfig) {
+          viewNode.sequences[':destroy'].next(function (done) {
+            viewNode._destroyed = true;
+            done();
+          });
+
+          viewNode.sequences[':leave'].next(function (done) {
+            if (leaveAnimationConfig.sequence) {
+              var animationMeta = AnimationMeta.GET(leaveAnimationConfig.sequence);
+
+              // if the animation has order it will be added to the queue according to its order.
+              // No order means lowest order
+              if (typeof leaveAnimationConfig.order === 'number') {
+                animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, function () {
+                  if (leaveAnimationConfig.group) {
+                    animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+                  }
+
+                  animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+                });
+
+                // When viewNode is the one which is destroyed, then run the queue
+                // The queue will never run if the destroyed viewNode has the lowest order
+                if (viewNode._destroyed) {
+                  var finishImmediately = false;
+                  for (var key in animationMeta.queue) {
+                    var item;
+                    for (var i = 0, len = animationMeta.queue[key].length; i < len; i++) {
+                      item = animationMeta.queue[key][i];
+                      item.operation();
+
+                      // If the the current queue item.node is the destroyed node, then all the animations in
+                      // queue should be ignored
+                      if (item.node === viewNode.node) {
+                        finishImmediately = true;
+                        break;
+                      }
+                    }
+
+                    if (finishImmediately) break;
+                  }
+
+                  animationMeta.queue = {};
+                  delete viewNode._destroyed;
+                }
+
+                return;
+              }
+
+              if (leaveAnimationConfig.group) {
+                animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+              }
+
+              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+            } else {
+              AnimationMeta.CREATE_TWEEN(viewNode.node, leaveAnimationConfig, done);
+            }
+          });
+        }
+
+        viewNode.observer.on('class', function (value, oldValue) {
+          value.forEach(function (item) {
+            if (item && oldValue.indexOf(item) === -1) {
+              var _config = config['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+
+                  var classAnimationConfig = _config;
+                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+
+                  if (classAnimationConfig.sequence) {
+                    var animationMeta = AnimationMeta.GET(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.CREATE_TWEEN(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+
+          oldValue.forEach(function (item) {
+            if (item && value.indexOf(item) === -1) {
+              var _config = config['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+                  var classAnimationConfig = _config;
+                  classAnimationConfig.to = {className: '-=' + item || ''};
+
+                  if (classAnimationConfig.sequence) {
+                    var animationMeta = AnimationMeta.GET(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.CREATE_TWEEN(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+        });
       });
     }
   };
 
-  function AnimationMeta() {
+  function AnimationMeta(onComplete) {
     this.timeline = new TimelineLite({
-      autoRemoveChildren: true
+      autoRemoveChildren: true,
+      onComplete: onComplete
     });
     this.groups = {};
     this.queue = {};
+    this.commands = new Galaxy.GalaxySequence();
+    this.commands.start();
+    this.added = false;
   }
 
   AnimationMeta.ANIMATIONS = {};
@@ -2794,15 +2828,37 @@ if (typeof Object.assign != 'function') {
   };
 
   AnimationMeta.prototype.getGroup = function (name) {
-    if (!this.groups[name]) {
-      this.groups[name] = new AnimationMeta();
+    var _this = this;
+    var group = this.groups[name];
+    if (!group) {
+      group = this.groups[name] = new AnimationMeta();
     }
 
-    if (this.timeline.getChildren().indexOf(this.groups[name].timelin) === -1) {
-      this.timeline.add(this.groups[name].timeline);
+    if (!group.added && this.timeline.getChildren().indexOf(group.timeline) === -1) {
+      // if the parent animation is still running, then add the group time line to the end of the parent animation
+      // when and only when the parent time line has reached its end
+      // group time line will be paused till the parent time line reaches its end
+      if (this.timeline.progress() !== undefined) {
+        group.timeline.pause();
+        group.added = true;
+
+        _this.timeline.add(function () {
+          _this.commands.next(function (done) {
+            _this.timeline.add(group.timeline);
+            group.added = false;
+            group.timeline.resume();
+            done();
+          });
+        });
+      }
+      // If the parent time line is not running, then add the group time line ti it immediately
+      else {
+        _this.timeline.add(group.timeline);
+      }
     }
 
-    return this.groups[name];
+
+    return group;
   };
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
@@ -2945,12 +3001,20 @@ if (typeof Object.assign != 'function') {
         });
       }
 
-      viewNode.node.setAttribute('class', getClasses(clone).join(' '));
+      viewNode.node.setAttribute('class', []);
       var observer = new Galaxy.GalaxyObserver(clone);
       observer.onAll(function (key, value, oldValue) {
         toggles.call(viewNode, key, value, oldValue, clone);
       });
-      toggles.call(viewNode, null, true, false, clone);
+
+      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
+        viewNode.rendered.then(function () {
+          toggles.call(viewNode, null, true, false, clone);
+        });
+      } else {
+        toggles.call(viewNode, null, true, false, clone);
+      }
+
       viewNode.addDependedObject(clone);
     }
   };
@@ -2983,7 +3047,6 @@ if (typeof Object.assign != 'function') {
       _this.node.setAttribute('class', newClasses.join(' '));
       _this.sequences[':class'].reset();
     });
-
   }
 })(Galaxy.GalaxyView);
 

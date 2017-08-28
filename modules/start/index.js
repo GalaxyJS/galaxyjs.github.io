@@ -1,9 +1,11 @@
 /* globals Scope */
 
 var view = Scope.import('galaxy/view');
+var animations = Scope.import('services/animations.js');
 
 view.init({
   class: 'card big',
+  animation: animations.cardInOut,
   children: [
     {
       tag: 'img',

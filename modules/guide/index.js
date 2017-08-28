@@ -1,4 +1,4 @@
-/* globals Scope, Promise */
+/* globals Scope, Promise, PR */
 Scope.import('galaxy/inputs');
 
 var view = Scope.import('galaxy/view');
@@ -9,7 +9,7 @@ Scope.on('module.init', function () {
 });
 
 Scope.on('module.start', function () {
-  console.info('Module guide started');
+  PR.prettyPrint();
 });
 
 Scope.on('module.destroy', function () {
@@ -50,19 +50,27 @@ view.init({
         },
         {
           tag: 'p',
-          // text: [
-          //   'inputs.text',
-          //   function (text) {
-          //     var content = new Promise(function (resolve) {
-          //       setTimeout(function () {
-          //         resolve(text + ', After 3 sec');
-          //       }, 3000);
-          //     });
-          //
-          //     return content;
-          //   }
-          // ]
           text: contentPromise
+        },
+        {
+          tag: 'h2',
+          text: 'Recommended project file & folder structure'
+        },
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-js',
+          text: 'project\n' +
+          '|-app  \n' +
+          '| |-assets\n' +
+          '| |-modules\n' +
+          '| | |-main\n' +
+          '| | | |-index.html\n' +
+          '| | \n' +
+          '| |-services ...\n' +
+          '| |-index.html\n' +
+          '|\n' +
+          '|-node_modules\n' +
+          '|-package.json'
         }
       ]
     }
