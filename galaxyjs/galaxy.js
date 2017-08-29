@@ -1532,7 +1532,7 @@ if (typeof Object.assign != 'function') {
     property = property.split('.')[0];
     var target = data;
     var temp = data;
-
+    // var nestingLevel = 0;
     if (!data.hasOwnProperty(property)) {
       while (temp.__parent__) {
         if (temp.__parent__.hasOwnProperty(property)) {
@@ -1540,7 +1540,11 @@ if (typeof Object.assign != 'function') {
           break;
         }
 
-        temp = data.__parent__;
+        // if (nestingLevel++ >= 1000) {
+        //   throw console.error('Maximum nested property lookup has reached `' + property + '`', data);
+        // }
+
+        temp = temp.__parent__;
       }
     }
 
@@ -2851,7 +2855,7 @@ if (typeof Object.assign != 'function') {
           });
         });
       }
-      // If the parent time line is not running, then add the group time line ti it immediately
+      // If the parent time line is not running, then add the group time line to it immediately
       else {
         _this.timeline.add(group.timeline);
       }

@@ -15,17 +15,15 @@ Scope.on('module.start', function () {
 Scope.on('module.destroy', function () {
   console.info('Module guide destroyed');
 });
+Scope.surfaces = [];
+Scope.progressText = 'Ready to make request';
+
 
 // var observer = Scope.observe(inputs);
 // observer.on('items', function (value, oldValue) {
 //   debugger;
 // });
 
-var contentPromise = new Promise(function (resolve) {
-  setTimeout(function () {
-    resolve('Content after 3 sec');
-  }, 3000);
-});
 
 view.init({
   class: 'card big',
@@ -49,10 +47,6 @@ view.init({
           text: 'Installation'
         },
         {
-          tag: 'p',
-          text: contentPromise
-        },
-        {
           tag: 'h2',
           text: 'Recommended project file & folder structure'
         },
@@ -71,6 +65,63 @@ view.init({
           '|\n' +
           '|-node_modules\n' +
           '|-package.json'
+        },
+        {
+          tag: 'button',
+          text: 'Request Surfaces',
+          on: {
+            click: function () {
+              var s = performance.now();
+              Scope.progressText = 'Please wait...';
+              fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
+                response.json().then(function (data) {
+                  var surfaces = data.data.productData.data[0].data.filter(function (item) {
+                    return item.baseType === 'surface';
+                  });
+                  Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
+                  setTimeout(function () {
+                    Scope.surfaces = surfaces;
+                  }, 1);
+                });
+              });
+            }
+          }
+        },
+        {
+          tag: 'h3',
+          text: '[progressText]'
+        },
+        {
+          tag: 'p',
+          // animation: animations.itemInOut,
+          $for: 'surface in surfaces',
+          text: '[surface.id]',
+          children: {
+            tag: 'ul',
+            children: {
+              tag: 'li',
+              class: 'material-item',
+              // animation: animations.itemInOut,
+              $for: 'material in surface.data',
+              text: '[material.id]',
+              children: {
+                tag: 'p',
+                children: {
+                  tag: 'img',
+                  class: 'color-item',
+                  // animation: animations.itemInOut,
+                  $for: 'color in material.data',
+                  src: [
+                    'material.id',
+                    'color.id',
+                    function (material, color) {
+                      return 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + material + '/' + color;
+                    }
+                  ]
+                }
+              }
+            }
+          }
         }
       ]
     }
