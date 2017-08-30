@@ -1718,7 +1718,6 @@ if (typeof Object.assign != 'function') {
       // Call init value only on the last variable binding,
       // so the expression with multiple arguments get called only once
       else if (typeof dataObject === 'object' && expressionArgumentsCount === 1) {
-        if(targetKeyName === 'text' && initValue === 'bolster') debugger;
         boundProperty.initValueFor(target, targetKeyName, initValue, dataObject);
       }
       expressionArgumentsCount--;
@@ -1916,7 +1915,6 @@ if (typeof Object.assign != 'function') {
         attributeValue = nodeSchema[attributeName];
 
         if (GalaxyView.REACTIVE_BEHAVIORS[attributeName]) {
-          if(attributeValue === 'material in surface.data') debugger;
           _this.addReactiveBehavior(viewNode, nodeSchema, parentScopeData, attributeName);
         }
 
@@ -2157,7 +2155,10 @@ if (typeof Object.assign != 'function') {
    * @public
    */
   BoundProperty.prototype.addNode = function (node, attributeName, expression) {
-    if (this.nodes.indexOf(node) === -1) {
+    var index = this.nodes.indexOf(node);
+    // Check if the node with the same property already exist
+    // Insure that same node with different property bind can exist
+    if (index === -1 || this.props[index] !== attributeName) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
         node.installPropertySetter(this, attributeName, expression);
       }
@@ -2168,11 +2169,16 @@ if (typeof Object.assign != 'function') {
   };
 
   BoundProperty.prototype.removeNode = function (node) {
-    var nodeIndexInTheHost = this.nodes.indexOf(node);
-    if (nodeIndexInTheHost !== -1) {
+    var nodeIndexInTheHost;
+    while ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
       this.nodes.splice(nodeIndexInTheHost, 1);
       this.props.splice(nodeIndexInTheHost, 1);
     }
+    // var nodeIndexInTheHost = this.nodes.indexOf(node);
+    // if (nodeIndexInTheHost !== -1) {
+    //   this.nodes.splice(nodeIndexInTheHost, 1);
+    //   this.props.splice(nodeIndexInTheHost, 1);
+    // }
   };
 
   BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {
@@ -2855,24 +2861,24 @@ if (typeof Object.assign != 'function') {
       // if the parent animation is still running, then add the group time line to the end of the parent animation
       // when and only when the parent time line has reached its end
       // group time line will be paused till the parent time line reaches its end
-      // _this.timeline.add(group.timeline);
-      if (this.timeline.progress() !== undefined) {
-        group.timeline.pause();
-        group.added = true;
-
-        _this.timeline.add(function () {
-          _this.commands.next(function (done) {
-            _this.timeline.add(group.timeline);
-            group.added = false;
-            group.timeline.resume();
-            done();
-          });
-        });
-      }
-      // If the parent time line is not running, then add the group time line to it immediately
-      else {
-        _this.timeline.add(group.timeline);
-      }
+      _this.timeline.add(group.timeline);
+      // if (this.timeline.progress() !== undefined) {
+      //   group.timeline.pause();
+      //   group.added = true;
+      //
+      //   _this.timeline.add(function () {
+      //     _this.commands.next(function (done) {
+      //       _this.timeline.add(group.timeline);
+      //       group.added = false;
+      //       group.timeline.resume();
+      //       done();
+      //     });
+      //   });
+      // }
+      // // If the parent time line is not running, then add the group time line to it immediately
+      // else {
+      //   _this.timeline.add(group.timeline);
+      // }
     }
 
 
@@ -3199,9 +3205,6 @@ if (typeof Object.assign != 'function') {
           itemDataScope[p] = valueEntity;
           cns = viewNode.cloneSchema();
           delete cns.$for;
-          if(cns.class ==='material-item') {
-            debugger;
-          }
           var vn = root.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);

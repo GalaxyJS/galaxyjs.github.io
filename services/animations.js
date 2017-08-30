@@ -60,18 +60,18 @@ Scope.export = {
   createSlideInOut: function (sequence) {
     return {
       ':enter': {
-        sequence: sequence,
-        group: 'items',
+        sequence: 'm',
+        group: 'material',
         from: {
           x: 100,
           opacity: 0
         },
-        position: '-=.4',
-        duration: .5
+        position: '-=.1',
+        duration: 1.5
       },
       ':leave': {
-        sequence: sequence,
-        group: 'items',
+        sequence: 'm',
+        // group: 'items',
         order: 5,
         to: {
           x: 100,
@@ -85,8 +85,8 @@ Scope.export = {
   createPopInOut: function (sequence) {
     return {
       ':enter': {
-        sequence: sequence,
-        // group: val,
+        sequence: 'm',
+        group: sequence,
         from: {
           scale: 0
         },
@@ -94,7 +94,7 @@ Scope.export = {
         duration: .5
       },
       ':leave': {
-        sequence: sequence,
+        sequence: 'm',
         // group: 'items',
         order: 5,
         to: {

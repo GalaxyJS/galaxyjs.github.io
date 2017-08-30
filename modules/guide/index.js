@@ -100,14 +100,12 @@ view.init({
               tag: 'li',
               class: 'material-item',
               $for: 'material in surface.data',
-              // animation: [
-              //   'material.id',
-              //   function (materialId) {
-              //   console.info('mmmm---->',materialId);
-              //     return {};
-              //   }
-              // ],
-              label: '[material.id]',
+              animation: [
+                'material.id',
+                function (materialId) {
+                  return animations.createSlideInOut(materialId);
+                }
+              ],
               text: '[material.id]',
               children: {
                 tag: 'p',
