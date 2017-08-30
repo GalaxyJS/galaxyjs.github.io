@@ -18,7 +18,7 @@ Scope.on('module.destroy', function () {
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 
-
+console.info(Scope);
 // var observer = Scope.observe(inputs);
 // observer.on('items', function (value, oldValue) {
 //   debugger;
@@ -79,9 +79,7 @@ view.init({
                     return item.baseType === 'surface';
                   });
                   Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
-                  setTimeout(function () {
-                    Scope.surfaces = surfaces;
-                  }, 1);
+                  Scope.surfaces = surfaces;
                 });
               });
             }
@@ -101,15 +99,27 @@ view.init({
             children: {
               tag: 'li',
               class: 'material-item',
-              // animation: animations.itemInOut,
               $for: 'material in surface.data',
+              // animation: [
+              //   'material.id',
+              //   function (materialId) {
+              //   console.info('mmmm---->',materialId);
+              //     return {};
+              //   }
+              // ],
+              label: '[material.id]',
               text: '[material.id]',
               children: {
                 tag: 'p',
                 children: {
                   tag: 'img',
                   class: 'color-item',
-                  // animation: animations.itemInOut,
+                  animation: [
+                    'material.id',
+                    function (materialId) {
+                      return animations.createPopInOut(materialId);
+                    }
+                  ],
                   $for: 'color in material.data',
                   src: [
                     'material.id',

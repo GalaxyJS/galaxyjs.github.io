@@ -1361,6 +1361,7 @@ if (typeof Object.assign != 'function') {
     value: null
   };
   var setAttr = Element.prototype.setAttribute;
+  var removeAttr = Element.prototype.removeAttribute;
   var nextTick = (function () {
     var callbacks = [];
     var pending = false;
@@ -1422,7 +1423,11 @@ if (typeof Object.assign != 'function') {
 
   GalaxyView.setAttr = function (viewNode, name, value, oldValue) {
     viewNode.notifyObserver(name, value, oldValue);
-    setAttr.call(viewNode.node, name, value, oldValue);
+    if (value) {
+      setAttr.call(viewNode.node, name, value, oldValue);
+    } else {
+      removeAttr.call(viewNode.node, name);
+    }
   };
 
   GalaxyView.cleanProperty = function (obj, key) {
@@ -1607,18 +1612,18 @@ if (typeof Object.assign != 'function') {
    * @param {String} targetKeyName
    * @param {string|Array<string>} variableNamePaths
    */
-  GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression) {
+  GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
     var dataObject = data;
     if (typeof dataObject !== 'object') {
       return;
     }
 
     var variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
-
     // expression === true means that a expression function is available and should be extracted
     if (expression === true) {
       var handler = variables[variables.length - 1];
       variables = variables.slice(0, variables.length - 1);
+      expressionArgumentsCount = variables.length;
       var functionContent = 'return [';
       functionContent += variables.map(function (path) {
         return 'prop(scope, "' + path + '").' + path;
@@ -1638,6 +1643,8 @@ if (typeof Object.assign != 'function') {
       catch (expection) {
         throw console.error(expection.message + '\n', variables);
       }
+    } else if (!expression) {
+      expressionArgumentsCount = 1;
     }
 
     var variableNamePath;
@@ -1706,10 +1713,15 @@ if (typeof Object.assign != 'function') {
       }
 
       if (childProperty) {
-        GalaxyView.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty, expression);
-      } else if (typeof dataObject === 'object') {
+        GalaxyView.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty, expression, expressionArgumentsCount);
+      }
+      // Call init value only on the last variable binding,
+      // so the expression with multiple arguments get called only once
+      else if (typeof dataObject === 'object' && expressionArgumentsCount === 1) {
+        if(targetKeyName === 'text' && initValue === 'bolster') debugger;
         boundProperty.initValueFor(target, targetKeyName, initValue, dataObject);
       }
+      expressionArgumentsCount--;
     }
   };
 
@@ -1904,6 +1916,7 @@ if (typeof Object.assign != 'function') {
         attributeValue = nodeSchema[attributeName];
 
         if (GalaxyView.REACTIVE_BEHAVIORS[attributeName]) {
+          if(attributeValue === 'material in surface.data') debugger;
           _this.addReactiveBehavior(viewNode, nodeSchema, parentScopeData, attributeName);
         }
 
@@ -2645,7 +2658,7 @@ if (typeof Object.assign != 'function') {
      */
     handler: function (viewNode, attr, config, oldConfig, scopeData) {
       viewNode.rendered.then(function () {
-        if (viewNode.virtual) {
+        if (viewNode.virtual || !config) {
           return;
         }
 
@@ -2842,6 +2855,7 @@ if (typeof Object.assign != 'function') {
       // if the parent animation is still running, then add the group time line to the end of the parent animation
       // when and only when the parent time line has reached its end
       // group time line will be paused till the parent time line reaches its end
+      // _this.timeline.add(group.timeline);
       if (this.timeline.progress() !== undefined) {
         group.timeline.pause();
         group.added = true;
@@ -3185,6 +3199,9 @@ if (typeof Object.assign != 'function') {
           itemDataScope[p] = valueEntity;
           cns = viewNode.cloneSchema();
           delete cns.$for;
+          if(cns.class ==='material-item') {
+            debugger;
+          }
           var vn = root.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);

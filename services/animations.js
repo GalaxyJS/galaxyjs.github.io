@@ -36,7 +36,7 @@ Scope.export = {
       //   x: 0,
       //   autoAlpha: 1
       // },
-      position: '-=.3',
+      position: '-=.4',
       duration: .5
     },
     ':leave': {
@@ -56,5 +56,53 @@ Scope.export = {
       position: '-=.15',
       duration: .3
     }
+  },
+  createSlideInOut: function (sequence) {
+    return {
+      ':enter': {
+        sequence: sequence,
+        group: 'items',
+        from: {
+          x: 100,
+          opacity: 0
+        },
+        position: '-=.4',
+        duration: .5
+      },
+      ':leave': {
+        sequence: sequence,
+        group: 'items',
+        order: 5,
+        to: {
+          x: 100,
+          opacity: 0
+        },
+        position: '-=.45',
+        duration: .5
+      }
+    };
+  },
+  createPopInOut: function (sequence) {
+    return {
+      ':enter': {
+        sequence: sequence,
+        // group: val,
+        from: {
+          scale: 0
+        },
+        position: '-=.3',
+        duration: .5
+      },
+      ':leave': {
+        sequence: sequence,
+        // group: 'items',
+        order: 5,
+        to: {
+          scale: 0
+        },
+        position: '-=.45',
+        duration: .5
+      }
+    };
   }
 };
