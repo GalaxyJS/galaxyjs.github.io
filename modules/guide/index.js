@@ -91,7 +91,7 @@ view.init({
         },
         {
           tag: 'p',
-          // animation: animations.itemInOut,
+          animation: animations.itemInOut,
           $for: 'surface in surfaces',
           text: '[surface.id]',
           children: {

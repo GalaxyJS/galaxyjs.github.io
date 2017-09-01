@@ -12,7 +12,7 @@ Scope.export = {
         y: 0,
         opacity: 1
       },
-      duration: .5
+      duration: 1.5
     },
     ':leave': {
       sequence: 'card',
@@ -26,8 +26,8 @@ Scope.export = {
   },
   itemInOut: {
     ':enter': {
-      sequence: 'card',
-      group: 'items',
+      parent: 'card',
+      sequence: 'item',
       from: {
         x: 100,
         opacity: 0
@@ -40,8 +40,8 @@ Scope.export = {
       duration: .5
     },
     ':leave': {
-      sequence: 'card',
-      group: 'items',
+      parent: 'card',
+      sequence: 'item',
       order: 5,
       to: {
         x: 100,
@@ -50,24 +50,23 @@ Scope.export = {
       position: '-=.45',
       duration: .5
     },
-    '.done': {
-      sequence: 'card',
-      group: 'item-state',
-      position: '-=.15',
-      duration: .3
-    }
+    // '.done': {
+    //   sequence: 'card',
+    //   group: 'item-state',
+    //   position: '-=.15',
+    //   duration: .3
+    // }
   },
   createSlideInOut: function (sequence) {
     return {
       ':enter': {
-        sequence: 'm',
-        group: 'material',
+        sequence: 'main',
         from: {
           x: 100,
           opacity: 0
         },
-        position: '-=.1',
-        duration: 1.5
+        position: '+=3',
+        duration: 1
       },
       ':leave': {
         sequence: 'm',
@@ -85,8 +84,8 @@ Scope.export = {
   createPopInOut: function (sequence) {
     return {
       ':enter': {
-        sequence: 'm',
-        group: sequence,
+        parent: 'main',
+        sequence: sequence,
         from: {
           scale: 0
         },
