@@ -740,12 +740,13 @@ if (typeof Object.assign != 'function') {
 })(this);
 
 /* global Galaxy, Promise */
+'use strict';
 
 (function (root) {
   Array.prototype.unique = function () {
-    var a = this.concat();
-    for (var i = 0; i < a.length; ++i) {
-      for (var j = i + 1; j < a.length; ++j) {
+    let a = this.concat();
+    for (let i = 0; i < a.length; ++i) {
+      for (let j = i + 1; j < a.length; ++j) {
         if (a[i] === a[j])
           a.splice(j--, 1);
       }
@@ -764,7 +765,7 @@ if (typeof Object.assign != 'function') {
 
   Galaxy.defineProp = Object.defineProperty;
 
-  var importedLibraries = {};
+  let importedLibraries = {};
 
   function Core() {
     this.bootModule = null;
@@ -777,14 +778,14 @@ if (typeof Object.assign != 'function') {
   }
 
   Core.prototype.extend = function (out) {
-    var result = out || {}, obj;
-    for (var i = 1; i < arguments.length; i++) {
+    let result = out || {}, obj;
+    for (let i = 1; i < arguments.length; i++) {
       obj = arguments[i];
 
       if (!obj)
         continue;
 
-      for (var key in obj) {
+      for (let key in obj) {
         if (obj.hasOwnProperty(key)) {
           if (obj[key] instanceof Array)
             result[key] = this.extend(result[key] || [], obj[key]);
@@ -805,7 +806,7 @@ if (typeof Object.assign != 'function') {
     }
 
     if (value === null) {
-      for (var k in out) {
+      for (let k in out) {
         if (typeof out[k] === 'object') {
           out[k] = this.resetObjectTo(out[k], null);
         }
@@ -817,10 +818,10 @@ if (typeof Object.assign != 'function') {
       return out;
     }
 
-    var outKeys = Object.keys(out);
-    var keys = outKeys.concat(Object.keys(value)).unique();
-    for (var i = 0, len = keys.length; i < len; i++) {
-      var key = keys[i];
+    let outKeys = Object.keys(out);
+    let keys = outKeys.concat(Object.keys(value)).unique();
+    for (let i = 0, len = keys.length; i < len; i++) {
+      let key = keys[i];
       if (value.hasOwnProperty(key)) {
         out[key] = this.resetObjectTo(out[key], value[key]);
       }
@@ -841,7 +842,7 @@ if (typeof Object.assign != 'function') {
    * @param {Element} rootElement
    */
   Core.prototype.boot = function (bootModule) {
-    var _this = this;
+    let _this = this;
     _this.rootElement = bootModule.element;
 
     bootModule.domain = this;
@@ -851,7 +852,7 @@ if (typeof Object.assign != 'function') {
       throw new Error('element property is mandatory');
     }
 
-    var promise = new Promise(function (resolve, reject) {
+    let promise = new Promise(function (resolve, reject) {
       _this.load(bootModule).then(function (module) {
         // Replace galaxy temporary  bootModule with user specified bootModule
         _this.bootModule = module;
@@ -863,11 +864,11 @@ if (typeof Object.assign != 'function') {
   };
 
   Core.prototype.convertToURIString = function (obj, prefix) {
-    var _this = this;
-    var str = [], p;
+    let _this = this;
+    let str = [], p;
     for (p in obj) {
       if (obj.hasOwnProperty(p)) {
-        var k = prefix ? prefix + '[' + p + ']' : p, v = obj[p];
+        let k = prefix ? prefix + '[' + p + ']' : p, v = obj[p];
         str.push((v !== null && typeof v === 'object') ?
           _this.convertToURIString(v, k) :
           encodeURIComponent(k) + '=' + encodeURIComponent(v));
@@ -878,15 +879,15 @@ if (typeof Object.assign != 'function') {
   };
 
   Core.prototype.load = function (module) {
-    var _this = this;
-    var promise = new Promise(function (resolve, reject) {
+    let _this = this;
+    let promise = new Promise(function (resolve, reject) {
       module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
       module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
       // root.Galaxy.onModuleLoaded[module.systemId] = resolve;
       // var moduleExist = Galaxy.modules[module.systemId];
 
-      var invokers = [module.url];
+      let invokers = [module.url];
       if (module.invokers) {
         if (module.invokers.indexOf(module.url) !== -1) {
           throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
@@ -897,9 +898,9 @@ if (typeof Object.assign != 'function') {
       }
 
       Galaxy.onLoadQueue[module.systemId] = true;
-      var url = module.url + '?' + _this.convertToURIString(module.params || {});
+      let url = module.url + '?' + _this.convertToURIString(module.params || {});
       // var fetcher = root.Galaxy.onModuleLoaded[url];
-      var fetcherContent = root.Galaxy.moduleContents[url];
+      let fetcherContent = root.Galaxy.moduleContents[url];
 
       if (!fetcherContent || module.fresh) {
         root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
@@ -927,9 +928,9 @@ if (typeof Object.assign != 'function') {
   };
 
   Core.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
-    var _this = this;
+    let _this = this;
     var promise = new Promise(function (resolve, reject) {
-      var doneImporting = function (module, imports) {
+      let doneImporting = function (module, imports) {
         imports.splice(imports.indexOf(module.url) - 1, 1);
 
         if (imports.length === 0) {
@@ -938,11 +939,11 @@ if (typeof Object.assign != 'function') {
         }
       };
 
-      var imports = [];
+      let imports = [];
       // extract imports from the source code
-      var moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
+      let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
       moduleContent = moduleContentWithoutComments.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
-        var query = path.match(/([\S]+)/gm);
+        let query = path.match(/([\S]+)/gm);
         imports.push({
           url: query[query.length - 1],
           fresh: query.indexOf('new') !== -1
@@ -951,20 +952,20 @@ if (typeof Object.assign != 'function') {
         return 'Scope.imports[\'' + query[query.length - 1] + '\']';
       });
 
-      var scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
+      let scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
       // var view = new Galaxy.GalaxyView(scope);
       // Create module from moduleMetaData
-      var module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope);
+      let module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope);
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
 
-        var importsCopy = imports.slice(0);
+        let importsCopy = imports.slice(0);
         imports.forEach(function (item) {
-          var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+          let moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
           if (moduleAddOnProvider) {
-            var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
-            var addOnInstance = providerStages.create();
+            let providerStages = moduleAddOnProvider.handler.call(null, scope, module);
+            let addOnInstance = providerStages.create();
             module.registerAddOn(item.url, addOnInstance);
             module.addOnProviders.push(providerStages);
 
@@ -999,21 +1000,21 @@ if (typeof Object.assign != 'function') {
    * @param {Galaxy.GalaxyModule}  module
    */
   Core.prototype.executeCompiledModule = function (module) {
-    var promise = new Promise(function (resolve, reject) {
+    let promise = new Promise(function (resolve, reject) {
       for (var item in module.addOns) {
         module.scope.imports[item] = module.addOns[item];
       }
 
       for (item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
-          var asset = importedLibraries[item];
+          let asset = importedLibraries[item];
           if (asset.module) {
             module.scope.imports[asset.name] = asset.module;
           }
         }
       }
 
-      var moduleSource = new Function('Scope', module.source);
+      let moduleSource = new Function('Scope', module.source);
       moduleSource.call(null, module.scope);
 
       delete module.source;
@@ -1036,7 +1037,7 @@ if (typeof Object.assign != 'function') {
         // module.scope.imports[module.url] = importedLibraries[module.url].module;
       }
 
-      var currentModule = Galaxy.modules[module.systemId];
+      let currentModule = Galaxy.modules[module.systemId];
       if (module.temporary || module.scope._doNotRegister) {
         delete module.scope._doNotRegister;
         currentModule = {
@@ -1062,10 +1063,10 @@ if (typeof Object.assign != 'function') {
   };
 
   Core.prototype.getModulesByAddOnId = function (addOnId) {
-    var modules = [];
-    var module;
+    let modules = [];
+    let module;
 
-    for (var moduleId in this.modules) {
+    for (let moduleId in this.modules) {
       module = this.modules[moduleId];
       if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
         modules.push({
@@ -1092,6 +1093,7 @@ if (typeof Object.assign != 'function') {
 }(this));
 
 /* global Galaxy */
+'use strict';
 
 (function (root, G) {
 
@@ -1137,6 +1139,7 @@ if (typeof Object.assign != 'function') {
 }(this, Galaxy || {}));
 
 /* global Galaxy */
+'use strict';
 
 (function (G) {
   G.GalaxyObserver = GalaxyObserver;
@@ -1166,14 +1169,14 @@ if (typeof Object.assign != 'function') {
   }
 
   GalaxyObserver.prototype.remove = function () {
-    var index = this.context.__observers__.indexOf(this);
+    let index = this.context.__observers__.indexOf(this);
     if (index !== -1) {
       this.context.__observers__.splice(index, 1);
     }
   };
 
   GalaxyObserver.prototype.notify = function (key, value, oldValue) {
-    var _this = this;
+    let _this = this;
     if (_this.subjectsActions.hasOwnProperty(key)) {
       _this.subjectsActions[key].call(_this.context, value, oldValue);
     }
@@ -1195,6 +1198,7 @@ if (typeof Object.assign != 'function') {
 })(Galaxy);
 
 /* global Galaxy */
+'use strict';
 
 (function (root, G) {
   root.Galaxy = G;
@@ -1212,7 +1216,7 @@ if (typeof Object.assign != 'function') {
     this.uri = new GalaxyURI(module.url);
     this.eventHandlers = {};
     this.observers = [];
-    this.on('module.destroy',this.destroy.bind(this));
+    this.on('module.destroy', this.destroy.bind(this));
   }
 
   GalaxyScope.prototype.destroy = function () {
@@ -1222,7 +1226,7 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
-    var newModuleMetaData = Object.assign({}, moduleMeta, config || {});
+    let newModuleMetaData = Object.assign({}, moduleMeta, config || {});
     if (newModuleMetaData.url.indexOf('./') === 0) {
       newModuleMetaData.url = this.path + moduleMeta.url.substr(2);
     }
@@ -1263,7 +1267,7 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyScope.prototype.observe = function (object) {
-    var observer = new Galaxy.GalaxyObserver(object);
+    let observer = new Galaxy.GalaxyObserver(object);
 
     this.observers.push(observer);
 
@@ -1277,10 +1281,10 @@ if (typeof Object.assign != 'function') {
   G.GalaxyURI = GalaxyURI;
 
   function GalaxyURI(url) {
-    var urlParser = document.createElement('a');
+    let urlParser = document.createElement('a');
     urlParser.href = url;
-    var myRegexp = /([^\t\n]+)\//g;
-    var match = myRegexp.exec(urlParser.pathname);
+    let myRegexp = /([^\t\n]+)\//g;
+    let match = myRegexp.exec(urlParser.pathname);
 
 
     this.paresdURL = urlParser.href;
@@ -1290,6 +1294,7 @@ if (typeof Object.assign != 'function') {
 }(this, Galaxy || {}));
 
 /* global Galaxy, Promise */
+'use strict';
 
 (function (G) {
   /**
@@ -1306,7 +1311,7 @@ if (typeof Object.assign != 'function') {
   }
 
   GalaxySequence.prototype.start = function () {
-    if(this.started) return this;
+    if (this.started) return this;
 
     this.firstStepResolve();
     this.started = true;
@@ -1314,7 +1319,7 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxySequence.prototype.reset = function () {
-    var _this = this;
+    let _this = this;
 
     _this.line = new Promise(function (resolve) {
       _this.firstStepResolve = resolve;
@@ -1325,8 +1330,8 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxySequence.prototype.next = function (action) {
-    var thunk;
-    var promise = new Promise(function (resolve, reject) {
+    let thunk;
+    let promise = new Promise(function (resolve, reject) {
       thunk = function () {
         action(resolve, reject);
       };
@@ -1348,36 +1353,36 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy, Promise */
 
 (function (root, G) {
-  var defineProp = Object.defineProperty;
-  var setterAndGetter = {
+  let defineProp = Object.defineProperty;
+  let setterAndGetter = {
     configurable: true,
     enumerable: false,
     set: null,
     get: null
   };
-  var boundPropertyReference = {
+  let boundPropertyReference = {
     configurable: false,
     enumerable: false,
     value: null
   };
-  var setAttr = Element.prototype.setAttribute;
-  var removeAttr = Element.prototype.removeAttribute;
-  var nextTick = (function () {
-    var callbacks = [];
-    var pending = false;
-    var timerFunc;
+  let setAttr = Element.prototype.setAttribute;
+  let removeAttr = Element.prototype.removeAttribute;
+  let nextTick = (function () {
+    let callbacks = [];
+    let pending = false;
+    let timerFunc;
 
     function nextTickHandler() {
       pending = false;
-      var copies = callbacks.slice(0);
+      let copies = callbacks.slice(0);
       callbacks.length = 0;
-      for (var i = 0; i < copies.length; i++) {
+      for (let i = 0; i < copies.length; i++) {
         copies[i]();
       }
     }
 
-    var p = Promise.resolve();
-    var logError = function (err) {
+    let p = Promise.resolve();
+    let logError = function (err) {
       console.error(err);
     };
     timerFunc = function () {
@@ -1385,7 +1390,7 @@ if (typeof Object.assign != 'function') {
     };
 
     return function queueNextTick(cb, ctx) {
-      var _resolve;
+      let _resolve;
       callbacks.push(function () {
         if (cb) {
           try {
@@ -1435,7 +1440,7 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.createMirror = function (obj) {
-    var result = {};
+    let result = {};
 
     defineProp(result, '__parent__', {
       enumerable: false,
@@ -1446,7 +1451,7 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.createClone = function (source) {
-    var cloned = Object.assign({}, source);
+    let cloned = Object.assign({}, source);
 
     GalaxyView.link(source, cloned);
 
@@ -1454,7 +1459,7 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.link = function (from, to) {
-    for (var key in from) {
+    for (let key in from) {
       if (from.hasOwnProperty('[' + key + ']')) {
         boundPropertyReference.value = from['[' + key + ']'];
         defineProp(to, '[' + key + ']', boundPropertyReference);
@@ -1464,8 +1469,8 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.getPropertyContainer = function (data, propertyName) {
-    var container = data;
-    var tempData = data.hasOwnProperty(propertyName);
+    let container = data;
+    let tempData = data.hasOwnProperty(propertyName);
 
     while (tempData.__parent__) {
       if (tempData.__parent__.hasOwnProperty(propertyName)) {
@@ -1480,9 +1485,9 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.getAllViewNodes = function (node) {
-    var item, viewNodes = [];
+    let item, viewNodes = [];
 
-    for (var i = 0, len = node.childNodes.length; i < len; i++) {
+    for (let i = 0, len = node.childNodes.length; i < len; i++) {
       item = node.childNodes[i];
 
       if (item.hasOwnProperty('__viewNode__')) {
@@ -1498,9 +1503,9 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.getBoundProperties = function (host) {
-    var all = Object.getOwnPropertyNames(host);
-    var visible = Object.keys(host);
-    var properties = [];
+    let all = Object.getOwnPropertyNames(host);
+    let visible = Object.keys(host);
+    let properties = [];
 
     all.forEach(function (key) {
       if (host[key] instanceof GalaxyView.BoundProperty && visible.indexOf(key) === -1) {
@@ -1512,9 +1517,9 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.getBindings = function (value) {
-    var variableNamePaths = null;
-    var isExpression = false;
-    var type = typeof(value);
+    let variableNamePaths = null;
+    let isExpression = false;
+    let type = typeof(value);
 
     if (type === 'string') {
       variableNamePaths = value.match(/^\[\s*([^\[\]]*)\s*\]$/);
@@ -1535,8 +1540,8 @@ if (typeof Object.assign != 'function') {
 
   GalaxyView.propertyLookup = function (data, property) {
     property = property.split('.')[0];
-    var target = data;
-    var temp = data;
+    let target = data;
+    let temp = data;
     // var nestingLevel = 0;
     if (!data.hasOwnProperty(property)) {
       while (temp.__parent__) {
@@ -1557,7 +1562,7 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.createBoundProperty = function (dataObject, propertyName, referenceName, enumerable, childProperty, initValue) {
-    var boundProperty = new GalaxyView.BoundProperty(dataObject, propertyName, initValue);
+    let boundProperty = new GalaxyView.BoundProperty(dataObject, propertyName, initValue);
     boundPropertyReference.value = boundProperty;
     defineProp(dataObject, referenceName, boundPropertyReference);
 
@@ -1572,11 +1577,11 @@ if (typeof Object.assign != 'function') {
       setterAndGetter.set = function (newValue) {
         if (boundProperty.value !== newValue) {
           if (newValue && typeof boundProperty.value === 'object') {
-            var all = Object.getOwnPropertyNames(boundProperty.value);
-            var visible = Object.keys(boundProperty.value);
-            var newVisible = Object.keys(newValue);
-            var descriptors = {};
-            var hidden = all.filter(function (key) {
+            let all = Object.getOwnPropertyNames(boundProperty.value);
+            let visible = Object.keys(boundProperty.value);
+            let newVisible = Object.keys(newValue);
+            let descriptors = {};
+            let hidden = all.filter(function (key) {
               descriptors[key] = Object.getOwnPropertyDescriptor(boundProperty.value || {}, key);
               return visible.indexOf(key) === -1;
             });
@@ -1613,18 +1618,18 @@ if (typeof Object.assign != 'function') {
    * @param {string|Array<string>} variableNamePaths
    */
   GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
-    var dataObject = data;
+    let dataObject = data;
     if (typeof dataObject !== 'object') {
       return;
     }
 
-    var variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
+    let variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
     // expression === true means that a expression function is available and should be extracted
     if (expression === true) {
-      var handler = variables[variables.length - 1];
+      let handler = variables[variables.length - 1];
       variables = variables.slice(0, variables.length - 1);
       expressionArgumentsCount = variables.length;
-      var functionContent = 'return [';
+      let functionContent = 'return [';
       functionContent += variables.map(function (path) {
         return 'prop(scope, "' + path + '").' + path;
       }).join(', ');
@@ -1632,10 +1637,10 @@ if (typeof Object.assign != 'function') {
 
       // Generate expression arguments
       try {
-        var getExpressionArguments = new Function('prop, scope', functionContent);
+        let getExpressionArguments = new Function('prop, scope', functionContent);
         expression = (function (scope) {
           return function () {
-            var args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);
+            let args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);
             return handler.apply(target, args);
           };
         })(dataObject);
@@ -1647,16 +1652,16 @@ if (typeof Object.assign != 'function') {
       expressionArgumentsCount = 1;
     }
 
-    var variableNamePath;
-    var propertyName = null;
-    var childProperty = null;
-    var initValue = null;
+    let variableNamePath;
+    let propertyName = null;
+    let childProperty = null;
+    let initValue = null;
 
-    for (var i = 0, len = variables.length; i < len; i++) {
+    for (let i = 0, len = variables.length; i < len; i++) {
       variableNamePath = variables[i];
       propertyName = variableNamePath;
 
-      var variableName = variableNamePath.split('.');
+      let variableName = variableNamePath.split('.');
       if (variableName.length > 1) {
         propertyName = variableName.shift();
         childProperty = variableName.join('.');
@@ -1666,14 +1671,14 @@ if (typeof Object.assign != 'function') {
 
       initValue = dataObject[propertyName];
 
-      var enumerable = true;
+      let enumerable = true;
       if (propertyName === 'length' && dataObject instanceof Array) {
         propertyName = '_length';
         enumerable = false;
       }
 
-      var referenceName = '[' + propertyName + ']';
-      var boundProperty = dataObject[referenceName];
+      let referenceName = '[' + propertyName + ']';
+      let boundProperty = dataObject[referenceName];
 
       if (typeof boundProperty === 'undefined') {
         boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
@@ -1725,16 +1730,16 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.bindSubjectsToData = function (subjects, data, cloneSubject) {
-    var keys = Object.keys(subjects);
-    var attributeName;
-    var attributeValue;
-    var subjectsClone = cloneSubject ? GalaxyView.createClone(subjects) : subjects;
+    let keys = Object.keys(subjects);
+    let attributeName;
+    let attributeValue;
+    let subjectsClone = cloneSubject ? GalaxyView.createClone(subjects) : subjects;
 
-    for (var i = 0, len = keys.length; i < len; i++) {
+    for (let i = 0, len = keys.length; i < len; i++) {
       attributeName = keys[i];
       attributeValue = subjects[attributeName];
 
-      var bindings = GalaxyView.getBindings(attributeValue);
+      let bindings = GalaxyView.getBindings(attributeValue);
 
       if (bindings.variableNamePaths) {
         GalaxyView.makeBinding(subjectsClone, data, attributeName, bindings.variableNamePaths, bindings.isExpression);
@@ -1751,14 +1756,14 @@ if (typeof Object.assign != 'function') {
   GalaxyView.createPropertySetter = function (node, property) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
-        var asyncCall = function (asyncValue) {
-          var newValue = property.parser ? property.parser(asyncValue) : asyncValue;
+        let asyncCall = function (asyncValue) {
+          let newValue = property.parser ? property.parser(asyncValue) : asyncValue;
           node.node[property.name] = newValue;
           node.notifyObserver(property.name, newValue, oldValue);
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        var newValue = property.parser ? property.parser(value) : value;
+        let newValue = property.parser ? property.parser(value) : value;
         node.node[property.name] = newValue;
         node.notifyObserver(property.name, newValue, oldValue);
       }
@@ -1768,7 +1773,7 @@ if (typeof Object.assign != 'function') {
   GalaxyView.createCustomSetter = function (node, attributeName, property) {
     return function (value, oldValue, scopeData) {
       if (value instanceof Promise) {
-        var asyncCall = function (asyncValue) {
+        let asyncCall = function (asyncValue) {
           property.handler(node, attributeName, asyncValue, oldValue, scopeData);
         };
         value.then(asyncCall).catch(asyncCall);
@@ -1781,13 +1786,13 @@ if (typeof Object.assign != 'function') {
   GalaxyView.createDefaultSetter = function (node, attributeName, parser) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
-        var asyncCall = function (asyncValue) {
-          var newValue = parser ? parser(asyncValue) : asyncValue;
+        let asyncCall = function (asyncValue) {
+          let newValue = parser ? parser(asyncValue) : asyncValue;
           GalaxyView.setAttr(node, attributeName, newValue, oldValue);
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        var newValue = parser ? parser(value) : value;
+        let newValue = parser ? parser(value) : value;
         GalaxyView.setAttr(node, attributeName, newValue, oldValue);
       }
     };
@@ -1838,8 +1843,8 @@ if (typeof Object.assign != 'function') {
     text: {
       type: 'custom',
       handler: function (viewNode, attr, value) {
-        var textNode = viewNode.node['[text]'];
-        var textValue = typeof value === 'undefined' ? '' : value;
+        let textNode = viewNode.node['[text]'];
+        let textValue = typeof value === 'undefined' ? '' : value;
         if (textNode) {
           textNode.textContent = textValue;
         } else {
@@ -1865,7 +1870,7 @@ if (typeof Object.assign != 'function') {
   function GalaxyView(scope) {
     this.scope = scope;
     this.dataRepos = {};
-    var rootElement;
+    let rootElement;
 
     if (scope.element instanceof GalaxyView.ViewNode) {
       rootElement = scope.element;
@@ -1894,22 +1899,22 @@ if (typeof Object.assign != 'function') {
    * @param {GalaxyView.ViewNode} parentViewNode
    */
   GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position) {
-    var _this = this;
-    var i = 0, len = 0;
+    let _this = this;
+    let i = 0, len = 0;
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
         _this.append(nodeSchema[i], parentScopeData, parentViewNode);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
-      var viewNode = new GalaxyView.ViewNode(_this, nodeSchema);
+      let viewNode = new GalaxyView.ViewNode(_this, nodeSchema);
       parentViewNode.append(viewNode, position);
 
       if (nodeSchema['mutator']) {
         viewNode.mutator = nodeSchema['mutator'];
       }
 
-      var keys = Object.keys(nodeSchema);
-      var attributeValue, attributeName;
+      let keys = Object.keys(nodeSchema);
+      let attributeValue, attributeName;
       for (i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
         attributeValue = nodeSchema[attributeName];
@@ -1918,7 +1923,7 @@ if (typeof Object.assign != 'function') {
           _this.addReactiveBehavior(viewNode, nodeSchema, parentScopeData, attributeName);
         }
 
-        var bindings = GalaxyView.getBindings(attributeValue);
+        let bindings = GalaxyView.getBindings(attributeValue);
 
         if (bindings.variableNamePaths) {
           GalaxyView.makeBinding(viewNode, parentScopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
@@ -1946,14 +1951,14 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.prototype.addReactiveBehavior = function (viewNode, nodeSchema, nodeScopeData, key) {
-    var behavior = GalaxyView.REACTIVE_BEHAVIORS[key];
-    var bindTo = nodeSchema[key];
+    let behavior = GalaxyView.REACTIVE_BEHAVIORS[key];
+    let bindTo = nodeSchema[key];
 
     if (behavior) {
-      var matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
+      let matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
       viewNode.properties.behaviors[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
-        var CACHE = {};
+        let CACHE = {};
         if (BEHAVIOR.getCache) {
           CACHE = BEHAVIOR.getCache(viewNode, MATCHES, BEHAVIOR_SCOPE_DATA);
         }
@@ -1968,8 +1973,8 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.prototype.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
-    var property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
-    var newValue = value;
+    let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    let newValue = value;
 
     switch (property.type) {
       case 'attr':
@@ -1995,7 +2000,7 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.prototype.getPropertySetter = function (viewNode, attributeName, expression) {
-    var property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName];
+    let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName];
 
     if (!property) {
       return function (value) {
@@ -2003,8 +2008,8 @@ if (typeof Object.assign != 'function') {
       };
     }
 
-    var parser = property.parser;
-    var setter;
+    let parser = property.parser;
+    let setter;
 
     switch (property.type) {
       case 'prop':
@@ -2012,7 +2017,7 @@ if (typeof Object.assign != 'function') {
 
         if (expression) {
           return function (none, oldValue) {
-            var expressionValue = expression(none);
+            let expressionValue = expression(none);
             setter(expressionValue, oldValue);
           };
         }
@@ -2035,7 +2040,7 @@ if (typeof Object.assign != 'function') {
 
         if (expression) {
           return function (none, oldValue, scopeData) {
-            var expressionValue = expression(none);
+            let expressionValue = expression(none);
             setter(expressionValue, oldValue, scopeData);
           };
         }
@@ -2046,7 +2051,7 @@ if (typeof Object.assign != 'function') {
         setter = GalaxyView.createDefaultSetter(viewNode, attributeName, parser);
         if (expression) {
           return function (none, oldValue) {
-            var expressionValue = expression(none);
+            let expressionValue = expression(none);
             setter(expressionValue, oldValue);
           };
         }
@@ -2056,20 +2061,20 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxyView.createActiveArray = function (value, onUpdate) {
-    var changes = {
+    let changes = {
       original: value,
       type: 'push',
       params: value
     };
 
-    var oldChanges = Object.assign({}, changes);
+    let oldChanges = Object.assign({}, changes);
 
     if (value.hasOwnProperty('[live]')) {
       return changes;
     }
 
-    var arrayProto = Array.prototype;
-    var methods = [
+    let arrayProto = Array.prototype;
+    let methods = [
       'push',
       'pop',
       'shift',
@@ -2078,15 +2083,15 @@ if (typeof Object.assign != 'function') {
       'sort',
       'reverse'
     ];
-    var arr = value;
-    var i = 0;
-    var args;
+    let arr = value;
+    let i = 0;
+    let args;
 
     boundPropertyReference.value = true;
     defineProp(value, '[live]', boundPropertyReference);
 
     methods.forEach(function (method) {
-      var original = arrayProto[method];
+      let original = arrayProto[method];
       Object.defineProperty(value, method, {
         value: function () {
           i = arguments.length;
@@ -2095,7 +2100,7 @@ if (typeof Object.assign != 'function') {
             args[i] = arguments[i];
           }
 
-          var result = original.apply(this, args);
+          let result = original.apply(this, args);
 
           if (typeof arr._length !== 'undefined') {
             arr._length = arr.length;
@@ -2155,7 +2160,7 @@ if (typeof Object.assign != 'function') {
    * @public
    */
   BoundProperty.prototype.addNode = function (node, attributeName, expression) {
-    var index = this.nodes.indexOf(node);
+    let index = this.nodes.indexOf(node);
     // Check if the node with the same property already exist
     // Insure that same node with different property bind can exist
     if (index === -1 || this.props[index] !== attributeName) {
@@ -2169,7 +2174,7 @@ if (typeof Object.assign != 'function') {
   };
 
   BoundProperty.prototype.removeNode = function (node) {
-    var nodeIndexInTheHost;
+    let nodeIndexInTheHost;
     while ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
       this.nodes.splice(nodeIndexInTheHost, 1);
       this.props.splice(nodeIndexInTheHost, 1);
@@ -2182,10 +2187,10 @@ if (typeof Object.assign != 'function') {
   };
 
   BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {
-    var oldValue = this.value;
+    let oldValue = this.value;
     this.value = value;
     if (value instanceof Array) {
-      var init = GV.createActiveArray(value, this.updateValue.bind(this));
+      let init = GV.createActiveArray(value, this.updateValue.bind(this));
       if (target instanceof GV.ViewNode) {
         target.values[key] = value;
         this.setUpdateFor(target, key, init);
@@ -2197,15 +2202,15 @@ if (typeof Object.assign != 'function') {
 
   BoundProperty.prototype.setValue = function (value, scopeData) {
     if (value !== this.value) {
-      var oldValue = this.value;
+      let oldValue = this.value;
       this.value = value;
       if (value instanceof Array) {
-        var oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
-        var change = {type: 'reset', params: value, original: value};
+        let oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
+        let change = {type: 'reset', params: value, original: value};
         this.updateValue(change, oldChanges);
         Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
       } else {
-        for (var i = 0, len = this.nodes.length; i < len; i++) {
+        for (let i = 0, len = this.nodes.length; i < len; i++) {
           this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
         }
         Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
@@ -2214,7 +2219,7 @@ if (typeof Object.assign != 'function') {
   };
 
   BoundProperty.prototype.updateValue = function (changes, oldChanges) {
-    for (var i = 0, len = this.nodes.length; i < len; i++) {
+    for (let i = 0, len = this.nodes.length; i < len; i++) {
       this.nodes[i].value = changes.original;
       this.setUpdateFor(this.nodes[i], this.props[i], changes, oldChanges);
     }
@@ -2252,7 +2257,7 @@ if (typeof Object.assign != 'function') {
     return document.createElement(t);
   }
 
-  var commentNode = document.createComment('');
+  let commentNode = document.createComment('');
 
   function createComment(t) {
     return commentNode.cloneNode(t);
@@ -2277,13 +2282,13 @@ if (typeof Object.assign != 'function') {
   };
 
 
-  var referenceToThis = {
+  let referenceToThis = {
     value: this,
     configurable: false,
     enumerable: false
   };
 
-  var __node__ = {
+  let __node__ = {
     value: null,
     configurable: false,
     enumerable: false
@@ -2325,7 +2330,7 @@ if (typeof Object.assign != 'function') {
     this.sequences = {};
     this.observer = new Galaxy.GalaxyObserver(this);
 
-    var _this = this;
+    let _this = this;
     this.rendered = new Promise(function (ready) {
       _this.ready = ready;
       _this.callLifeCycleEvent('rendered');
@@ -2353,7 +2358,7 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.cloneSchema = function () {
-    var clone = Object.assign({}, this.schema);
+    let clone = Object.assign({}, this.schema);
     empty(clone);
 
     GV.defineProp(clone, 'mother', {
@@ -2391,7 +2396,7 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.setInDOM = function (flag) {
-    var _this = this;
+    let _this = this;
     _this.inDOM = flag;
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
@@ -2414,7 +2419,7 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.append = function (viewNode, position) {
-    var _this = this;
+    let _this = this;
     viewNode.parent = _this;
     _this.node.insertBefore(viewNode.placeholder, position);
   };
@@ -2429,7 +2434,7 @@ if (typeof Object.assign != 'function') {
     this.properties[boundProperty.name] = boundProperty;
     this.setters[propertyName] = this.root.getPropertySetter(this, propertyName, this.virtual ? null : expression);
     if (!this.setters[propertyName]) {
-      var _this = this;
+      let _this = this;
       this.setters[propertyName] = function () {
         console.error('No setter for property :', propertyName, '\nNode:', _this);
       };
@@ -2437,7 +2442,7 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.destroy = function (sequence, source) {
-    var _this = this;
+    let _this = this;
 
     if (!source) {
       if (_this.inDOM) {
@@ -2491,9 +2496,9 @@ if (typeof Object.assign != 'function') {
     });
 
 
-    var property, properties = _this.properties;
+    let property, properties = _this.properties;
 
-    for (var propertyName in properties) {
+    for (let propertyName in properties) {
       property = properties[propertyName];
 
       if (property instanceof GV.BoundProperty) {
@@ -2503,7 +2508,7 @@ if (typeof Object.assign != 'function') {
 
     _this.inDOM = false;
     _this.dependedObjects.forEach(function (item) {
-      var temp = GV.getBoundProperties(item);
+      let temp = GV.getBoundProperties(item);
       temp.forEach(function (property) {
         property.removeNode(item);
       });
@@ -2517,8 +2522,8 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.refreshBinds = function (data) {
-    var property;
-    for (var propertyName in this.properties) {
+    let property;
+    for (let propertyName in this.properties) {
       property = this.properties[propertyName];
       if (property.nodes.indexOf(this) === -1) {
         property.nodes.push(this);
@@ -2539,8 +2544,8 @@ if (typeof Object.assign != 'function') {
   };
 
   ViewNode.prototype.empty = function (sequence, source) {
-    var toBeRemoved = [], node;
-    for (var i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
+    let toBeRemoved = [], node;
+    for (let i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
       node = this.node.childNodes[i];
 
       if (node.hasOwnProperty('__viewNode__')) {
@@ -2548,7 +2553,7 @@ if (typeof Object.assign != 'function') {
       }
     }
 
-    var domManipulationSequence = this.domManipulationSequence;
+    let domManipulationSequence = this.domManipulationSequence;
 
     toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy(sequence, source);
@@ -2597,7 +2602,7 @@ if (typeof Object.assign != 'function') {
     onApply: function (cache, viewNode, value, oldValue, matches, context) {
       if (viewNode.virtual) return;
 
-      var clone = GV.bindSubjectsToData(value, context, true);
+      let clone = GV.bindSubjectsToData(value, context, true);
 
       if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]'].clone) {
         Galaxy.resetObjectTo(viewNode['[addon/inputs]'], {
@@ -2638,7 +2643,7 @@ if (typeof Object.assign != 'function') {
   G.registerAddOnProvider('galaxy/view', function (scope) {
     return {
       create: function () {
-        var view = new Galaxy.GalaxyView(scope);
+        let view = new Galaxy.GalaxyView(scope);
 
         return view;
       },
@@ -2647,6 +2652,348 @@ if (typeof Object.assign != 'function') {
       }
     };
   });
+})(Galaxy);
+
+/* global Galaxy, TweenLite, TimelineLite */
+'use strict';
+
+(function (G) {
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
+    type: 'custom',
+    name: 'animation',
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param attr
+     * @param config
+     * @param scopeData
+     */
+    handler: function (viewNode, attr, config, oldConfig, scopeData) {
+      viewNode.rendered.then(function () {
+        if (viewNode.virtual || !config) {
+          return;
+        }
+
+        let enterAnimationConfig = config[':enter'];
+        if (enterAnimationConfig) {
+          viewNode.sequences[':enter'].next(function (done) {
+            if (enterAnimationConfig.sequence) {
+              let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
+              animationMeta.s = enterAnimationConfig.sequence;
+              animationMeta.duration = enterAnimationConfig.duration;
+              animationMeta.position = enterAnimationConfig.position;
+              
+              if (enterAnimationConfig.parent) {
+                animationMeta.setParent(AnimationMeta.get(enterAnimationConfig.parent));
+              }
+
+              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              lastStep.clearProps = 'all';
+              animationMeta.add(viewNode.node, enterAnimationConfig, done);
+            } else {
+              AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
+            }
+          });
+        }
+
+        let leaveAnimationConfig = config[':leave'];
+        if (leaveAnimationConfig) {
+          viewNode.sequences[':destroy'].next(function (done) {
+            viewNode._destroyed = true;
+            done();
+          });
+
+          viewNode.sequences[':leave'].next(function (done) {
+            if (leaveAnimationConfig.sequence) {
+              let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+              animationMeta.duration = leaveAnimationConfig.duration;
+              animationMeta.position = leaveAnimationConfig.position;
+              // if the animation has order it will be added to the queue according to its order.
+              // No order means lowest order
+              if (typeof leaveAnimationConfig.order === 'number') {
+                animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
+                  return function () {
+                    if (conf.parent) {
+                      const parent = AnimationMeta.get(conf.parent);
+                      am.setParent(parent, 'leave');
+                      // Update parent childrenOffset so the parent animation starts after the subTimeline animations
+                      parent.childrenOffset = am.childrenOffset;
+                    }
+
+                    am.add(viewNode.node, conf, done);
+                  };
+                })(viewNode, animationMeta, leaveAnimationConfig));
+
+                // When viewNode is the one which is destroyed, then run the queue
+                // The queue will never run if the destroyed viewNode has the lowest order
+                if (viewNode._destroyed) {
+                  let finishImmediately = false;
+                  while (animationMeta.parent) {
+                    animationMeta = animationMeta.parent;
+                  }
+                  let queue = animationMeta.queue;
+
+                  for (let key in queue) {
+                    let item;
+                    for (let i = 0, len = queue[key].length; i < len; i++) {
+                      item = queue[key][i];
+                      item.operation();
+
+                      // If the the current queue item.node is the destroyed node, then all the animations in
+                      // queue should be ignored
+                      if (item.node === viewNode.node) {
+                        finishImmediately = true;
+                        break;
+                      }
+                    }
+
+                    if (finishImmediately) break;
+                  }
+
+                  animationMeta.queue = {};
+                  delete viewNode._destroyed;
+                }
+
+                return;
+              }
+
+              if (leaveAnimationConfig.group) {
+                animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+              }
+
+              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+            } else {
+              AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
+            }
+          });
+        }
+
+        viewNode.observer.on('class', function (value, oldValue) {
+          value.forEach(function (item) {
+            if (item && oldValue.indexOf(item) === -1) {
+              let _config = config['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+
+                  let classAnimationConfig = _config;
+                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+
+                  if (classAnimationConfig.sequence) {
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+
+          oldValue.forEach(function (item) {
+            if (item && value.indexOf(item) === -1) {
+              let _config = config['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+                  let classAnimationConfig = _config;
+                  classAnimationConfig.to = {className: '-=' + item || ''};
+
+                  if (classAnimationConfig.sequence) {
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+        });
+      });
+    }
+  };
+
+  function AnimationMeta(onComplete) {
+    this.timeline = new TimelineLite({
+      autoRemoveChildren: true,
+      onComplete: onComplete
+    });
+
+    this.timeline.addLabel('beginning', 0);
+    this.duration = 0;
+    this.position = '+=0';
+    this.subSequences = {};
+    this.queue = {};
+    // this.commands = new Galaxy.GalaxySequence();
+    // this.commands.start();
+    this.childrenOffset = 0;
+    this.subTimelineOffset = 0;
+    this.offset = 0;
+    this.parent = null;
+  }
+
+  AnimationMeta.ANIMATIONS = {};
+
+  AnimationMeta.get = function (name) {
+    if (!AnimationMeta.ANIMATIONS[name]) {
+      AnimationMeta.ANIMATIONS[name] = new AnimationMeta();
+    }
+
+    return AnimationMeta.ANIMATIONS[name];
+  };
+
+  AnimationMeta.parseSequence = function (sequence) {
+    return sequence.split('/').filter(Boolean);
+  };
+
+  AnimationMeta.createTween = function (node, config, onComplete) {
+    let to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+    let tween = null;
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      let from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+    return tween;
+  };
+
+  AnimationMeta.calculateDuration = function (duration, position) {
+    let po = position.replace('=', '');
+    return ((duration * 10) + (Number(po) * 10)) / 10;
+  };
+
+  AnimationMeta.prototype.setParent = function (parent, type) {
+    let _this = this;
+    _this.parent = parent;
+    const children = _this.parent.timeline.getChildren();
+
+    if (children.indexOf(_this.timeline) === -1) {
+      let subTimelineOffset = AnimationMeta.calculateDuration(_this.parent.duration, _this.parent.position || '+=0');
+
+      if (type === 'leave') {
+        // subTimeline should start immediately when state is leave
+        if (_this.parent.timeline.progress() === undefined) {
+          _this.parent.subTimelineOffset = 0;
+        }
+
+        _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
+        _this.parent.timeline.add(function () {
+          _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
+        });
+
+        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
+      } else {
+        if (_this.parent.timeline.progress() === undefined) {
+          return;
+        }
+
+        // There should be a starting offset when state is enter
+        if (_this.parent.subTimelineOffset === 0) {
+          _this.parent.subTimelineOffset = subTimelineOffset;
+        }
+
+        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
+
+        _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
+        _this.parent.timeline.add(function () {
+          _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
+        });
+      }
+    }
+  };
+
+  AnimationMeta.prototype.add = function (node, config, onComplete) {
+    const _this = this;
+    let to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+
+    let tween = null;
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      let from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+    let cal = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
+    if (this.timeline.getChildren().length === 0) {
+      cal = 0;
+    }
+
+    _this.childrenOffset = ((_this.childrenOffset * 10) + (cal * 10)) / 10;
+    _this.timeline.add(tween, _this.childrenOffset);
+    _this.timeline.add(function () {
+      _this.childrenOffset = ((_this.childrenOffset * 10) - (cal * 10)) / 10;
+    });
+  };
+
+  /**
+   *
+   * @param {number} order
+   * @param {callback} operation
+   */
+  AnimationMeta.prototype.addToQueue = function (order, node, operation) {
+    if (this.parent) {
+      return this.parent.addToQueue(order, node, operation);
+    }
+
+    if (!this.queue[order]) {
+      this.queue[order] = [];
+    }
+
+    this.queue[order].push({node: node, operation: operation});
+  };
+})(Galaxy);
+
+/* global Galaxy */
+
+(function (G) {
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
+    type: 'custom',
+    name: 'on',
+    handler: function (viewNode, attr, events, oldEvents, scopeData) {
+      if (events !== null && typeof events === 'object') {
+        for (let name in events) {
+          if (events.hasOwnProperty(name)) {
+            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
+          }
+        }
+      }
+    }
+  };
 })(Galaxy);
 
 /* global Galaxy */
@@ -2660,8 +3007,8 @@ if (typeof Object.assign != 'function') {
   GV.REACTIVE_BEHAVIORS['checked'] = {
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
     bind: function (viewNode, nodeScopeData, matches) {
-      var parts = matches[1].split('.');
-      var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
+      let parts = matches[1].split('.');
+      let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
       viewNode.node.addEventListener('change', function () {
         setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.checked);
       });
@@ -2709,7 +3056,7 @@ if (typeof Object.assign != 'function') {
         return viewNode.node.removeAttribute('class');
       }
 
-      var clone = GV.bindSubjectsToData(value, context, true);
+      let clone = GV.bindSubjectsToData(value, context, true);
 
       if (viewNode.hasOwnProperty('[reactive/class]') && clone !== viewNode['[reactive/class]']) {
         Galaxy.resetObjectTo(viewNode['[reactive/class]'], clone);
@@ -2721,7 +3068,7 @@ if (typeof Object.assign != 'function') {
       }
 
       viewNode.node.setAttribute('class', []);
-      var observer = new Galaxy.GalaxyObserver(clone);
+      let observer = new Galaxy.GalaxyObserver(clone);
       observer.onAll(function (key, value, oldValue) {
         toggles.call(viewNode, key, value, oldValue, clone);
       });
@@ -2744,9 +3091,9 @@ if (typeof Object.assign != 'function') {
     } else if (obj instanceof Array) {
       return obj;
     } else if (obj !== null && typeof obj === 'object') {
-      var newClasses = [];
+      let newClasses = [];
 
-      for (var key in obj) {
+      for (let key in obj) {
         if (obj.hasOwnProperty(key) && obj[key]) newClasses.push(key);
       }
 
@@ -2756,10 +3103,10 @@ if (typeof Object.assign != 'function') {
 
   function toggles(key, value, oldValue, classes) {
     if (oldValue === value) return;
-    var oldClasses = this.node.getAttribute('class');
+    let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    var newClasses = getClasses(classes);
-    var _this = this;
+    let newClasses = getClasses(classes);
+    let _this = this;
 
     _this.notifyObserver('class', newClasses, oldClasses);
     _this.sequences[':class'].start().finish(function () {
@@ -2792,8 +3139,8 @@ if (typeof Object.assign != 'function') {
     onApply: function (cache, viewNode, selector, oldSelector, matches, scopeData) {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
         viewNode.domManipulationSequence.next(function (done) {
-          var allContent = scopeData.element.schema.children;
-          var parentViewNode = viewNode.parent;
+          let allContent = scopeData.element.schema.children;
+          let parentViewNode = viewNode.parent;
           allContent.forEach(function (content) {
             if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
               content.__node__.__viewNode__.refreshBinds(scopeData);
@@ -2839,10 +3186,10 @@ if (typeof Object.assign != 'function') {
      * @param nodeScopeData
      */
     onApply: function (cache, viewNode, changes, oldChanges, matches, nodeScopeData) {
-      var parentNode = viewNode.parent;
-      var position = null;
-      var newItems = [];
-      var action = Array.prototype.push;
+      let parentNode = viewNode.parent;
+      let position = null;
+      let newItems = [];
+      let action = Array.prototype.push;
 
       if (!changes) {
         return;
@@ -2859,7 +3206,7 @@ if (typeof Object.assign != 'function') {
       }
 
       if (changes.type === 'push') {
-        var length = cache.nodes.length;
+        let length = cache.nodes.length;
         if (length) {
           position = cache.nodes[length - 1].getPlaceholder().nextSibling;
         } else {
@@ -2872,7 +3219,7 @@ if (typeof Object.assign != 'function') {
         newItems = changes.params;
         action = Array.prototype.unshift;
       } else if (changes.type === 'splice') {
-        var removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
+        let removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
         newItems = changes.params.slice(2);
         removedItems.forEach(function (node) {
           node.destroy();
@@ -2890,17 +3237,17 @@ if (typeof Object.assign != 'function') {
         newItems = changes.original;
       }
 
-      var valueEntity, itemDataScope = nodeScopeData;
-      var p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
+      let valueEntity, itemDataScope = nodeScopeData;
+      let p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
 
       if (newItems instanceof Array) {
-        for (var i = 0, len = newItems.length; i < len; i++) {
+        for (let i = 0, len = newItems.length; i < len; i++) {
           valueEntity = newItems[i];
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = valueEntity;
           cns = viewNode.cloneSchema();
           delete cns.$for;
-          var vn = root.append(cns, itemDataScope, parentNode, position);
+          let vn = root.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);
         }
@@ -2965,8 +3312,8 @@ if (typeof Object.assign != 'function') {
             done();
 
             // Check for circular module loading
-            var tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
-            var root = viewNode.root;
+            let tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
+            let root = viewNode.root;
             while (root.scope) {
               if (tempURI.parsedURL === root.scope.uri.paresdURL) {
                 return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
@@ -3008,8 +3355,8 @@ if (typeof Object.assign != 'function') {
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
     bind: function (viewNode, nodeScopeData, matches) {
       if (viewNode.node.type === 'text') {
-        var parts = matches[1].split('.');
-        var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
+        let parts = matches[1].split('.');
+        let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
         viewNode.node.addEventListener('keyup', function () {
           setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.value);
         });
@@ -3025,378 +3372,3 @@ if (typeof Object.assign != 'function') {
   };
 })(Galaxy.GalaxyView);
 
-
-/* global Galaxy, TweenLite, TimelineLite */
-
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
-    type: 'custom',
-    name: 'animation',
-    /**
-     *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param attr
-     * @param config
-     * @param scopeData
-     */
-    handler: function (viewNode, attr, config, oldConfig, scopeData) {
-      viewNode.rendered.then(function () {
-        if (viewNode.virtual || !config) {
-          return;
-        }
-
-        var enterAnimationConfig = config[':enter'];
-        if (enterAnimationConfig) {
-          viewNode.sequences[':enter'].next(function (done) {
-            if (enterAnimationConfig.sequence) {
-              var animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
-              animationMeta.duration = enterAnimationConfig.duration;
-              animationMeta.position = enterAnimationConfig.position;
-              // if (enterAnimationConfig.group) {
-              // animationMeta = animationMeta.getGroup(enterAnimationConfig.group, enterAnimationConfig.duration, enterAnimationConfig.position || '+=0');
-              // }
-
-              if (enterAnimationConfig.parent) {
-                console.info('gonna set parent', enterAnimationConfig.parent, 'on', enterAnimationConfig.sequence);
-                // animationMeta.timeline.pause();
-                animationMeta.setParent(AnimationMeta.get(enterAnimationConfig.parent));
-              }
-
-              var lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
-              lastStep.clearProps = 'all';
-              animationMeta.add(viewNode.node, enterAnimationConfig, done);
-            } else {
-              AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
-            }
-          });
-        }
-
-        var leaveAnimationConfig = config[':leave'];
-        if (leaveAnimationConfig) {
-          viewNode.sequences[':destroy'].next(function (done) {
-            viewNode._destroyed = true;
-            done();
-          });
-
-          viewNode.sequences[':leave'].next(function (done) {
-            if (leaveAnimationConfig.sequence) {
-              var animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-              // if the animation has order it will be added to the queue according to its order.
-              // No order means lowest order
-              // debugger;
-              if (typeof leaveAnimationConfig.order === 'number') {
-                animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
-                  return function () {
-                    // if (conf.group) {
-                    //   am = am.getGroup(conf.group, conf.duration, conf.position || '+=0');
-                    // }
-                    if (conf.parent) {
-                      am.setParent(AnimationMeta.get(conf.parent));
-                    }
-
-                    am.add(viewNode.node, conf, done);
-                  };
-                })(viewNode, animationMeta, leaveAnimationConfig));
-
-                // When viewNode is the one which is destroyed, then run the queue
-                // The queue will never run if the destroyed viewNode has the lowest order
-                if (viewNode._destroyed) {
-                  var finishImmediately = false;
-                  while (animationMeta.parent) {
-                    animationMeta = animationMeta.parent;
-                  }
-                  var queue = animationMeta.queue;
-
-                  for (var key in queue) {
-                    var item;
-                    for (var i = 0, len = queue[key].length; i < len; i++) {
-                      item = queue[key][i];
-                      item.operation();
-
-                      // If the the current queue item.node is the destroyed node, then all the animations in
-                      // queue should be ignored
-                      if (item.node === viewNode.node) {
-                        finishImmediately = true;
-                        break;
-                      }
-                    }
-
-                    if (finishImmediately) break;
-                  }
-
-                  animationMeta.queue = {};
-                  delete viewNode._destroyed;
-                }
-
-                return;
-              }
-
-              if (leaveAnimationConfig.group) {
-                animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-              }
-
-              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-            } else {
-              AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
-            }
-          });
-        }
-
-        viewNode.observer.on('class', function (value, oldValue) {
-          value.forEach(function (item) {
-            if (item && oldValue.indexOf(item) === -1) {
-              var _config = config['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-
-                  var classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
-
-                  if (classAnimationConfig.sequence) {
-                    var animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
-              }
-            }
-          });
-
-          oldValue.forEach(function (item) {
-            if (item && value.indexOf(item) === -1) {
-              var _config = config['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  var classAnimationConfig = _config;
-                  classAnimationConfig.to = {className: '-=' + item || ''};
-
-                  if (classAnimationConfig.sequence) {
-                    var animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
-              }
-            }
-          });
-        });
-      });
-    }
-  };
-
-  function AnimationMeta(onComplete) {
-    this.timeline = new TimelineLite({
-      autoRemoveChildren: true,
-      onComplete: onComplete
-    });
-
-    this.timeline.addLabel('beginning', 0);
-    this.duration = 0;
-    this.position = '+=0';
-    this.subSequences = {};
-    this.queue = {};
-    // this.commands = new Galaxy.GalaxySequence();
-    // this.commands.start();
-    this.beginOffset = 0;
-    this.beginOffset2 = 0;
-    this.offset = 0;
-    this.parent = null;
-  }
-
-  AnimationMeta.ANIMATIONS = {};
-
-  AnimationMeta.get = function (name) {
-    if (!AnimationMeta.ANIMATIONS[name]) {
-      AnimationMeta.ANIMATIONS[name] = new AnimationMeta();
-    }
-
-    return AnimationMeta.ANIMATIONS[name];
-  };
-
-  AnimationMeta.parseSequence = function (sequence) {
-    return sequence.split('/').filter(Boolean);
-  };
-
-  AnimationMeta.createTween = function (node, config, onComplete) {
-    var to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
-    var tween = null;
-
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      var from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
-      tween = TweenLite.from(node,
-        config.duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(node,
-        config.duration || 0,
-        to || {});
-    }
-
-    return tween;
-  };
-
-  AnimationMeta.calculateDuration = function (duration, position) {
-    var po = position.replace('=', '');
-    return duration + Number(po);
-  };
-
-  AnimationMeta.prototype.setParent = function (parent) {
-    var _this = this;
-    _this.parent = parent;
-    if (_this.parent.timeline.getChildren().indexOf(_this.timeline) === -1) {
-      // console.info('set parent', _this.parent.beginOffset, _this.parent.duration);
-      // If parent time line is active then add this time line at the end of the parent item time line
-      if (_this.parent.timeline.getChildren().length > 0) {
-        var cal = AnimationMeta.calculateDuration(_this.parent.duration, _this.parent.position);
-        console.info(_this.parent.beginOffset2)
-        _this.parent.beginOffset2 += cal;
-        _this.parent.timeline.add(this.timeline, 'beginning+=' + this.parent.beginOffset2);
-        _this.parent.timeline.add(function () {
-          _this.parent.beginOffset2 -= cal;
-        });
-        // _this.parent.beginOffset2 += cal;
-      } else {
-        this.parent.beginOffset += this.parent.duration;
-        this.parent.timeline.add(this.timeline, 'beginning');
-      }
-    }
-  };
-
-  AnimationMeta.prototype.getGroup = function (name, duration, position) {
-    var _this = this;
-    // var group = this.groups[name];
-    // if (!group) {
-    //   group = this.groups[name] = new AnimationMeta();
-    // }
-
-    var group = AnimationMeta.get(name);
-    group.parent = _this;
-    if (this.timeline.getChildren().indexOf(group.timeline) === -1) {
-      // if the parent animation is still running, then add the group time line to the end of the parent animation
-      // when and only when the parent time line has reached its end
-      // group time line will be paused till the parent time line reaches its end
-      var calPosition = AnimationMeta.calculateDuration(duration, position);
-      group.offset++;
-      _this.timeline.add(group.timeline, 'group+=' + _this.groupPosition);
-      _this.timeline.add((function (cp) {
-        return function () {
-          group.offset--;
-          _this.groupPosition -= cp;
-        };
-      })(calPosition));
-      _this.groupPosition += calPosition;
-      // if (this.timeline.progress() !== undefined) {
-      //   group.timeline.pause();
-      //   group.added = true;
-      //
-      //   _this.timeline.add(function () {
-      //     _this.commands.next(function (done) {
-      //       _this.timeline.add(group.timeline);
-      //       group.added = false;
-      //       group.timeline.resume();
-      //       done();
-      //     });
-      //   });
-      // }
-      // // If the parent time line is not running, then add the group time line to it immediately
-      // else {
-      //   _this.timeline.add(group.timeline);
-      // }
-    }
-
-
-    return group;
-  };
-
-  AnimationMeta.prototype.add = function (node, config, onComplete) {
-    var to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
-
-    var tween = null;
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      var from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
-      tween = TweenLite.from(node,
-        config.duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(node,
-        config.duration || 0,
-        to || {});
-    }
-
-    var cal;
-    if (this.timeline.getChildren().length > this.offset) {
-      cal = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
-      this.beginOffset += cal;
-      this.timeline.add(tween, 'beginning+=' + this.beginOffset);
-      this.timeline.add(function () {
-        this.beginOffset -= cal;
-      });
-
-    } else {
-      cal = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
-      this.beginOffset += cal;
-      this.timeline.add(tween, config.position);
-    }
-  };
-
-  /**
-   *
-   * @param {number} order
-   * @param {callback} operation
-   */
-  AnimationMeta.prototype.addToQueue = function (order, node, operation) {
-    if (this.parent) {
-      return this.parent.addToQueue(order, node, operation);
-    }
-
-    if (!this.queue[order]) {
-      this.queue[order] = [];
-    }
-
-    this.queue[order].push({node: node, operation: operation});
-  };
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
-    type: 'custom',
-    name: 'on',
-    handler: function (viewNode, attr, events, oldEvents, scopeData) {
-      if (events !== null && typeof events === 'object') {
-        for (var name in events) {
-          if (events.hasOwnProperty(name)) {
-            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
-          }
-        }
-      }
-    }
-  };
-})(Galaxy);

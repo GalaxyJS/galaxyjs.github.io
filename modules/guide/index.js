@@ -1,8 +1,8 @@
 /* globals Scope, Promise, PR */
 Scope.import('galaxy/inputs');
 
-var view = Scope.import('galaxy/view');
-var animations = Scope.import('services/animations.js');
+let view = Scope.import('galaxy/view');
+let animations = Scope.import('services/animations.js');
 
 Scope.on('module.init', function () {
   console.info('Module guide initialized');
@@ -71,11 +71,11 @@ view.init({
           text: 'Request Surfaces',
           on: {
             click: function () {
-              var s = performance.now();
+              let s = performance.now();
               Scope.progressText = 'Please wait...';
               fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
                 response.json().then(function (data) {
-                  var surfaces = data.data.productData.data[0].data.filter(function (item) {
+                  let surfaces = data.data.productData.data[0].data.filter(function (item) {
                     return item.baseType === 'surface';
                   });
                   Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
@@ -91,7 +91,7 @@ view.init({
         },
         {
           tag: 'p',
-          animation: animations.itemInOut,
+          // animation: animations.itemInOut,
           $for: 'surface in surfaces',
           text: '[surface.id]',
           children: {

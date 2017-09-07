@@ -12,7 +12,7 @@ Scope.export = {
         y: 0,
         opacity: 1
       },
-      duration: 1.5
+      duration: .5
     },
     ':leave': {
       sequence: 'card',
@@ -32,11 +32,7 @@ Scope.export = {
         x: 100,
         opacity: 0
       },
-      // to: {
-      //   x: 0,
-      //   autoAlpha: 1
-      // },
-      position: '-=.4',
+      position: '-=.3',
       duration: .5
     },
     ':leave': {
@@ -47,7 +43,7 @@ Scope.export = {
         x: 100,
         opacity: 0
       },
-      position: '-=.45',
+      position: '-=.4',
       duration: .5
     },
     // '.done': {
@@ -60,25 +56,26 @@ Scope.export = {
   createSlideInOut: function (sequence) {
     return {
       ':enter': {
+        // parent: 'item',
         sequence: 'main',
         from: {
           x: 100,
           opacity: 0
         },
-        position: '+=3',
+        position: '-=.3',
         duration: 1
       },
-      ':leave': {
-        sequence: 'm',
-        // group: 'items',
-        order: 5,
-        to: {
-          x: 100,
-          opacity: 0
-        },
-        position: '-=.45',
-        duration: .5
-      }
+      // ':leave': {
+      //   sequence: 'm',
+      //   // group: 'items',
+      //   order: 5,
+      //   to: {
+      //     x: 100,
+      //     opacity: 0
+      //   },
+      //   position: '-=.45',
+      //   duration: .5
+      // }
     };
   },
   createPopInOut: function (sequence) {
@@ -92,16 +89,16 @@ Scope.export = {
         position: '-=.3',
         duration: .5
       },
-      ':leave': {
-        sequence: 'm',
-        // group: 'items',
-        order: 5,
-        to: {
-          scale: 0
-        },
-        position: '-=.45',
-        duration: .5
-      }
+      // ':leave': {
+      //   sequence: 'm',
+      //   // group: 'items',
+      //   order: 5,
+      //   to: {
+      //     scale: 0
+      //   },
+      //   position: '-=.45',
+      //   duration: .5
+      // }
     };
   }
 };
