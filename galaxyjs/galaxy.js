@@ -1307,6 +1307,8 @@ if (typeof Object.assign != 'function') {
     this.line = null;
     this.firstStepResolve = null;
     this.started = false;
+    this.lastTimestamp = Date.now();
+    this.offset = 0;
     this.reset();
   }
 
@@ -1319,7 +1321,8 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxySequence.prototype.reset = function () {
-    let _this = this;
+    const _this = this;
+    _this.offset = 0;
 
     _this.line = new Promise(function (resolve) {
       _this.firstStepResolve = resolve;
@@ -1330,10 +1333,22 @@ if (typeof Object.assign != 'function') {
   };
 
   GalaxySequence.prototype.next = function (action) {
+    const _this = this;
     let thunk;
     let promise = new Promise(function (resolve, reject) {
+      const timestamp = Date.now();
+      if (_this.lastTimestamp !== timestamp) {
+        _this.lastTimestamp = timestamp;
+        _this.offset = 0;
+      } else {
+        _this.offset++;
+      }
+
+      const id = _this.lastTimestamp + '-' + _this.offset;
       thunk = function () {
-        action(resolve, reject);
+        action.call({
+          id: id
+        }, resolve, reject);
       };
     });
 
@@ -2329,6 +2344,7 @@ if (typeof Object.assign != 'function') {
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
     this.observer = new Galaxy.GalaxyObserver(this);
+    this.origin = false;
 
     let _this = this;
     this.rendered = new Promise(function (ready) {
@@ -2395,23 +2411,39 @@ if (typeof Object.assign != 'function') {
     this.setInDOM(false);
   };
 
+  ViewNode.prototype.populateEnterSequence = function (sequence) {
+
+  };
+
+  ViewNode.prototype.populateLeaveSequence = function (sequence) {
+
+  };
+
   ViewNode.prototype.setInDOM = function (flag) {
     let _this = this;
     _this.inDOM = flag;
+
+    // We use domManipulationSequence to make sure dom manipulation activities happen in oder and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
+        _this.populateEnterSequence(_this.sequences[':enter']);
+        // Go to next dom manipulation step when the whole :enter sequence is done
         _this.sequences[':enter'].finish(done);
         _this.callLifeCycleEvent('inserted');
       });
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
+        _this.origin = true;
+        _this.populateLeaveSequence(_this.sequences[':leave']);
+        // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
         _this.sequences[':leave'].start().finish(function () {
           insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
           removeChild(_this.node.parentNode, _this.node);
           done();
           _this.sequences[':leave'].reset();
+          _this.origin = false;
           _this.callLifeCycleEvent('removed');
         });
       });
@@ -2445,25 +2477,34 @@ if (typeof Object.assign != 'function') {
     let _this = this;
 
     if (!source) {
+      _this.origin = true;
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
-          _this.empty(_this.sequences[':destroy'], true);
-          _this.sequences[':destroy'].start().finish(function () {
-            _this.sequences[':leave'].start().finish(function () {
-              removeChild(_this.node.parentNode, _this.node);
-              _this.sequences[':leave'].reset();
-              _this.callLifeCycleEvent('removed');
-            });
+          // _this.empty(_this.sequences[':destroy'], true);
+          // _this.sequences[':destroy'].start().finish(function ()
 
+          // Add children leave sequence to this node leave sequence
+          _this.empty(_this.sequences[':leave'], true);
+          _this.populateLeaveSequence(_this.sequences[':leave']);
+          _this.sequences[':leave'].start().finish(function () {
+            removeChild(_this.node.parentNode, _this.node);
+            _this.sequences[':leave'].reset();
             done();
-            _this.sequences[':destroy'].reset();
+            _this.origin = false;
+            _this.callLifeCycleEvent('removed');
             _this.callLifeCycleEvent('destroyed');
           });
+
+
+          // _this.sequences[':destroy'].reset();
+          // _this.callLifeCycleEvent('destroyed');
+          // });
         });
       }
     } else if (source) {
       if (_this.inDOM) {
         sequence.next(function (done) {
+          _this.populateLeaveSequence(_this.sequences[':leave']);
           _this.sequences[':leave'].start().finish(function () {
             _this.sequences[':leave'].reset();
             _this.callLifeCycleEvent('removed');
@@ -2478,6 +2519,7 @@ if (typeof Object.assign != 'function') {
     } else {
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
+          _this.populateLeaveSequence(_this.sequences[':leave']);
           _this.sequences[':leave'].start().finish(function () {
             removeChild(_this.node.parentNode, _this.node);
             done();
@@ -2532,7 +2574,7 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  var empty = function (nodes) {
+  const empty = function (nodes) {
     if (nodes instanceof Array) {
       nodes.forEach(function (node) {
         empty(node);
@@ -2554,9 +2596,10 @@ if (typeof Object.assign != 'function') {
     }
 
     let domManipulationSequence = this.domManipulationSequence;
-
+// sequence = sequence || this.domManipulationSequence
     toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy(sequence, source);
+      // if(viewNode.origin)
       domManipulationSequence = viewNode.domManipulationSequence;
     });
 
@@ -2669,20 +2712,23 @@ if (typeof Object.assign != 'function') {
      * @param scopeData
      */
     handler: function (viewNode, attr, config, oldConfig, scopeData) {
-      viewNode.rendered.then(function () {
-        if (viewNode.virtual || !config) {
-          return;
-        }
+      if (viewNode.virtual || !config) {
+        return;
+      }
+      let enterAnimationConfig = config[':enter'];
+      if (enterAnimationConfig) {
+        // viewNode.sequences[':enter'].next(function (done) {
+        //
+        // });
 
-        let enterAnimationConfig = config[':enter'];
-        if (enterAnimationConfig) {
-          viewNode.sequences[':enter'].next(function (done) {
+        viewNode.populateEnterSequence = function (sequence) {
+          sequence.next(function (done) {
             if (enterAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
               animationMeta.s = enterAnimationConfig.sequence;
               animationMeta.duration = enterAnimationConfig.duration;
               animationMeta.position = enterAnimationConfig.position;
-              
+
               if (enterAnimationConfig.parent) {
                 animationMeta.setParent(AnimationMeta.get(enterAnimationConfig.parent));
               }
@@ -2691,19 +2737,25 @@ if (typeof Object.assign != 'function') {
               lastStep.clearProps = 'all';
               animationMeta.add(viewNode.node, enterAnimationConfig, done);
             } else {
+              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              lastStep.clearProps = 'all';
               AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
             }
           });
-        }
+        };
+      }
 
-        let leaveAnimationConfig = config[':leave'];
-        if (leaveAnimationConfig) {
-          viewNode.sequences[':destroy'].next(function (done) {
-            viewNode._destroyed = true;
-            done();
-          });
+      let leaveAnimationConfig = config[':leave'];
+      if (leaveAnimationConfig) {
+        // Set view node as destroyed whenever the node is leaving the dom
+        viewNode.populateLeaveSequence = function (sequence) {
+          // viewNode._destroyed = true;
+          // sequence.next(function (done) {
+          //   viewNode._destroyed = true;
+          //   done();
+          // });
 
-          viewNode.sequences[':leave'].next(function (done) {
+          sequence.next(function (done) {
             if (leaveAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               animationMeta.duration = leaveAnimationConfig.duration;
@@ -2723,10 +2775,10 @@ if (typeof Object.assign != 'function') {
                     am.add(viewNode.node, conf, done);
                   };
                 })(viewNode, animationMeta, leaveAnimationConfig));
-
-                // When viewNode is the one which is destroyed, then run the queue
+// debugger;
+                // When viewNode is the one which is the origin, then run the queue
                 // The queue will never run if the destroyed viewNode has the lowest order
-                if (viewNode._destroyed) {
+                if (viewNode.origin) {
                   let finishImmediately = false;
                   while (animationMeta.parent) {
                     animationMeta = animationMeta.parent;
@@ -2751,23 +2803,25 @@ if (typeof Object.assign != 'function') {
                   }
 
                   animationMeta.queue = {};
-                  delete viewNode._destroyed;
+                  viewNode.origin = false;
+                  // delete viewNode._destroyed;
                 }
 
                 return;
               }
 
-              if (leaveAnimationConfig.group) {
-                animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-              }
-
+              // if (leaveAnimationConfig.group) {
+              //   animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+              // }
               animationMeta.add(viewNode.node, leaveAnimationConfig, done);
             } else {
               AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
             }
           });
-        }
+        };
+      }
 
+      viewNode.rendered.then(function () {
         viewNode.observer.on('class', function (value, oldValue) {
           value.forEach(function (item) {
             if (item && oldValue.indexOf(item) === -1) {
@@ -3272,9 +3326,9 @@ if (typeof Object.assign != 'function') {
     },
     onApply: function (cache, viewNode, value) {
       // console.info('apply $if', value);
-      if (value) {
+      if (value && !viewNode.inDOM) {
         viewNode.setInDOM(true);
-      } else {
+      } else if (!value && viewNode.inDOM) {
         viewNode.setInDOM(false);
       }
     }
@@ -3304,34 +3358,37 @@ if (typeof Object.assign != 'function') {
     onApply: function (cache, viewNode, moduleMeta) {
       if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
         viewNode.rendered.then(function () {
-          viewNode.empty().next(function (done) {
-            if(cache.module) {
-              cache.module.destroy();
-            }
-
-            done();
-
-            // Check for circular module loading
-            let tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
-            let root = viewNode.root;
-            while (root.scope) {
-              if (tempURI.parsedURL === root.scope.uri.paresdURL) {
-                return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
+          const afterEmpty = (function (moduleMeta) {
+            return function (done) {
+              if (cache.module) {
+                cache.module.destroy();
               }
 
-              root = root.container;
-            }
+              // Check for circular module loading
+              let tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
+              let root = viewNode.root;
+              while (root.scope) {
+                if (tempURI.parsedURL === root.scope.uri.paresdURL) {
+                  return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
+                }
 
-            cache.scope.load(moduleMeta, {
-              element: viewNode
-            }).then(function (module) {
-              cache.module = module;
-              viewNode.node.setAttribute('module', module.systemId);
-              module.start();
-            }).catch(function (response) {
-              console.error(response);
-            });
-          });
+                root = root.container;
+              }
+
+              cache.scope.load(moduleMeta, {
+                element: viewNode
+              }).then(function (module) {
+                cache.module = module;
+                viewNode.node.setAttribute('module', module.systemId);
+                module.start();
+              }).catch(function (response) {
+                console.error(response);
+              });
+
+              done();
+            };
+          })(moduleMeta);
+          viewNode.empty().next(afterEmpty);
         });
       } else if (!moduleMeta) {
         viewNode.empty();

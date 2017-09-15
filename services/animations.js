@@ -53,35 +53,39 @@ Scope.export = {
     //   duration: .3
     // }
   },
-  createSlideInOut: function (sequence) {
+  createSlideInOut: function (sequence, parent) {
     return {
       ':enter': {
-        // parent: 'item',
-        sequence: 'main',
+        parent: parent || null,
+        sequence: sequence,
         from: {
           x: 100,
           opacity: 0
         },
+        to: {
+          x: 0,
+          opacity: 1
+        },
         position: '-=.3',
         duration: 1
       },
-      // ':leave': {
-      //   sequence: 'm',
-      //   // group: 'items',
-      //   order: 5,
-      //   to: {
-      //     x: 100,
-      //     opacity: 0
-      //   },
-      //   position: '-=.45',
-      //   duration: .5
-      // }
+      ':leave': {
+        parent: parent || null,
+        sequence: sequence,
+        order: 5,
+        to: {
+          x: 100,
+          opacity: 0
+        },
+        position: '-=.45',
+        duration: .5
+      }
     };
   },
-  createPopInOut: function (sequence) {
+  createPopInOut: function (sequence, parent) {
     return {
       ':enter': {
-        parent: 'main',
+        parent: parent || null,
         sequence: sequence,
         from: {
           scale: 0
@@ -89,16 +93,16 @@ Scope.export = {
         position: '-=.3',
         duration: .5
       },
-      // ':leave': {
-      //   sequence: 'm',
-      //   // group: 'items',
-      //   order: 5,
-      //   to: {
-      //     scale: 0
-      //   },
-      //   position: '-=.45',
-      //   duration: .5
-      // }
+      ':leave': {
+        parent: parent || null,
+        sequence: sequence,
+        order: 5,
+        to: {
+          scale: 0
+        },
+        position: '-=.45',
+        duration: .5
+      }
     };
   }
 };
