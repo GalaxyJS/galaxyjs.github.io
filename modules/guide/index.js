@@ -5,7 +5,7 @@ let view = Scope.import('galaxy/view');
 let animations = Scope.import('services/animations.js');
 
 Scope.on('module.init', function () {
-  console.info('Module guide initialized');
+  // console.info('Module guide initialized');
 });
 
 Scope.on('module.start', function () {
@@ -13,12 +13,12 @@ Scope.on('module.start', function () {
 });
 
 Scope.on('module.destroy', function () {
-  console.info('Module guide destroyed');
+  // console.info('Module guide destroyed');
 });
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
-console.info(Scope);
+// console.info(Scope);
 // var observer = Scope.observe(inputs);
 // observer.on('items', function (value, oldValue) {
 //   debugger;
