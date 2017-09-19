@@ -211,7 +211,7 @@ view.init({
           tag: 'h3',
           text: '[progressText]',
           $if: '[flag]',
-          animation: animations.createSlideInOut('surfaces')
+          animation: animations.createSlideInOut('surfaces', 'card')
         },
         {
           tag: 'p',

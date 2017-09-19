@@ -1355,7 +1355,7 @@ if (typeof Object.assign != 'function') {
     this.line.then(thunk).catch(thunk);
     this.line = promise;
 
-    return promise;
+    return _this;
   };
 
   GalaxySequence.prototype.finish = function (action) {
@@ -2596,7 +2596,7 @@ if (typeof Object.assign != 'function') {
     }
 
     let domManipulationSequence = this.domManipulationSequence;
-// sequence = sequence || this.domManipulationSequence
+    // sequence = sequence || this.domManipulationSequence
     toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy(sequence, source);
       // if(viewNode.origin)
@@ -2725,7 +2725,6 @@ if (typeof Object.assign != 'function') {
           sequence.next(function (done) {
             if (enterAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
-              animationMeta.s = enterAnimationConfig.sequence;
               animationMeta.duration = enterAnimationConfig.duration;
               animationMeta.position = enterAnimationConfig.position;
 
@@ -2755,7 +2754,9 @@ if (typeof Object.assign != 'function') {
           //   done();
           // });
 
+          console.info('outside', viewNode.node);
           sequence.next(function (done) {
+
             if (leaveAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               animationMeta.duration = leaveAnimationConfig.duration;
@@ -2763,19 +2764,29 @@ if (typeof Object.assign != 'function') {
               // if the animation has order it will be added to the queue according to its order.
               // No order means lowest order
               if (typeof leaveAnimationConfig.order === 'number') {
+                console.info('--->', viewNode.node, leaveAnimationConfig.order, leaveAnimationConfig.parent, leaveAnimationConfig.sequence);
                 animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
                   return function () {
+                    let parent;
                     if (conf.parent) {
-                      const parent = AnimationMeta.get(conf.parent);
+                      parent = AnimationMeta.get(conf.parent);
                       am.setParent(parent, 'leave');
-                      // Update parent childrenOffset so the parent animation starts after the subTimeline animations
-                      parent.childrenOffset = am.childrenOffset;
+
+
+                    } else {
+                      // console.info(conf.parent, conf.sequence, am.childrenOffset);
                     }
 
                     am.add(viewNode.node, conf, done);
+
+                    if (parent) {
+                      // Update parent childrenOffset so the parent animation starts after the subTimeline animations
+                      parent.childrenOffset = am.childrenOffset;
+                      console.info(conf.parent, conf.sequence, am.childrenOffset);
+                    }
                   };
                 })(viewNode, animationMeta, leaveAnimationConfig));
-// debugger;
+
                 // When viewNode is the one which is the origin, then run the queue
                 // The queue will never run if the destroyed viewNode has the lowest order
                 if (viewNode.origin) {
@@ -2810,9 +2821,6 @@ if (typeof Object.assign != 'function') {
                 return;
               }
 
-              // if (leaveAnimationConfig.group) {
-              //   animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-              // }
               animationMeta.add(viewNode.node, leaveAnimationConfig, done);
             } else {
               AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
@@ -2887,8 +2895,6 @@ if (typeof Object.assign != 'function') {
     this.position = '+=0';
     this.subSequences = {};
     this.queue = {};
-    // this.commands = new Galaxy.GalaxySequence();
-    // this.commands.start();
     this.childrenOffset = 0;
     this.subTimelineOffset = 0;
     this.offset = 0;
@@ -2956,6 +2962,7 @@ if (typeof Object.assign != 'function') {
         _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
         _this.parent.timeline.add(function () {
           _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
+          _this.parent.childrenOffset = 0;
         });
 
         _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
@@ -3002,15 +3009,15 @@ if (typeof Object.assign != 'function') {
         to || {});
     }
 
-    let cal = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
+    let calc = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
     if (this.timeline.getChildren().length === 0) {
-      cal = 0;
+      calc = 0;
     }
 
-    _this.childrenOffset = ((_this.childrenOffset * 10) + (cal * 10)) / 10;
+    _this.childrenOffset = ((_this.childrenOffset * 10) + (calc * 10)) / 10;
     _this.timeline.add(tween, _this.childrenOffset);
     _this.timeline.add(function () {
-      _this.childrenOffset = ((_this.childrenOffset * 10) - (cal * 10)) / 10;
+      _this.childrenOffset = ((_this.childrenOffset * 10) - (calc * 10)) / 10;
     });
   };
 
@@ -3339,6 +3346,41 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy */
 
 (function (GV) {
+  const loadModuleQueue = new Galaxy.GalaxySequence();
+  loadModuleQueue.start();
+
+  const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
+    return function (done) {
+      if (cache.module) {
+        cache.module.destroy();
+      }
+      // Check for circular module loading
+      let tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
+      let root = viewNode.root;
+      while (root.scope) {
+        if (tempURI.parsedURL === root.scope.uri.paresdURL) {
+          return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
+        }
+
+        root = root.container;
+      }
+
+      window.requestAnimationFrame(function () {
+        cache.scope.load(moduleMeta, {
+          element: viewNode
+        }).then(function (module) {
+          cache.module = module;
+          viewNode.node.setAttribute('module', module.systemId);
+          module.start();
+          done();
+        }).catch(function (response) {
+          console.error(response);
+          done();
+        });
+      });
+    };
+  };
+
   GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
     type: 'reactive',
     name: 'module'
@@ -3358,37 +3400,25 @@ if (typeof Object.assign != 'function') {
     onApply: function (cache, viewNode, moduleMeta) {
       if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
         viewNode.rendered.then(function () {
-          const afterEmpty = (function (moduleMeta) {
-            return function (done) {
-              if (cache.module) {
-                cache.module.destroy();
-              }
+          // Add the new module request to the sequence
+          console.info('Added to queue:', moduleMeta.id);
+          loadModuleQueue.next(function (nextCall) {
 
-              // Check for circular module loading
-              let tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
-              let root = viewNode.root;
-              while (root.scope) {
-                if (tempURI.parsedURL === root.scope.uri.paresdURL) {
-                  return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
-                }
-
-                root = root.container;
-              }
-
-              cache.scope.load(moduleMeta, {
-                element: viewNode
-              }).then(function (module) {
-                cache.module = module;
-                viewNode.node.setAttribute('module', module.systemId);
-                module.start();
-              }).catch(function (response) {
-                console.error(response);
-              });
-
+            // Wait till all viewNode animation are done
+            viewNode.domManipulationSequence.next(function (done) {
               done();
-            };
-          })(moduleMeta);
-          viewNode.empty().next(afterEmpty);
+              // Empty the node and wait till all animation are finished
+              // Then load the next requested module in the queue
+              // and after that proceed to next request in the queue
+              viewNode.empty().next(moduleLoaderGenerator(viewNode, cache, moduleMeta))
+                .next(function (done) {
+                  // module loader may add animations to the viewNode. if that is the case we will wait for the animations
+                  // to finish at the beginning of the next module request
+                  done();
+                  nextCall();
+                });
+            });
+          });
         });
       } else if (!moduleMeta) {
         viewNode.empty();
