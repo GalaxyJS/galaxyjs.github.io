@@ -1913,16 +1913,19 @@ if (typeof Object.assign != 'function') {
    * @param {Object} nodeScopeData
    * @param {GalaxyView.ViewNode} parentViewNode
    */
-  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position) {
+  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position, domManipulationSequence) {
     let _this = this;
     let i = 0, len = 0;
+
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        _this.append(nodeSchema[i], parentScopeData, parentViewNode);
+        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null, domManipulationSequence);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
-      let viewNode = new GalaxyView.ViewNode(_this, nodeSchema);
-      parentViewNode.append(viewNode, position);
+      let viewNode = new GalaxyView.ViewNode(_this, nodeSchema, null, domManipulationSequence);
+      parentViewNode.registerChild(viewNode, position);
+
+      domManipulationSequence = domManipulationSequence || viewNode.domManipulationSequence;
 
       if (nodeSchema['mutator']) {
         viewNode.mutator = nodeSchema['mutator'];
@@ -1952,7 +1955,9 @@ if (typeof Object.assign != 'function') {
           viewNode.setInDOM(true);
         }
 
-        _this.append(nodeSchema.children, parentScopeData, viewNode);
+        _this.append(nodeSchema.children,
+          parentScopeData,
+          viewNode, null, domManipulationSequence);
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
@@ -1961,6 +1966,7 @@ if (typeof Object.assign != 'function') {
         viewNode.ready();
         done();
       });
+
       return viewNode;
     }
   };
@@ -2326,7 +2332,7 @@ if (typeof Object.assign != 'function') {
    * @param schema
    * @constructor
    */
-  function ViewNode(root, schema, node) {
+  function ViewNode(root, schema, node,dms) {
     this.root = root;
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
@@ -2422,6 +2428,7 @@ if (typeof Object.assign != 'function') {
   ViewNode.prototype.setInDOM = function (flag) {
     let _this = this;
     _this.inDOM = flag;
+    // domManipulationSequence = domManipulationSequence || _this.domManipulationSequence;
 
     // We use domManipulationSequence to make sure dom manipulation activities happen in oder and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
@@ -2450,7 +2457,7 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  ViewNode.prototype.append = function (viewNode, position) {
+  ViewNode.prototype.registerChild = function (viewNode, position) {
     let _this = this;
     viewNode.parent = _this;
     _this.node.insertBefore(viewNode.placeholder, position);
@@ -2771,8 +2778,6 @@ if (typeof Object.assign != 'function') {
                     if (conf.parent) {
                       parent = AnimationMeta.get(conf.parent);
                       am.setParent(parent, 'leave');
-
-
                     } else {
                       // console.info(conf.parent, conf.sequence, am.childrenOffset);
                     }
@@ -3205,7 +3210,7 @@ if (typeof Object.assign != 'function') {
           allContent.forEach(function (content) {
             if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
               content.__node__.__viewNode__.refreshBinds(scopeData);
-              parentViewNode.append(content.__node__.__viewNode__, viewNode.placeholder);
+              parentViewNode.registerChild(content.__node__.__viewNode__, viewNode.placeholder);
               content.__node__.__viewNode__.setInDOM(true);
             }
           });
@@ -3371,6 +3376,7 @@ if (typeof Object.assign != 'function') {
         }).then(function (module) {
           cache.module = module;
           viewNode.node.setAttribute('module', module.systemId);
+          console.warn('-------------------', module.systemId);
           module.start();
           done();
         }).catch(function (response) {
@@ -3406,7 +3412,6 @@ if (typeof Object.assign != 'function') {
 
             // Wait till all viewNode animation are done
             viewNode.domManipulationSequence.next(function (done) {
-              done();
               // Empty the node and wait till all animation are finished
               // Then load the next requested module in the queue
               // and after that proceed to next request in the queue
@@ -3417,6 +3422,11 @@ if (typeof Object.assign != 'function') {
                   done();
                   nextCall();
                 });
+              // requestAnimationFrame(function () {
+                done();
+                // debugger;
+              // });
+
             });
           });
         });

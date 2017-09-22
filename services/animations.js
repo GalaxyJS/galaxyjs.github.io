@@ -12,7 +12,7 @@ Scope.export = {
         y: 0,
         opacity: 1
       },
-      duration: .5
+      duration: 1
     },
     ':leave': {
       sequence: 'card',
@@ -21,7 +21,7 @@ Scope.export = {
         y: 100,
         opacity: 0
       },
-      duration: .5
+      duration: 1
     }
   },
   itemInOut: {
