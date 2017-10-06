@@ -1308,7 +1308,7 @@ if (typeof Object.assign != 'function') {
     this.firstStepResolve = null;
     this.started = false;
     this.lastTimestamp = Date.now();
-    this.offset = 0;
+    // this.offset = 0;
     this.reset();
     this.children = [];
   }
@@ -1323,7 +1323,7 @@ if (typeof Object.assign != 'function') {
 
   GalaxySequence.prototype.reset = function () {
     const _this = this;
-    _this.offset = 0;
+    // _this.offset = 0;
     _this.children = [];
 
     _this.line = new Promise(function (resolve) {
@@ -1337,7 +1337,7 @@ if (typeof Object.assign != 'function') {
   GalaxySequence.prototype.next = function (action) {
     const _this = this;
     let thunk;
-    _this.offset++;
+    // _this.offset++;
     let promise = new Promise(function (resolve, reject) {
       // const timestamp = Date.now();
       // if (_this.lastTimestamp !== timestamp) {
@@ -1349,7 +1349,7 @@ if (typeof Object.assign != 'function') {
       //
       // const id = _this.lastTimestamp + '-' + _this.offset;
       thunk = function () {
-        _this.offset--;
+        // _this.offset--;
         action.call(null, resolve, reject);
       };
     });
@@ -2546,7 +2546,7 @@ if (typeof Object.assign != 'function') {
 
   };
 
-  ViewNode.prototype.setInDOM = function (flag) {
+  ViewNode.prototype.setInDOM = function (flag, nextUIAction) {
     let _this = this;
     _this.inDOM = flag;
 
@@ -2557,7 +2557,7 @@ if (typeof Object.assign != 'function') {
         removeChild(_this.placeholder.parentNode, _this.placeholder);
         _this.populateEnterSequence(_this.sequences[':enter']);
         // Go to next dom manipulation step when the whole :enter sequence is done
-        _this.sequences[':enter'].finish(function () {
+        _this.sequences[':enter'].nextAction(function () {
           done();
         });
         _this.callLifeCycleEvent('inserted');
@@ -2624,6 +2624,7 @@ if (typeof Object.assign != 'function') {
         _this.domManipulationSequence.next(function (done) {
           // Add children leave sequence to this node(parent node) leave sequence
           _this.empty(_this.sequences[':leave']);
+
           _this.populateLeaveSequence(_this.sequences[':leave']);
           _this.sequences[':leave'].start()
             .finish(function () {
@@ -2867,10 +2868,6 @@ if (typeof Object.assign != 'function') {
       }
       let enterAnimationConfig = config[':enter'];
       if (enterAnimationConfig) {
-        // viewNode.sequences[':enter'].next(function (done) {
-        //
-        // });
-
         viewNode.populateEnterSequence = function (sequence) {
           sequence.next(function (done) {
             if (enterAnimationConfig.sequence) {
@@ -2879,7 +2876,8 @@ if (typeof Object.assign != 'function') {
               animationMeta.position = enterAnimationConfig.position;
 
               if (enterAnimationConfig.parent) {
-                animationMeta.setParent(AnimationMeta.get(enterAnimationConfig.parent));
+                const parent = AnimationMeta.get(enterAnimationConfig.parent);
+                animationMeta.setParent(parent);
               }
 
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
@@ -2898,13 +2896,6 @@ if (typeof Object.assign != 'function') {
       if (leaveAnimationConfig) {
         // Set view node as destroyed whenever the node is leaving the dom
         viewNode.populateLeaveSequence = function (sequence) {
-          // viewNode._destroyed = true;
-          // sequence.next(function (done) {
-          //   viewNode._destroyed = true;
-          //   done();
-          // });
-
-          // console.info('outside', viewNode.node);
           sequence.next(function (done) {
 
             if (leaveAnimationConfig.sequence) {
@@ -2914,23 +2905,22 @@ if (typeof Object.assign != 'function') {
               // if the animation has order it will be added to the queue according to its order.
               // No order means lowest order
               if (typeof leaveAnimationConfig.order === 'number') {
-                // console.info('--->', viewNode.node, leaveAnimationConfig.order, leaveAnimationConfig.parent, leaveAnimationConfig.sequence);
                 animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
                   return function () {
-                    let parent;
+                    // debugger;
+                    let parent, extra = 0;
                     if (conf.parent) {
                       parent = AnimationMeta.get(conf.parent);
                       am.setParent(parent, 'leave');
-                    } else {
-                      // console.info(conf.parent, conf.sequence, am.childrenOffset);
+                      // extra = parent.childrenOffset;
                     }
 
                     am.add(viewNode.node, conf, done);
 
                     if (parent) {
                       // Update parent childrenOffset so the parent animation starts after the subTimeline animations
-                      parent.childrenOffset = am.childrenOffset;
-                      // console.info(conf.parent, conf.sequence, am.childrenOffset);
+                      parent.childrenOffset = extra + am.childrenOffset;
+                      // console.info(viewNode.node, '\n', conf.parent, conf.sequence, parent.childrenOffset);
                     }
                   };
                 })(viewNode, animationMeta, leaveAnimationConfig));
@@ -2938,10 +2928,11 @@ if (typeof Object.assign != 'function') {
                 // When viewNode is the one which is the origin, then run the queue
                 // The queue will never run if the destroyed viewNode has the lowest order
                 if (viewNode.origin) {
+                  // debugger;
                   let finishImmediately = false;
-                  while (animationMeta.parent) {
-                    animationMeta = animationMeta.parent;
-                  }
+                  // while (animationMeta.parent) {
+                  //   animationMeta = animationMeta.parent;
+                  // }
                   let queue = animationMeta.queue;
 
                   for (let key in queue) {
@@ -3110,7 +3101,7 @@ if (typeof Object.assign != 'function') {
         _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
         _this.parent.timeline.add(function () {
           _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
-          _this.parent.childrenOffset = 0;
+          // _this.parent.childrenOffset = 0;
         });
 
         _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
@@ -3124,12 +3115,12 @@ if (typeof Object.assign != 'function') {
           _this.parent.subTimelineOffset = subTimelineOffset;
         }
 
-        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
-
         _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
         _this.parent.timeline.add(function () {
           _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
         });
+
+        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
       }
     }
   };
@@ -3450,16 +3441,25 @@ if (typeof Object.assign != 'function') {
       let p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
 
       if (newItems instanceof Array) {
-        for (let i = 0, len = newItems.length; i < len; i++) {
-          valueEntity = newItems[i];
-          itemDataScope = GV.createMirror(nodeScopeData);
-          itemDataScope[p] = valueEntity;
-          cns = viewNode.cloneSchema();
-          delete cns.$for;
-          let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.manipulationPromiseList);
-          vn.data[p] = valueEntity;
-          action.call(n, vn);
-        }
+        // console.info(viewNode.manipulationPromiseList.length);
+        // viewNode.uiManipulationSequence.next(function (ne) {
+
+          for (let i = 0, len = newItems.length; i < len; i++) {
+            valueEntity = newItems[i];
+            itemDataScope = GV.createMirror(nodeScopeData);
+            itemDataScope[p] = valueEntity;
+            cns = viewNode.cloneSchema();
+            delete cns.$for;
+            let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.manipulationPromiseList);
+            vn.data[p] = valueEntity;
+            action.call(n, vn);
+          }
+
+          // Promise.all(viewNode.manipulationPromiseList).then(function () {
+          //   // debugger;
+          //   ne();
+          // });
+        // });
       }
     }
   };

@@ -6,13 +6,14 @@ Scope.export = {
       sequence: 'card',
       from: {
         y: 100,
-        opacity: 0
+        opacity: 0,
+        ease: Power1.easeInOut
       },
       to: {
         y: 0,
         opacity: 1
       },
-      duration: 1
+      duration: .5
     },
     ':leave': {
       sequence: 'card',
@@ -21,7 +22,7 @@ Scope.export = {
         y: 100,
         opacity: 0
       },
-      duration: 1
+      duration: .3
     }
   },
   itemInOut: {
@@ -53,7 +54,7 @@ Scope.export = {
     //   duration: .3
     // }
   },
-  createSlideInOut: function (sequence, parent) {
+  createSlideInOut: function (sequence, parent,order) {
     return {
       ':enter': {
         parent: parent || null,
@@ -67,17 +68,17 @@ Scope.export = {
           opacity: 1
         },
         position: '-=.3',
-        duration: 1
+        duration: .5
       },
       ':leave': {
         parent: parent || null,
         sequence: sequence,
-        order: 5,
+        order: order || 5,
         to: {
           x: 100,
           opacity: 0
         },
-        position: '-=.45',
+        position: '-=.3',
         duration: .5
       }
     };
@@ -96,11 +97,11 @@ Scope.export = {
       ':leave': {
         parent: parent || null,
         sequence: sequence,
-        order: 5,
+        order: 2,
         to: {
           scale: 0
         },
-        position: '-=.45',
+        position: '-=.3',
         duration: .5
       }
     };

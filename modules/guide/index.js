@@ -77,13 +77,132 @@ view.init({
               Scope.progressText = 'Please wait...';
               fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
                 response.json().then(function (data) {
-                  let surfaces = data.data.productData.data[0].data.filter(function (item) {
-                    return item.baseType === 'surface';
-                  });
+                  // let surfaces = data.data.productData.data[0].data.filter(function (item) {
+                  //   return item.baseType === 'surface';
+                  // });
                   Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
-                  Scope.surfaces = surfaces;
+                  // Scope.surfaces = surfaces;
                 });
-
+                Scope.surfaces = [
+                  {
+                    id: 'First',
+                    data: [
+                      {
+                        id: 'bolster',
+                        selected: '48_green_blue',
+                        data: [
+                          {
+                            'id': '48_green_blue'
+                          },
+                          {
+                            'id': '8_grey_blue'
+                          },
+                          {
+                            'id': '10_red'
+                          },
+                          {
+                            'id': '40_petrol'
+                          }
+                        ]
+                      },
+                      {
+                        id: 'ploegwool',
+                        selected: '13_diep_red',
+                        data: [
+                          {
+                            'id': '13_diep_red'
+                          },
+                          {
+                            'id': '14_orange'
+                          },
+                          {
+                            'id': '17_bright_red'
+                          },
+                          {
+                            'id': '24_light_blue'
+                          }
+                        ]
+                      },
+                      {
+                        id: 'polder',
+                        selected: '1_orange_square',
+                        data: [
+                          {
+                            'id': '1_orange_square'
+                          },
+                          {
+                            'id': '4_blue_square'
+                          },
+                          {
+                            'id': '6_yellow_square'
+                          },
+                          {
+                            'id': '8_grey_square'
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    id: 'Second',
+                    data: [
+                      {
+                        id: 'bolster',
+                        selected: '48_green_blue',
+                        data: [
+                          {
+                            'id': '48_green_blue'
+                          },
+                          {
+                            'id': '8_grey_blue'
+                          },
+                          {
+                            'id': '10_red'
+                          },
+                          {
+                            'id': '40_petrol'
+                          }
+                        ]
+                      },
+                      {
+                        id: 'ploegwool',
+                        selected: '13_diep_red',
+                        data: [
+                          {
+                            'id': '13_diep_red'
+                          },
+                          {
+                            'id': '14_orange'
+                          },
+                          {
+                            'id': '17_bright_red'
+                          },
+                          {
+                            'id': '24_light_blue'
+                          }
+                        ]
+                      },
+                      {
+                        id: 'polder',
+                        selected: '1_orange_square',
+                        data: [
+                          {
+                            'id': '1_orange_square'
+                          },
+                          {
+                            'id': '4_blue_square'
+                          },
+                          {
+                            'id': '6_yellow_square'
+                          },
+                          {
+                            'id': '8_grey_square'
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ];
               });
             }
           }
@@ -100,7 +219,7 @@ view.init({
           animation: [
             'surface.id',
             function () {
-              return animations.createSlideInOut('surfaces');
+              return animations.createSlideInOut('surfaces', 'card', 6);
             }
           ],
           text: '[surface.id]',

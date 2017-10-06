@@ -25,7 +25,7 @@ Scope.navItems = [
     link: '#guide',
     module: {
       id: 'guide',
-      url: 'modules/test/index.js'
+      url: 'modules/guide/index.js'
     }
   },
   {
