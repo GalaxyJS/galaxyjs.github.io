@@ -17,7 +17,7 @@ Scope.export = {
     },
     ':leave': {
       sequence: 'card',
-      order: 10,
+      order: 100,
       to: {
         y: 100,
         opacity: 0
@@ -54,7 +54,7 @@ Scope.export = {
     //   duration: .3
     // }
   },
-  createSlideInOut: function (sequence, parent,order) {
+  createSlideInOut: function (sequence, parent, order) {
     return {
       ':enter': {
         parent: parent || null,

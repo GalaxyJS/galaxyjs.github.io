@@ -54,6 +54,7 @@ view.init({
             renderConfig: {
               applyClassListAfterRender: true
             },
+            id: '[item.title]',
             class: {
               done: '[item.done]'
             },

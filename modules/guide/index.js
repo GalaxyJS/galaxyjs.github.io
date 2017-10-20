@@ -76,13 +76,13 @@ view.init({
               let s = performance.now();
               Scope.progressText = 'Please wait...';
               fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
-                response.json().then(function (data) {
-                  // let surfaces = data.data.productData.data[0].data.filter(function (item) {
-                  //   return item.baseType === 'surface';
-                  // });
-                  Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
-                  // Scope.surfaces = surfaces;
-                });
+                // response.json().then(function (data) {
+                //   let surfaces = data.data.productData.data[0].data.filter(function (item) {
+                //     return item.baseType === 'surface';
+                //   });
+                //   Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
+                //   Scope.surfaces = surfaces;
+                // });
                 Scope.surfaces = [
                   {
                     id: 'First',
@@ -211,15 +211,15 @@ view.init({
           tag: 'h3',
           text: '[progressText]',
           $if: '[flag]',
-          animation: animations.createSlideInOut('surfaces', 'card')
+          // animation: animations.createSlideInOut('surfaces', 'card')
         },
         {
           tag: 'p',
           $for: 'surface in surfaces',
           animation: [
             'surface.id',
-            function () {
-              return animations.createSlideInOut('surfaces', 'card', 6);
+            function (si) {
+              return animations.createSlideInOut('surfaces', 'card', 20);
             }
           ],
           text: '[surface.id]',
@@ -233,7 +233,7 @@ view.init({
                 'surface.id',
                 'material.id',
                 function (surfaceId, materialId) {
-                  return animations.createSlideInOut(surfaceId + '-' + materialId + '-material', 'surfaces');
+                  return animations.createSlideInOut(surfaceId + '-' + materialId + '-material', 'surfaces', 10);
                 }
               ],
               text: '[material.id]',
