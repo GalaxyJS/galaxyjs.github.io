@@ -1329,7 +1329,7 @@ if (typeof Object.assign != 'function') {
     _this.line = new Promise(function (resolve) {
       _this.firstStepResolve = resolve;
     });
-
+this.startP = _this.line;
     this.started = false;
     return _this;
   };
@@ -1921,9 +1921,10 @@ if (typeof Object.assign != 'function') {
   GalaxyView.prototype.init = function (schema) {
     const _this = this;
     _this.container.uiManipulationSequence.next(function (nextUIAction) {
-      _this.append(schema, _this.scope, _this.container, null, _this.container.manipulationPromiseList);
-      Promise.all(_this.container.manipulationPromiseList).then(function () {
-        _this.container.manipulationPromiseList = [];
+      _this.append(schema, _this.scope, _this.container, null, _this.container.domManipulationBus);
+
+      Promise.all(_this.container.domManipulationBus).then(function () {
+        _this.container.domManipulationBus = [];
         nextUIAction();
       });
     });
@@ -1935,19 +1936,19 @@ if (typeof Object.assign != 'function') {
    * @param {Object} nodeScopeData
    * @param {GalaxyView.ViewNode} parentViewNode
    * @param position
-   * @param {Array} manipulationPromiseList
+   * @param {Array} domManipulationBus
    */
-  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position, manipulationPromiseList) {
+  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position, domManipulationBus) {
     let _this = this;
     let i = 0, len = 0;
 
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null, manipulationPromiseList);
+        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null, domManipulationBus);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let viewNode = new GalaxyView.ViewNode(_this, nodeSchema, null);
-      viewNode.manipulationPromiseList = manipulationPromiseList || [];
+      viewNode.domManipulationBus = domManipulationBus || [];
       parentViewNode.registerChild(viewNode, position);
 
       if (nodeSchema['mutator']) {
@@ -1980,7 +1981,7 @@ if (typeof Object.assign != 'function') {
 
         _this.append(nodeSchema.children,
           parentScopeData,
-          viewNode, null, manipulationPromiseList);
+          viewNode, null, domManipulationBus);
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
@@ -1989,8 +1990,8 @@ if (typeof Object.assign != 'function') {
         viewNode.ready();
       });
 
-      if (manipulationPromiseList) {
-        manipulationPromiseList.push(viewNode.domManipulationSequence.line);
+      if (domManipulationBus) {
+        domManipulationBus.push(viewNode.domManipulationSequence.line);
       }
 
       return viewNode;
@@ -2444,6 +2445,16 @@ if (typeof Object.assign != 'function') {
     }
   };
 
+  ViewNode.destroyNodes = function (node, toBeRemoved, sequence) {
+    node.domManipulationBus = node.parent.domManipulationBus;
+    let remove = null;
+    for (let i = 0, len = toBeRemoved.length; i < len; i++) {
+      remove = toBeRemoved[i];
+      remove.destroy(sequence);
+      node.domManipulationBus.push(remove.domManipulationSequence.line);
+    }
+  };
+
   /**
    *
    * @param {Galaxy.GalaxyView} root
@@ -2466,7 +2477,7 @@ if (typeof Object.assign != 'function') {
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
-    this.manipulationPromiseList = [];
+    this.domManipulationBus = [];
     this.uiManipulationSequence = new Galaxy.GalaxySequence().start();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
@@ -2550,7 +2561,7 @@ if (typeof Object.assign != 'function') {
     let _this = this;
     _this.inDOM = flag;
 
-    // We use domManipulationSequence to make sure dom manipulation activities happen in oder and don't interfere
+    // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
@@ -2623,7 +2634,7 @@ if (typeof Object.assign != 'function') {
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
           // Add children leave sequence to this node(parent node) leave sequence
-          _this.empty(_this.sequences[':leave']);
+          _this.clean(_this.sequences[':leave']);
 
           _this.populateLeaveSequence(_this.sequences[':leave']);
           _this.sequences[':leave'].start()
@@ -2641,6 +2652,8 @@ if (typeof Object.assign != 'function') {
         });
       }
     } else if (leaveSequence) {
+      _this.clean(leaveSequence);
+
       if (_this.inDOM) {
         leaveSequence.nextAction(function () {
           _this.populateLeaveSequence(_this.sequences[':leave']);
@@ -2653,9 +2666,9 @@ if (typeof Object.assign != 'function') {
             });
         });
       }
-
-      _this.empty(leaveSequence);
     } else {
+      _this.clean(leaveSequence);
+
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
           _this.populateLeaveSequence(_this.sequences[':leave']);
@@ -2671,8 +2684,6 @@ if (typeof Object.assign != 'function') {
             });
         });
       }
-
-      _this.empty(leaveSequence);
     }
 
     _this.domManipulationSequence.nextAction(function () {
@@ -2705,7 +2716,7 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  ViewNode.prototype.refreshBinds = function (data) {
+  ViewNode.prototype.refreshBinds = function () {
     let property;
     for (let propertyName in this.properties) {
       property = this.properties[propertyName];
@@ -2716,9 +2727,9 @@ if (typeof Object.assign != 'function') {
     }
   };
 
-  ViewNode.prototype.empty = function (leaveSequence) {
+  ViewNode.prototype.clean = function (leaveSequence) {
     let toBeRemoved = [], node, _this = this;
-    for (let i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
+    for (let i = this.node.childNodes.length - 1; i >= 0; i--) {
       node = this.node.childNodes[i];
 
       if (node.hasOwnProperty('__viewNode__')) {
@@ -2729,28 +2740,20 @@ if (typeof Object.assign != 'function') {
     // If leaveSequence is present we assume that this is a being destroyed as child, therefore its
     // children should also get destroyed as child
     if (leaveSequence) {
-      _this.manipulationPromiseList = _this.parent.manipulationPromiseList;
-      toBeRemoved.forEach(function (viewNode) {
-        viewNode.destroy(leaveSequence);
-        _this.manipulationPromiseList.push(viewNode.domManipulationSequence.line);
-      });
-      _this.manipulationPromiseList = [];
+      ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence);
 
-      return this.uiManipulationSequence;
+      return _this.uiManipulationSequence;
     }
 
-    this.uiManipulationSequence.next(function (nextUIAction) {
+    _this.uiManipulationSequence.next(function (nextUIAction) {
       if (!toBeRemoved.length) {
         nextUIAction();
       }
 
-      toBeRemoved.forEach(function (viewNode) {
-        viewNode.destroy();
-        _this.manipulationPromiseList.push(viewNode.domManipulationSequence.line);
-      });
+      ViewNode.destroyNodes(_this, toBeRemoved);
 
-      Promise.all(_this.manipulationPromiseList).then(function () {
-        _this.manipulationPromiseList = [];
+      Promise.all(_this.domManipulationBus).then(function () {
+        _this.domManipulationBus = [];
         nextUIAction();
       });
     });
@@ -2902,62 +2905,67 @@ if (typeof Object.assign != 'function') {
               let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               animationMeta.duration = leaveAnimationConfig.duration;
               animationMeta.position = leaveAnimationConfig.position;
+              animationMeta.sequuuu = leaveAnimationConfig.sequence;
+              animationMeta.NODE = viewNode;
+
               // if the animation has order it will be added to the queue according to its order.
               // No order means lowest order
               if (typeof leaveAnimationConfig.order === 'number') {
-                animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
-                  return function () {
-                    // debugger;
-                    // let parent;
+                animationMeta.addToQueue(leaveAnimationConfig.order,
+                  viewNode.node, (function (viewNode, am, conf) {
+                    return function () {
+                      am.add(viewNode.node, conf, done);
+                      animationMeta.NODE = viewNode;
 
-                    am.add(viewNode.node, conf, done);
-                    // debugger;
-                    // let a = AnimationMeta.calculateDuration(conf.duration, conf.position || '+=0');
-                    // debugger;
-                    // if (parent) {
-                    // Update parent lastChildPosition so the parent animation starts after the subTimeline animations
-                    // parent.lastChildPosition += AnimationMeta.calculateDuration(conf.duration, conf.position || '+=0');
-                    // console.info(viewNode.node, '\n', conf.parent, conf.sequence, parent.lastChildPosition);
-                    // }
-
-                    if (conf.parent) {
-                      const parent = AnimationMeta.get(conf.parent);
-                      parent.addChild(am, true);
-                    }
-                  };
-                })(viewNode, animationMeta, leaveAnimationConfig));
+                      if (conf.parent) {
+                        const parent = AnimationMeta.get(conf.parent);
+                        parent.addChild(am, true);
+                      }
+                    };
+                  })(viewNode, animationMeta, leaveAnimationConfig));
 
                 // When viewNode is the one which is the origin, then run the queue
                 // The queue will never run if the destroyed viewNode has the lowest order
                 if (viewNode.origin) {
-                  // debugger;
                   let finishImmediately = false;
-                  // while (animationMeta.parent) {
-                  //   animationMeta = animationMeta.parent;
-                  // }
+                  while (animationMeta.parent) {
+                    animationMeta = animationMeta.parent;
+                  }
                   let queue = animationMeta.queue;
 
-                  for (let key in queue) {
-                    let item;
-                    for (let i = 0, len = queue[key].length; i < len; i++) {
-                      item = queue[key][i];
-                      item.operation();
+                  let item = null;
+                  for (let i = 0, len = animationMeta.list.length; i < len; i++) {
+                    item = animationMeta.list[i];
+                    item.operation();
 
-                      // If the the current queue item.node is the destroyed node, then all the animations in
-                      // queue should be ignored
-                      if (item.node === viewNode.node) {
-                        finishImmediately = true;
-                        break;
-                      }
+                    if (item.node === viewNode.node) {
+                      finishImmediately = true;
+                      break;
                     }
 
                     if (finishImmediately) break;
                   }
+                  // for (let key in queue) {
+                  //   let item;
+                  //   for (let i = 0, len = queue[key].length; i < len; i++) {
+                  //     item = queue[key][i];
+                  //     item.operation();
+                  //
+                  //     // If the the current queue item.node is the destroyed node, then all the animations in
+                  //     // queue should be ignored
+                  //     if (item.node === viewNode.node) {
+                  //       finishImmediately = true;
+                  //       break;
+                  //     }
+                  //   }
+                  //
+                  //   if (finishImmediately) break;
+                  // }
 
                   animationMeta.queue = {};
+                  animationMeta.list = [];
                   viewNode.origin = false;
                   // debugger;
-                  // delete viewNode._destroyed;
                 }
 
                 return;
@@ -2978,7 +2986,6 @@ if (typeof Object.assign != 'function') {
               let _config = config['.' + item];
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
-
                   let classAnimationConfig = _config;
                   classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
 
@@ -3043,6 +3050,7 @@ if (typeof Object.assign != 'function') {
     this.duration = 0;
     this.position = '+=0';
     this.queue = {};
+    this.list = [];
     this.lastChildPosition = 0;
     this.parent = null;
   }
@@ -3108,6 +3116,7 @@ if (typeof Object.assign != 'function') {
     const lcp = (this.lastChildPosition * 10);
     const c = (calc * 10);
     this.lastChildPosition = (lcp + c) / 10;
+
   };
 
   AnimationMeta.prototype.addChild = function (child, prior) {
@@ -3115,16 +3124,26 @@ if (typeof Object.assign != 'function') {
     child.parent = _this;
 
     const children = this.timeline.getChildren(false);
-    // console.info(children);
+
     if (children.indexOf(child.timeline) === -1) {
       _this.calculateLastChildPosition(child.duration, child.position);
-      // console.info('-------------------------------', child.duration, child.position, _this.lastChildPosition);
       _this.timeline.add(child.timeline, _this.lastChildPosition);
     } else {
-      if (prior) {
-        _this.lastChildPosition = (child.lastChildPosition + child.duration);
-      }
+      _this.calculateLastChildPosition(child.duration, child.position);
+      _this.lastChildPosition = ((child.lastChildPosition * 10) + (child.duration * 10) ) / 10;
     }
+
+    // if (prior) {
+    // if (_this.timeline.getChildren(false).length !== 0) {
+    // const calc = AnimationMeta.calculateDuration(child.duration, child.position || '+=0');
+    // _this.lastChildPosition = ((_this.lastChildPosition * 10) + (child.lastChildPosition * 10) ) / 10;
+    // }
+    // _this.lastChildPosition = (child.lastChildPosition + child.duration);
+    // _this.lastChildPosition += AnimationMeta.calculateDuration(child.lastChildPosition, child.position || '+=0');
+    // console.info(child.NODE.node.tagName, '>', child.lastChildPosition, '<', child.duration,
+    //   '===', _this.NODE.node.tagName, '>', _this.lastChildPosition);
+    // }
+
   };
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
@@ -3151,20 +3170,13 @@ if (typeof Object.assign != 'function') {
     }
 
     _this.calculateLastChildPosition(config.duration, config.position);
-    // debugger;
+
     // First animation in the timeline should always start at zero
     if (this.timeline.getChildren(false).length === 0) {
       _this.lastChildPosition = 0;
-      // console.info(node, 'beginning');
       _this.timeline.add(tween, 0);
     } else {
-      // console.info(node, _this.lastChildPosition);
       _this.timeline.add(tween, _this.lastChildPosition);
-      // _this.timeline.add((function (a, b) {
-      //   return function () {
-      //     _this.lastChildPosition = (a - b) / 10;
-      //   };
-      // })(lcp, (calc * 10)));
     }
 
   };
@@ -3182,8 +3194,8 @@ if (typeof Object.assign != 'function') {
     if (!this.queue[order]) {
       this.queue[order] = [];
     }
-
     this.queue[order].push({node: node, operation: operation});
+    this.list.push({node: node, operation: operation, order: order});
   };
 })(Galaxy);
 
@@ -3405,9 +3417,11 @@ if (typeof Object.assign != 'function') {
       }
 
       if (changes.type === 'reset') {
-        cache.nodes.forEach(function (viewNode) {
-          viewNode.destroy();
-        });
+        let vn = null;
+        for (let i = cache.nodes.length - 1; i >= 0; i--) {
+          vn = cache.nodes[i];
+          vn.destroy();
+        }
 
         cache.nodes = [];
         changes = Object.assign({}, changes);
@@ -3450,24 +3464,21 @@ if (typeof Object.assign != 'function') {
       let p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
 
       if (newItems instanceof Array) {
-        // console.info(viewNode.manipulationPromiseList.length);
-        // viewNode.uiManipulationSequence.next(function (ne) {
+        for (let i = 0, len = newItems.length; i < len; i++) {
+          valueEntity = newItems[i];
+          itemDataScope = GV.createMirror(nodeScopeData);
+          itemDataScope[p] = valueEntity;
+          cns = viewNode.cloneSchema();
+          delete cns.$for;
+          let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
+          vn.data[p] = valueEntity;
+          action.call(n, vn);
+        }
 
-          for (let i = 0, len = newItems.length; i < len; i++) {
-            valueEntity = newItems[i];
-            itemDataScope = GV.createMirror(nodeScopeData);
-            itemDataScope[p] = valueEntity;
-            cns = viewNode.cloneSchema();
-            delete cns.$for;
-            let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.manipulationPromiseList);
-            vn.data[p] = valueEntity;
-            action.call(n, vn);
-          }
-
-          // Promise.all(viewNode.manipulationPromiseList).then(function () {
-          //   // debugger;
-          //   ne();
-          // });
+        // Promise.all(viewNode.manipulationPromiseList).then(function () {
+        //   // debugger;
+        //   ne();
+        // });
         // });
       }
     }
@@ -3565,7 +3576,7 @@ if (typeof Object.assign != 'function') {
             // Empty the node and wait till all animation are finished
             // Then load the next requested module in the queue
             // and after that proceed to next request in the queue
-            viewNode.empty().next(moduleLoaderGenerator(viewNode, cache, moduleMeta))
+            viewNode.clean().next(moduleLoaderGenerator(viewNode, cache, moduleMeta))
               .next(function (done) {
                 // module loader may add animations to the viewNode. if that is the case we will wait for the animations
                 // to finish at the beginning of the next module request
@@ -3575,7 +3586,7 @@ if (typeof Object.assign != 'function') {
           });
         });
       } else if (!moduleMeta) {
-        viewNode.empty();
+        viewNode.clean();
       }
 
       cache.moduleMeta = moduleMeta;

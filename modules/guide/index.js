@@ -24,7 +24,7 @@ Scope.flag = true;
 //   debugger;
 // });
 
-
+console.info(Scope)
 view.init({
   class: 'card big',
   animation: animations.cardInOut,
