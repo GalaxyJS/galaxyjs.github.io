@@ -78,8 +78,8 @@ Scope.export = {
           x: 150,
           opacity: 0
         },
-        position: '-=.3',
-        duration: .5
+        position: '-=.2',
+        duration: .3
       }
     };
   },
@@ -94,16 +94,16 @@ Scope.export = {
         position: '-=.3',
         duration: .5
       },
-      ':leave': {
-        parent: parent || null,
-        sequence: sequence,
-        order: 2,
-        to: {
-          scale: 0
-        },
-        position: '-=.3',
-        duration: .5
-      }
+      // ':leave': {
+      //   parent: parent || null,
+      //   sequence: sequence,
+      //   order: 2,
+      //   to: {
+      //     scale: 0
+      //   },
+      //   position: '-=.3',
+      //   duration: .5
+      // }
     };
   }
 };

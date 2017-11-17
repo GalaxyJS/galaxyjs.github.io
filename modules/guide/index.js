@@ -24,7 +24,7 @@ Scope.flag = true;
 //   debugger;
 // });
 
-console.info(Scope)
+console.info(Scope);
 view.init({
   class: 'card big',
   animation: animations.cardInOut,
@@ -76,14 +76,16 @@ view.init({
               let s = performance.now();
               Scope.progressText = 'Please wait...';
               fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
-                // response.json().then(function (data) {
-                //   let surfaces = data.data.productData.data[0].data.filter(function (item) {
-                //     return item.baseType === 'surface';
-                //   });
-                //   Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
-                //   Scope.surfaces = surfaces;
-                // });
-                Scope.surfaces = [
+                response.json().then(function (data) {
+                  let surfaces = data.data.productData.data[0].data.filter(function (item) {
+                    return item.baseType === 'surface';
+                  });
+                  Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
+                  // console.info(surfaces);
+                  Scope.surfaces = surfaces.slice(2, 6);
+                });
+                // Scope.surfaces = [
+                Scope.surfaces2 = [
                   {
                     id: 'First',
                     data: [
@@ -208,6 +210,15 @@ view.init({
           }
         },
         {
+          tag: 'button',
+          text: 'Clear',
+          on: {
+            click: function () {
+              Scope.surfaces = [];
+            }
+          }
+        },
+        {
           tag: 'h3',
           text: '[progressText]',
           $if: '[flag]',
@@ -219,7 +230,7 @@ view.init({
           animation: [
             'surface.id',
             function (si) {
-              return animations.createSlideInOut('surfaces', 'card', 20);
+              return animations.createSlideInOut('surfaces-', 'card', 20);
             }
           ],
           text: '[surface.id]',
@@ -233,7 +244,7 @@ view.init({
                 'surface.id',
                 'material.id',
                 function (surfaceId, materialId) {
-                  return animations.createSlideInOut(surfaceId + '-' + materialId + '-material', 'surfaces', 10);
+                  return animations.createSlideInOut(surfaceId + '-' + materialId + '-material', 'surfaces-', 10);
                 }
               ],
               text: '[material.id]',
@@ -246,7 +257,7 @@ view.init({
                     'surface.id',
                     'material.id',
                     function (surfaceId, materialId) {
-                      return animations.createPopInOut(surfaceId + '-' + materialId + '-color', surfaceId + '-' + materialId + '-material');
+                      return animations.createPopInOut(surfaceId + '-color', surfaceId + '-' + materialId + '-material');
                     }
                   ],
                   $for: 'color in material.data',
