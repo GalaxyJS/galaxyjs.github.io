@@ -17,7 +17,7 @@ Scope.export = {
     },
     ':leave': {
       sequence: 'card',
-      order: 0,
+      order: 100,
       to: {
         y: 100,
         opacity: 0
@@ -75,7 +75,7 @@ Scope.export = {
         sequence: sequence,
         order: order || 5,
         to: {
-          y: 50,
+          x: 150,
           opacity: 0
         },
         position: '-=.3',
@@ -94,16 +94,16 @@ Scope.export = {
         position: '-=.3',
         duration: .5
       },
-      // ':leave': {
-      //   parent: parent || null,
-      //   sequence: sequence,
-      //   order: 2,
-      //   to: {
-      //     scale: 0
-      //   },
-      //   position: '-=.3',
-      //   duration: .5
-      // }
+      ':leave': {
+        parent: parent || null,
+        sequence: sequence,
+        order: 2,
+        to: {
+          scale: 0
+        },
+        position: '-=.3',
+        duration: .5
+      }
     };
   }
 };
