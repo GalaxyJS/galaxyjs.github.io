@@ -742,6 +742,9 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy, Promise */
 'use strict';
 
+/**
+ * @exports Galaxy
+ */
 (function (root) {
   Array.prototype.unique = function () {
     let a = this.concat();
@@ -755,19 +758,30 @@ if (typeof Object.assign != 'function') {
     return a;
   };
 
-  root.Galaxy = root.Galaxy || new Core();
-
-  /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
+  /**
    *
-   * @returns {Galaxy.GalaxySystem}
+   * @namespace
    */
-  Galaxy.GalaxyCore = Core;
+  const Galaxy = root.Galaxy || new GalaxyCore();
+  root.Galaxy = Galaxy;
+  /** The main class of the GalaxyJS. window.Galaxy is an instance of this class.
+   *
+   * @type {GalaxyCore}
+   */
+  Galaxy.GalaxyCore = GalaxyCore;
 
+  /**
+   * @type Function
+   */
   Galaxy.defineProp = Object.defineProperty;
 
   let importedLibraries = {};
 
-  function Core() {
+  /**
+   *
+   * @constructor
+   */
+  function GalaxyCore() {
     this.bootModule = null;
     this.modules = {};
     this.onLoadQueue = [];
@@ -777,7 +791,12 @@ if (typeof Object.assign != 'function') {
     this.rootElement = null;
   }
 
-  Core.prototype.extend = function (out) {
+  /**
+   *
+   * @param {Object} out
+   * @returns {*|{}}
+   */
+  GalaxyCore.prototype.extend = function (out) {
     let result = out || {}, obj;
     for (let i = 1; i < arguments.length; i++) {
       obj = arguments[i];
@@ -800,7 +819,7 @@ if (typeof Object.assign != 'function') {
     return result;
   };
 
-  Core.prototype.resetObjectTo = function (out, value) {
+  GalaxyCore.prototype.resetObjectTo = function (out, value) {
     if (value !== null && typeof value !== 'object') {
       return value;
     }
@@ -838,10 +857,10 @@ if (typeof Object.assign != 'function') {
 
   /**
    *
-   * @param bootModule
+   * @param {Object} bootModule
    * @param {Element} rootElement
    */
-  Core.prototype.boot = function (bootModule) {
+  GalaxyCore.prototype.boot = function (bootModule) {
     let _this = this;
     _this.rootElement = bootModule.element;
 
@@ -863,7 +882,7 @@ if (typeof Object.assign != 'function') {
     return promise;
   };
 
-  Core.prototype.convertToURIString = function (obj, prefix) {
+  GalaxyCore.prototype.convertToURIString = function (obj, prefix) {
     let _this = this;
     let str = [], p;
     for (p in obj) {
@@ -878,7 +897,7 @@ if (typeof Object.assign != 'function') {
     return str.join('&');
   };
 
-  Core.prototype.load = function (module) {
+  GalaxyCore.prototype.load = function (module) {
     let _this = this;
     let promise = new Promise(function (resolve, reject) {
       module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
@@ -927,9 +946,9 @@ if (typeof Object.assign != 'function') {
     return promise;
   };
 
-  Core.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
+  GalaxyCore.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
     let _this = this;
-    var promise = new Promise(function (resolve, reject) {
+    let promise = new Promise(function (resolve, reject) {
       let doneImporting = function (module, imports) {
         imports.splice(imports.indexOf(module.url) - 1, 1);
 
@@ -959,7 +978,6 @@ if (typeof Object.assign != 'function') {
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
-
         let importsCopy = imports.slice(0);
         imports.forEach(function (item) {
           let moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
@@ -986,7 +1004,7 @@ if (typeof Object.assign != 'function') {
           }
         });
 
-        return promise;
+        return;
       }
 
       resolve(module);
@@ -999,13 +1017,13 @@ if (typeof Object.assign != 'function') {
    *
    * @param {Galaxy.GalaxyModule}  module
    */
-  Core.prototype.executeCompiledModule = function (module) {
+  GalaxyCore.prototype.executeCompiledModule = function (module) {
     let promise = new Promise(function (resolve, reject) {
-      for (var item in module.addOns) {
+      for (let item in module.addOns) {
         module.scope.imports[item] = module.addOns[item];
       }
 
-      for (item in importedLibraries) {
+      for (let item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
           let asset = importedLibraries[item];
           if (asset.module) {
@@ -1056,13 +1074,13 @@ if (typeof Object.assign != 'function') {
     return promise;
   };
 
-  Core.prototype.getModuleAddOnProvider = function (name) {
+  GalaxyCore.prototype.getModuleAddOnProvider = function (name) {
     return this.addOnProviders.filter(function (service) {
       return service.name === name;
     })[0];
   };
 
-  Core.prototype.getModulesByAddOnId = function (addOnId) {
+  GalaxyCore.prototype.getModulesByAddOnId = function (addOnId) {
     let modules = [];
     let module;
 
@@ -1079,7 +1097,7 @@ if (typeof Object.assign != 'function') {
     return modules;
   };
 
-  Core.prototype.registerAddOnProvider = function (name, handler) {
+  GalaxyCore.prototype.registerAddOnProvider = function (name, handler) {
     if (typeof handler !== 'function') {
       throw 'Addon provider should be a function';
     }
@@ -1095,12 +1113,11 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy */
 'use strict';
 
-(function (root, G) {
+(function (G) {
 
-  root.Galaxy = G;
   /**
    *
-   * @returns {Galaxy.GalaxyModule}
+   * @type {Galaxy.GalaxyModule}
    */
   G.GalaxyModule = GalaxyModule;
 
@@ -1109,6 +1126,7 @@ if (typeof Object.assign != 'function') {
    * @param {Object} module
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
+   * @memberOf Galaxy
    */
   function GalaxyModule(module, source, scope) {
     this.id = module.id;
@@ -1136,12 +1154,16 @@ if (typeof Object.assign != 'function') {
   GalaxyModule.prototype.registerAddOn = function (id, object) {
     this.addOns[id] = object;
   };
-}(this, Galaxy || {}));
+}(Galaxy || {}));
 
 /* global Galaxy */
 'use strict';
 
 (function (G) {
+  /**
+   *
+   * @type {Galaxy.GalaxyObserver}
+   */
   G.GalaxyObserver = GalaxyObserver;
 
   GalaxyObserver.notify = function (obj, key, value, oldValue) {
@@ -1152,6 +1174,12 @@ if (typeof Object.assign != 'function') {
     }
   };
 
+  /**
+   *
+   * @param {Object} context
+   * @constructor
+   * @memberOf Galaxy
+   */
   function GalaxyObserver(context) {
     this.context = context;
     this.subjectsActions = {};
@@ -1200,19 +1228,19 @@ if (typeof Object.assign != 'function') {
 /* global Galaxy */
 'use strict';
 
-(function (root, G) {
-  root.Galaxy = G;
+(function (G) {
   /**
    *
-   * @returns {Galaxy.GalaxyScope}
+   * @typedef {Galaxy.GalaxyScope}
    */
   G.GalaxyScope = GalaxyScope;
 
   /**
    *
-   * @param module
+   * @param {Object} module
    * @param element
    * @constructor
+   * @memberOf Galaxy
    */
   function GalaxyScope(module, element) {
     this.systemId = module.systemId;
@@ -1297,7 +1325,7 @@ if (typeof Object.assign != 'function') {
     this.path = match ? match[0] : '/';
   }
 
-}(this, Galaxy || {}));
+}(Galaxy || {}));
 
 /* global Galaxy, Promise */
 'use strict';
@@ -1305,10 +1333,15 @@ if (typeof Object.assign != 'function') {
 (function (G) {
   /**
    *
-   * @returns {Galaxy.GalaxyScope}
+   * @type {Galaxy.GalaxySequence}
    */
   G.GalaxySequence = GalaxySequence;
 
+  /**
+   *
+   * @constructor
+   * @memberOf Galaxy
+   */
   function GalaxySequence() {
     this.line = null;
     this.firstStepResolve = null;
@@ -1389,8 +1422,9 @@ this.startP = _this.line;
 })(Galaxy);
 
 /* global Galaxy, Promise */
+'use strict';
 
-(function (root, G) {
+(function (G) {
   let defineProp = Object.defineProperty;
   let setterAndGetter = {
     configurable: true,
@@ -1406,11 +1440,9 @@ this.startP = _this.line;
   let setAttr = Element.prototype.setAttribute;
   let removeAttr = Element.prototype.removeAttribute;
 
-  root.Galaxy = G;
-
   /**
    *
-   * @returns {Galaxy.GalaxyView}
+   * @type {Galaxy.GalaxyView}
    */
   G.GalaxyView = GalaxyView;
 
@@ -2105,6 +2137,7 @@ this.startP = _this.line;
    *
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
+   * @memberOf Galaxy
    */
   function GalaxyView(scope) {
     this.scope = scope;
@@ -2137,39 +2170,41 @@ this.startP = _this.line;
     });
   };
 
-}(this, Galaxy || {}));
+}(Galaxy || {}));
 
 /* global Galaxy */
 
 (function (GV) {
-
   /**
    *
-   * @returns {Galaxy.GalaxyView.BoundProperty}
+   * @type {Galaxy.GalaxyView.BoundProperty}
    */
   GV.BoundProperty = BoundProperty;
 
   /**
    *
-   * @param {String} name
+   * @param {Object} host
+   * @param {string} name
+   * @param {} value
    * @constructor
+   * @memberOf Galaxy.GalaxyView
    */
   function BoundProperty(host, name, value) {
-    /**
-     * @public
-     * @type {String} Name of the property
-     */
     this.host = host;
     this.name = name;
     this.value = value;
     this.props = [];
+    /**
+     *
+     * @type {Array<Galaxy.GalaxyView.ViewNode>}
+     */
     this.nodes = [];
   }
 
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode} node
-   * @param {String} attributeName
+   * @param {string} attributeName
    * @param {Function} expression
    * @public
    */
@@ -2187,6 +2222,10 @@ this.startP = _this.line;
     }
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   */
   BoundProperty.prototype.removeNode = function (node) {
     let nodeIndexInTheHost;
     while ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
@@ -2239,6 +2278,14 @@ this.startP = _this.line;
     }
   };
 
+  /**
+   *
+   * @param {(Galaxy.GalaxyView.ViewNode|Object)} host
+   * @param {string} attributeName
+   * @param value
+   * @param oldValue
+   * @param scopeData
+   */
   BoundProperty.prototype.setValueFor = function (host, attributeName, value, oldValue, scopeData) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.values[attributeName] = value;
@@ -2253,6 +2300,13 @@ this.startP = _this.line;
     }
   };
 
+  /**
+   *
+   * @param {(Galaxy.GalaxyView.ViewNode|Object)} host
+   * @param {string} attributeName
+   * @param {} changes
+   * @param {} oldChanges
+   */
   BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
@@ -2265,8 +2319,9 @@ this.startP = _this.line;
 })(Galaxy.GalaxyView);
 
 /* global Galaxy, Promise */
-(function (GV) {
+'use strict';
 
+(function (GV) {
   function createElem(t) {
     return document.createElement(t);
   }
@@ -2285,17 +2340,6 @@ this.startP = _this.line;
     node.removeChild(child);
   }
 
-  /**
-   *
-   * @returns {Galaxy.GalaxyView.ViewNode}
-   */
-  GV.ViewNode = ViewNode;
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
-    type: 'none'
-  };
-
-
   let referenceToThis = {
     value: this,
     configurable: false,
@@ -2306,6 +2350,16 @@ this.startP = _this.line;
     value: null,
     configurable: false,
     enumerable: false
+  };
+
+  /**
+   *
+   * @type {Galaxy.GalaxyView.ViewNode}
+   */
+  GV.ViewNode = ViewNode;
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
+    type: 'none'
   };
 
   GV.NODE_SCHEMA_PROPERTY_MAP['lifeCycle'] = {
@@ -2342,9 +2396,10 @@ this.startP = _this.line;
   /**
    *
    * @param {Galaxy.GalaxyView} root
-   * @param node
+   * @param {Node|Element} node
    * @param schema
    * @constructor
+   * @memberOf Galaxy.GalaxyView
    */
   function ViewNode(root, schema, node) {
     this.root = root;
@@ -2680,7 +2735,7 @@ this.startP = _this.line;
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
     },
-    onApply: function (cache, value, oldValue, matches, context) {
+    onApply: function (cache, value, oldValue, context) {
       if (this.virtual) return;
 
       let clone = GV.bindSubjectsToData(value, context, true);
@@ -3138,10 +3193,11 @@ this.startP = _this.line;
   GV.REACTIVE_BEHAVIORS['checked'] = {
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
     bind: function (nodeScopeData, matches) {
+      const _this = this;
       let parts = matches[1].split('.');
       let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
-      this.node.addEventListener('change', function () {
-        setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), this.node.checked);
+      _this.node.addEventListener('change', function () {
+        setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), _this.node.checked);
       });
     },
     onApply: function (cache, value) {
@@ -3179,40 +3235,42 @@ this.startP = _this.line;
         return;
       }
 
+      const _this = this;
+
       if (typeof value === 'string') {
-        return this.node.setAttribute('class', value);
+        return _this.node.setAttribute('class', value);
       } else if (value instanceof Array) {
-        return this.node.setAttribute('class', value.join(' '));
+        return _this.node.setAttribute('class', value.join(' '));
       } else if (value === null) {
-        return this.node.removeAttribute('class');
+        return _this.node.removeAttribute('class');
       }
 
       let clone = GV.bindSubjectsToData(value, context, true);
 
-      if (this.hasOwnProperty('[reactive/class]') && clone !== this['[reactive/class]']) {
-        Galaxy.resetObjectTo(this['[reactive/class]'], clone);
-      } else if (!this.hasOwnProperty('[reactive/class]')) {
-        Object.defineProperty(this, '[reactive/class]', {
+      if (_this.hasOwnProperty('[reactive/class]') && clone !== _this['[reactive/class]']) {
+        Galaxy.resetObjectTo(_this['[reactive/class]'], clone);
+      } else if (!_this.hasOwnProperty('[reactive/class]')) {
+        Object.defineProperty(_this, '[reactive/class]', {
           value: clone,
           enumerable: false
         });
       }
 
-      this.node.setAttribute('class', []);
+      _this.node.setAttribute('class', []);
       let observer = new Galaxy.GalaxyObserver(clone);
       observer.onAll(function (key, value, oldValue) {
-        toggles.call(this, key, value, oldValue, clone);
+        toggles.call(_this, key, value, oldValue, clone);
       });
 
-      if (this.schema.renderConfig && this.schema.renderConfig.applyClassListAfterRender) {
-        this.rendered.then(function () {
-          toggles.call(this, null, true, false, clone);
+      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
+        _this.rendered.then(function () {
+          toggles.call(_this, null, true, false, clone);
         });
       } else {
-        toggles.call(this, null, true, false, clone);
+        toggles.call(_this, null, true, false, clone);
       }
 
-      this.addDependedObject(clone);
+      _this.addDependedObject(clone);
     }
   };
 
@@ -3517,10 +3575,11 @@ this.startP = _this.line;
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
     bind: function (nodeScopeData, matches) {
       if (this.node.type === 'text') {
+        const _this = this;
         let parts = matches[1].split('.');
         let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
-        this.node.addEventListener('keyup', function () {
-          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), this.node.value);
+        _this.node.addEventListener('keyup', function () {
+          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), _this.node.value);
         });
       }
     },

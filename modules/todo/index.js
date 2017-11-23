@@ -40,7 +40,7 @@ view.init({
           on: {
             click: function () {
               Scope.inputs.items.forEach(function (item) {
-                item.done = true;
+                item.done = !item.done;
               });
             }
           }
