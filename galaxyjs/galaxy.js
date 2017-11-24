@@ -758,6 +758,12 @@ if (typeof Object.assign != 'function') {
     return a;
   };
 
+  root.Reflect = root.Reflect || {
+    deleteProperty: function (target, propertyKey) {
+      delete target[propertyKey];
+    }
+  };
+
   /**
    *
    * @namespace
@@ -1035,14 +1041,13 @@ if (typeof Object.assign != 'function') {
       let moduleSource = new Function('Scope', module.source);
       moduleSource.call(null, module.scope);
 
-      delete module.source;
+      Reflect.deleteProperty(module, 'source');
 
       module.addOnProviders.forEach(function (item) {
         item.finalize();
       });
 
-      delete module.addOnProviders;
-
+      Reflect.deleteProperty(module, 'addOnProviders');
 
       if (!importedLibraries[module.url]) {
         importedLibraries[module.url] = {
@@ -1057,7 +1062,7 @@ if (typeof Object.assign != 'function') {
 
       let currentModule = Galaxy.modules[module.systemId];
       if (module.temporary || module.scope._doNotRegister) {
-        delete module.scope._doNotRegister;
+        Reflect.deleteProperty(module, 'scope._doNotRegister');
         currentModule = {
           id: module.id,
           scope: module.scope
@@ -1068,7 +1073,7 @@ if (typeof Object.assign != 'function') {
 
       resolve(currentModule);
 
-      delete Galaxy.onLoadQueue[module.systemId];
+      Reflect.deleteProperty(Galaxy.onLoadQueue, module.systemId);
     });
 
     return promise;
@@ -1346,8 +1351,6 @@ if (typeof Object.assign != 'function') {
     this.line = null;
     this.firstStepResolve = null;
     this.started = false;
-    this.lastTimestamp = Date.now();
-    // this.offset = 0;
     this.reset();
     this.children = [];
   }
@@ -1695,6 +1698,33 @@ this.startP = _this.line;
     return boundProperty;
   };
 
+  GalaxyView.EXPRESSION_ARGS_FUNC_CACHE = {};
+
+  GalaxyView.createExpressionArgumentsFunction = function (variables) {
+    const id = variables.join();
+
+    if (GalaxyView.EXPRESSION_ARGS_FUNC_CACHE[id]) {
+      return GalaxyView.EXPRESSION_ARGS_FUNC_CACHE[id];
+    }
+
+    let functionContent = 'return [';
+
+    let middle = '';
+    for (let i = 0, len = variables.length; i < len; i++) {
+      functionContent += 'prop(scope, "' + variables[i] + '").' + variables[i] + ',';
+    }
+
+    // Take care of variables that contain square brackets like '[variable_name]'
+    // for the convenience of the programmer
+    middle = middle.substring(0, middle.length - 1).replace(/\[|\]/g, '');
+
+    functionContent += middle + ']';
+
+    const func = new Function('prop, scope', functionContent);
+    GalaxyView.EXPRESSION_ARGS_FUNC_CACHE[id] = func;
+
+    return func;
+  };
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode | Object} target
@@ -1703,10 +1733,11 @@ this.startP = _this.line;
    * @param {string|Array<string>} variableNamePaths
    */
   GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
-    let dataObject = data;
-    if (typeof dataObject !== 'object') {
+    if (typeof data !== 'object') {
       return;
     }
+
+    let dataObject = data;
 
     let variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
     // expression === true means that a expression function is available and should be extracted
@@ -1714,18 +1745,18 @@ this.startP = _this.line;
       let handler = variables[variables.length - 1];
       variables = variables.slice(0, variables.length - 1);
       expressionArgumentsCount = variables.length;
-      let functionContent = 'return [';
-      functionContent += variables.map(function (path) {
-        // Take care of variables that contain square brackets like '[variable_name]'
-        // for the convenience of the programmer
-        path = path.replace(/\[|\]/g, '');
-        return 'prop(scope, "' + path + '").' + path;
-      }).join(', ');
-      functionContent += ']';
+      // let functionContent = 'return [';
+      // functionContent += variables.map(function (path) {
+      //   // Take care of variables that contain square brackets like '[variable_name]'
+      //   // for the convenience of the programmer
+      //   path = path.replace(/\[|\]/g, '');
+      //   return 'prop(scope, "' + path + '").' + path;
+      // }).join(', ');
+      // functionContent += ']';
 
       // Generate expression arguments
       try {
-        let getExpressionArguments = new Function('prop, scope', functionContent);
+        let getExpressionArguments = Galaxy.GalaxyView.createExpressionArgumentsFunction(variables);
         expression = (function (scope) {
           return function () {
             let args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);
@@ -2419,7 +2450,12 @@ this.startP = _this.line;
     this.domManipulationBus = [];
     this.uiManipulationSequence = new Galaxy.GalaxySequence().start();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
-    this.sequences = {};
+    this.sequences = {
+      ':enter': new Galaxy.GalaxySequence().start(),
+      ':leave': new Galaxy.GalaxySequence(),
+      ':destroy': new Galaxy.GalaxySequence(),
+      ':class': new Galaxy.GalaxySequence().start()
+    };
     this.observer = new Galaxy.GalaxyObserver(this);
     this.origin = false;
 
@@ -2429,10 +2465,10 @@ this.startP = _this.line;
       _this.callLifeCycleEvent('rendered');
     });
 
-    this.createSequence(':enter', true);
-    this.createSequence(':leave', false);
-    this.createSequence(':destroy', false);
-    this.createSequence(':class', true);
+    // this.createSequence(':enter', true);
+    // this.createSequence(':leave', false);
+    // this.createSequence(':destroy', false);
+    // this.createSequence(':class', true);
 
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
@@ -2462,24 +2498,6 @@ this.startP = _this.line;
     });
 
     return schemaClone;
-  };
-
-  /**
-   *
-   * @param name
-   * @param start
-   * @returns {Galaxy.GalaxySequence}
-   */
-  ViewNode.prototype.createSequence = function (name, start) {
-    if (!this.sequences[name]) {
-      this.sequences[name] = new Galaxy.GalaxySequence();
-
-      if (start) {
-        this.sequences[name].start();
-      }
-    }
-
-    return this.sequences[name];
   };
 
   ViewNode.prototype.toTemplate = function () {
@@ -3073,8 +3091,8 @@ this.startP = _this.line;
         _this.timeline.add(child.timeline, _this.lastChildPosition);
         _this.calculateLastChildPosition(child.lastChildPosition || child.duration, _this.position);
       } else {
-        _this.timeline.add(child.timeline, _this.lastChildPosition);
         _this.calculateLastChildPosition(_this.duration, _this.position);
+        _this.timeline.add(child.timeline, _this.lastChildPosition);
       }
     } else {
       if (prior) {
@@ -3138,7 +3156,7 @@ this.startP = _this.line;
     if (this.timeline.getChildren(false).length === 0) {
       _this.lastChildPosition = 0;
       // _this.calculateLastChildPosition(config.duration, config.position);
-      _this.calculateLastChildPosition(config.duration, config.position);
+      // _this.calculateLastChildPosition(config.duration, config.position);
       _this.timeline.add(tween, 0);
     } else {
       _this.calculateLastChildPosition(config.duration, config.position);
@@ -3436,7 +3454,7 @@ this.startP = _this.line;
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = valueEntity;
           cns = this.cloneSchema();
-          delete cns.$for;
+          Reflect.deleteProperty(cns, '$for');
           // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
           let vn = GV.createNode(parentNode, itemDataScope, cns, position, this.domManipulationBus);
           vn.data[p] = valueEntity;

@@ -82,6 +82,7 @@ view.init({
                   });
                   Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
                   // console.info(surfaces);
+                  // Scope.surfaces = surfaces;
                   Scope.surfaces = surfaces.slice(2, 6);
                 });
                 // Scope.surfaces = [
@@ -230,7 +231,7 @@ view.init({
           animation: [
             'surface.id',
             function (si) {
-              return animations.createSlideInOut('surfaces'+si, 'card', 20);
+              return animations.createSlideInOut('surfaces' + si, 'card', 20);
             }
           ],
           text: '[surface.id]',
@@ -244,7 +245,7 @@ view.init({
                 'surface.id',
                 'material.id',
                 function (surfaceId, materialId) {
-                  return animations.createSlideInOut(surfaceId + '-' + materialId + '-material', 'surfaces'+surfaceId, 10);
+                  return animations.createSlideInOut(surfaceId + '-' + materialId + '-material', 'surfaces' + surfaceId, 10);
                 }
               ],
               text: '[material.id]',
