@@ -1700,7 +1700,7 @@ this.startP = _this.line;
 
   GalaxyView.EXPRESSION_ARGS_FUNC_CACHE = {};
 
-  GalaxyView.createExpressionArgumentsFunction = function (variables) {
+  GalaxyView.createExpressionArgumentsProvider = function (variables) {
     const id = variables.join();
 
     if (GalaxyView.EXPRESSION_ARGS_FUNC_CACHE[id]) {
@@ -1711,7 +1711,7 @@ this.startP = _this.line;
 
     let middle = '';
     for (let i = 0, len = variables.length; i < len; i++) {
-      functionContent += 'prop(scope, "' + variables[i] + '").' + variables[i] + ',';
+      middle += 'prop(scope, "' + variables[i] + '").' + variables[i] + ',';
     }
 
     // Take care of variables that contain square brackets like '[variable_name]'
@@ -1725,6 +1725,16 @@ this.startP = _this.line;
 
     return func;
   };
+
+  GalaxyView.createExpressionFunction = function (host, handler, variables, scope) {
+    let getExpressionArguments = Galaxy.GalaxyView.createExpressionArgumentsProvider(variables);
+
+    return function () {
+      let args = getExpressionArguments.call(host, Galaxy.GalaxyView.propertyLookup, scope);
+      return handler.apply(host, args);
+    };
+  };
+
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode | Object} target
@@ -1738,7 +1748,6 @@ this.startP = _this.line;
     }
 
     let dataObject = data;
-
     let variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
     // expression === true means that a expression function is available and should be extracted
     if (expression === true) {
@@ -1756,13 +1765,7 @@ this.startP = _this.line;
 
       // Generate expression arguments
       try {
-        let getExpressionArguments = Galaxy.GalaxyView.createExpressionArgumentsFunction(variables);
-        expression = (function (scope) {
-          return function () {
-            let args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);
-            return handler.apply(target, args);
-          };
-        })(dataObject);
+        expression = Galaxy.GalaxyView.createExpressionFunction(target, handler, variables, dataObject);
       }
       catch (exception) {
         throw console.error(exception.message + '\n', variables);
@@ -1771,7 +1774,7 @@ this.startP = _this.line;
       expressionArgumentsCount = 1;
     }
 
-    let variableNamePath;
+    let variableNamePath = null;
     let propertyName = null;
     let childProperty = null;
     let initValue = null;
@@ -1779,6 +1782,7 @@ this.startP = _this.line;
     for (let i = 0, len = variables.length; i < len; i++) {
       variableNamePath = variables[i];
       propertyName = variableNamePath;
+      childProperty = null;
 
       let variableName = variableNamePath.split('.');
       if (variableName.length > 1) {
@@ -1802,10 +1806,19 @@ this.startP = _this.line;
       if (typeof boundProperty === 'undefined') {
         boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
       }
-
       // When target is not a ViewNode, then add target['[targetKeyName]']
       if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
         boundPropertyReference.value = boundProperty;
+        // debugger;
+        // Create a BoundProperty for targetKeyName if the value is an expression
+        // the expression it self will be treated as a BoundProperty
+        if (expression) {
+          boundPropertyReference.value = GalaxyView.createBoundProperty({}, targetKeyName, '[' + targetKeyName + ']', false, null, null);
+        }
+
+        // Otherwise the data is going to be bound through alias.
+        // In other word, [targetKeyName] will refer to original BoundProperty.
+        // This will make sure that there is always one BoundProperty for each data entry
         defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
 
         setterAndGetter.enumerable = enumerable;
@@ -1821,13 +1834,13 @@ this.startP = _this.line;
           return function () {
             return BOUND_PROPERTY.value;
           };
-        })(boundProperty, expression);
+        })(boundPropertyReference.value, expression);
 
         setterAndGetter.set = (function (BOUND_PROPERTY, DATA) {
           return function (value) {
             BOUND_PROPERTY.setValue(value, DATA);
           };
-        })(boundProperty, dataObject);
+        })(boundPropertyReference.value, dataObject);
 
         defineProp(target, targetKeyName, setterAndGetter);
       }
@@ -1994,6 +2007,7 @@ this.startP = _this.line;
         }
 
         return function (vn, value, oldValue) {
+          // console.info(_scopeData);
           return _behavior.onApply.call(vn, _cache, value, oldValue, _scopeData);
         };
       })(behavior, matches, scopeData);
@@ -3447,25 +3461,22 @@ this.startP = _this.line;
 
       let valueEntity, itemDataScope = nodeScopeData;
       let p = cache.propName, n = cache.nodes, cns;
+      const _this = this;
 
       if (newItems instanceof Array) {
-        for (let i = 0, len = newItems.length; i < len; i++) {
-          valueEntity = newItems[i];
-          itemDataScope = GV.createMirror(nodeScopeData);
-          itemDataScope[p] = valueEntity;
-          cns = this.cloneSchema();
-          Reflect.deleteProperty(cns, '$for');
-          // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
-          let vn = GV.createNode(parentNode, itemDataScope, cns, position, this.domManipulationBus);
-          vn.data[p] = valueEntity;
-          action.call(n, vn);
-        }
-
-        // Promise.all(viewNode.manipulationPromiseList).then(function () {
-        //   // debugger;
-        //   ne();
-        // });
-        // });
+        requestAnimationFrame(function () {
+          for (let i = 0, len = newItems.length; i < len; i++) {
+            valueEntity = newItems[i];
+            itemDataScope = GV.createMirror(nodeScopeData);
+            itemDataScope[p] = valueEntity;
+            cns = _this.cloneSchema();
+            Reflect.deleteProperty(cns, '$for');
+            // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
+            let vn = GV.createNode(parentNode, itemDataScope, cns, position, _this.domManipulationBus);
+            vn.data[p] = valueEntity;
+            action.call(n, vn);
+          }
+        });
       }
     }
   };

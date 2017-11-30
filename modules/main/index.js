@@ -1,12 +1,7 @@
 /* global Scope */
 
 
-var view = Scope.import('galaxy/view');
-
-Scope.activeModule = {
-  id: 'guide',
-  url: 'modules/guide/index.js'
-};
+const view = Scope.import('galaxy/view');
 
 Scope.flag = false;
 Scope.count = 10;
@@ -45,6 +40,8 @@ Scope.navItems = [
     }
   }
 ];
+
+Scope.activeModule = Scope.navItems[1].module;
 
 Scope.todos = [
   {
@@ -98,6 +95,16 @@ view.init([
         tag: 'a',
         href: '[item.link]',
         text: '[item.title]',
+        class: {
+          active: [
+            'item.module',
+            'activeModule',
+            function (mod, actMod) {
+              // console.log(mod, actMod, mod === actMod);
+              return mod === actMod;
+            }
+          ]
+        },
         on: {
           click: function () {
             Scope.activeModule = this.data.item.module;
