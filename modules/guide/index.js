@@ -18,7 +18,6 @@ Scope.on('module.destroy', function () {
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
-// console.info(Scope);
 // var observer = Scope.observe(inputs);
 // observer.on('items', function (value, oldValue) {
 //   debugger;

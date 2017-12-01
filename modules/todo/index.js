@@ -2,12 +2,22 @@
 
 Scope.import('galaxy/inputs');
 
-var view = Scope.import('galaxy/view');
-var animations = Scope.import('services/animations.js');
+const view = Scope.import('galaxy/view');
+const animations = Scope.import('services/animations.js');
+
+const ToDoService = {
+  data: Scope.inputs.items,
+  add: function (newItem) {
+    newItem.title = newItem.title.trim();
+    if (newItem.title) {
+      this.data.push(Object.assign({}, newItem));
+    }
+  }
+};
 
 Scope.count = 0;
 
-var observer = Scope.observe(Scope.inputs.data);
+const observer = Scope.observe(Scope.inputs.data);
 observer.on('count', function (value, oldValue) {
 });
 
@@ -29,30 +39,81 @@ view.init({
           tag: 'h2',
           text: [
             'inputs.items.length',
-            function (items) {
-              return 'ToDos, Count: ' + items;
+            function (length) {
+              return 'ToDos, Count: ' + length;
             }
           ]
         },
         {
-          tag: 'button',
-          text: 'Check All',
-          on: {
-            click: function () {
-              Scope.inputs.items.forEach(function (item) {
-                item.done = !item.done;
-              });
+          class: 'fa-end',
+          children: [
+            {
+              tag: 'button',
+              text: 'Check All',
+              disabled: [
+                'inputs.items',
+                function (items) {
+                  return items.filter(function (item) {
+                    return !item.done;
+                  }).length === 0;
+                }
+              ],
+              on: {
+                click: function () {
+                  Scope.inputs.items.forEach(function (item) {
+                    item.done = true;
+                  });
+                }
+              }
+            },
+            {
+              tag: 'button',
+              text: 'Un-Check All',
+              disabled: [
+                'inputs.items',
+                function (items) {
+                  return items.filter(function (item) {
+                    return item.done;
+                  }).length === 0;
+                }
+              ],
+              on: {
+                click: function () {
+                  Scope.inputs.items.forEach(function (item) {
+                    item.done = false;
+                  });
+                }
+              }
+            },
+            {
+              tag: 'button',
+              text: 'Toggle',
+              on: {
+                click: function () {
+                  Scope.inputs.items.forEach(function (item) {
+                    item.done = !item.done;
+                  });
+                }
+              }
             }
-          }
+          ]
         },
         {
           tag: 'ul',
           children: {
             tag: 'li',
             $for: 'item in inputs.items',
-            animation: animations.itemInOut,
-            renderConfig: {
-              applyClassListAfterRender: true
+            animation: {
+              ':enter': {
+                parent: 'card',
+                sequence: 'todo-items',
+                from: {
+                  height: 0,
+                  padding: 0
+                },
+                position: '-=.1',
+                duration: .2
+              }
             },
             id: '[item.title]',
             class: {
@@ -82,19 +143,29 @@ view.init({
             },
             {
               tag: 'input',
-              value: '[newItem.title]'
+              value: '[newItem.title]',
+              on: {
+                keyup: function (event) {
+                  if (event.keyCode === 13) {
+                    ToDoService.add(Scope.newItem);
+                    Scope.newItem = {
+                      title: '',
+                      done: false
+                    };
+                  }
+                }
+              }
             }
           ]
         },
         {
-          tag: 'button',
-          text: 'Add',
-          on: {
-            click: function () {
-              Scope.newItem.title = Scope.newItem.title.trim();
-              if (Scope.newItem.title.trim()) {
-                Scope.inputs.items.push(Object.assign({}, Scope.newItem));
-                Scope.inputs.data.count += 1;
+          class: 'fa-end',
+          children: {
+            tag: 'button',
+            text: 'Add',
+            on: {
+              click: function () {
+                ToDoService.add(Scope.newItem);
                 Scope.newItem = {
                   title: '',
                   done: false

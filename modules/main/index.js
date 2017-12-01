@@ -41,7 +41,7 @@ Scope.navItems = [
   }
 ];
 
-Scope.activeModule = Scope.navItems[1].module;
+Scope.activeModule = Scope.navItems[3].module;
 
 Scope.todos = [
   {
@@ -107,7 +107,7 @@ view.init([
         },
         on: {
           click: function () {
-            Scope.activeModule = this.data.item.module;
+            Scope.activeModule = this.data.$for.item.module;
           }
         },
         onDataChange: {

@@ -3,6 +3,7 @@
     Author     : Eeliya
 */
 /*@import url('https://fonts.googleapis.com/css?family=Rubik:300,400,500,700');*/
+@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');
 
 p {
   margin: 15px 0;
@@ -16,7 +17,7 @@ h1 {
 h2 > a {
   float: right;
   text-decoration: none;
-  font-size: 13px;
+  font-size: .87em;
   font-weight: 500;
   text-transform: capitalize;
   line-height: 26px;
@@ -32,13 +33,17 @@ h2 > a:hover {
 }
 
 html, body {
-  font-family: 'Rubik', sans-serif;
-  font-size: 18px;
+  /*font-family: 'Rubik', sans-serif;*/
+  font-size: 17px;
   background-color: #fafbfc;
   position: relative;
   height: 100%;
   max-width: 100%;
   margin: 0;
+}
+
+* {
+  font-family: 'Nunito', sans-serif;
 }
 
 *, *:before, *:after {
@@ -161,8 +166,13 @@ a {
   font-weight: 300;
 }
 
+ul {
+  padding: 0;
+}
+
 ul > li {
   padding: .2em 0;
+  overflow: hidden;
 }
 
 ul.items-list > li {
@@ -411,3 +421,55 @@ section > section {
 .done {
   opacity: .3;
 }
+
+button {
+  background-color: rgba(0, 0, 0, .28);
+  border: 2px solid transparent;
+  color: rgba(0, 0, 0, .87);
+  cursor: pointer;
+  font-weight: 600;
+  margin: 0 .6em;
+  outline: none;
+  padding: .6em 1em;
+  transition-property: transform, border-color, background-color;
+  transition: all 90ms linear;
+  user-select: none;
+  display: inline-block;
+}
+
+button:first-of-type {
+  margin-left: 0;
+}
+
+button:last-of-type {
+  margin-right: 0;
+}
+
+button:hover, button:focus {
+  /*background-color: rgba(40, 40, 40, .28);*/
+  border-color: rgba(0, 0, 0, .3);
+}
+
+button:active {
+  /*background-color: rgba(40, 40, 40, .28);*/
+  background-color: rgba(0, 0, 0, .38);
+  /*border-color: transparent;*/
+  /*box-shadow: 0 0 6px 2px rgba(0, 0, 0, .36);*/
+  transform: scale(.94);
+}
+
+button:disabled {
+  cursor: default;
+  opacity: .5;
+}
+
+button:disabled:hover {
+  border-color: transparent;
+}
+
+.fa-end {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+

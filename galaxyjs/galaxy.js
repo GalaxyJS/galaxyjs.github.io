@@ -1506,10 +1506,13 @@ this.startP = _this.line;
     checked: {
       type: 'prop'
     },
-    click: {
-      type: 'event',
-      name: 'click'
+    disabled: {
+      type: 'attr'
     }
+    // click: {
+    //   type: 'event',
+    //   name: 'click'
+    // }
   };
 
   GalaxyView.defineProp = G.defineProp;
@@ -1806,6 +1809,10 @@ this.startP = _this.line;
       if (typeof boundProperty === 'undefined') {
         boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
       }
+
+      if (dataObject.hasOwnProperty('__lists__')) {
+        boundProperty.lists = dataObject['__lists__'];
+      }
       // When target is not a ViewNode, then add target['[targetKeyName]']
       if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
         boundPropertyReference.value = boundProperty;
@@ -1814,8 +1821,9 @@ this.startP = _this.line;
         // the expression it self will be treated as a BoundProperty
         if (expression) {
           boundPropertyReference.value = GalaxyView.createBoundProperty({}, targetKeyName, '[' + targetKeyName + ']', false, null, null);
-        }
 
+        }
+        // console.info(boundPropertyReference.value,referenceName );
         // Otherwise the data is going to be bound through alias.
         // In other word, [targetKeyName] will refer to original BoundProperty.
         // This will make sure that there is always one BoundProperty for each data entry
@@ -1978,6 +1986,7 @@ this.startP = _this.line;
 
           changes.type = method;
           changes.params = args;
+          changes.result = result;
 
           onUpdate(changes, oldChanges);
           oldChanges = Object.assign({}, changes);
@@ -2228,6 +2237,38 @@ this.startP = _this.line;
 
   /**
    *
+   * @param {Galaxy.GalaxyView.BoundProperty} bp
+   * @param {Array} list
+   */
+  BoundProperty.installContainerList = function (bp, list) {
+    list.forEach(function (item) {
+      if (item.hasOwnProperty('__lists__')) {
+        if (item['__lists__'].indexOf(bp) === -1) {
+          item['__lists__'].push(bp);
+        }
+      } else {
+        GV.defineProp(item, '__lists__', {
+          configurable: false,
+          enumerable: false,
+          value: [bp]
+        });
+      }
+    });
+  };
+
+  BoundProperty.uninstallContainerList = function (bp, list) {
+    list.forEach(function (item) {
+      if (item.hasOwnProperty('__lists__')) {
+        let i = item['__lists__'].indexOf(bp);
+        if (i !== -1) {
+          item['__lists__'].splice(i, 1);
+        }
+      }
+    });
+  };
+
+  /**
+   *
    * @param {Object} host
    * @param {string} name
    * @param {} value
@@ -2244,6 +2285,7 @@ this.startP = _this.line;
      * @type {Array<Galaxy.GalaxyView.ViewNode>}
      */
     this.nodes = [];
+    this.lists = [];
   }
 
   /**
@@ -2285,16 +2327,18 @@ this.startP = _this.line;
   };
 
   BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {
-    let oldValue = this.value;
-    this.value = value;
+    const _this = this;
+    let oldValue = _this.value;
+    _this.value = value;
     if (value instanceof Array) {
+      BoundProperty.installContainerList(_this, value);
       let init = GV.createActiveArray(value, this.updateValue.bind(this));
       if (target instanceof GV.ViewNode) {
-        target.values[key] = value;
-        this.setUpdateFor(target, key, init);
+        target.data[key] = value;
+        _this.setUpdateFor(target, key, init);
       }
     } else {
-      this.setValueFor(target, key, value, oldValue, scopeData);
+      _this.setValueFor(target, key, value, oldValue, scopeData);
     }
   };
 
@@ -2303,22 +2347,37 @@ this.startP = _this.line;
       let oldValue = this.value;
       this.value = value;
       if (value instanceof Array) {
-        let oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
-        let change = {type: 'reset', params: value, original: value};
-        this.updateValue(change, oldChanges);
+        let change = GV.createActiveArray(value, this.updateValue.bind(this));
+        // let change = {type: 'reset', params: value, original: value};
+        change.type = 'reset';
+        change.result = oldValue;
+        this.updateValue(change, {original: oldValue});
         Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
       } else {
         for (let i = 0, len = this.nodes.length; i < len; i++) {
           this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
         }
         Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
+
+        this.lists.forEach(function (con) {
+          con.updateValue();
+        });
       }
     }
   };
 
   BoundProperty.prototype.updateValue = function (changes, oldChanges) {
+    if (changes) {
+      if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
+        BoundProperty.installContainerList(this, changes.params);
+      } else if (changes.type === 'shift' || changes.type === 'pop') {
+        BoundProperty.uninstallContainerList(this, [changes.result]);
+      } else if (changes.type === 'splice' || changes.type === 'reset') {
+        BoundProperty.uninstallContainerList(this, changes.result);
+      }
+    }
+
     for (let i = 0, len = this.nodes.length; i < len; i++) {
-      this.nodes[i].value = changes.original;
       this.setUpdateFor(this.nodes[i], this.props[i], changes, oldChanges);
     }
   };
@@ -2333,7 +2392,7 @@ this.startP = _this.line;
    */
   BoundProperty.prototype.setValueFor = function (host, attributeName, value, oldValue, scopeData) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      host.values[attributeName] = value;
+      host.data[attributeName] = value;
       if (!host.setters[attributeName]) {
         console.info(host, attributeName, value);
       }
@@ -2355,10 +2414,14 @@ this.startP = _this.line;
   BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
+      // console.info('node', attributeName, changes);
     } else {
       // host.__observer__.notify(attributeName, changes, oldChanges);
+      // console.info('notify', attributeName, changes);
       Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges);
     }
+
+
   };
 
 })(Galaxy.GalaxyView);
@@ -2447,7 +2510,7 @@ this.startP = _this.line;
    * @memberOf Galaxy.GalaxyView
    */
   function ViewNode(root, schema, node) {
-    this.root = root;
+    // this.root = root;
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
     this.data = {};
@@ -2456,7 +2519,7 @@ this.startP = _this.line;
     this.properties = {
       behaviors: {}
     };
-    this.values = {};
+    // this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
@@ -3101,12 +3164,12 @@ this.startP = _this.line;
 
     if (children.indexOf(child.timeline) === -1) {
       if (prior) {
-        console.info(child.NODE.node, child.lastChildPosition, _this.duration);
+        // console.info(child.NODE.node, child.lastChildPosition, _this.duration);
         _this.timeline.add(child.timeline, _this.lastChildPosition);
         _this.calculateLastChildPosition(child.lastChildPosition || child.duration, _this.position);
       } else {
-        _this.calculateLastChildPosition(_this.duration, _this.position);
         _this.timeline.add(child.timeline, _this.lastChildPosition);
+        _this.calculateLastChildPosition(_this.duration, _this.position);
       }
     } else {
       if (prior) {
@@ -3406,14 +3469,14 @@ this.startP = _this.line;
      * @param nodeScopeData
      */
     onApply: function (cache, changes, oldChanges, nodeScopeData) {
+      if (!changes) {
+        return;
+      }
+
       let parentNode = this.parent;
       let position = null;
       let newItems = [];
       let action = Array.prototype.push;
-
-      if (!changes) {
-        return;
-      }
 
       if (changes.type === 'reset') {
         let vn = null;
@@ -3437,7 +3500,7 @@ this.startP = _this.line;
 
         newItems = changes.params;
       } else if (changes.type === 'unshift') {
-        position = cache.nodes[0] ? cache.nodes[0].placeholder : null;
+        position = cache.nodes[0] ? cache.nodes[0].getPlaceholder() : null;
         newItems = changes.params;
         action = Array.prototype.unshift;
       } else if (changes.type === 'splice') {
@@ -3473,7 +3536,9 @@ this.startP = _this.line;
             Reflect.deleteProperty(cns, '$for');
             // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
             let vn = GV.createNode(parentNode, itemDataScope, cns, position, _this.domManipulationBus);
-            vn.data[p] = valueEntity;
+            // vn.data[p] = valueEntity;
+            vn.data['$for'] = {};
+            vn.data['$for'][p] = valueEntity;
             action.call(n, vn);
           }
         });
