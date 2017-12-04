@@ -41,7 +41,7 @@ Scope.navItems = [
   }
 ];
 
-Scope.activeModule = Scope.navItems[3].module;
+Scope.activeModule = Scope.navItems[1].module;
 
 Scope.todos = [
   {

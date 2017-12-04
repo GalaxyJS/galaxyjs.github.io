@@ -1781,7 +1781,6 @@ this.startP = _this.line;
     let propertyName = null;
     let childProperty = null;
     let initValue = null;
-
     for (let i = 0, len = variables.length; i < len; i++) {
       variableNamePath = variables[i];
       propertyName = variableNamePath;
@@ -1830,17 +1829,17 @@ this.startP = _this.line;
         defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
 
         setterAndGetter.enumerable = enumerable;
-        setterAndGetter.get = (function (BOUND_PROPERTY, EXPRESSION) {
+        setterAndGetter.get = (function (_boundProperty, _expression) {
           // If there is an expression for the property, then apply it on get because target is not ViewNode
           // and can not have any setter for its properties
-          if (EXPRESSION) {
+          if (_expression) {
             return function () {
-              return EXPRESSION();
+              return _expression();
             };
           }
 
           return function () {
-            return BOUND_PROPERTY.value;
+            return _boundProperty.value;
           };
         })(boundPropertyReference.value, expression);
 
@@ -2009,14 +2008,13 @@ this.startP = _this.line;
     if (behavior) {
       let matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
-      viewNode.properties.behaviors[key] = (function (_behavior, _matches, _scopeData) {
+      viewNode.behaviors[key] = (function (_behavior, _matches, _scopeData) {
         let _cache = {};
         if (_behavior.getCache) {
           _cache = _behavior.getCache.call(viewNode, _matches, _scopeData);
         }
 
         return function (vn, value, oldValue) {
-          // console.info(_scopeData);
           return _behavior.onApply.call(vn, _cache, value, oldValue, _scopeData);
         };
       })(behavior, matches, scopeData);
@@ -2052,7 +2050,7 @@ this.startP = _this.line;
       }
 
       case 'reactive': {
-        let reactiveFunction = viewNode.properties.behaviors[property.name];
+        let reactiveFunction = viewNode.behaviors[property.name];
 
         if (!reactiveFunction) {
           console.error('Reactive handler not found for: ' + property.name);
@@ -2103,7 +2101,7 @@ this.startP = _this.line;
         break;
 
       case 'reactive':
-        viewNode.properties.behaviors[property.name](viewNode, newValue, null);
+        viewNode.behaviors[property.name](viewNode, newValue, null);
         break;
 
       case 'event':
@@ -2319,11 +2317,6 @@ this.startP = _this.line;
       this.nodes.splice(nodeIndexInTheHost, 1);
       this.props.splice(nodeIndexInTheHost, 1);
     }
-    // var nodeIndexInTheHost = this.nodes.indexOf(node);
-    // if (nodeIndexInTheHost !== -1) {
-    //   this.nodes.splice(nodeIndexInTheHost, 1);
-    //   this.props.splice(nodeIndexInTheHost, 1);
-    // }
   };
 
   BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {
@@ -2333,6 +2326,7 @@ this.startP = _this.line;
     if (value instanceof Array) {
       BoundProperty.installContainerList(_this, value);
       let init = GV.createActiveArray(value, this.updateValue.bind(this));
+
       if (target instanceof GV.ViewNode) {
         target.data[key] = value;
         _this.setUpdateFor(target, key, init);
@@ -2348,7 +2342,6 @@ this.startP = _this.line;
       this.value = value;
       if (value instanceof Array) {
         let change = GV.createActiveArray(value, this.updateValue.bind(this));
-        // let change = {type: 'reset', params: value, original: value};
         change.type = 'reset';
         change.result = oldValue;
         this.updateValue(change, {original: oldValue});
@@ -2499,6 +2492,10 @@ this.startP = _this.line;
       remove.destroy(sequence);
       node.domManipulationBus.push(remove.domManipulationSequence.line);
     }
+
+    Promise.all(node.parent.domManipulationBus).then(function () {
+      node.parent.domManipulationBus = [];
+    });
   };
 
   /**
@@ -2516,9 +2513,8 @@ this.startP = _this.line;
     this.data = {};
     this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
-    this.properties = {
-      behaviors: {}
-    };
+    this.properties = {};
+    this.behaviors = {};
     // this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
@@ -2541,11 +2537,6 @@ this.startP = _this.line;
       _this.ready = ready;
       _this.callLifeCycleEvent('rendered');
     });
-
-    // this.createSequence(':enter', true);
-    // this.createSequence(':leave', false);
-    // this.createSequence(':destroy', false);
-    // this.createSequence(':class', true);
 
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
@@ -2645,8 +2636,17 @@ this.startP = _this.line;
    * @param {Function} expression
    */
   ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression) {
-    this.properties[boundProperty.name] = boundProperty;
-    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, this.virtual ? null : expression);
+    // This cause memory leak for expressions
+    let exist = this.properties[boundProperty.name];
+    if (exist instanceof Array) {
+      exist.push(boundProperty);
+    } else if (exist) {
+      this.properties[boundProperty.name] = [exist, boundProperty];
+    } else {
+      this.properties[boundProperty.name] = boundProperty;
+    }
+
+    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, this.virtual ? false : expression);
     if (!this.setters[propertyName]) {
       let _this = this;
       this.setters[propertyName] = function () {
@@ -2726,11 +2726,15 @@ this.startP = _this.line;
 
 
     let property, properties = _this.properties;
+    // for (let i = 0, len = properties.length; i < len; i++) {
+    for (let key in properties) {
+      property = properties[key];
 
-    for (let propertyName in properties) {
-      property = properties[propertyName];
-
-      if (property instanceof GV.BoundProperty) {
+      if (property instanceof Array) {
+        property.forEach(function (item) {
+          item.removeNode(_this);
+        });
+      } else {
         property.removeNode(_this);
       }
     }
@@ -2742,6 +2746,8 @@ this.startP = _this.line;
         property.removeNode(item);
       });
     });
+
+    _this.schema.__node__ = undefined;
   };
 
   ViewNode.prototype.addDependedObject = function (item) {
@@ -2751,12 +2757,22 @@ this.startP = _this.line;
   };
 
   ViewNode.prototype.refreshBinds = function () {
-    let property;
-    for (let propertyName in this.properties) {
-      property = this.properties[propertyName];
-      if (property.nodes.indexOf(this) === -1) {
-        property.nodes.push(this);
-        property.props.push(propertyName);
+    let property, properties = this.properties;
+    for (let key in properties) {
+      property = properties[key];
+
+      if (property instanceof Array) {
+        property.forEach(function (item) {
+          if (item.nodes.indexOf(this) === -1) {
+            item.nodes.push(this);
+            item.props.push(key);
+          }
+        });
+      } else {
+        if (property.value.nodes.indexOf(this) === -1) {
+          property.value.nodes.push(this);
+          property.value.props.push(key);
+        }
       }
     }
   };
@@ -3443,59 +3459,38 @@ this.startP = _this.line;
 /* global Galaxy */
 
 (function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
-    type: 'reactive',
-    name: '$for'
+  const createResetProcess = function (node, cache, changes, nodeScopeData) {
+    if (changes.type === 'reset') {
+      node.uiManipulationSequence.next(function (nextUIAction) {
+        GV.ViewNode.destroyNodes(node, cache.nodes);
+
+        const bus = node.domManipulationBus.slice(0);
+        cache.nodes = [];
+
+        Promise.all(bus).then(function () {
+          nextUIAction();
+        });
+      });
+
+      changes = Object.assign({}, changes);
+      changes.type = 'push';
+    }
+
+    createPushProcess(node, cache, changes, nodeScopeData);
   };
 
-  GV.REACTIVE_BEHAVIORS['$for'] = {
-    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    bind: function (nodeScopeData, matches) {
-      this.toTemplate();
-      GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
-    },
-    getCache: function (matches) {
-      return {
-        propName: matches[1],
-        nodes: []
-      };
-    },
-    /**
-     *
-     * @param cache
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param changes
-     * @param matches
-     * @param nodeScopeData
-     */
-    onApply: function (cache, changes, oldChanges, nodeScopeData) {
-      if (!changes) {
-        return;
-      }
-
-      let parentNode = this.parent;
-      let position = null;
-      let newItems = [];
-      let action = Array.prototype.push;
-
-      if (changes.type === 'reset') {
-        let vn = null;
-        for (let i = cache.nodes.length - 1; i >= 0; i--) {
-          vn = cache.nodes[i];
-          vn.destroy();
-        }
-
-        cache.nodes = [];
-        changes = Object.assign({}, changes);
-        changes.type = 'push';
-      }
-
+  const createPushProcess = function (node, cache, changes, nodeScopeData) {
+    let parentNode = node.parent;
+    let position = null;
+    let newItems = [];
+    let action = Array.prototype.push;
+    node.uiManipulationSequence.next(function (nextUIAction) {
       if (changes.type === 'push') {
         let length = cache.nodes.length;
         if (length) {
           position = cache.nodes[length - 1].getPlaceholder().nextSibling;
         } else {
-          position = this.placeholder.nextSibling;
+          position = node.placeholder.nextSibling;
         }
 
         newItems = changes.params;
@@ -3524,25 +3519,60 @@ this.startP = _this.line;
 
       let valueEntity, itemDataScope = nodeScopeData;
       let p = cache.propName, n = cache.nodes, cns;
-      const _this = this;
 
       if (newItems instanceof Array) {
-        requestAnimationFrame(function () {
-          for (let i = 0, len = newItems.length; i < len; i++) {
-            valueEntity = newItems[i];
-            itemDataScope = GV.createMirror(nodeScopeData);
-            itemDataScope[p] = valueEntity;
-            cns = _this.cloneSchema();
-            Reflect.deleteProperty(cns, '$for');
-            // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
-            let vn = GV.createNode(parentNode, itemDataScope, cns, position, _this.domManipulationBus);
-            // vn.data[p] = valueEntity;
-            vn.data['$for'] = {};
-            vn.data['$for'][p] = valueEntity;
-            action.call(n, vn);
-          }
-        });
+        for (let i = 0, len = newItems.length; i < len; i++) {
+          valueEntity = newItems[i];
+          itemDataScope = GV.createMirror(nodeScopeData);
+          itemDataScope[p] = valueEntity;
+          cns = node.cloneSchema();
+          Reflect.deleteProperty(cns, '$for');
+
+          let vn = GV.createNode(parentNode, itemDataScope, cns, position, node.domManipulationBus);
+
+          vn.data['$for'] = {};
+          vn.data['$for'][p] = valueEntity;
+          action.call(n, vn);
+        }
       }
+
+      Promise.all(node.domManipulationBus).then(function () {
+        nextUIAction();
+      });
+    });
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
+    type: 'reactive',
+    name: '$for'
+  };
+
+  GV.REACTIVE_BEHAVIORS['$for'] = {
+    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
+    bind: function (nodeScopeData, matches) {
+      this.toTemplate();
+      GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
+    },
+    getCache: function (matches) {
+      return {
+        propName: matches[1],
+        nodes: []
+      };
+    },
+    /**
+     *
+     * @param cache
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param changes
+     * @param matches
+     * @param nodeScopeData
+     */
+    onApply: function (cache, changes, oldChanges, nodeScopeData) {
+      if (!changes || typeof changes === 'string') {
+        return;
+      }
+
+      createResetProcess(this, cache, changes, nodeScopeData);
     }
   };
 })(Galaxy.GalaxyView);
