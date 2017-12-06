@@ -9,7 +9,6 @@ Scope.on('module.init', function () {
 });
 
 Scope.on('module.start', function () {
-  PR.prettyPrint();
 });
 
 Scope.on('module.destroy', function () {
@@ -27,12 +26,17 @@ console.info(Scope);
 view.init({
   class: 'card big',
   animation: animations.cardInOut,
+  lifeCycle: {
+    inserted: function () {
+      PR.prettyPrint();
+    }
+  },
   children: [
-    // {
-    //   tag: 'img',
-    //   class: 'banner',
-    //   src: 'assets/images/guide.jpg'
-    // },
+    {
+      tag: 'img',
+      class: 'banner',
+      src: 'assets/images/guide.jpg'
+    },
     {
       class: 'content',
       tag: 'section',
@@ -46,8 +50,21 @@ view.init({
           text: 'Installation'
         },
         {
+          tag: 'p',
+          text: 'Simply copy & paste the following into your page\'s head'
+        },
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-html',
+          text: '<script src="https://gitcdn.xyz/repo/GalaxyJS/galaxyjs.github.io/wip/galaxyjs/galaxy.js"></script>'
+        },
+        {
           tag: 'h2',
           text: 'Recommended project file & folder structure'
+        },
+        {
+          tag: 'p',
+          text: 'You can have whatever directory structure you like as long as you know how to the load modules. The following structure is recommended and we are using this structure though out our guide.'
         },
         {
           tag: 'pre',
@@ -57,13 +74,57 @@ view.init({
           '| |-assets\n' +
           '| |-modules\n' +
           '| | |-main\n' +
-          '| | | |-index.html\n' +
+          '| | | |-index.js\n' +
           '| | \n' +
-          '| |-services ...\n' +
+          '| |-services \n' +
           '| |-index.html\n' +
           '|\n' +
           '|-node_modules\n' +
           '|-package.json'
+        },
+        {
+          tag: 'h2',
+          text: 'Bootstrap'
+        },
+        {
+          tag: 'p',
+          text: 'Add this code into the app/index.html'
+        },
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-html',
+          text: '<!doctype html>\n' +
+          '<html>\n' +
+          '  <head>\n' +
+          '    <title>Learning GalaxyJS</title>\n' +
+          '    <meta charset="UTF-8">\n' +
+          '\n' +
+          '    <script src="path/to/galaxy-min.js"></script>\n' +
+          '\n' +
+          '    <script>\n' +
+          '      (function () {\n' +
+          '          // This will ensure that you boot Galaxy when everything is loaded\n' +
+          '          // If you are using JQuery, you can also use $(document).ready(run);\n' +
+          '          window.addEventListener(\'load\', run);\n' +
+          '\n' +
+          '          function run() {\n' +
+          '              Galaxy.boot({\n' +
+          '                  // The path to your main module file\n' +
+          '                  url: \'modules/main/index.js\',\n' +
+          '                  // The container element for your app\n' +
+          '                  element: document.getElementById(\'body\')\n' +
+          '              }).then(function (module) {\n' +
+          '                  module.start();\n' +
+          '              });\n' +
+          '          }\n' +
+          '      })();\n' +
+          '    </script>\n' +
+          '  </head>\n' +
+          '\n' +
+          '  <body>\n' +
+          '    Loading...\n' +
+          '  </body>\n' +
+          '</html>    '
         },
         {
           tag: 'button',
@@ -282,3 +343,5 @@ view.init({
     }
   ]
 });
+
+

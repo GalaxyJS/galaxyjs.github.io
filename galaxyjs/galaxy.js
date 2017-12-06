@@ -966,8 +966,9 @@ if (typeof Object.assign != 'function') {
 
       let imports = [];
       // extract imports from the source code
-      let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
-      moduleContent = moduleContentWithoutComments.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+      // removing comments cause an bug
+      // let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
+      moduleContent = moduleContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
         let query = path.match(/([\S]+)/gm);
         imports.push({
           url: query[query.length - 1],
@@ -2115,22 +2116,22 @@ this.startP = _this.line;
 
   /**
    *
-   * @param {GalaxyView.ViewNode} parentViewNode
+   * @param {Galaxy.GalaxyView.ViewNode} parentViewNode
    * @param {Object} scopeData
    * @param {Object} nodeSchema
    * @param position
    * @param {Array} domManipulationBus
    */
-  GalaxyView.createNode = function (parentViewNode, scopeData, nodeSchema, position, domManipulationBus) {
+  GalaxyView.createNode = function (parentViewNode, scopeData, nodeSchema, position) {
     let i = 0, len = 0;
 
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        GalaxyView.createNode(parentViewNode, scopeData, nodeSchema[i], null, domManipulationBus);
+        GalaxyView.createNode(parentViewNode, scopeData, nodeSchema[i], null);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let viewNode = new GalaxyView.ViewNode(null, nodeSchema, null);
-      viewNode.domManipulationBus = domManipulationBus || [];
+      viewNode.domManipulationBus = parentViewNode.domManipulationBus;
       parentViewNode.registerChild(viewNode, position);
 
       if (nodeSchema['mutator']) {
@@ -2163,22 +2164,25 @@ this.startP = _this.line;
       }
 
       if (!viewNode.virtual) {
+        GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
+
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
-
-        GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null, domManipulationBus);
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its children elements are rendered
       viewNode.domManipulationSequence.finish(function () {
+        viewNode.domManipulationBus = [];
         viewNode.ready();
       });
 
-      if (domManipulationBus) {
-        domManipulationBus.push(viewNode.domManipulationSequence.line);
-      }
+      // if (domManipulationBus) {
+      //   domManipulationBus.push(viewNode.domManipulationSequence.line);
+      // }
+
+      viewNode.domManipulationBus.push(viewNode.domManipulationSequence.line);
 
       return viewNode;
     }
@@ -2202,6 +2206,9 @@ this.startP = _this.line;
         tag: scope.element.tagName
       }, scope.element);
     }
+
+    this.uiManipulationSequence = this.container.uiManipulationSequence;
+    this.domManipulationSequence = this.container.domManipulationSequence;
   }
 
   GalaxyView.prototype.setupRepos = function (repos) {
@@ -2494,6 +2501,7 @@ this.startP = _this.line;
 
     Promise.all(node.parent.domManipulationBus).then(function () {
       node.parent.domManipulationBus = [];
+      node.domManipulationBus = [];
     });
   };
 
@@ -2514,7 +2522,6 @@ this.startP = _this.line;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
     this.behaviors = {};
-    // this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
@@ -2622,8 +2629,6 @@ this.startP = _this.line;
   ViewNode.prototype.registerChild = function (viewNode, position) {
     let _this = this;
     viewNode.parent = _this;
-
-    // _this.activityState.add(viewNode.activityState);
 
     _this.node.insertBefore(viewNode.placeholder, position);
   };

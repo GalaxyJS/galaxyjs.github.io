@@ -12,6 +12,12 @@ p {
 h1 {
   font-size: 1.9em;
   cursor: default;
+  margin: 20px 0;
+}
+
+h2 {
+  margin-top: 30px;
+  margin-bottom: 15px;
 }
 
 h2 > a {
