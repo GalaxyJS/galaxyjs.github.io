@@ -276,6 +276,12 @@ view.init({
           on: {
             click: function () {
               Scope.surfaces = [];
+              this.broadcast(new CustomEvent('test', {
+                bubbles: true,
+                detail: {
+                  someStuff: true
+                }
+              }));
             }
           }
         },

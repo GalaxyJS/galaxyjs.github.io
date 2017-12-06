@@ -114,6 +114,11 @@ view.init([
           'item.title': function () {
           }
         }
+      },
+      {
+        $for: 'item in todos',
+        tag: 'li',
+        text: '[item.title]',
       }
     ]
   },
@@ -124,8 +129,12 @@ view.init([
     children: [
       {
         module: '[activeModule]',
-        // inputs: {}
         inputs: Scope.moduleInputs,
+        on: {
+          test: function (event) {
+            console.info(event);
+          }
+        }
         // children: [
         //   {
         //     tag: 'p',

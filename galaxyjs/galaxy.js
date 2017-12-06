@@ -1,3 +1,19 @@
+(function () {
+
+  if (typeof window.CustomEvent === 'function') return false;
+
+  function CustomEvent(event, params) {
+    params = params || {bubbles: false, cancelable: false, detail: undefined};
+    var evt = document.createEvent('CustomEvent');
+    evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+    return evt;
+  }
+
+  CustomEvent.prototype = window.Event.prototype;
+
+  window.CustomEvent = CustomEvent;
+})();
+
 /* eslint-disable */
 /**
  * @link https://github.github.io/fetch/
@@ -2558,6 +2574,10 @@ this.startP = _this.line;
     if (this.schema.lifeCycle && typeof this.schema.lifeCycle[id] === 'function') {
       this.schema.lifeCycle[id].call(this);
     }
+  };
+
+  ViewNode.prototype.broadcast = function (event) {
+    this.node.dispatchEvent(event);
   };
 
   ViewNode.prototype.cloneSchema = function () {
