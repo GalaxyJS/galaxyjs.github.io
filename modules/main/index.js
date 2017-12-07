@@ -114,11 +114,6 @@ view.init([
           'item.title': function () {
           }
         }
-      },
-      {
-        $for: 'item in todos',
-        tag: 'li',
-        text: '[item.title]',
       }
     ]
   },
