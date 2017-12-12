@@ -133,10 +133,10 @@ view.init({
             click: function () {
               // Scope.flag = !Scope.flag;
               // return;
-              let s = performance.now();
               Scope.progressText = 'Please wait...';
               fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
                 response.json().then(function (data) {
+                  let s = performance.now();
                   let surfaces = data.data.productData.data[0].data.filter(function (item) {
                     return item.type === 'surfaces';
                   });
@@ -322,7 +322,7 @@ view.init({
               children: {
                 tag: 'p',
                 children: {
-                  tag: 'p',
+                  tag: 'img',
                   class: 'color-item',
                   // animation: [
                   //   'surface.id',
@@ -332,7 +332,7 @@ view.init({
                   //   }
                   // ],
                   $for: 'color in material.data',
-                  text: [
+                  src: [
                     'material.id',
                     'color.id',
                     function (material, color) {

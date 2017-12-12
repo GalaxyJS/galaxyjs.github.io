@@ -1424,6 +1424,11 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
   return GalaxySequence;
 })(Galaxy);
 
+self.addEventListener('message', function(e) {
+  // self.postMessage(e.data);
+  console.info(e)
+}, false);
+
 /* global Galaxy, Promise */
 'use strict';
 
@@ -1431,6 +1436,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   const defineProp = Object.defineProperty;
   const setAttr = Element.prototype.setAttribute;
   const removeAttr = Element.prototype.removeAttribute;
+  // const worker = new Worker('galaxyjs/galaxy-web-worker.js');
 
   let setterAndGetter = {
     configurable: true,
@@ -1521,7 +1527,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     delete obj[key];
   };
 
-  GalaxyView.createMirror = function (obj) {
+  GalaxyView.createMirror = function (obj, newProp) {
     let result = {};
 
     defineProp(result, '__parent__', {
@@ -2079,7 +2085,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
     let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
     let newValue = value;
-
+    // worker.postMessage({viewNode: viewNode});
     switch (property.type) {
       case 'attr':
         GalaxyView.createDefaultSetter(viewNode, attributeName, property.parser)(newValue, null);
@@ -2156,7 +2162,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
 
         if (viewNode.inDOM) {
+          // requestAnimationFrame(function () {
           viewNode.setInDOM(true);
+          // });
         }
       }
 
@@ -2167,9 +2175,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         viewNode.ready();
       });
 
-      // if (domManipulationBus) {
-      //   domManipulationBus.push(viewNode.domManipulationSequence.line);
-      // }
       viewNode.domManipulationBus.push(viewNode.domManipulationSequence.line);
 
       return viewNode;
@@ -2584,28 +2589,32 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
-        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-        removeChild(_this.placeholder.parentNode, _this.placeholder);
-        _this.populateEnterSequence(_this.sequences[':enter']);
-        // Go to next dom manipulation step when the whole :enter sequence is done
-        _this.sequences[':enter'].nextAction(function () {
-          done();
-        });
-        _this.callLifeCycleEvent('inserted');
+        // requestAnimationFrame(function () {
+          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+          removeChild(_this.placeholder.parentNode, _this.placeholder);
+          _this.populateEnterSequence(_this.sequences[':enter']);
+          // Go to next dom manipulation step when the whole :enter sequence is done
+          _this.sequences[':enter'].nextAction(function () {
+            done();
+          });
+          _this.callLifeCycleEvent('inserted');
+        // });
       });
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
         _this.origin = true;
-        _this.populateLeaveSequence(_this.sequences[':leave']);
-        // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
-        _this.sequences[':leave'].start().finish(function () {
-          insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-          removeChild(_this.node.parentNode, _this.node);
-          done();
-          _this.sequences[':leave'].reset();
-          _this.origin = false;
-          _this.callLifeCycleEvent('removed');
-        });
+        // requestAnimationFrame(function () {
+          _this.populateLeaveSequence(_this.sequences[':leave']);
+          // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
+          _this.sequences[':leave'].start().finish(function () {
+            insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+            removeChild(_this.node.parentNode, _this.node);
+            done();
+            _this.sequences[':leave'].reset();
+            _this.origin = false;
+            _this.callLifeCycleEvent('removed');
+          });
+        // });
       });
     }
   };
@@ -2740,7 +2749,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       });
     });
 
-    _this.schema.__node__ = undefined;
+    // _this.schema.__node__ = undefined;
   };
 
   ViewNode.prototype.addDependedObject = function (item) {
@@ -3527,22 +3536,24 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
       if (newItems instanceof Array) {
-        const c = newItems.slice(0);
-        for (let i = 0, len = newItems.length; i < len; i++) {
-          valueEntity = c[i];
-          itemDataScope = GV.createMirror(nodeScopeData);
-          itemDataScope[p] = valueEntity;
-          cns = Object.assign({}, templateSchema);
+        requestAnimationFrame(function () {
+          const c = newItems.slice(0);
+          for (let i = 0, len = newItems.length; i < len; i++) {
+            // valueEntity = c[i];
+            itemDataScope = GV.createMirror(nodeScopeData);
+            itemDataScope[p] = c[i];
+            cns = Object.assign({}, templateSchema);
 
-          let vn = GV.createNode(parentNode, itemDataScope, cns, position);
+            let vn = GV.createNode(parentNode, itemDataScope, cns, position);
 
-          vn.data['$for'] = {};
-          vn.data['$for'][p] = valueEntity;
-          action.call(n, vn);
-        }
+            vn.data['$for'] = {};
+            vn.data['$for'][p] = c[i];
+            action.call(n, vn);
+          }
+
+          next();
+        });
       }
-
-      next();
     });
 
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
