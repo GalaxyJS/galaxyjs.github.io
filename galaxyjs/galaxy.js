@@ -1865,6 +1865,13 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
   };
 
+  /**
+   *
+   * @param subjects
+   * @param data
+   * @param cloneSubject
+   * @returns {*}
+   */
   GalaxyView.bindSubjectsToData = function (subjects, data, cloneSubject) {
     let keys = Object.keys(subjects);
     let attributeName;
@@ -1889,6 +1896,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     return subjectsClone;
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   * @param property
+   * @returns {Function}
+   */
   GalaxyView.createPropertySetter = function (node, property) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
@@ -1906,6 +1919,13 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     };
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   * @param {string} attributeName
+   * @param property
+   * @returns {Function}
+   */
   GalaxyView.createCustomSetter = function (node, attributeName, property) {
     return function (value, oldValue, scopeData) {
       if (value instanceof Promise) {
@@ -1919,6 +1939,13 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     };
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   * @param {string} attributeName
+   * @param {Function} parser
+   * @returns {Function}
+   */
   GalaxyView.createDefaultSetter = function (node, attributeName, parser) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
@@ -1934,6 +1961,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     };
   };
 
+  /**
+   *
+   * @param {Array} value
+   * @param {Function} onUpdate
+   * @returns {{original: *, type: string, params: *}}
+   */
   GalaxyView.createActiveArray = function (value, onUpdate) {
     let changes = {
       original: value,
@@ -1994,21 +2027,26 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       });
     });
 
-
     return changes;
   };
 
-  GalaxyView.addReactiveBehavior = function (viewNode, key, scopeData) {
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   * @param {string} key
+   * @param scopeData
+   */
+  GalaxyView.addReactiveBehavior = function (node, key, scopeData) {
     let behavior = GalaxyView.REACTIVE_BEHAVIORS[key];
-    let bindTo = viewNode.schema[key];
+    let bindTo = node.schema[key];
 
     if (behavior) {
       let matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
-      viewNode.behaviors[key] = (function (_behavior, _matches, _scopeData) {
+      node.behaviors[key] = (function (_behavior, _matches, _scopeData) {
         let _cache = {};
         if (_behavior.getCache) {
-          _cache = _behavior.getCache.call(viewNode, _matches, _scopeData);
+          _cache = _behavior.getCache.call(node, _matches, _scopeData);
         }
 
         return function (vn, value, oldValue) {
@@ -2016,7 +2054,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         };
       })(behavior, matches, scopeData);
 
-      behavior.bind.call(viewNode, scopeData, matches);
+      behavior.bind.call(node, scopeData, matches);
     }
   };
 
@@ -2083,9 +2121,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
-    let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
     let newValue = value;
     // worker.postMessage({viewNode: viewNode});
+
     switch (property.type) {
       case 'attr':
         GalaxyView.createDefaultSetter(viewNode, attributeName, property.parser)(newValue, null);
@@ -2126,7 +2165,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let viewNode = new GalaxyView.ViewNode(null, nodeSchema, null);
-      viewNode.domManipulationBus = parent.domManipulationBus;
+      // viewNode.domManipulationBus = parent.domManipulationBus;
       parent.registerChild(viewNode, position);
 
       if (nodeSchema['mutator']) {
@@ -2171,11 +2210,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its children elements are rendered
       viewNode.domManipulationSequence.finish(function () {
-        viewNode.domManipulationBus = [];
+        viewNode.domBus = [];
         viewNode.ready();
       });
 
-      viewNode.domManipulationBus.push(viewNode.domManipulationSequence.line);
+      // viewNode.domManipulationBus.push(viewNode.domManipulationSequence.line);
+      parent.addToDOMBus(viewNode.domManipulationSequence.line);
 
       return viewNode;
     }
@@ -2212,10 +2252,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     const _this = this;
 
     _this.container.renderingFlow.next(function (nextUIAction) {
-      GalaxyView.createNode(_this.container, _this.scope, schema, null, _this.container.domManipulationBus);
+      GalaxyView.createNode(_this.container, _this.scope, schema, null, _this.container.domBus);
 
-      Promise.all(_this.container.domManipulationBus).then(function () {
-        _this.container.domManipulationBus = [];
+      Promise.all(_this.container.domBus).then(function () {
+        _this.container.domBus = [];
         nextUIAction();
       });
     });
@@ -2481,17 +2521,17 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @static
    */
   ViewNode.destroyNodes = function (node, toBeRemoved, sequence) {
-    node.domManipulationBus = node.parent.domManipulationBus;
+    node.domBus = node.parent.domBus;
     let remove = null;
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
       remove.destroy(sequence);
-      node.domManipulationBus.push(remove.domManipulationSequence.line);
+      node.domBus.push(remove.domManipulationSequence.line);
     }
 
-    Promise.all(node.parent.domManipulationBus).then(function () {
-      node.parent.domManipulationBus = [];
-      node.domManipulationBus = [];
+    Promise.all(node.parent.domBus).then(function () {
+      node.parent.domBus = [];
+      node.domBus = [];
     });
   };
 
@@ -2516,7 +2556,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
-    this.domManipulationBus = [];
+    this.domBus = [];
     this.renderingFlow = new Galaxy.GalaxySequence().start();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {
@@ -2582,6 +2622,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   };
 
+  /**
+   *
+   * @param {Promise} promise
+   */
+  ViewNode.prototype.addToDOMBus = function (promise) {
+    this.domBus.push(promise);
+  };
+
   ViewNode.prototype.setInDOM = function (flag, nextUIAction) {
     let _this = this;
     _this.inDOM = flag;
@@ -2590,30 +2638,30 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         // requestAnimationFrame(function () {
-          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-          removeChild(_this.placeholder.parentNode, _this.placeholder);
-          _this.populateEnterSequence(_this.sequences[':enter']);
-          // Go to next dom manipulation step when the whole :enter sequence is done
-          _this.sequences[':enter'].nextAction(function () {
-            done();
-          });
-          _this.callLifeCycleEvent('inserted');
+        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        removeChild(_this.placeholder.parentNode, _this.placeholder);
+        _this.populateEnterSequence(_this.sequences[':enter']);
+        // Go to next dom manipulation step when the whole :enter sequence is done
+        _this.sequences[':enter'].nextAction(function () {
+          done();
+        });
+        _this.callLifeCycleEvent('inserted');
         // });
       });
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
         _this.origin = true;
         // requestAnimationFrame(function () {
-          _this.populateLeaveSequence(_this.sequences[':leave']);
-          // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
-          _this.sequences[':leave'].start().finish(function () {
-            insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-            removeChild(_this.node.parentNode, _this.node);
-            done();
-            _this.sequences[':leave'].reset();
-            _this.origin = false;
-            _this.callLifeCycleEvent('removed');
-          });
+        _this.populateLeaveSequence(_this.sequences[':leave']);
+        // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
+        _this.sequences[':leave'].start().finish(function () {
+          insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+          removeChild(_this.node.parentNode, _this.node);
+          done();
+          _this.sequences[':leave'].reset();
+          _this.origin = false;
+          _this.callLifeCycleEvent('removed');
+        });
         // });
       });
     }
@@ -2625,9 +2673,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param position
    */
   ViewNode.prototype.registerChild = function (viewNode, position) {
-    let _this = this;
+    const _this = this;
     viewNode.parent = _this;
-
+    viewNode.domBus = _this.domBus;
     _this.node.insertBefore(viewNode.placeholder, position);
   };
 
@@ -2805,8 +2853,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
       ViewNode.destroyNodes(_this, toBeRemoved);
 
-      Promise.all(_this.domManipulationBus).then(function () {
-        _this.domManipulationBus = [];
+      Promise.all(_this.domBus).then(function () {
+        _this.domBus = [];
         nextUIAction();
       });
     });
@@ -3480,7 +3528,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         // const bus = node.parent.domManipulationBus.slice(0);
         // cache.nodes = [];
 
-        Promise.all(node.parent.domManipulationBus).then(function () {
+        Promise.all(node.parent.domBus).then(function () {
           cache.nodes = [];
           next();
         });
@@ -3560,7 +3608,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
     // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
     node.renderingFlow.next(function (next) {
-      Promise.all(parentNode.domManipulationBus).then(next);
+      Promise.all(parentNode.domBus).then(next);
     });
   };
 

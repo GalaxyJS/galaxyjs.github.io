@@ -324,6 +324,8 @@ view.init({
                 children: {
                   tag: 'img',
                   class: 'color-item',
+                  width: 40,
+                  height: 40,
                   // animation: [
                   //   'surface.id',
                   //   'material.id',
@@ -336,7 +338,18 @@ view.init({
                     'material.id',
                     'color.id',
                     function (material, color) {
-                      return 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + material + '/' + color;
+                      const p = new Promise(function (loaded) {
+                        const img = new Image(40, 40);
+                        img.src = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + material + '/' + color;
+                        img.addEventListener('load', function () {
+                          setTimeout(function () {
+                            console.info(img.src, ' loaded');
+                            loaded(img.src);
+                          }, 2000);
+                        });
+                      });
+
+                      return p;
                     }
                   ]
                 }
