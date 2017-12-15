@@ -330,28 +330,52 @@ view.init({
                   //   'surface.id',
                   //   'material.id',
                   //   function (surfaceId, materialId) {
-                  //     return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + '-' + materialId + '-material');
+                  //     return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + '-material');
                   //   }
                   // ],
-                  $for: 'color in material.data',
-                  src: [
-                    'material.id',
-                    'color.id',
-                    function (material, color) {
-                      const p = new Promise(function (loaded) {
+                  lifeCycle: {
+                    created: function (sequence, scope) {
+                      const _this = this;
+                      sequence.next(function (done) {
+                        const args = _this.arguments;
+                        scope.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + args.material.id + '/' + args.color.id;
                         const img = new Image(40, 40);
-                        img.src = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + material + '/' + color;
-                        img.addEventListener('load', function () {
-                          setTimeout(function () {
-                            console.info(img.src, ' loaded');
-                            loaded(img.src);
-                          }, 2000);
-                        });
+                        img.src = scope.iconURL;
+                        img.addEventListener('load', done, false);
+                        img.addEventListener('error', done, false);
+                        // scope.iconURL = 'https://dummyimage.com/40x40/33ccff/fff';
+                        // console.info(_this);
+                        // setTimeout(done, 5000);
                       });
-
-                      return p;
                     }
-                  ]
+                  },
+                  $for: 'color in material.data',
+                  arguments: [
+                    'material',
+                    'color'
+                  ],
+                  src: '[this.iconURL]'
+
+                  // src: [
+                  //   'material.id',
+                  //   'color.id',
+                  //   function (material, color) {
+                  //     // console.log(this);
+                  //     // const p = new Promise(function (loaded) {
+                  //     //   const img = new Image(40, 40);
+                  //     //   img.src = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + material + '/' + color;
+                  //     //   img.addEventListener('load', function () {
+                  //     //     setTimeout(function () {
+                  //     //       console.info(img.src, ' loaded');
+                  //     //       loaded(img.src);
+                  //     //     }, 2000);
+                  //     //   });
+                  //     // });
+                  //     //
+                  //     // return p;
+                  //     return 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + material + '/' + color;
+                  //   }
+                  // ]
                 }
               }
             }
