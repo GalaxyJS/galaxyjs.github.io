@@ -334,28 +334,29 @@ view.init({
                   //   }
                   // ],
                   lifeCycle: {
-                    created: function (sequence, scope) {
-                      const _this = this;
+                    preInsert: function (inputs, scope, sequence) {
+                      // debugger;
+                      // console.info(_this);
                       sequence.next(function (done) {
-                        const args = _this.arguments;
-                        scope.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + args.material.id + '/' + args.color.id;
+                        scope.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.colorId;
                         const img = new Image(40, 40);
                         img.src = scope.iconURL;
                         img.addEventListener('load', done, false);
-                        img.addEventListener('error', done, false);
-                        // scope.iconURL = 'https://dummyimage.com/40x40/33ccff/fff';
-                        // console.info(_this);
-                        // setTimeout(done, 5000);
+                        img.addEventListener('error', function () {
+                          scope.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
+                          done();
+                        }, false);
                       });
                     }
                   },
                   $for: 'color in material.data',
-                  arguments: [
-                    'material',
-                    'color'
-                  ],
-                  src: '[this.iconURL]'
-
+                  inputs: {
+                    materialId: '<>material.id',
+                    colorId: '<>color.id'
+                  },
+                  // id: '[color.id]',
+                  // test: '[color.id]',
+                  src: '[this.iconURL]',
                   // src: [
                   //   'material.id',
                   //   'color.id',
