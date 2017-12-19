@@ -115,19 +115,19 @@ view.init({
                 duration: .2
               }
             },
-            id: '[item.title]',
+            id: '<>item.title',
             class: {
-              done: '[item.done]'
+              done: '<>item.done'
             },
             children: [
               {
                 tag: 'span',
-                text: '[item.title]'
+                text: '<>item.title'
               },
               {
                 tag: 'input',
                 type: 'checkbox',
-                checked: '[item.done]'
+                checked: '<>item.done'
               }
             ]
 
@@ -143,7 +143,7 @@ view.init({
             },
             {
               tag: 'input',
-              value: '[newItem.title]',
+              value: '<>newItem.title',
               on: {
                 keyup: function (event) {
                   if (event.keyCode === 13) {

@@ -73,9 +73,9 @@ Scope.todos = [
 Scope.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
-  items: '[todos]',
+  items: '<>todos',
   data: {
-    count: '[count]'
+    count: '<>count'
   }
 };
 
@@ -93,14 +93,13 @@ view.init([
       {
         $for: 'item in navItems',
         tag: 'a',
-        href: '[item.link]',
-        text: '[item.title]',
+        href: '<>item.link',
+        text: '<>item.title',
         class: {
           active: [
             'item.module',
             'activeModule',
             function (mod, actMod) {
-              // console.log(mod, actMod, mod === actMod);
               return mod === actMod;
             }
           ]
@@ -123,7 +122,7 @@ view.init([
     class: 'main-content',
     children: [
       {
-        module: '[activeModule]',
+        module: '<>activeModule',
         inputs: Scope.moduleInputs,
         on: {
           test: function (event) {
@@ -148,13 +147,3 @@ view.init([
     ]
   }
 ]);
-
-setTimeout(function () {
-  // Scope.moduleInputs.text = 'This has been changed after 3 seconds!';
-  // for (var i = 0; i < 1000; i++) {
-  //   Scope.todos.push({
-  //     title: 'Dynamic item ' + i,
-  //     done: (i % 3 === 0)
-  //   });
-  // }
-}, 2000);

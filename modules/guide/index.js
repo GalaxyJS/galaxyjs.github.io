@@ -318,10 +318,35 @@ view.init({
               //     return animations.createSlideInOut(surfaceId + '-' + materialId + '-material', 'surfaces' + surfaceId, 10);
               //   }
               // ],
-              text: '[material.id]',
+              text: '<>material.id',
               children: {
                 tag: 'p',
                 children: {
+                  inputs: {
+                    materialId: '<>material.id',
+                    colorId: '<>color.id',
+                    colors: '<>material.data'
+                  },
+                  lifecycle: {
+                    postInit: function (inputs, scope) {
+
+                    },
+                    preInsert: function (inputs, scope, sequence) {
+                      console.info(this);
+                      sequence.next(function (done) {
+                        inputs.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.colorId;
+                        const img = new Image(40, 40);
+                        img.src = inputs.iconURL;
+                        img.addEventListener('load', done, false);
+                        img.addEventListener('error', function () {
+                          inputs.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
+                          done();
+                        }, false);
+                      });
+                    }
+                  },
+                  $for: 'color in this.colors',
+                  src: '<>this.iconURL',
                   tag: 'img',
                   class: 'color-item',
                   width: 40,
@@ -331,50 +356,6 @@ view.init({
                   //   'material.id',
                   //   function (surfaceId, materialId) {
                   //     return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + '-material');
-                  //   }
-                  // ],
-                  lifeCycle: {
-                    preInsert: function (inputs, scope, sequence) {
-                      // debugger;
-                      // console.info(_this);
-                      sequence.next(function (done) {
-                        scope.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.colorId;
-                        const img = new Image(40, 40);
-                        img.src = scope.iconURL;
-                        img.addEventListener('load', done, false);
-                        img.addEventListener('error', function () {
-                          scope.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
-                          done();
-                        }, false);
-                      });
-                    }
-                  },
-                  $for: 'color in material.data',
-                  inputs: {
-                    materialId: '<>material.id',
-                    colorId: '<>color.id'
-                  },
-                  // id: '[color.id]',
-                  // test: '[color.id]',
-                  src: '[this.iconURL]',
-                  // src: [
-                  //   'material.id',
-                  //   'color.id',
-                  //   function (material, color) {
-                  //     // console.log(this);
-                  //     // const p = new Promise(function (loaded) {
-                  //     //   const img = new Image(40, 40);
-                  //     //   img.src = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + material + '/' + color;
-                  //     //   img.addEventListener('load', function () {
-                  //     //     setTimeout(function () {
-                  //     //       console.info(img.src, ' loaded');
-                  //     //       loaded(img.src);
-                  //     //     }, 2000);
-                  //     //   });
-                  //     // });
-                  //     //
-                  //     // return p;
-                  //     return 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + material + '/' + color;
                   //   }
                   // ]
                 }
