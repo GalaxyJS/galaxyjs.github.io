@@ -26,7 +26,7 @@ console.info(Scope);
 
 fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
   response.json().then(function (data) {
-    let s = performance.now();
+    // let s = performance.now();
     let surfaces = data.data.productData.data[0].data.filter(function (item) {
       return item.type === 'surfaces';
     });
@@ -147,127 +147,127 @@ view.init({
               // Scope.flag = !Scope.flag;
               // return;
               Scope.progressText = 'Please wait...';
-              Scope.surfaces = ha;
-              // Scope.surfaces = [
-              //   {
-              //     id: 'First',
-              //     data: [
-              //       {
-              //         id: 'bolster',
-              //         selected: '48_green_blue',
-              //         data: [
-              //           {
-              //             'id': '48_green_blue'
-              //           },
-              //           {
-              //             'id': '8_grey_blue'
-              //           },
-              //           {
-              //             'id': '10_red'
-              //           },
-              //           {
-              //             'id': '40_petrol'
-              //           }
-              //         ]
-              //       },
-              //       {
-              //         id: 'ploegwool',
-              //         selected: '13_diep_red',
-              //         data: [
-              //           {
-              //             'id': '13_diep_red'
-              //           },
-              //           {
-              //             'id': '14_orange'
-              //           },
-              //           {
-              //             'id': '17_bright_red'
-              //           },
-              //           {
-              //             'id': '24_light_blue'
-              //           }
-              //         ]
-              //       },
-              //       {
-              //         id: 'polder',
-              //         selected: '1_orange_square',
-              //         data: [
-              //           {
-              //             'id': '1_orange_square'
-              //           },
-              //           {
-              //             'id': '4_blue_square'
-              //           },
-              //           {
-              //             'id': '6_yellow_square'
-              //           },
-              //           {
-              //             'id': '8_grey_square'
-              //           }
-              //         ]
-              //       }
-              //     ]
-              //   },
-              //   {
-              //     id: 'Second',
-              //     data: [
-              //       {
-              //         id: 'bolster',
-              //         selected: '48_green_blue',
-              //         data: [
-              //           {
-              //             'id': '48_green_blue'
-              //           },
-              //           {
-              //             'id': '8_grey_blue'
-              //           },
-              //           {
-              //             'id': '10_red'
-              //           },
-              //           {
-              //             'id': '40_petrol'
-              //           }
-              //         ]
-              //       },
-              //       {
-              //         id: 'ploegwool',
-              //         selected: '13_diep_red',
-              //         data: [
-              //           {
-              //             'id': '13_diep_red'
-              //           },
-              //           {
-              //             'id': '14_orange'
-              //           },
-              //           {
-              //             'id': '17_bright_red'
-              //           },
-              //           {
-              //             'id': '24_light_blue'
-              //           }
-              //         ]
-              //       },
-              //       {
-              //         id: 'polder',
-              //         selected: '1_orange_square',
-              //         data: [
-              //           {
-              //             'id': '1_orange_square'
-              //           },
-              //           {
-              //             'id': '4_blue_square'
-              //           },
-              //           {
-              //             'id': '6_yellow_square'
-              //           },
-              //           {
-              //             'id': '8_grey_square'
-              //           }
-              //         ]
-              //       }
-              //     ]
-              //   }
-              // ];
+              // Scope.surfaces = ha;
+              Scope.surfaces = [
+                {
+                  id: 'First',
+                  data: [
+                    {
+                      id: 'bolster',
+                      selected: '48_green_blue',
+                      data: [
+                        {
+                          'id': '48_green_blue'
+                        },
+                        {
+                          'id': '8_grey_blue'
+                        },
+                        {
+                          'id': '10_red'
+                        },
+                        {
+                          'id': '40_petrol'
+                        }
+                      ]
+                    },
+                    {
+                      id: 'ploegwool',
+                      selected: '13_diep_red',
+                      data: [
+                        {
+                          'id': '13_diep_red'
+                        },
+                        {
+                          'id': '14_orange'
+                        },
+                        {
+                          'id': '17_bright_red'
+                        },
+                        {
+                          'id': '24_light_blue'
+                        }
+                      ]
+                    },
+                    {
+                      id: 'polder',
+                      selected: '1_orange_square',
+                      data: [
+                        {
+                          'id': '1_orange_square'
+                        },
+                        {
+                          'id': '4_blue_square'
+                        },
+                        {
+                          'id': '6_yellow_square'
+                        },
+                        {
+                          'id': '8_grey_square'
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  id: 'Second',
+                  data: [
+                    {
+                      id: 'bolster',
+                      selected: '48_green_blue',
+                      data: [
+                        {
+                          'id': '48_green_blue'
+                        },
+                        {
+                          'id': '8_grey_blue'
+                        },
+                        {
+                          'id': '10_red'
+                        },
+                        {
+                          'id': '40_petrol'
+                        }
+                      ]
+                    },
+                    {
+                      id: 'ploegwool',
+                      selected: '13_diep_red',
+                      data: [
+                        {
+                          'id': '13_diep_red'
+                        },
+                        {
+                          'id': '14_orange'
+                        },
+                        {
+                          'id': '17_bright_red'
+                        },
+                        {
+                          'id': '24_light_blue'
+                        }
+                      ]
+                    },
+                    {
+                      id: 'polder',
+                      selected: '1_orange_square',
+                      data: [
+                        {
+                          'id': '1_orange_square'
+                        },
+                        {
+                          'id': '4_blue_square'
+                        },
+                        {
+                          'id': '6_yellow_square'
+                        },
+                        {
+                          'id': '8_grey_square'
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ];
             }
           }
         },
@@ -300,12 +300,6 @@ view.init({
         {
           tag: 'p',
           $for: 'surface in surfaces',
-          // animation: [
-          //   'surface.id',
-          //   function (si) {
-          //     return animations.createSlideInOut('surfaces' + si, 'card', 20);
-          //   }
-          // ],
           text: '<>surface.id',
           children: {
             tag: 'ul',
@@ -313,14 +307,8 @@ view.init({
               tag: 'li',
               class: 'material-item',
               $for: 'material in surface.data',
-              // animation: [
-              //   'surface.id',
-              //   'material.id',
-              //   function (surfaceId, materialId) {
-              //     return animations.createSlideInOut(surfaceId + '-' + materialId + '-material', 'surfaces' + surfaceId, 10);
-              //   }
-              // ],
               text: '<>material.id',
+              animation: animations.createSlideInOut('surfaces', 'card', 0),
               children: {
                 tag: 'p',
                 children: {
@@ -330,6 +318,7 @@ view.init({
                   },
                   lifecycle: {
                     preInsert: function (inputs, scope, sequence) {
+                      console.info(this);
                       sequence.next(function (done) {
                         scope.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.colorId;
                         const img = new Image(40, 40);
@@ -344,12 +333,7 @@ view.init({
                   },
                   // $for: 'color in material.data',
                   $for: {
-                    data: [
-                      'material.data',
-                      function (data) {
-                        return data.slice(0, 5);
-                      }
-                    ],
+                    data: '<>material.data',
                     as: 'color'
                   },
                   src: '<>this.iconURL',

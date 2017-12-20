@@ -54,7 +54,7 @@ Scope.export = {
     //   duration: .3
     // }
   },
-  createSlideInOut: function (sequence, parent, order,t) {
+  createSlideInOut: function (sequence, parent, order, t) {
     return {
       ':enter': {
         parent: parent || null,

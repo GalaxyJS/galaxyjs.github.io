@@ -2257,9 +2257,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         viewNode.callLifecycleEvent('postInit');
 
         if (viewNode.inDOM) {
-          // requestAnimationFrame(function () {
           viewNode.setInDOM(true);
-          // });
         }
       } else {
         viewNode.callLifecycleEvent('postInit');
@@ -2587,12 +2585,12 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       node.domBus.push(remove.domManipulationSequence.line);
     }
 
-    requestAnimationFrame(function () {
-      Promise.all(node.parent.domBus).then(function () {
-        node.parent.domBus = [];
-        node.domBus = [];
-      });
+    // setTimeout(function () {
+    Promise.all(node.parent.domBus).then(function () {
+      node.parent.domBus = [];
+      node.domBus = [];
     });
+    // });
   };
 
   /**
@@ -2802,6 +2800,10 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
             });
         });
       }
+
+      _this.domManipulationSequence.nextAction(function () {
+        _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
+      });
     } else if (leaveSequence) {
       _this.clean(leaveSequence);
 
@@ -2818,30 +2820,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
             });
         });
       }
-    } else {
-      _this.clean(leaveSequence);
-
-      if (_this.inDOM) {
-        _this.callLifecycleEvent('preDestroy');
-        _this.domManipulationSequence.next(function (done) {
-          _this.populateLeaveSequence(_this.sequences[':leave']);
-          _this.sequences[':leave'].start()
-            .finish(function () {
-              removeChild(_this.node.parentNode, _this.node);
-              done();
-
-              _this.sequences[':leave'].reset();
-
-              _this.callLifecycleEvent('postRemove');
-              _this.callLifecycleEvent('postDestroy');
-            });
-        });
-      }
     }
-
-    _this.domManipulationSequence.nextAction(function () {
-      _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
-    });
 
     let property, properties = _this.properties;
     const removeItem = function (item) {
@@ -2919,6 +2898,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       ViewNode.destroyNodes(_this, toBeRemoved);
 
       Promise.all(_this.domBus).then(function () {
+        // _this.parent.domBus = [];
         _this.domBus = [];
         next();
       });
@@ -3587,6 +3567,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
     if (changes.type === 'reset') {
+      // debugger;
       node.renderingFlow.next(function (next) {
         GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
 
@@ -3649,7 +3630,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
       if (newItems instanceof Array) {
-        requestAnimationFrame(function () {
+        // requestAnimationFrame(function () {
           const c = newItems.slice(0);
           for (let i = 0, len = newItems.length; i < len; i++) {
             // valueEntity = c[i];
@@ -3665,7 +3646,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           }
 
           next();
-        });
+        // });
       }
     });
 
