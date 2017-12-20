@@ -21,13 +21,26 @@ Scope.flag = true;
 // observer.on('items', function (value, oldValue) {
 //   debugger;
 // });
-
+let ha;
 console.info(Scope);
+
+fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
+  response.json().then(function (data) {
+    let s = performance.now();
+    let surfaces = data.data.productData.data[0].data.filter(function (item) {
+      return item.type === 'surfaces';
+    });
+
+    ha = surfaces;
+    // Scope.surfaces = surfaces.slice(2, 5);
+    // Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
+  });
+});
 view.init({
   class: 'card big',
   animation: animations.cardInOut,
   lifeCycle: {
-    inserted: function () {
+    postInsert: function () {
       PR.prettyPrint();
     }
   },
@@ -134,18 +147,7 @@ view.init({
               // Scope.flag = !Scope.flag;
               // return;
               Scope.progressText = 'Please wait...';
-              fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
-                response.json().then(function (data) {
-                  let s = performance.now();
-                  let surfaces = data.data.productData.data[0].data.filter(function (item) {
-                    return item.type === 'surfaces';
-                  });
-
-                  Scope.surfaces = surfaces;
-                  // Scope.surfaces = surfaces.slice(2, 5);
-                  Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
-                });
-              });
+              Scope.surfaces = ha;
               // Scope.surfaces = [
               //   {
               //     id: 'First',
@@ -286,8 +288,8 @@ view.init({
         },
         {
           tag: 'h3',
-          text: '[progressText]',
-          $if: '[flag]',
+          text: '<>inputs.items.length',
+          $if: '<>flag',
           on: {
             click: function () {
               console.info(Scope);
@@ -304,7 +306,7 @@ view.init({
           //     return animations.createSlideInOut('surfaces' + si, 'card', 20);
           //   }
           // ],
-          text: '[surface.id]',
+          text: '<>surface.id',
           children: {
             tag: 'ul',
             children: {
@@ -324,28 +326,32 @@ view.init({
                 children: {
                   inputs: {
                     materialId: '<>material.id',
-                    colorId: '<>color.id',
-                    colors: '<>material.data'
+                    colorId: '<>color.id'
                   },
                   lifecycle: {
-                    postInit: function (inputs, scope) {
-
-                    },
                     preInsert: function (inputs, scope, sequence) {
-                      console.info(this);
                       sequence.next(function (done) {
-                        inputs.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.colorId;
+                        scope.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.colorId;
                         const img = new Image(40, 40);
-                        img.src = inputs.iconURL;
+                        img.src = scope.iconURL;
                         img.addEventListener('load', done, false);
                         img.addEventListener('error', function () {
-                          inputs.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
+                          scope.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
                           done();
                         }, false);
                       });
                     }
                   },
-                  $for: 'color in this.colors',
+                  // $for: 'color in material.data',
+                  $for: {
+                    data: [
+                      'material.data',
+                      function (data) {
+                        return data.slice(0, 5);
+                      }
+                    ],
+                    as: 'color'
+                  },
                   src: '<>this.iconURL',
                   tag: 'img',
                   class: 'color-item',
