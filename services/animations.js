@@ -79,7 +79,7 @@ Scope.export = {
           opacity: 0
         },
         position: '-=.2',
-        duration: .3
+        duration: .5
       }
     };
   },
