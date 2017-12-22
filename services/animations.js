@@ -87,7 +87,7 @@ Scope.export = {
     return {
       ':enter': {
         parent: parent || null,
-        sequence: sequence,
+        // sequence: sequence,
         from: {
           scale: 0
         },

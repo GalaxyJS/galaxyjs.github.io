@@ -112,8 +112,18 @@ view.init({
                   padding: 0
                 },
                 position: '-=.1',
-                duration: .2
-              }
+                duration: .3
+              },
+              // ':leave': {
+              //   parent: 'card',
+              //   sequence: 'todo-items',
+              //   to: {
+              //     height: 0,
+              //     padding: 0
+              //   },
+              //   position: '-=.05',
+              //   duration: .1
+              // }
             },
             id: '<>item.title',
             class: {

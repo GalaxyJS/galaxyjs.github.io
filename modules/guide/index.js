@@ -319,6 +319,7 @@ view.init({
                   lifecycle: {
                     preInsert: function (inputs, scope, sequence) {
                       sequence.next(function (done) {
+                        // setTimeout(done, 1000);
                         scope.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.colorId;
                         const img = new Image(40, 40);
                         img.src = scope.iconURL;
@@ -335,25 +336,18 @@ view.init({
                     data: '<>material.data',
                     as: 'color'
                   },
-                  // test: [
-                  //   'color.id',
-                  //   function (mid) {
-                  //     console.info(this.virtual, mid);
-                  //     return 'test';
-                  //   }
-                  // ],
                   src: '<>this.iconURL',
                   tag: 'img',
                   class: 'color-item',
                   width: 40,
                   height: 40,
-                  animation: [
-                    'surface.id',
-                    'material.id',
-                    function (surfaceId, materialId) {
-                      return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + '-material');
-                    }
-                  ]
+                  // animation: [
+                  //   'surface.id',
+                  //   'material.id',
+                  //   function (surfaceId, materialId) {
+                  //     return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + '-material');
+                  //   }
+                  // ]
                 }
               }
             }
