@@ -15,8 +15,6 @@ const ToDoService = {
   }
 };
 
-Scope.count = 0;
-
 const observer = Scope.observe(Scope.inputs.data);
 observer.on('count', function (value, oldValue) {
 });
@@ -104,7 +102,7 @@ view.init({
             tag: 'li',
             $for: 'item in inputs.items',
             animation: {
-              ':enter': {
+              enter: {
                 parent: 'card',
                 sequence: 'todo-items',
                 from: {
@@ -114,16 +112,16 @@ view.init({
                 position: '-=.1',
                 duration: .3
               },
-              // ':leave': {
-              //   parent: 'card',
-              //   sequence: 'todo-items',
-              //   to: {
-              //     height: 0,
-              //     padding: 0
-              //   },
-              //   position: '-=.05',
-              //   duration: .1
-              // }
+              leave: {
+                parent: 'card',
+                sequence: 'todo-items',
+                to: {
+                  height: 0,
+                  padding: 0
+                },
+                position: '-=.05',
+                duration: .1
+              }
             },
             id: '<>item.title',
             class: {

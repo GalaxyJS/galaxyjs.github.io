@@ -38,6 +38,15 @@ Scope.navItems = [
       id: 'todo-demo',
       url: 'modules/todo/index.js'
     }
+  },
+
+  {
+    title: 'VueJS Replica - Demo',
+    link: '#vuejs-replica-demo',
+    module: {
+      id: 'vuejs-replica',
+      url: 'modules/vuejs-replica/index.js'
+    }
   }
 ];
 
@@ -91,8 +100,11 @@ view.init([
     class: 'main-nav',
     children: [
       {
-        $for: 'item in navItems',
         tag: 'a',
+        $for: 'item in navItems',
+        inputs: {
+          item: '<>item'
+        },
         href: '<>item.link',
         text: '<>item.title',
         class: {
@@ -106,7 +118,7 @@ view.init([
         },
         on: {
           click: function () {
-            Scope.activeModule = this.data.$for.item.module;
+            Scope.activeModule = this.inputs.item.module;
           }
         },
         onDataChange: {

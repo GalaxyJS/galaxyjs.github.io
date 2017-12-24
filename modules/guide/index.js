@@ -312,30 +312,40 @@ view.init({
               children: {
                 tag: 'p',
                 children: {
+                  $for: {
+                    data: [
+                      '<>material.data',
+                      function (data) {
+                        return data.slice(0, 5);
+                      }
+                    ],
+                    as: 'color'
+                  },
                   inputs: {
                     materialId: '<>material.id',
-                    colorId: '<>color.id'
+                    color: '<>color'
                   },
                   lifecycle: {
-                    preInsert: function (inputs, scope, sequence) {
+                    preInsert: function (inputs, data, sequence) {
                       sequence.next(function (done) {
-                        // setTimeout(done, 1000);
-                        scope.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.colorId;
+                        data.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.color.id;
                         const img = new Image(40, 40);
-                        img.src = scope.iconURL;
+                        img.src = data.iconURL;
                         img.addEventListener('load', done, false);
                         img.addEventListener('error', function () {
-                          scope.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
+                          data.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
                           done();
                         }, false);
                       });
                     }
                   },
-                  // $for: 'color in material.data',
-                  $for: {
-                    data: '<>material.data',
-                    as: 'color'
-                  },
+                  title: [
+                    '$forIndex',
+                    'color.id',
+                    function (index, id) {
+                      return (index + 1) + ' - ' + id;
+                    }
+                  ],
                   src: '<>this.iconURL',
                   tag: 'img',
                   class: 'color-item',
