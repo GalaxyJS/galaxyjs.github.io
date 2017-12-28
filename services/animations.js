@@ -60,6 +60,7 @@ Scope.export = {
         parent: parent || null,
         sequence: sequence,
         from: {
+          // ease: Power2.easeOut,
           x: 100,
           opacity: 0
         },
@@ -67,19 +68,19 @@ Scope.export = {
           x: 0,
           opacity: 1
         },
-        position: '-=.2',
+        position: '-=.3',
         duration: t || .5
       },
       leave: {
         parent: parent || null,
         sequence: sequence,
-        order: order || 5,
         to: {
+          // ease: Power2.easeIn,
           x: 150,
           opacity: 0
         },
-        position: '-=.2',
-        duration: .5
+        position: '-=.1',
+        duration: .2
       }
     };
   },
@@ -87,23 +88,23 @@ Scope.export = {
     return {
       enter: {
         parent: parent || null,
-        // sequence: sequence,
+        sequence: sequence,
         from: {
           scale: 0
         },
         position: '-=.3',
         duration: .5
       },
-      // leave: {
-      //   parent: parent || null,
-      //   sequence: sequence,
-      //   order: 2,
-      //   to: {
-      //     scale: 0
-      //   },
-      //   position: '-=.3',
-      //   duration: .5
-      // }
+      leave: {
+        parent: parent || null,
+        sequence: sequence,
+        order: 2,
+        to: {
+          scale: 0
+        },
+        position: '-=.1',
+        duration: .2
+      }
     };
   }
 };

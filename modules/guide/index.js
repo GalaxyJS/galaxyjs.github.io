@@ -36,6 +36,7 @@ fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/bla
     // Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
   });
 });
+
 view.init({
   class: 'card big',
   animation: animations.cardInOut,
@@ -300,68 +301,88 @@ view.init({
         {
           tag: 'p',
           $for: 'surface in surfaces',
-          text: '<>surface.id',
-          children: {
-            tag: 'ul',
-            children: {
-              tag: 'li',
-              class: 'material-item',
-              $for: 'material in surface.data',
-              text: '<>material.id',
-              // animation: animations.createSlideInOut('surfaces', 'card'),
+          // text: '<>surface.id',
+          children: [
+            {
+              tag: 'h3',
+              text: '<>surface.id'
+            },
+            {
+              tag: 'ul',
               children: {
-                tag: 'p',
+                tag: 'li',
+                class: 'material-item',
+                $for: 'material in surface.data',
+                text: '<>material.id',
+                animation: [
+                  'surface.id',
+                  'material.id',
+                  function (surfaceId, mid) {
+                    return animations.createSlideInOut(surfaceId + mid + '-anim', 'card');
+                  }
+                ],
                 children: {
-                  $for: {
-                    data: [
-                      '<>material.data',
-                      function (data) {
-                        return data.slice(0, 5);
+                  tag: 'p',
+                  children: {
+                    $for: {
+                      data: [
+                        'material.data',
+                        function (data) {
+                          return data.slice(0, 5);
+                          // return data;
+                        }
+                      ],
+                      as: 'color'
+                    },
+                    inputs: {
+                      materialId: '<>material.id',
+                      color: '<>color'
+                    },
+                    lifecycle: {
+                      // preInsert: function (inputs, data, sequence) {
+                      //   sequence.next(function (done) {
+                      //     data.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.color.id;
+                      //     const img = new Image(40, 40);
+                      //     img.src = data.iconURL;
+                      //     img.addEventListener('load', done, false);
+                      //     img.addEventListener('error', function () {
+                      //       data.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
+                      //       done();
+                      //     }, false);
+                      //   });
+                      // }
+                    },
+                    title: [
+                      '$forIndex',
+                      'color.id',
+                      function (index, id) {
+                        return (index + 1) + ' - ' + id;
                       }
                     ],
-                    as: 'color'
-                  },
-                  inputs: {
-                    materialId: '<>material.id',
-                    color: '<>color'
-                  },
-                  lifecycle: {
-                    preInsert: function (inputs, data, sequence) {
-                      sequence.next(function (done) {
-                        data.iconURL = 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + inputs.materialId + '/' + inputs.color.id;
-                        const img = new Image(40, 40);
-                        img.src = data.iconURL;
-                        img.addEventListener('load', done, false);
-                        img.addEventListener('error', function () {
-                          data.iconURL = 'https://dummyimage.com/40x40/fff/f00&text=X';
-                          done();
-                        }, false);
-                      });
-                    }
-                  },
-                  title: [
-                    '$forIndex',
-                    'color.id',
-                    function (index, id) {
-                      return (index + 1) + ' - ' + id;
-                    }
-                  ],
-                  src: '<>this.iconURL',
-                  tag: 'img',
-                  class: 'color-item',
-                  width: 40,
-                  height: 40,
-                  // animation: [
-                  //   'surface.id',
-                  //   'material.id',
-                  //   function (surfaceId, materialId) {
-                  //     return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + '-material');
-                  //   }
-                  // ]
+                    // src: '<>this.iconURL',
+                    src: [
+                      'material.id',
+                      'color.id',
+                      function (materialId, colorId) {
+                        return 'https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/thumbnail/40x40/' + materialId + '/' + colorId;
+                      }
+                    ],
+                    tag: 'img',
+                    class: 'color-item',
+                    width: 40,
+                    height: 40,
+                    animation: [
+                      'surface.id',
+                      'material.id',
+                      function (surfaceId, materialId) {
+                        return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + materialId + '-anim');
+                      }
+                    ]
+                  }
                 }
               }
             }
-          }
+          ]
         }
       ]
     }

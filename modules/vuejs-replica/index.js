@@ -27,6 +27,8 @@ Scope.products = [
   }
 ];
 
+console.info(Scope);
+
 view.init({
   tag: 'div',
   class: 'card',
@@ -51,13 +53,12 @@ view.init({
             {
               tag: 'span',
               text: ' - OUT OF STOCK',
-              // $if: [
-              //   'product.quantity',
-              //   function (q) {
-              //     return q === 0;
-              //   }
-              // ],
-              $if: '{ product.quantity === 0 }'
+              $if: [
+                'product.quantity',
+                function (q) {
+                  return q === 0;
+                }
+              ]
             },
             {
               tag: 'button',
@@ -70,7 +71,8 @@ view.init({
                   this.inputs.productQ += 1;
                 }
               }
-            }]
+            }
+          ]
         },
         {
           tag: 'h3',

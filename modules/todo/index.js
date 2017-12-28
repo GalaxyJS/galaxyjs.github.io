@@ -37,8 +37,8 @@ view.init({
           tag: 'h2',
           text: [
             'inputs.items.length',
-            function (length) {
-              return 'ToDos, Count: ' + length;
+            function (len) {
+              return 'ToDos, Count: ' + len;
             }
           ]
         },
