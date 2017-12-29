@@ -54,7 +54,7 @@ Scope.export = {
     //   duration: .3
     // }
   },
-  createSlideInOut: function (sequence, parent, order, t) {
+  createSlideInOut: function (sequence, parent, lSeq) {
     return {
       enter: {
         parent: parent || null,
@@ -69,11 +69,11 @@ Scope.export = {
           opacity: 1
         },
         position: '-=.3',
-        duration: t || .5
+        duration: .5
       },
       leave: {
-        parent: parent || null,
-        sequence: sequence,
+        // parent: parent || null,
+        sequence: lSeq,
         to: {
           // ease: Power2.easeIn,
           x: 150,
@@ -84,7 +84,7 @@ Scope.export = {
       }
     };
   },
-  createPopInOut: function (sequence, parent) {
+  createPopInOut: function (sequence, parent, lParent) {
     return {
       enter: {
         parent: parent || null,
@@ -96,7 +96,7 @@ Scope.export = {
         duration: .5
       },
       leave: {
-        parent: parent || null,
+        parent: lParent || null,
         sequence: sequence,
         order: 2,
         to: {

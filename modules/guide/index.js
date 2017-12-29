@@ -24,18 +24,18 @@ Scope.flag = true;
 let ha;
 console.info(Scope);
 
-fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
-  response.json().then(function (data) {
-    // let s = performance.now();
-    let surfaces = data.data.productData.data[0].data.filter(function (item) {
-      return item.type === 'surfaces';
-    });
-
-    ha = surfaces;
-    // Scope.surfaces = surfaces.slice(2, 5);
-    // Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
-  });
-});
+// fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
+//   response.json().then(function (data) {
+//     // let s = performance.now();
+//     let surfaces = data.data.productData.data[0].data.filter(function (item) {
+//       return item.type === 'surfaces';
+//     });
+//
+//     ha = surfaces;
+//     // Scope.surfaces = surfaces.slice(2, 5);
+//     // Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
+//   });
+// });
 
 view.init({
   class: 'card big',
@@ -148,127 +148,127 @@ view.init({
               // Scope.flag = !Scope.flag;
               // return;
               Scope.progressText = 'Please wait...';
-              Scope.surfaces = ha;
-              // Scope.surfaces = [
-              //   {
-              //     id: 'First',
-              //     data: [
-              //       {
-              //         id: 'bolster',
-              //         selected: '48_green_blue',
-              //         data: [
-              //           {
-              //             'id': '48_green_blue'
-              //           },
-              //           {
-              //             'id': '8_grey_blue'
-              //           },
-              //           {
-              //             'id': '10_red'
-              //           },
-              //           {
-              //             'id': '40_petrol'
-              //           }
-              //         ]
-              //       },
-              //       {
-              //         id: 'ploegwool',
-              //         selected: '13_diep_red',
-              //         data: [
-              //           {
-              //             'id': '13_diep_red'
-              //           },
-              //           {
-              //             'id': '14_orange'
-              //           },
-              //           {
-              //             'id': '17_bright_red'
-              //           },
-              //           {
-              //             'id': '24_light_blue'
-              //           }
-              //         ]
-              //       },
-              //       {
-              //         id: 'polder',
-              //         selected: '1_orange_square',
-              //         data: [
-              //           {
-              //             'id': '1_orange_square'
-              //           },
-              //           {
-              //             'id': '4_blue_square'
-              //           },
-              //           {
-              //             'id': '6_yellow_square'
-              //           },
-              //           {
-              //             'id': '8_grey_square'
-              //           }
-              //         ]
-              //       }
-              //     ]
-              //   },
-              //   {
-              //     id: 'Second',
-              //     data: [
-              //       {
-              //         id: 'bolster',
-              //         selected: '48_green_blue',
-              //         data: [
-              //           {
-              //             'id': '48_green_blue'
-              //           },
-              //           {
-              //             'id': '8_grey_blue'
-              //           },
-              //           {
-              //             'id': '10_red'
-              //           },
-              //           {
-              //             'id': '40_petrol'
-              //           }
-              //         ]
-              //       },
-              //       {
-              //         id: 'ploegwool',
-              //         selected: '13_diep_red',
-              //         data: [
-              //           {
-              //             'id': '13_diep_red'
-              //           },
-              //           {
-              //             'id': '14_orange'
-              //           },
-              //           {
-              //             'id': '17_bright_red'
-              //           },
-              //           {
-              //             'id': '24_light_blue'
-              //           }
-              //         ]
-              //       },
-              //       {
-              //         id: 'polder',
-              //         selected: '1_orange_square',
-              //         data: [
-              //           {
-              //             'id': '1_orange_square'
-              //           },
-              //           {
-              //             'id': '4_blue_square'
-              //           },
-              //           {
-              //             'id': '6_yellow_square'
-              //           },
-              //           {
-              //             'id': '8_grey_square'
-              //           }
-              //         ]
-              //       }
-              //     ]
-              //   }
-              // ];
+              // Scope.surfaces = ha;
+              Scope.surfaces = [
+                {
+                  id: 'First',
+                  data: [
+                    {
+                      id: 'bolster',
+                      selected: '48_green_blue',
+                      data: [
+                        {
+                          'id': '48_green_blue'
+                        },
+                        {
+                          'id': '8_grey_blue'
+                        },
+                        {
+                          'id': '10_red'
+                        },
+                        {
+                          'id': '40_petrol'
+                        }
+                      ]
+                    },
+                    {
+                      id: 'ploegwool',
+                      selected: '13_diep_red',
+                      data: [
+                        {
+                          'id': '13_diep_red'
+                        },
+                        {
+                          'id': '14_orange'
+                        },
+                        {
+                          'id': '17_bright_red'
+                        },
+                        {
+                          'id': '24_light_blue'
+                        }
+                      ]
+                    },
+                    {
+                      id: 'polder',
+                      selected: '1_orange_square',
+                      data: [
+                        {
+                          'id': '1_orange_square'
+                        },
+                        {
+                          'id': '4_blue_square'
+                        },
+                        {
+                          'id': '6_yellow_square'
+                        },
+                        {
+                          'id': '8_grey_square'
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  id: 'Second',
+                  data: [
+                    {
+                      id: 'bolster',
+                      selected: '48_green_blue',
+                      data: [
+                        {
+                          'id': '48_green_blue'
+                        },
+                        {
+                          'id': '8_grey_blue'
+                        },
+                        {
+                          'id': '10_red'
+                        },
+                        {
+                          'id': '40_petrol'
+                        }
+                      ]
+                    },
+                    {
+                      id: 'ploegwool',
+                      selected: '13_diep_red',
+                      data: [
+                        {
+                          'id': '13_diep_red'
+                        },
+                        {
+                          'id': '14_orange'
+                        },
+                        {
+                          'id': '17_bright_red'
+                        },
+                        {
+                          'id': '24_light_blue'
+                        }
+                      ]
+                    },
+                    {
+                      id: 'polder',
+                      selected: '1_orange_square',
+                      data: [
+                        {
+                          'id': '1_orange_square'
+                        },
+                        {
+                          'id': '4_blue_square'
+                        },
+                        {
+                          'id': '6_yellow_square'
+                        },
+                        {
+                          'id': '8_grey_square'
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ];
             }
           }
         },
@@ -318,7 +318,7 @@ view.init({
                   'surface.id',
                   'material.id',
                   function (surfaceId, mid) {
-                    return animations.createSlideInOut(surfaceId + mid + '-anim', 'card');
+                    return animations.createSlideInOut(surfaceId + mid + '-anim', 'card','items-leave');
                   }
                 ],
                 children: {
@@ -375,7 +375,7 @@ view.init({
                       'surface.id',
                       'material.id',
                       function (surfaceId, materialId) {
-                        return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + materialId + '-anim');
+                        return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + materialId + '-anim',  surfaceId + materialId + '-anim');
                       }
                     ]
                   }

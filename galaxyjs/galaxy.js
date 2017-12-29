@@ -1368,6 +1368,8 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
    */
   function GalaxySequence(continues) {
     this.continues = continues || false;
+    this.truncated = false;
+    this.truncateHandlers = [];
     this.line = null;
     this.firstStepResolve = null;
     this.started = false;
@@ -1378,7 +1380,7 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
   GalaxySequence.prototype.start = function () {
     if (this.started) return this;
 
-    this.firstStepResolve();
+    this.firstStepResolve('sequence-start');
     this.started = true;
     return this;
   };
@@ -1397,10 +1399,15 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
 
   GalaxySequence.prototype.next = function (action) {
     const _this = this;
+    _this.truncated = false;
 
     let thunk;
     let promise = new Promise(function (resolve, reject) {
       thunk = function () {
+        if (_this.truncated) {
+          return;
+        }
+
         action.call(null, resolve, reject);
       };
     });
@@ -1417,10 +1424,31 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
     return _this;
   };
 
+  GalaxySequence.prototype.onTruncate = function (act) {
+    if (this.truncateHandlers.indexOf(act) === -1) {
+      this.truncateHandlers.push(act);
+    }
+  };
+
+  GalaxySequence.prototype.truncate = function () {
+    const _this = this;
+    _this.truncated = true;
+
+    let i = 0, len = this.truncateHandlers.length;
+    for (; i < len; i++) {
+      this.truncateHandlers[i].call(this);
+    }
+
+    this.truncateHandlers = [];
+    _this.reset();
+
+    return _this;
+  };
+
   GalaxySequence.prototype.nextAction = function (action) {
     this.next(function (done) {
       action.call();
-      done();
+      done('sequence-action');
     });
   };
 
@@ -2634,6 +2662,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     let remove = null;
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
+      remove.domManipulationSequence.truncate().start();
       remove.destroy(sequence);
       node.domBus.push(remove.domManipulationSequence.line);
     }
@@ -2759,6 +2788,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
+        _this.sequences.leave.truncate().start();
         _this.populateEnterSequence(_this.sequences.enter);
         // Go to next dom manipulation step when the whole :enter sequence is done
         _this.sequences.enter.nextAction(function () {
@@ -2770,6 +2800,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       _this.callLifecycleEvent('preRemove');
       _this.domManipulationSequence.next(function (done) {
         _this.origin = true;
+        _this.sequences.enter.truncate().start();
         _this.populateLeaveSequence(_this.sequences.leave);
         // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
         _this.sequences.leave.nextAction(function () {
@@ -2835,11 +2866,15 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       _this.origin = true;
       if (_this.inDOM) {
         _this.callLifecycleEvent('preDestroy');
+        // debugger;
+        _this.sequences.enter.truncate().start();
+        // _this.sequences.leave.truncate().start();
         _this.domManipulationSequence.next(function (done) {
           // Add children leave sequence to this node(parent node) leave sequence
           _this.clean(_this.sequences.leave);
           _this.populateLeaveSequence(_this.sequences.leave);
           _this.sequences.leave.nextAction(function () {
+
             removeChild(_this.node.parentNode, _this.node);
             done();
             _this.origin = false;
@@ -2849,11 +2884,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         });
       }
     } else if (leaveSequence) {
-      // _this.domManipulationSequence.next(function (done) {
-      _this.clean(leaveSequence);
-
       if (_this.inDOM) {
         _this.callLifecycleEvent('preDestroy');
+        _this.sequences.enter.truncate().start();
+        // _this.sequences.leave.truncate().start();
+        _this.clean(_this.sequences.leave);
         _this.populateLeaveSequence(_this.sequences.leave);
 
         leaveSequence.next(function (next) {
@@ -2864,7 +2899,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           });
         });
       }
-      // });
+
     }
 
     _this.domManipulationSequence.nextAction(function () {
@@ -2922,7 +2957,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   ViewNode.prototype.clean = function (leaveSequence) {
     let toBeRemoved = [], node, _this = this;
-
+// debugger;
     const cn = Array.prototype.slice.call(_this.node.childNodes, 0);
     for (let i = cn.length - 1; i >= 0; i--) {
       node = cn[i]['__viewNode__'];
@@ -2936,8 +2971,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // children should also get destroyed as child
     if (leaveSequence) {
       // _this.renderingFlow.next(function (done) {
+      //   debugger;
       ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence);
-      // leaveSequence.nextAction(done);
+      // setTimeout(function () {
+      //   leaveSequence.nextAction(done);
+      // }, 1000);
       // });
 
       return _this.renderingFlow;
@@ -2952,6 +2990,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
       Promise.all(_this.domBus).then(function () {
         _this.domBus = [];
+        // debugger;
         next();
       });
     });
@@ -3052,6 +3091,331 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       }
     };
   });
+})(Galaxy);
+
+/* global Galaxy, TweenLite, TimelineLite */
+'use strict';
+
+(function (G) {
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
+    type: 'custom',
+    name: 'animation',
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param attr
+     * @param config
+     * @param scopeData
+     */
+    handler: function (viewNode, attr, config, oldConfig, scopeData) {
+      if (viewNode.virtual || !config) {
+        return;
+      }
+      let enterAnimationConfig = config.enter;
+      if (enterAnimationConfig) {
+        viewNode.populateEnterSequence = function (sequence) {
+          sequence.onTruncate(function () {
+            TweenLite.killTweensOf(viewNode.node);
+            // console.info(enterAnimationConfig.sequence, enterAnimationConfig.parent);
+            if (enterAnimationConfig.sequence) {
+              AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
+            }
+
+            if (enterAnimationConfig.parent) {
+              AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
+            }
+          });
+
+          sequence.next(function (done) {
+            if (enterAnimationConfig.sequence) {
+              let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
+              animationMeta.duration = enterAnimationConfig.duration;
+              animationMeta.position = enterAnimationConfig.position;
+              animationMeta.NODE = viewNode;
+
+              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              lastStep.clearProps = 'all';
+              animationMeta.add(viewNode.node, enterAnimationConfig, done);
+
+              // Add to parent should happen after the animation is added to the child
+              if (enterAnimationConfig.parent) {
+                const parent = AnimationMeta.get(enterAnimationConfig.parent);
+                parent.addChild(animationMeta);
+              }
+            } else {
+              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              lastStep.clearProps = 'all';
+              AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
+            }
+          });
+        };
+      }
+
+      let leaveAnimationConfig = config.leave;
+      if (leaveAnimationConfig) {
+        viewNode.populateLeaveSequence = function (sequence) {
+          sequence.onTruncate(function () {
+            TweenLite.killTweensOf(viewNode.node);
+            if (leaveAnimationConfig.sequence) {
+              AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence] = null;
+            }
+
+            if (leaveAnimationConfig.parent) {
+              AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent] = null;
+            }
+          });
+
+          sequence.next(function (done) {
+            if (leaveAnimationConfig.sequence) {
+              // debugger;
+              let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+              animationMeta.duration = leaveAnimationConfig.duration;
+              animationMeta.position = leaveAnimationConfig.position;
+              animationMeta.NODE = viewNode;
+
+              // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
+              // lastStep.clearProps = 'all';
+              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+
+              // Add to parent should happen after the animation is added to the child
+              if (leaveAnimationConfig.parent) {
+                const parent = AnimationMeta.get(leaveAnimationConfig.parent);
+                parent.addChild(animationMeta);
+              }
+            } else {
+              // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
+              // lastStep.clearProps = 'all';
+              AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
+            }
+          });
+        };
+      }
+
+      viewNode.rendered.then(function () {
+        viewNode.observer.on('class', function (value, oldValue) {
+          value.forEach(function (item) {
+            if (item && oldValue.indexOf(item) === -1) {
+              let _config = config['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+                  let classAnimationConfig = _config;
+                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+
+                  if (classAnimationConfig.sequence) {
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+
+          oldValue.forEach(function (item) {
+            if (item && value.indexOf(item) === -1) {
+              let _config = config['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+                  let classAnimationConfig = _config;
+                  classAnimationConfig.to = {className: '-=' + item || ''};
+
+                  if (classAnimationConfig.sequence) {
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+        });
+      });
+    }
+  };
+
+  function AnimationMeta(name) {
+    const _this = this;
+    _this.name = name;
+    this.timeline = new TimelineLite({
+      autoRemoveChildren: true,
+      smoothChildTiming: true,
+      onComplete: function () {
+        _this.lastChildPosition = 0;
+        // console.info(_this);
+        if (_this.parent) {
+          _this.parent.timeline.remove(_this.timeline);
+        }
+      }
+    });
+
+    this.timeline.addLabel('beginning', 0);
+    this.duration = 0;
+    this.position = '+=0';
+    this.queue = {};
+    this.list = [];
+    this.lastChildPosition = 0;
+    this.parent = null;
+  }
+
+  AnimationMeta.ANIMATIONS = {};
+  AnimationMeta.TIMELINES = {};
+  // console.info(AnimationMeta.ANIMATIONS);
+  AnimationMeta.getTimeline = function (name, onComplete) {
+    if (!AnimationMeta.TIMELINES[name]) {
+      AnimationMeta.TIMELINES[name] = new TimelineLite({
+        autoRemoveChildren: true,
+        onComplete: onComplete
+      });
+    }
+
+    return AnimationMeta.TIMELINES[name];
+  };
+
+  AnimationMeta.get = function (name) {
+    if (!AnimationMeta.ANIMATIONS[name]) {
+      AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
+    }
+
+    return AnimationMeta.ANIMATIONS[name];
+  };
+
+  AnimationMeta.parseSequence = function (sequence) {
+    return sequence.split('/').filter(Boolean);
+  };
+
+  AnimationMeta.createTween = function (node, config, onComplete) {
+    let to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+    let tween = null;
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      let from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+    return tween;
+  };
+
+  AnimationMeta.calculateDuration = function (duration, position) {
+    let po = position.replace('=', '');
+    return ((duration * 10) + (Number(po) * 10)) / 10;
+  };
+
+  AnimationMeta.prototype.calculateLastChildPosition = function (duration, position) {
+    const calc = AnimationMeta.calculateDuration(duration, position || '+=0');
+    const lcp = (this.lastChildPosition * 10);
+    const c = (calc * 10);
+    this.lastChildPosition = (lcp + c) / 10;
+
+  };
+
+  AnimationMeta.prototype.addChild = function (child, prior) {
+    const _this = this;
+    child.parent = _this;
+
+    const children = this.timeline.getChildren(false);
+
+    if (children.indexOf(child.timeline) === -1) {
+      // debugger;
+      _this.timeline.add(child.timeline, _this.lastChildPosition);
+      _this.calculateLastChildPosition(child.duration, child.position);
+    } else {
+      // _this.calculateLastChildPosition(child.duration, child.position);
+    }
+  };
+
+  AnimationMeta.prototype.add = function (node, config, onComplete) {
+    const _this = this;
+    let to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+
+    let tween = null;
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      let from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+
+    // First animation in the timeline should always start at zero
+    if (this.timeline.getChildren(false).length === 0) {
+      _this.lastChildPosition = 0;
+      _this.timeline.add(tween, 0);
+    } else {
+      _this.calculateLastChildPosition(config.duration, config.position);
+      _this.timeline.add(tween, _this.lastChildPosition);
+    }
+  };
+
+  /**
+   *
+   * @param {number} order
+   * @param {callback} operation
+   */
+  AnimationMeta.prototype.addToQueue = function (order, node, operation) {
+    if (this.parent) {
+      return this.parent.addToQueue(order, node, operation);
+    }
+
+    if (!this.queue[order]) {
+      this.queue[order] = [];
+    }
+    this.queue[order].push({node: node, operation: operation});
+    this.list.push({node: node, operation: operation, order: order});
+  };
+})(Galaxy);
+
+/* global Galaxy */
+
+(function (G) {
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
+    type: 'custom',
+    name: 'on',
+    handler: function (viewNode, attr, events, oldEvents, scopeData) {
+      if (events !== null && typeof events === 'object') {
+        for (let name in events) {
+          if (events.hasOwnProperty(name)) {
+            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
+          }
+        }
+      }
+    }
+  };
 })(Galaxy);
 
 /* global Galaxy */
@@ -3228,13 +3592,15 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param nodeScopeData
    */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
+    const parentNode = node.parent;
     if (changes.type === 'reset') {
-      node.renderingFlow.nextAction(function () {
-        GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
+      parentNode.renderingFlow.truncate().start();
+      parentNode.renderingFlow.nextAction(function () {
+        GV.ViewNode.destroyNodes(parentNode, cache.nodes.reverse());
         cache.nodes = [];
       });
 
-      node.renderingFlow.next(function (next) {
+      parentNode.renderingFlow.next(function (next) {
         requestAnimationFrame(function () {
           Promise.all(node.parent.domBus).then(next);
         });
@@ -3252,7 +3618,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     let position = null;
     let newItems = [];
     let action = Array.prototype.push;
-    node.renderingFlow.next(function (next) {
+    parentNode.renderingFlow.next(function (next) {
       if (changes.type === 'push') {
         let length = cache.nodes.length;
         if (length) {
@@ -3289,6 +3655,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       let p = cache.propName, n = cache.nodes, cns;
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
+
       if (newItems instanceof Array) {
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
@@ -3307,7 +3674,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
     // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
-    node.renderingFlow.next(function (next) {
+    parentNode.renderingFlow.next(function (next) {
       requestAnimationFrame(function () {
         Promise.all(parentNode.domBus).then(next);
       });
@@ -3504,304 +3871,3 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   };
 })(Galaxy.GalaxyView);
 
-
-/* global Galaxy, TweenLite, TimelineLite */
-'use strict';
-
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
-    type: 'custom',
-    name: 'animation',
-    /**
-     *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param attr
-     * @param config
-     * @param scopeData
-     */
-    handler: function (viewNode, attr, config, oldConfig, scopeData) {
-      if (viewNode.virtual || !config) {
-        return;
-      }
-      let enterAnimationConfig = config.enter;
-      if (enterAnimationConfig) {
-        viewNode.populateEnterSequence = function (sequence) {
-          sequence.next(function (done) {
-            if (enterAnimationConfig.sequence) {
-              let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
-              animationMeta.duration = enterAnimationConfig.duration;
-              animationMeta.position = enterAnimationConfig.position;
-              animationMeta.NODE = viewNode;
-
-              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
-              lastStep.clearProps = 'all';
-              animationMeta.add(viewNode.node, enterAnimationConfig, done);
-
-              // Add to parent should happen after the animation is added to the child
-              if (enterAnimationConfig.parent) {
-                const parent = AnimationMeta.get(enterAnimationConfig.parent);
-                parent.addChild(animationMeta);
-              }
-            } else {
-              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
-              lastStep.clearProps = 'all';
-              AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
-            }
-          });
-        };
-      }
-
-      let leaveAnimationConfig = config.leave;
-      if (leaveAnimationConfig) {
-        viewNode.populateLeaveSequence = function (sequence) {
-          sequence.next(function (done) {
-            if (leaveAnimationConfig.sequence) {
-              // debugger;
-              let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-              animationMeta.duration = leaveAnimationConfig.duration;
-              animationMeta.position = leaveAnimationConfig.position;
-              animationMeta.NODE = viewNode;
-
-              // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
-              // lastStep.clearProps = 'all';
-              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-
-              // Add to parent should happen after the animation is added to the child
-              if (leaveAnimationConfig.parent) {
-                const parent = AnimationMeta.get(leaveAnimationConfig.parent);
-                parent.addChild(animationMeta);
-              }
-            } else {
-              // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
-              // lastStep.clearProps = 'all';
-              AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
-            }
-          });
-        };
-      }
-
-      viewNode.rendered.then(function () {
-        viewNode.observer.on('class', function (value, oldValue) {
-          value.forEach(function (item) {
-            if (item && oldValue.indexOf(item) === -1) {
-              let _config = config['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
-              }
-            }
-          });
-
-          oldValue.forEach(function (item) {
-            if (item && value.indexOf(item) === -1) {
-              let _config = config['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = {className: '-=' + item || ''};
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
-              }
-            }
-          });
-        });
-      });
-    }
-  };
-
-  function AnimationMeta(name) {
-    const _this = this;
-    _this.name = name;
-    this.timeline = new TimelineLite({
-      autoRemoveChildren: true,
-      smoothChildTiming: true,
-      onComplete: function () {
-        _this.lastChildPosition = 0;
-        if (_this.parent) {
-          _this.parent.timeline.remove(_this.timeline);
-        }
-      }
-    });
-
-    this.timeline.addLabel('beginning', 0);
-    this.duration = 0;
-    this.position = '+=0';
-    this.queue = {};
-    this.list = [];
-    this.lastChildPosition = 0;
-    this.parent = null;
-  }
-
-  AnimationMeta.ANIMATIONS = {};
-  AnimationMeta.TIMELINES = {};
-
-  AnimationMeta.getTimeline = function (name, onComplete) {
-    if (!AnimationMeta.TIMELINES[name]) {
-      AnimationMeta.TIMELINES[name] = new TimelineLite({
-        autoRemoveChildren: true,
-        onComplete: onComplete
-      });
-    }
-
-    return AnimationMeta.TIMELINES[name];
-  };
-
-  AnimationMeta.get = function (name) {
-    if (!AnimationMeta.ANIMATIONS[name]) {
-      AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
-    }
-
-    return AnimationMeta.ANIMATIONS[name];
-  };
-
-  AnimationMeta.parseSequence = function (sequence) {
-    return sequence.split('/').filter(Boolean);
-  };
-
-  AnimationMeta.createTween = function (node, config, onComplete) {
-    let to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
-    let tween = null;
-
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      let from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
-      tween = TweenLite.from(node,
-        config.duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(node,
-        config.duration || 0,
-        to || {});
-    }
-
-    return tween;
-  };
-
-  AnimationMeta.calculateDuration = function (duration, position) {
-    let po = position.replace('=', '');
-    return ((duration * 10) + (Number(po) * 10)) / 10;
-  };
-
-  AnimationMeta.prototype.calculateLastChildPosition = function (duration, position) {
-    const calc = AnimationMeta.calculateDuration(duration, position || '+=0');
-    const lcp = (this.lastChildPosition * 10);
-    const c = (calc * 10);
-    this.lastChildPosition = (lcp + c) / 10;
-
-  };
-
-  AnimationMeta.prototype.addChild = function (child, prior) {
-    const _this = this;
-    child.parent = _this;
-
-    const children = this.timeline.getChildren(false);
-
-    if (children.indexOf(child.timeline) === -1) {
-      // debugger;
-      _this.timeline.add(child.timeline, _this.lastChildPosition);
-      _this.calculateLastChildPosition(child.duration, child.position);
-    } else {
-      // _this.calculateLastChildPosition(child.duration, child.position);
-    }
-  };
-
-  AnimationMeta.prototype.add = function (node, config, onComplete) {
-    const _this = this;
-    let to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
-
-    let tween = null;
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      let from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
-      tween = TweenLite.from(node,
-        config.duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(node,
-        config.duration || 0,
-        to || {});
-    }
-
-
-    // First animation in the timeline should always start at zero
-    if (this.timeline.getChildren(false).length === 0) {
-      _this.lastChildPosition = 0;
-      _this.timeline.add(tween, 0);
-    } else {
-      _this.calculateLastChildPosition(config.duration, config.position);
-      _this.timeline.add(tween, _this.lastChildPosition);
-    }
-  };
-
-  /**
-   *
-   * @param {number} order
-   * @param {callback} operation
-   */
-  AnimationMeta.prototype.addToQueue = function (order, node, operation) {
-    if (this.parent) {
-      return this.parent.addToQueue(order, node, operation);
-    }
-
-    if (!this.queue[order]) {
-      this.queue[order] = [];
-    }
-    this.queue[order].push({node: node, operation: operation});
-    this.list.push({node: node, operation: operation, order: order});
-  };
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
-    type: 'custom',
-    name: 'on',
-    handler: function (viewNode, attr, events, oldEvents, scopeData) {
-      if (events !== null && typeof events === 'object') {
-        for (let name in events) {
-          if (events.hasOwnProperty(name)) {
-            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
-          }
-        }
-      }
-    }
-  };
-})(Galaxy);
