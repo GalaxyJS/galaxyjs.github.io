@@ -79,8 +79,8 @@ Scope.export = {
           x: 150,
           opacity: 0
         },
-        position: '-=.1',
-        duration: .2
+        position: '-=.5',
+        duration: 1
       }
     };
   },
@@ -103,7 +103,7 @@ Scope.export = {
           scale: 0
         },
         position: '-=.1',
-        duration: .2
+        duration: 1
       }
     };
   }

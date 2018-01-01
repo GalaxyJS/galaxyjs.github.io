@@ -1,6 +1,5 @@
 /* global Scope */
 
-
 const view = Scope.import('galaxy/view');
 
 Scope.flag = false;

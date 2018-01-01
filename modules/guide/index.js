@@ -318,7 +318,7 @@ view.init({
                   'surface.id',
                   'material.id',
                   function (surfaceId, mid) {
-                    return animations.createSlideInOut(surfaceId + mid + '-anim', 'card','items-leave');
+                    return animations.createSlideInOut(surfaceId + mid + '-anim', 'card', 'items-leave');
                   }
                 ],
                 children: {
@@ -375,7 +375,7 @@ view.init({
                       'surface.id',
                       'material.id',
                       function (surfaceId, materialId) {
-                        return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + materialId + '-anim',  surfaceId + materialId + '-anim');
+                        return animations.createPopInOut(surfaceId + materialId + '-color', surfaceId + materialId + '-anim', surfaceId + materialId + '-anim');
                       }
                     ]
                   }
