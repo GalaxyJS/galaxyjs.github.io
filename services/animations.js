@@ -68,8 +68,8 @@ Scope.export = {
           x: 0,
           opacity: 1
         },
-        position: '-=.3',
-        duration: .5
+        position: '-=.2',
+        duration: .3
       },
       leave: {
         // parent: parent || null,
@@ -79,12 +79,12 @@ Scope.export = {
           x: 150,
           opacity: 0
         },
-        position: '-=.5',
-        duration: 1
+        position: '-=.15',
+        duration: .2
       }
     };
   },
-  createPopInOut: function (sequence, parent, lParent) {
+  createPopInOut: function (sequence, parent, lSequence, lParent) {
     return {
       enter: {
         parent: parent || null,
@@ -92,18 +92,18 @@ Scope.export = {
         from: {
           scale: 0
         },
-        position: '-=.3',
-        duration: .5
+        position: '-=.2',
+        duration: .3
       },
       leave: {
         parent: lParent || null,
-        sequence: sequence,
+        sequence: lSequence,
         order: 2,
         to: {
           scale: 0
         },
-        position: '-=.1',
-        duration: 1
+        position: '-=.15',
+        duration: .2
       }
     };
   }
