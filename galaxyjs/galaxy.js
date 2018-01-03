@@ -1385,7 +1385,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     _this.activeState = Promise.resolve('sequence-constructor');
     // _this.children = [];
     _this.actions = [];
-    _this.res = Promise.resolve();
+    _this.resolver = Promise.resolve();
 
     this.reset();
   }
@@ -1440,21 +1440,21 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     //     action.call(null, resolve, reject);
     //   };
     // });
-    let done;
-    let promise = new Promise(function (resolve, reject) {
-      done = resolve;
-    });
+    // let done;
+    // let promise = new Promise(function (resolve, reject) {
+    //   done = resolve;
+    // });
     // we create an act object in order to be able to change the process on the fly
     // when this sequence is truncated, then the process of any active action should be disabled
     const act = {
-      promise: promise,
-      done: done,
+      // promise: promise,
+      // done: done,
       process: this.proceed,
-      run: function () {
+      run: function run() {
         const local = this;
         action.call(null, function () {
           local.process.call(_this);
-          done();
+          // done();
         }, function (e) {
           console.error(e);
         });
@@ -1478,7 +1478,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
 
     if (!_this.processing) {
       _this.processing = true;
-      _this.res.then(act.run.bind(act));
+      _this.resolver.then(act.run.bind(act));
       // requestAnimationFrame(act.run.bind(act));
       // setTimeout(act.run.bind(act));
       // act.run();
@@ -1511,7 +1511,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       // oldAction.promise.then(function () {
       //   firstAction.run();
       // });
-      _this.res.then(firstAction.run.bind(firstAction));
+      _this.resolver.then(firstAction.run.bind(firstAction));
       // requestAnimationFrame(firstAction.run.bind(firstAction));
       // setTimeout(firstAction.run.bind(firstAction));
       // firstAction.run();
@@ -1519,7 +1519,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       // oldAction.promise.then(function () {
       //   _this.activeStateResolve();
       // });
-      _this.res.then(_this.activeStateResolve.bind(_this));
+      _this.resolver.then(_this.activeStateResolve.bind(_this));
       // _this.activeStateResolve();
       // setTimeout(_this.activeStateResolve.bind(_this));
     }
@@ -1546,12 +1546,6 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     this.truncateHandlers = [];
     _this.isFinished = true;
     _this.processing = false;
-    // setTimeout(function () {
-    //   _this.activeStateResolve();
-    // });
-    // setTimeout(function () {
-    // _this.reset();
-    // });
 
     return _this;
   };
@@ -1562,14 +1556,6 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       done('sequence-action');
     });
   };
-
-  // GalaxySequence.prototype.finish = function (action) {
-  //   const _this = this;
-  //   Promise.all(this.children).then(function () {
-  //     _this.children = [];
-  //     action.call();
-  //   });
-  // };
 
   return GalaxySequence;
 })();
@@ -2488,7 +2474,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
 
     _this.renderingFlow = this.container.renderingFlow;
-    _this.domManipulationSequence = this.container.domManipulationSequence;
+    // _this.domManipulationSequence = this.container.domManipulationSequence;
   }
 
   GalaxyView.prototype.setupRepos = function (repos) {
@@ -2786,7 +2772,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
-      remove.domManipulationSequence.truncate();
+      // remove.domManipulationSequence.truncate();
       remove.renderingFlow.truncate();
       remove.destroy(sequence);
       // console.info(remove.node);
@@ -2827,11 +2813,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     this.parent = null;
     this.dependedObjects = [];
     // this.domBus = [];
-    this.renderingFlow = new Galaxy.GalaxySequence(true).start();
-    this.domManipulationSequence = new Galaxy.GalaxySequence(true).start();
+    this.renderingFlow = new Galaxy.GalaxySequence();
+    // this.domManipulationSequence = new Galaxy.GalaxySequence();
     this.sequences = {
-      enter: new Galaxy.GalaxySequence(true).start(),
-      leave: new Galaxy.GalaxySequence(true).start(),
+      enter: new Galaxy.GalaxySequence(),
+      leave: new Galaxy.GalaxySequence(),
       ':destroy': new Galaxy.GalaxySequence(true),
       ':class': new Galaxy.GalaxySequence().start()
     };
@@ -2860,7 +2846,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    */
   ViewNode.prototype.callLifecycleEvent = function (id) {
     if (this.schema.lifecycle && typeof this.schema.lifecycle[id] === 'function') {
-      this.schema.lifecycle[id].call(this, this.inputs, this.data, this.domManipulationSequence);
+      this.schema.lifecycle[id].call(this, this.inputs, this.data, this.sequences);
     }
   };
 
@@ -2902,18 +2888,21 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
     // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
-      _this.callLifecycleEvent('preInsert');
       _this.sequences.leave.truncate();
-      insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-      removeChild(_this.placeholder.parentNode, _this.placeholder);
+      _this.callLifecycleEvent('preInsert');
+
+      _this.sequences.enter.nextAction(function () {
+        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        removeChild(_this.placeholder.parentNode, _this.placeholder);
+      });
 
       let animationDone;
-      let p = new Promise(function (resolve) {
+      const waitForNodeAnimation = new Promise(function (resolve) {
         animationDone = resolve;
       });
 
       _this.parent.sequences.enter.next(function (next) {
-        p.then(next);
+        waitForNodeAnimation.then(next);
       });
 
       _this.populateEnterSequence(_this.sequences.enter);
@@ -2923,17 +2912,18 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         animationDone();
       });
     } else if (!flag && _this.node.parentNode) {
-      _this.callLifecycleEvent('preRemove');
       _this.sequences.enter.truncate();
+      _this.callLifecycleEvent('preRemove');
+
       _this.origin = true;
 
       let animationDone;
-      let p = new Promise(function (resolve) {
+      const waitForNodeAnimation = new Promise(function (resolve) {
         animationDone = resolve;
       });
 
       _this.parent.sequences.leave.next(function (next) {
-        p.then(next);
+        waitForNodeAnimation.then(next);
       });
 
       _this.populateLeaveSequence(_this.sequences.leave);
@@ -2956,8 +2946,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   ViewNode.prototype.registerChild = function (viewNode, position) {
     const _this = this;
     viewNode.parent = _this;
-    // viewNode.domBus = _this.domBus;
-    // viewNode.renderingFlow = _this.renderingFlow;
     _this.node.insertBefore(viewNode.placeholder, position);
   };
 
@@ -2998,34 +2986,45 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     if (!leaveSequence) {
       _this.origin = true;
       if (_this.inDOM) {
-        _this.callLifecycleEvent('preDestroy');
         _this.sequences.enter.truncate();
-        // _this.domManipulationSequence.next(function (done) {
+        _this.callLifecycleEvent('preDestroy');
+
+        let animationDone;
+        const waitForNodeAnimation = new Promise(function (resolve) {
+          animationDone = resolve;
+        });
+
+        _this.parent.sequences.leave.next(function (next) {
+          waitForNodeAnimation.then(next);
+        });
+
         // Add children leave sequence to this node(parent node) leave sequence
-        _this.clean(_this.parent.sequences.leave);
-        _this.populateLeaveSequence(_this.parent.sequences.leave);
-        _this.parent.sequences.leave.nextAction(function () {
+        _this.clean(_this.sequences.leave);
+        _this.populateLeaveSequence(_this.sequences.leave);
+        _this.sequences.leave.nextAction(function () {
           removeChild(_this.node.parentNode, _this.node);
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
+          animationDone();
           _this.origin = false;
         });
       }
     } else if (leaveSequence) {
       if (_this.inDOM) {
-        _this.callLifecycleEvent('preDestroy');
         _this.sequences.enter.truncate();
+        _this.callLifecycleEvent('preDestroy');
+
         _this.clean(_this.sequences.leave);
         _this.populateLeaveSequence(_this.sequences.leave);
 
         let animationDone;
-        let p = new Promise(function (resolve) {
+        const waitForNodeAnimation = new Promise(function (resolve) {
           animationDone = resolve;
         });
 
         leaveSequence.next(function (next) {
-          p.then(next);
+          waitForNodeAnimation.then(next);
         });
 
         _this.sequences.leave.nextAction(function () {
@@ -3036,10 +3035,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         });
       }
     }
-
-    // _this.domManipulationSequence.nextAction(function () {
-    //   _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
-    // });
 
     let property, properties = _this.properties;
     const removeItem = function (item) {
@@ -3364,19 +3359,19 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     },
     onApply: function (cache, selector, oldSelector, scopeData) {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
-        this.domManipulationSequence.next(function (done) {
-          let allContent = scopeData.element.schema.children;
-          let parentViewNode = this.parent;
-          allContent.forEach(function (content) {
-            if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
-              content.__node__.__viewNode__.refreshBinds(scopeData);
-              parentViewNode.registerChild(content.__node__.__viewNode__, this.placeholder);
-              content.__node__.__viewNode__.setInDOM(true);
-            }
-          });
-
-          done();
+        // this.domManipulationSequence.next(function (done) {
+        let allContent = scopeData.element.schema.children;
+        let parentViewNode = this.parent;
+        allContent.forEach(function (content) {
+          if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
+            content.__node__.__viewNode__.refreshBinds(scopeData);
+            parentViewNode.registerChild(content.__node__.__viewNode__, this.placeholder);
+            content.__node__.__viewNode__.setInDOM(true);
+          }
         });
+
+        // done();
+        // });
       }
     }
   };
@@ -3397,7 +3392,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // const parentNode = node.parent;
     node.renderingFlow.truncate();
     if (changes.type === 'reset') {
-      node.renderingFlow.next(function (next) {
+      node.renderingFlow.next(function forResetProcess(next) {
         GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
         cache.nodes = [];
 
@@ -3423,7 +3418,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     let newItems = [];
     let action = Array.prototype.push;
 
-    node.renderingFlow.next(function (next) {
+    node.renderingFlow.next(function forPushProcess(next) {
       if (changes.type === 'push') {
         let length = cache.nodes.length;
         if (length) {
