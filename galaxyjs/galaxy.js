@@ -2901,8 +2901,13 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       _this.callLifecycleEvent('preInsert');
 
       _this.sequences.enter.nextAction(function () {
-        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-        removeChild(_this.placeholder.parentNode, _this.placeholder);
+        if (!_this.node.parentNode) {
+          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        }
+
+        if (_this.placeholder.parentNode) {
+          removeChild(_this.placeholder.parentNode, _this.placeholder);
+        }
       });
 
       let animationDone;
@@ -2938,8 +2943,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       _this.populateLeaveSequence(_this.sequences.leave);
       // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
       _this.sequences.leave.nextAction(function () {
-        insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-        removeChild(_this.node.parentNode, _this.node);
+        if (!_this.placeholder.parentNode) {
+          insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+        }
+
+        if (_this.node.parentNode) {
+          removeChild(_this.node.parentNode, _this.node);
+        }
+
         _this.origin = false;
         _this.callLifecycleEvent('postRemove');
         animationDone();
@@ -3266,6 +3277,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
+              // enterAnimationConfig.to = enterAnimationConfig.to || {};
+              // enterAnimationConfig.to.clearProps = 'all';
               animationMeta.add(viewNode.node, enterAnimationConfig, done);
 
               // Add to parent should happen after the animation is added to the child
@@ -3276,6 +3289,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
             } else {
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
+
+              // enterAnimationConfig.to = enterAnimationConfig.to || {};
+              // enterAnimationConfig.to.clearProps = 'all';
               AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
             }
           });
@@ -3433,7 +3449,16 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   AnimationMeta.createTween = function (node, config, onComplete) {
     let to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
+
+    if (to.onComplete) {
+      const userOnComplete = to.onComplete;
+      to.onComplete = function () {
+        userOnComplete();
+        onComplete();
+      };
+    } else {
+      to.onComplete = onComplete;
+    }
     let tween = null;
 
     if (config.from && config.to) {
@@ -3443,7 +3468,17 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         to);
     } else if (config.from) {
       let from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
+
+      if (from.onComplete) {
+        const userOnComplete = to.onComplete;
+        from.onComplete = function () {
+          userOnComplete();
+          onComplete();
+        };
+      } else {
+        from.onComplete = onComplete;
+      }
+
       tween = TweenLite.from(node,
         config.duration || 0,
         from || {});
@@ -3880,20 +3915,37 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   };
 
   GV.REACTIVE_BEHAVIORS['$if'] = {
-    bind: function (nodeScopeData, matches,) {
+    bind: function (nodeScopeData, matches) {
     },
     onApply: function (cache, value, oldValue, scopeData, expression) {
       if (expression) {
         value = expression();
       }
 
-      if (value && !this.inDOM) {
-        this.setInDOM(true);
-      } else if (!value && this.inDOM) {
-        this.setInDOM(false);
-      }
+      createProcess(this, value);
     }
   };
+
+  function createProcess(node, value) {
+    node.rendered.then(function () {
+      node.renderingFlow.truncate();
+      node.renderingFlow.next(function ifProcess(next) {
+        if (value && !node.inDOM) {
+          // debugger;
+          node.setInDOM(true);
+          node.sequences.enter.next(function () {
+            next();
+          });
+        } else if (!value && node.inDOM) {
+          // debugger;
+          node.setInDOM(false);
+          node.sequences.leave.next(next);
+        }        else {
+          next();
+        }
+      });
+    });
+  }
 })(Galaxy.GalaxyView);
 
 

@@ -145,10 +145,10 @@ view.init({
           text: 'Request Surfaces',
           on: {
             click: function () {
-              // Scope.flag = !Scope.flag;
+              Scope.flag = !Scope.flag;
               // return;
               Scope.progressText = 'Please wait...';
-              Scope.surfaces = ha;
+              // Scope.surfaces = ha;
               // Scope.surfaces = [
               //   {
               //     id: 'First',
@@ -289,14 +289,14 @@ view.init({
         },
         {
           tag: 'h3',
-          text: '<>inputs.items.length',
+          text: 'sd asdsaf saf asf sa',
           $if: '<>flag',
           on: {
             click: function () {
               console.info(Scope);
             }
           },
-          // animation: animations.createSlideInOut('surfaces', 'card')
+          animation: animations.createSlideInOut()
         },
         {
           tag: 'p',
