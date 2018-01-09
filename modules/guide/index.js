@@ -145,10 +145,10 @@ view.init({
           text: 'Request Surfaces',
           on: {
             click: function () {
-              Scope.flag = !Scope.flag;
+              // Scope.flag = !Scope.flag;
               // return;
               Scope.progressText = 'Please wait...';
-              // Scope.surfaces = ha;
+              Scope.surfaces = ha;
               // Scope.surfaces = [
               //   {
               //     id: 'First',

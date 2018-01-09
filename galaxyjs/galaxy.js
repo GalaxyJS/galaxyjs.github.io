@@ -894,7 +894,7 @@ if (typeof Object.assign != 'function') {
    * @param {Element} rootElement
    */
   GalaxyCore.prototype.boot = function (bootModule) {
-    let _this = this;
+    const _this = this;
     _this.rootElement = bootModule.element;
 
     bootModule.domain = this;
@@ -904,7 +904,7 @@ if (typeof Object.assign != 'function') {
       throw new Error('element property is mandatory');
     }
 
-    let promise = new Promise(function (resolve, reject) {
+    const promise = new Promise(function (resolve, reject) {
       _this.load(bootModule).then(function (module) {
         // Replace galaxy temporary  bootModule with user specified bootModule
         _this.bootModule = module;
@@ -1595,8 +1595,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     value: null
   };
 
-  GalaxyView.BINDING_SYNTAX_REGEX = /^<>\s*([^\[\]]*)\s*$/;
-  GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp(/(?:["'][\w\s]*['"])|([^\d\s=+\-|&%{}()<>!/]+)/, 'g');
+  GalaxyView.BINDING_SYNTAX_REGEX = new RegExp('^<>\\s*([^\\[\\]]*)\\s*$');
+  GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
@@ -3833,7 +3833,12 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
+      // let processFinished;
+      // const process = new Promise(function (resolve) {
+      //   processFinished = resolve;
+      // });
 
+      // requestAnimationFrame(function () {
       if (newItems instanceof Array) {
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
@@ -3846,7 +3851,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         }
       }
 
+      // processFinished();
       parentNode.sequences.enter.nextAction(next);
+      // });
+
+
+      // process.then(function () {
+
+      // });
     });
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
