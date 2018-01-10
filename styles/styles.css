@@ -11,9 +11,10 @@ p {
 }
 
 h1 {
-  font-size: 1.9em;
+  font-size: 30px;
   cursor: default;
   margin: 20px 0;
+  line-height: 30px;
 }
 
 h2 {
@@ -41,7 +42,8 @@ h2 > a:hover {
 
 html, body {
   /*font-family: 'Rubik', sans-serif;*/
-  font-size: 17px;
+  font-size: 16px;
+  line-height: 18px;
   background-color: #fafbfc;
   position: relative;
   height: 100%;
@@ -189,8 +191,22 @@ ul {
 }
 
 ul > li {
-  padding: .2em 0;
+  padding: 5px 0 5px 22px;
   overflow: hidden;
+  position: relative;
+}
+
+ul > li:before {
+  content: ' ';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  line-height: 12px;
+  background-color: #009688;
+  margin: 8px 5px;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
 }
 
 ul.items-list > li {
@@ -245,6 +261,7 @@ ul.items-list > li:hover {
 @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
   html, body {
     font-size: 15px;
+    line-height: 16px;
   }
 
   .main-content {

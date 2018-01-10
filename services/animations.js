@@ -95,16 +95,16 @@ Scope.export = {
         position: '-=.2',
         duration: .3
       },
-      leave: {
-        parent: lParent || null,
-        sequence: lSequence,
-        order: 2,
-        to: {
-          scale: 0
-        },
-        position: '-=.15',
-        duration: .2
-      }
+      // leave: {
+      //   parent: lParent || null,
+      //   sequence: lSequence,
+      //   order: 2,
+      //   to: {
+      //     scale: 0
+      //   },
+      //   position: '-=.15',
+      //   duration: .2
+      // }
     };
   }
 };

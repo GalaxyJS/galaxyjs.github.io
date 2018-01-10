@@ -22,29 +22,37 @@ view.init({
         },
         {
           tag: 'h3',
-          text: 'GalaxyJS is library to help you to implement your web application into isolated modules'
+          text: 'GalaxyJS is framework that helps you to build a framework for your web application'
         },
         {
           tag: 'p',
-          text: 'It\'s build on the premise that it\'s not a framework but a library.'
+          text: 'The difference between Vanilla JS and a Javascript framework is like the difference between a galaxy and a planet. Planets exist inside the galaxy.'
         },
         {
           tag: 'p',
-          text: 'Things you need to know before start using GalaxyJS'
+          html: 'Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is life on that planet of course)</i>.'
         },
         {
-          tag: 'ul',
-          children: [
-            {
-              tag: 'li',
-              html: 'It\'s depends on Javascript <strong>new Function()</strong> feature'
-            },
-            {
-              tag: 'li',
-              text: ' Its structure encourages you to write more DRY code'
-            }
-          ]
+          tag: 'p',
+          html: 'With GalaxyJS you can create your own favorite application\'s ecosystem/<i>framework</i>, which suits your project the best.'
         }
+        // {
+        //   tag: 'p',
+        //   text: 'Things you need to know before start using GalaxyJS'
+        // },
+        // {
+        //   tag: 'ul',
+        //   children: [
+        //     {
+        //       tag: 'li',
+        //       html: 'It\'s depends on Javascript <strong>new Function()</strong> feature'
+        //     },
+        //     {
+        //       tag: 'li',
+        //       text: ' Its structure encourages you to write more DRY code'
+        //     }
+        //   ]
+        // }
       ]
     },
     {
@@ -57,19 +65,24 @@ view.init({
         },
         {
           tag: 'h3',
-          text: 'Easy to learn... That\'s it!'
+          text: 'It\'s very, really, pretty, stupidity easy to learn while GalaxyJS offers:'
         },
         {
-          tag: 'p',
-          text: 'The difference between Vanilla JS and a Javascript framework is like the difference between a galaxy and a planet. Planets exist inside the galaxy.'
-        },
-        {
-          tag: 'p',
-          html: 'Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is life on that planet of course)</i>.'
-        },
-        {
-          tag: 'p',
-          html: 'With GalaxyJS you can create your own favorite application ecosystem <i>(framework)</i>, which suits your project the best.'
+          tag: 'ul',
+          children: [
+            {
+              tag: 'li',
+              html: 'Maximum <strong>performance</strong>'
+            },
+            {
+              tag: 'li',
+              html: '<strong>Flexible Structure</strong> in order to achieve most optimal solution for your app'
+            },
+            {
+              tag: 'li',
+              html: '<strong>Scalability</strong> and <strong>Extendability</strong>'
+            }
+          ]
         }
       ]
     }

@@ -48,7 +48,27 @@ view.init({
               html: '<strong>observe(object)</strong> ...'
             }
           ]
-        }
+        },
+        {
+          tag: 'h2',
+          text: 'Galaxy.GalaxyModule'
+        },
+        {
+          tag: 'h2',
+          text: 'Galaxy.GalaxySequence'
+        },
+        {
+          tag: 'h2',
+          text: 'Galaxy.GalaxyObserver'
+        },
+        {
+          tag: 'h2',
+          text: 'Galaxy.GalaxyView'
+        },
+        {
+          tag: 'h2',
+          text: 'Galaxy.GalaxyView.ViewNode'
+        },
       ]
     }
   ]

@@ -1762,7 +1762,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       variableNamePaths = value.match(GalaxyView.BINDING_SYNTAX_REGEX);
       variableNamePaths = variableNamePaths ? variableNamePaths[1] : null;
 
-      if (/\s*{\s*(.*)\s*}\s*/.test(value)) {
+      if (/^\s*{\s*(.*)\s*}\s*/g.test(value)) {
         variableNamePaths = [];
 
         let match = null;
@@ -2908,6 +2908,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         if (_this.placeholder.parentNode) {
           removeChild(_this.placeholder.parentNode, _this.placeholder);
         }
+
+        _this.callLifecycleEvent('postInsert');
       });
 
       let animationDone;
@@ -2922,7 +2924,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
       _this.sequences.enter.nextAction(function () {
-        _this.callLifecycleEvent('postInsert');
         animationDone();
       });
     } else if (!flag && _this.node.parentNode) {
