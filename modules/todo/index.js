@@ -107,7 +107,8 @@ view.init({
                 sequence: 'todo-items',
                 from: {
                   height: 0,
-                  padding: 0
+                  paddingTop: 0,
+                  paddingBottom: 0
                 },
                 position: '-=.1',
                 duration: .3
@@ -117,7 +118,8 @@ view.init({
                 sequence: 'todo-items',
                 to: {
                   height: 0,
-                  padding: 0
+                  paddingTop: 0,
+                  paddingBottom: 0
                 },
                 position: '-=.05',
                 duration: .1

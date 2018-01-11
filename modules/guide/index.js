@@ -24,18 +24,18 @@ Scope.flag = true;
 let ha;
 console.info(Scope);
 
-fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
-  response.json().then(function (data) {
-    // let s = performance.now();
-    let surfaces = data.data.productData.data[0].data.filter(function (item) {
-      return item.type === 'surfaces';
-    });
-
-    ha = surfaces;
-    // Scope.surfaces = surfaces.slice(2, 5);
-    // Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
-  });
-});
+// fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
+//   response.json().then(function (data) {
+//     // let s = performance.now();
+//     let surfaces = data.data.productData.data[0].data.filter(function (item) {
+//       return item.type === 'surfaces';
+//     });
+//
+//     ha = surfaces;
+//     // Scope.surfaces = surfaces.slice(2, 5);
+//     // Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
+//   });
+// });
 
 view.init({
   class: 'card big',

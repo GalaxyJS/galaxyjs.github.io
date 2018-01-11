@@ -2,29 +2,9 @@
 
 const animations = Scope.import('services/animations.js');
 const view = Scope.import('galaxy/view');
+const data = Scope.import('./data.js');
 
-Scope.products = [
-  {
-    id: 1,
-    quantity: 5,
-    title: 'Socks'
-  },
-  {
-    id: 2,
-    quantity: 15,
-    title: 'Shirts'
-  },
-  {
-    id: 3,
-    quantity: 0,
-    title: 'Jacket'
-  },
-  {
-    id: 4,
-    quantity: 3,
-    title: 'Compass'
-  }
-];
+Scope.products = data;
 
 console.info(Scope);
 

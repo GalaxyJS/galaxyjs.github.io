@@ -194,6 +194,20 @@ ul > li {
   padding: 5px 0 5px 22px;
   overflow: hidden;
   position: relative;
+  display: block;
+}
+
+ul > li > span {
+  float: left;
+}
+
+input[type='checkbox'] {
+  margin: 0 5px;
+  border: 2px solid #000000;
+  border-radius: 2px;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
 }
 
 ul > li:before {
