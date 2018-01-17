@@ -15,8 +15,9 @@ const ToDoService = {
   }
 };
 
-const observer = Scope.observe(Scope.inputs.data);
-observer.on('count', function (value, oldValue) {
+const observer = Scope.observe(Scope.inputs.items);
+observer.on('length', function (value, oldValue) {
+  console.info('length has been changed from', value, 'to', oldValue);
 });
 
 Scope.newItem = {
@@ -111,7 +112,8 @@ view.init({
                   paddingBottom: 0
                 },
                 position: '-=.1',
-                duration: .3
+                duration: .2,
+                chainToParent: true
               },
               leave: {
                 parent: 'card',
@@ -125,7 +127,7 @@ view.init({
                 duration: .1
               }
             },
-            id: '<>item.title',
+            // id: '<>item.title',
             class: {
               done: '<>item.done'
             },

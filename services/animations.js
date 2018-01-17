@@ -6,12 +6,7 @@ Scope.export = {
       sequence: 'card',
       from: {
         y: 100,
-        opacity: 0,
-        ease: Power1.easeInOut
-      },
-      to: {
-        y: 0,
-        opacity: 1
+        opacity: 0
       },
       duration: .5
     },
