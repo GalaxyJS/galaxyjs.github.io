@@ -2,10 +2,7 @@
 
 const view = Scope.import('galaxy/view');
 
-Scope.flag = false;
-Scope.count = 10;
-
-Scope.navItems = [
+Scope.data.navItems = [
   {
     title: 'Start',
     link: '#start',
@@ -49,9 +46,9 @@ Scope.navItems = [
   }
 ];
 
-Scope.activeModule = Scope.navItems[1].module;
+Scope.data.activeModule = Scope.data.navItems[1].module;
 
-Scope.todos = [
+Scope.data.todos = [
   {
     title: 'Should add new item to todos',
     done: false
@@ -75,19 +72,31 @@ Scope.todos = [
   {
     title: 'Should add new item to todos 6',
     done: false
+  },
+  {
+    title: 'Should add new item to todos 7',
+    done: false
+  },
+  {
+    title: 'Should add new item to todos 8',
+    done: false
+  },
+  {
+    title: 'Should add new item to todos 9',
+    done: false
   }
 ];
 
-Scope.moduleInputs = {
+Scope.data.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
-  items: '<>todos',
+  items: '<>data.todos',
   data: {
     count: '<>count'
   }
 };
 
-Scope.newItem = {
+Scope.data.newItem = {
   title: '',
   done: false
 };
@@ -100,7 +109,7 @@ view.init([
     children: [
       {
         tag: 'a',
-        $for: 'item in navItems',
+        $for: 'item in data.navItems',
         inputs: {
           item: '<>item'
         },
@@ -109,7 +118,7 @@ view.init([
         class: {
           active: [
             'item.module',
-            'activeModule',
+            'data.activeModule',
             function (mod, actMod) {
               return mod === actMod;
             }
@@ -117,7 +126,7 @@ view.init([
         },
         on: {
           click: function () {
-            Scope.activeModule = this.inputs.item.module;
+            Scope.data.activeModule = this.inputs.item.module;
           }
         },
         onDataChange: {
@@ -133,8 +142,8 @@ view.init([
     class: 'main-content',
     children: [
       {
-        module: '<>activeModule',
-        inputs: Scope.moduleInputs,
+        module: '<>data.activeModule',
+        inputs: Scope.data.moduleInputs,
         on: {
           test: function (event) {
             console.info(event);

@@ -1098,10 +1098,10 @@ if (typeof Object.assign != 'function') {
       if (!importedLibraries[mId]) {
         importedLibraries[mId] = {
           name: module.name || mId,
-          module: module.scope.export
+          module: module.scope.exports
         };
       } else if (module.fresh) {
-        importedLibraries[mId].module = module.scope.export;
+        importedLibraries[mId].module = module.scope.exports;
       } else {
         // module.scope.imports[module.url] = importedLibraries[module.url].module;
       }
@@ -1320,11 +1320,13 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this.parentScope = module.parentScope || null;
     this.element = element || null;
     this.imports = {};
+    this.exports = {};
     this.uri = new Galaxy.GalaxyURI(module.url);
     this.eventHandlers = {};
     this.observers = [];
     this.on('module.destroy', this.destroy.bind(this));
     this.data = {};
+    // Object.preventExtensions(this);
   }
 
   GalaxyScope.prototype.destroy = function () {
@@ -1671,6 +1673,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     checked: {
       type: 'prop'
     },
+    value: {
+      type: 'prop'
+    },
     disabled: {
       type: 'attr'
     }
@@ -1953,12 +1958,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {String} targetKeyName
    * @param {string|Array<string>} variableNamePaths
    */
-  GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
-    if (typeof data !== 'object') {
+  GalaxyView.makeBinding = function (target, scopeData, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
+    if (typeof scopeData !== 'object') {
       return;
     }
 
-    let dataObject = data;
+    let dataObject = scopeData;
     let variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
 
     // expression === true means that a expression function is available and should be extracted
@@ -2009,7 +2014,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         aliasPropertyName = 'this.' + propertyName;
         dataObject = GalaxyView.propertyLookup(target.data, propertyName);
       } else {
-        dataObject = GalaxyView.propertyLookup(data, propertyName);
+        dataObject = GalaxyView.propertyLookup(dataObject, propertyName);
       }
 
       initValue = dataObject[propertyName];
@@ -2070,7 +2075,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       if (!childProperty) {
-        boundProperty.addNode(target, targetKeyName, expression);
+        boundProperty.addNode(target, targetKeyName, expression, dataObject);
       }
 
       if (childProperty !== null) {
@@ -2331,7 +2336,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
   };
 
-  GalaxyView.getPropertySetter = function (viewNode, attributeName, expression) {
+  GalaxyView.getPropertySetter = function (viewNode, attributeName, expression, dataObject) {
     let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName];
 
     if (!property) {
@@ -2341,6 +2346,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       property = {
         type: 'attr'
       };
+    }
+
+    if (property.util) {
+      property.util(viewNode, attributeName, expression, dataObject);
     }
 
     // expressing for reactive property should be handled by that property handler
@@ -2445,14 +2454,15 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       if (!viewNode.virtual) {
+        viewNode.callLifecycleEvent('postInit');
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
-        viewNode.callLifecycleEvent('postInit');
+
         GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
-
-
-
+        viewNode.inserted.then(function () {
+          viewNode.callLifecycleEvent('postChildrenInsert');
+        });
       } else {
         viewNode.callLifecycleEvent('postInit');
       }
@@ -2461,13 +2471,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       // this make sure that the viewNode and its child elements are rendered
       // setTimeout(function () {
       viewNode.sequences.enter.nextAction(function () {
-        // viewNode.domBus = [];
-        viewNode.ready();
+        viewNode.callLifecycleEvent('rendered');
+        viewNode.hasBeenRendered();
       });
-      // });
-
-      // viewNode.domManipulationBus.push(viewNode.domManipulationSequence.line);
-      // parent.addToDOMBus(viewNode.domManipulationSequence.activeState);
 
       return viewNode;
     }
@@ -2493,11 +2499,11 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }, scope.element);
 
       // _this.container.domManipulationSequence.nextAction(function () {
-      //   _this.container.ready();
+      //   _this.container.hasBeenRendered();
       // });
 
       _this.container.sequences.enter.nextAction(function () {
-        _this.container.ready();
+        _this.container.hasBeenRendered();
       });
     }
 
@@ -2601,13 +2607,13 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
    * @param {Function} expression
    * @public
    */
-  BoundProperty.prototype.addNode = function (node, attributeName, expression) {
+  BoundProperty.prototype.addNode = function (node, attributeName, expression, dataObject) {
     let index = this.nodes.indexOf(node);
     // Check if the node with the same property already exist
     // Insure that same node with different property bind can exist
     if (index === -1 || this.props[index] !== attributeName) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
-        node.installPropertySetter(this, attributeName, expression);
+        node.installPropertySetter(this, attributeName, expression,dataObject);
       }
 
       this.props.push(attributeName);
@@ -2814,38 +2820,50 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @memberOf Galaxy.GalaxyView
    */
   function ViewNode(root, schema, node) {
+    const _this = this;
     // this.root = root;
-    this.node = node || createElem(schema.tag || 'div');
-    this.schema = schema;
-    this.data = {};
-    this.addons = {};
-    this.inputs = {};
-    // this.localScope = {};
-    this.virtual = false;
-    this.placeholder = createComment(schema.tag || 'div');
-    this.properties = {};
-    this.behaviors = {};
-    this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
-    this.setters = {};
-    this.parent = null;
-    this.dependedObjects = [];
-    // this.domBus = [];
-    this.renderingFlow = new Galaxy.GalaxySequence();
-    // this.domManipulationSequence = new Galaxy.GalaxySequence();
-    this.sequences = {
+    _this.node = node || createElem(schema.tag || 'div');
+    _this.schema = schema;
+    _this.data = {};
+    _this.addons = {};
+    _this.inputs = {};
+    // _this.localScope = {};
+    _this.virtual = false;
+    _this.placeholder = createComment(schema.tag || 'div');
+    _this.properties = {};
+    _this.behaviors = {};
+    _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
+    _this.setters = {};
+    _this.parent = null;
+    _this.dependedObjects = [];
+    // _this.domBus = [];
+    _this.renderingFlow = new Galaxy.GalaxySequence();
+    // _this.domManipulationSequence = new Galaxy.GalaxySequence();
+    _this.sequences = {
       enter: new Galaxy.GalaxySequence(),
       leave: new Galaxy.GalaxySequence(),
       ':destroy': new Galaxy.GalaxySequence(true),
       ':class': new Galaxy.GalaxySequence().start()
     };
-    this.observer = new Galaxy.GalaxyObserver(this);
-    this.origin = false;
+    _this.observer = new Galaxy.GalaxyObserver(_this);
+    _this.origin = false;
 
-    let _this = this;
-    this.rendered = new Promise(function (ready) {
-      _this.ready = ready;
-      _this.callLifecycleEvent('rendered');
+    _this.hasBeenRendered = null;
+    _this.rendered = new Promise(function (done) {
+      _this.hasBeenRendered = function () {
+        _this.rendered.resolved = true;
+        done();
+      };
     });
+    _this.rendered.resolved = false;
+
+    _this.inserted = new Promise(function (done) {
+      _this.hasBeenInserted = function () {
+        _this.inserted.resolved = true;
+        done();
+      };
+    });
+    _this.inserted.resolved = false;
 
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
@@ -2854,7 +2872,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     GV.defineProp(this.node, '__viewNode__', referenceToThis);
     GV.defineProp(this.placeholder, '__viewNode__', referenceToThis);
 
-    this.callLifecycleEvent('postCreate');
+    _this.callLifecycleEvent('postCreate');
   }
 
   /**
@@ -2918,6 +2936,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
+        _this.hasBeenInserted();
+        _this.visible = false;
       });
 
       let animationDone;
@@ -2929,6 +2949,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         waitForNodeAnimation.then(next);
       });
 
+      _this.sequences.enter.nextAction(function () {
+        _this.visible = true;
+      });
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
       _this.sequences.enter.nextAction(function () {
@@ -2984,7 +3007,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {string} propertyName
    * @param {Function} expression
    */
-  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression) {
+  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression, dataObject) {
     // This cause memory leak for expressions
     let exist = this.properties[boundProperty.name];
     if (exist) {
@@ -2995,7 +3018,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       this.properties[boundProperty.name] = [boundProperty];
     }
 
-    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, /*this.virtual ? false :*/ expression);
+    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, /*this.virtual ? false :*/ expression, dataObject);
     if (!this.setters[propertyName]) {
       let _this = this;
       this.setters[propertyName] = function () {
@@ -3282,6 +3305,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           });
 
           sequence.next(function (done) {
+            viewNode.visible = true;
             if (enterAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
               // animationMeta.NODE = viewNode;
@@ -3325,13 +3349,22 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
           sequence.next(function (done) {
             if (leaveAnimationConfig.sequence) {
-              let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+              // in the case which the viewNode is not visible, then ignore its animation
+              if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
+                return done();
+              }
+
+              const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               // animationMeta.NODE = viewNode;
+              // if (enterAnimationConfig.sequence === 'card') debugger;
+
               animationMeta.add(viewNode.node, leaveAnimationConfig, done);
 
               // Add to parent should happen after the animation is added to the child
               if (leaveAnimationConfig.parent) {
                 const parent = AnimationMeta.get(leaveAnimationConfig.parent);
+                // viewNode;
+                // debugger;
                 parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
               }
             } else {
@@ -3511,7 +3544,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     if (children.indexOf(child.timeline) === -1) {
       if (_this.timeline.getChildren(false, true, false).length === 0) {
         // _this.calculateLastChildPosition(parentConf.duration);
-        // debugger;
         _this.timeline.add(child.timeline, 0);
       } else {
         // _this.calculateLastChildPosition(childConf.duration, childConf.position);
@@ -3612,7 +3644,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       let parts = matches[1].split('.');
       let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
       _this.node.addEventListener('change', function () {
-        setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), _this.node.checked);
+        setter.call(null, GV.getPropertyContainer(nodeScopeData.data, parts[0]), _this.node.checked);
       });
     },
     onApply: function (cache, value) {
@@ -3982,7 +4014,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
 (function (GV) {
   const loadModuleQueue = new Galaxy.GalaxySequence();
-  loadModuleQueue.start();
+  // loadModuleQueue.start();
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
     return function (done) {
@@ -4063,6 +4095,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
         _this.rendered.then(function () {
+          // loadModuleQueue.truncate();
           // Add the new module request to the sequence
           loadModuleQueue.next(function (nextCall) {
             // Wait till all viewNode animation are done
@@ -4070,6 +4103,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
             // Empty the node and wait till all animation are finished
             // Then load the next requested module in the queue
             // and after that proceed to next request in the queue
+            _this.renderingFlow.truncate();
             _this.clean().next(moduleLoaderGenerator(_this, cache, moduleMeta))
               .next(function (done) {
                 // module loader may add animations to the viewNode. if that is the case we will wait for the animations
@@ -4092,29 +4126,60 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 /* global Galaxy */
 
 (function (GV) {
+  // GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
+  //   type: 'reactive',
+  //   name: 'value'
+  // };
+  //
+  // GV.REACTIVE_BEHAVIORS['value'] = {
+  //   regex: GV.BINDING_SYNTAX_REGEX,
+  //   bind: function (nodeScopeData, matches) {
+  //     let b = GV.getBindings(matches);
+  //     arguments
+  //     debugger;
+  //     if (this.node.type === 'text') {
+  //
+  //       const _this = this;
+  //       let data = nodeScopeData;
+  //       let propertyName = matches[1];
+  //       let parts = propertyName.split('.');
+  //       if (parts[0] === 'Scope') {
+  //         propertyName = parts.slice(1).join('.');
+  //       } else if (parts[0] === 'this') {
+  //         propertyName = parts.slice(1).join('.');
+  //         data = _this.data;
+  //       }
+  //
+  //       let setter = new Function('data, value', 'data.' + propertyName + ' = value;');
+  //       _this.node.addEventListener('keyup', function () {
+  //         setter.call(null, GV.getPropertyContainer(data, propertyName), _this.node.value);
+  //       });
+  //     }
+  //   },
+  //   onApply: function (cache, value) {
+  //     if (document.activeElement === this.node && this.node.value === value) {
+  //       return;
+  //     }
+  //
+  //     this.node.value = value || '';
+  //   }
+  // };
   GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
-    type: 'reactive',
-    name: 'value'
-  };
-
-  GV.REACTIVE_BEHAVIORS['value'] = {
-    regex: GV.BINDING_SYNTAX_REGEX,
-    bind: function (nodeScopeData, matches) {
-      if (this.node.type === 'text') {
-        const _this = this;
-        let parts = matches[1].split('.');
-        let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
-        _this.node.addEventListener('keyup', function () {
-          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), _this.node.value);
-        });
+    type: 'prop',
+    util: function (viewNode, prop, expression, dataObject) {
+      if (expression) {
+        throw new Error('value property can not be bound to an expression');
       }
-    },
-    onApply: function (cache, value) {
-      if (document.activeElement === this.node && this.node.value === value) {
-        return;
-      }
+      let bindings = GV.getBindings(viewNode.schema.value);
 
-      this.node.value = value || '';
+      let id = bindings.variableNamePaths.split('.').pop()
+      // let setter = new Function('data, value', 'data.' + bindings.variableNamePaths + ' = value;');
+      debugger;
+      console.info(dataObject)
+      viewNode.node.addEventListener('keyup', function () {
+        dataObject[id] = viewNode.node.value;
+        // setter.call(null, GV.getPropertyContainer(data, propertyName), _this.node.value);
+      });
     }
   };
 })(Galaxy.GalaxyView);

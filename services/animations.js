@@ -1,6 +1,6 @@
 /* global Scope */
 
-Scope.export = {
+Scope.exports = {
   cardInOut: {
     enter: {
       sequence: 'card',

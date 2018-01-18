@@ -1,12 +1,11 @@
 /* global Scope */
 
-Scope.import('galaxy/inputs');
-
+const inputs = Scope.import('galaxy/inputs');
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
 const ToDoService = {
-  data: Scope.inputs.items,
+  data: inputs.items,
   add: function (newItem) {
     newItem.title = newItem.title.trim();
     if (newItem.title) {
@@ -15,15 +14,17 @@ const ToDoService = {
   }
 };
 
-const observer = Scope.observe(Scope.inputs.items);
+const observer = Scope.observe(inputs.items);
 observer.on('length', function (value, oldValue) {
   console.info('length has been changed from', value, 'to', oldValue);
 });
 
-Scope.newItem = {
+Scope.data.newItem = {
   title: '',
   done: false
 };
+
+console.info(Scope);
 
 view.init({
   tag: 'div',
@@ -59,7 +60,7 @@ view.init({
               ],
               on: {
                 click: function () {
-                  Scope.inputs.items.forEach(function (item) {
+                  inputs.items.forEach(function (item) {
                     item.done = true;
                   });
                 }
@@ -78,7 +79,7 @@ view.init({
               ],
               on: {
                 click: function () {
-                  Scope.inputs.items.forEach(function (item) {
+                  inputs.items.forEach(function (item) {
                     item.done = false;
                   });
                 }
@@ -89,7 +90,7 @@ view.init({
               text: 'Toggle',
               on: {
                 click: function () {
-                  Scope.inputs.items.forEach(function (item) {
+                  inputs.items.forEach(function (item) {
                     item.done = !item.done;
                   });
                 }
@@ -155,12 +156,17 @@ view.init({
             },
             {
               tag: 'input',
-              value: '<>newItem.title',
+              value: '<>data.newItem.title',
+              lifecycle: {
+                postCreate: function (i, d) {
+                  d.t = 'test';
+                }
+              },
               on: {
                 keyup: function (event) {
                   if (event.keyCode === 13) {
-                    ToDoService.add(Scope.newItem);
-                    Scope.newItem = {
+                    ToDoService.add(Scope.data.newItem);
+                    Scope.data.newItem = {
                       title: '',
                       done: false
                     };
@@ -177,8 +183,8 @@ view.init({
             text: 'Add',
             on: {
               click: function () {
-                ToDoService.add(Scope.newItem);
-                Scope.newItem = {
+                ToDoService.add(Scope.data.newItem);
+                Scope.data.newItem = {
                   title: '',
                   done: false
                 };

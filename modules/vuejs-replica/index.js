@@ -4,7 +4,7 @@ const animations = Scope.import('services/animations.js');
 const view = Scope.import('galaxy/view');
 const data = Scope.import('./data.js');
 
-Scope.products = data;
+Scope.data.products = data;
 
 console.info(Scope);
 
