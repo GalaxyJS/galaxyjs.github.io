@@ -326,6 +326,12 @@ pre.prettyprint {
   background-color: #eee;
 }
 
+pre.prettyprint.inline {
+  display: inline;
+  padding: 0 4px;
+  border-radius: 9px;
+}
+
 blockquote {
   margin: 0;
   padding: 0 1em;

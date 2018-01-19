@@ -143,7 +143,6 @@ view.init({
                 checked: '<>item.done'
               }
             ]
-
           }
         },
         {
@@ -157,11 +156,6 @@ view.init({
             {
               tag: 'input',
               value: '<>data.newItem.title',
-              lifecycle: {
-                postCreate: function (i, d) {
-                  d.t = 'test';
-                }
-              },
               on: {
                 keyup: function (event) {
                   if (event.keyCode === 13) {

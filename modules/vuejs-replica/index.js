@@ -27,7 +27,7 @@ view.init({
             {
               tag: 'li',
               $for: {
-                data: '<>products',
+                data: '<>data.products',
                 as: 'product'
               },
               text: [
@@ -65,7 +65,7 @@ view.init({
             {
               tag: 'h3',
               text: [
-                'products',
+                'data.products',
                 function (p) {
                   return 'Total: ' + p.reduce(function (sum, item) {
                     return sum + item.quantity;

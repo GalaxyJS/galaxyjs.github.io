@@ -398,6 +398,36 @@ view.init({
               }
             }
           ]
+        },
+        {
+          tag: 'h2',
+          text: 'Main module'
+        },
+        {
+          tag: 'p',
+          text: 'Add this code into the app/modules/index.js'
+        },
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-js',
+          text: 'var view = Scope.import(\'galaxy/view\');\n' +
+          'view.init({\n' +
+          '  tag:\'h1\',\n' +
+          '  text:\'Hello World!\'\n' +
+          '})'
+        },
+        {
+          tag: 'h3',
+          text: 'TADAAA! you have created your first app with GalaxyJS!'
+        },
+        {
+          tag: 'p',
+          html: '<strong>Lets see what is going on here</strong>'
+        },
+        {
+          tag: 'p',
+          html: '<pre class="prettyprint inline lang-js">Scope.import(\'galaxy/view\')</pre> is loading the view addon which provides functionality ' +
+          'necessary to create the UI/UX of your module and/or component'
         }
       ]
     }
