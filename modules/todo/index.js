@@ -2,6 +2,7 @@
 
 const inputs = Scope.import('galaxy/inputs');
 const view = Scope.import('galaxy/view');
+const tag = Scope.import('galaxy/tag');
 const animations = Scope.import('services/animations.js');
 
 const ToDoService = {
@@ -35,69 +36,49 @@ view.init({
       tag: 'section',
       class: 'content',
       children: [
-        {
-          tag: 'h2',
-          text: [
-            'inputs.items.length',
-            function (len) {
-              return 'ToDos, Count: ' + len;
-            }
-          ]
-        },
+        tag.h2([
+          'inputs.items.length',
+          function (len) {
+            return 'ToDos, Count: ' + len;
+          }
+        ]),
         {
           class: 'fa-end',
           children: [
-            {
-              tag: 'button',
-              text: 'Check All',
-              disabled: [
-                'inputs.items',
-                function (items) {
-                  return items.filter(function (item) {
-                    return !item.done;
-                  }).length === 0;
-                }
-              ],
-              on: {
-                click: function () {
-                  inputs.items.forEach(function (item) {
-                    item.done = true;
-                  });
-                }
+            tag.button('Check All').disabled([
+              'inputs.items',
+              function (items) {
+                return items.filter(function (item) {
+                  return !item.done;
+                }).length === 0;
               }
-            },
-            {
-              tag: 'button',
-              text: 'Un-Check All',
-              disabled: [
-                'inputs.items',
-                function (items) {
-                  return items.filter(function (item) {
-                    return item.done;
-                  }).length === 0;
-                }
-              ],
-              on: {
-                click: function () {
-                  inputs.items.forEach(function (item) {
-                    item.done = false;
-                  });
-                }
+            ]).onEvent('click', function () {
+              inputs.items.forEach(function (item) {
+                item.done = true;
+              });
+            }),
+
+            tag.button('Un-Check All').disabled([
+              'inputs.items',
+              function (items) {
+                return items.filter(function (item) {
+                  return item.done;
+                }).length === 0;
               }
-            },
-            {
-              tag: 'button',
-              text: 'Toggle',
-              on: {
-                click: function () {
-                  inputs.items.forEach(function (item) {
-                    item.done = !item.done;
-                  });
-                }
-              }
-            }
+            ]).onEvent('click', function () {
+              inputs.items.forEach(function (item) {
+                item.done = false;
+              });
+            }),
+
+            tag.button('Toggle').onEvent('click', function () {
+              inputs.items.forEach(function (item) {
+                item.done = !item.done;
+              });
+            })
           ]
         },
+
         {
           tag: 'ul',
           children: {
@@ -132,16 +113,10 @@ view.init({
             class: {
               done: '<>item.done'
             },
+
             children: [
-              {
-                tag: 'span',
-                text: '<>item.title'
-              },
-              {
-                tag: 'input',
-                type: 'checkbox',
-                checked: '<>item.done'
-              }
+              tag.span('<>item.title'),
+              tag.input().type('checkbox').checked('<>item.done')
             ]
           }
         },
@@ -149,42 +124,29 @@ view.init({
           tag: 'div',
           class: 'field',
           children: [
-            {
-              tag: 'label',
-              text: 'ToDo Item'
-            },
-            {
-              tag: 'input',
-              value: '<>data.newItem.title',
-              on: {
-                keyup: function (event) {
-                  if (event.keyCode === 13) {
-                    ToDoService.add(Scope.data.newItem);
-                    Scope.data.newItem = {
-                      title: '',
-                      done: false
-                    };
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          class: 'fa-end',
-          children: {
-            tag: 'button',
-            text: 'Add',
-            on: {
-              click: function () {
+            tag.label('ToDo item'),
+            tag.input().value('<>data.newItem.title').onEvent('keyup', function (event) {
+              if (event.keyCode === 13) {
                 ToDoService.add(Scope.data.newItem);
                 Scope.data.newItem = {
                   title: '',
                   done: false
                 };
               }
-            }
-          }
+            })
+          ]
+        },
+        {
+          class: 'fa-end',
+          children: [
+            tag.button('Add').onEvent('click', function () {
+              ToDoService.add(Scope.data.newItem);
+              Scope.data.newItem = {
+                title: '',
+                done: false
+              };
+            })
+          ]
         }
       ]
     }

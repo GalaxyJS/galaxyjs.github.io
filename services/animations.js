@@ -14,6 +14,7 @@ Scope.exports = {
       sequence: 'card',
       order: 100,
       to: {
+        y: -10,
         opacity: 0
       },
       duration: .1
