@@ -21,7 +21,6 @@ Scope.flag = true;
 // observer.on('items', function (value, oldValue) {
 //   debugger;
 // });
-let ha;
 console.info(Scope);
 
 // fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {

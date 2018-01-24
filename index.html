@@ -31,6 +31,16 @@
         }).then(function (module) {
           module.start();
         });
+
+        let module = {
+          imports: ['galaxy/view'],
+          element: document.querySelector('#test'),
+          constructor: function (Scope) {
+            console.log('Internal Module:', Scope);
+          }
+        };
+
+        Galaxy.load(module);
       }
 
     })();
@@ -38,5 +48,6 @@
 </head>
 
 <body id="body">
+<div id="test"></div>
 </body>
 </html>
