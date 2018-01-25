@@ -83,6 +83,12 @@ a {
   overflow-y: scroll;
 }
 
+.main-content > main {
+  position: relative;
+  overflow: hidden;
+  min-height: 100%;
+}
+
 .main-nav {
   position: absolute;
   width: 300px;

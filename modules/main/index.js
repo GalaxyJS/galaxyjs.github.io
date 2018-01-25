@@ -142,6 +142,7 @@ view.init([
     class: 'main-content',
     children: [
       {
+        tag: 'main',
         module: '<>data.activeModule',
         inputs: Scope.data.moduleInputs,
         on: {

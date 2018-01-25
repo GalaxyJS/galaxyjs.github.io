@@ -5,19 +5,30 @@ Scope.exports = {
     enter: {
       sequence: 'card',
       from: {
-        y: -30,
+        transformOrigin: 'top center',
+        scale: 1.1,
         opacity: 0
       },
-      duration: .5
+      duration: .5,
+      position: '-=.25',
+      chainToParent: true
     },
     leave: {
       sequence: 'card',
       order: 100,
+      from: {
+        transformOrigin: 'top center',
+        position: 'absolute',
+        x: function (val, node) {
+          return node.offsetLeft;
+        }
+      },
       to: {
-        y: -15,
+        scale: .9,
         opacity: 0
       },
-      duration: .2
+      // position: '-=2',
+      duration: .5
     }
   },
   itemInOut: {
