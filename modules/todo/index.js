@@ -106,6 +106,7 @@ view.init({
                   paddingBottom: 0
                 },
                 position: '-=.05',
+                chainToParent: true,
                 duration: .1
               }
             },

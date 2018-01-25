@@ -5,7 +5,7 @@ Scope.exports = {
     enter: {
       sequence: 'card',
       from: {
-        y: -20,
+        y: -30,
         opacity: 0
       },
       duration: .5
@@ -14,15 +14,15 @@ Scope.exports = {
       sequence: 'card',
       order: 100,
       to: {
-        y: -10,
+        y: -15,
         opacity: 0
       },
-      duration: .1
+      duration: .2
     }
   },
   itemInOut: {
     enter: {
-      parent: 'card1',
+      parent: 'card',
       sequence: 'item',
       from: {
         x: 100,
