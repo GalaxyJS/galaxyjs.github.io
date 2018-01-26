@@ -9,13 +9,12 @@ Scope.exports = {
         scale: 1.1,
         opacity: 0
       },
-      duration: .5,
-      position: '-=.25',
+      duration: .3,
+      position: '-=.15',
       chainToParent: true
     },
     leave: {
       sequence: 'card',
-      order: 100,
       from: {
         transformOrigin: 'top center',
         position: 'absolute',
@@ -27,8 +26,7 @@ Scope.exports = {
         scale: .9,
         opacity: 0
       },
-      // position: '-=2',
-      duration: .5
+      duration: .3
     }
   },
   itemInOut: {
