@@ -1,6 +1,7 @@
 /* global Scope */
 
 const view = Scope.import('galaxy/view');
+const animations = Scope.import('services/animations.js');
 
 Scope.data.navItems = [
   {
@@ -46,7 +47,7 @@ Scope.data.navItems = [
   }
 ];
 
-Scope.data.activeModule = Scope.data.navItems[1].module;
+Scope.data.activeModule = Scope.data.navItems[0].module;
 
 Scope.data.todos = [
   {
@@ -101,70 +102,74 @@ Scope.data.newItem = {
   done: false
 };
 
-view.init([
-  {
-    tag: 'div',
-    id: 'main-nav',
-    class: 'main-nav',
-    children: [
-      {
-        tag: 'a',
-        $for: 'item in data.navItems',
-        inputs: {
-          item: '<>item'
-        },
-        href: '<>item.link',
-        text: '<>item.title',
-        class: {
-          active: [
-            'item.module',
-            'data.activeModule',
-            function (mod, actMod) {
-              return mod === actMod;
+requestAnimationFrame(function () {
+
+  view.init([
+    {
+      tag: 'div',
+      id: 'main-nav',
+      class: 'main-nav',
+      animation: animations.mainNav,
+      children: [
+        {
+          tag: 'a',
+          $for: 'item in data.navItems',
+          inputs: {
+            item: '<>item'
+          },
+          href: '<>item.link',
+          text: '<>item.title',
+          class: {
+            active: [
+              'item.module',
+              'data.activeModule',
+              function (mod, actMod) {
+                return mod === actMod;
+              }
+            ]
+          },
+          on: {
+            click: function () {
+              Scope.data.activeModule = this.inputs.item.module;
             }
-          ]
-        },
-        on: {
-          click: function () {
-            Scope.data.activeModule = this.inputs.item.module;
-          }
-        },
-        onDataChange: {
-          'item.title': function () {
+          },
+          onDataChange: {
+            'item.title': function () {
+            }
           }
         }
-      }
-    ]
-  },
-  {
-    tag: 'div',
-    id: 'main-content',
-    class: 'main-content',
-    children: [
-      {
-        tag: 'main',
-        module: '<>data.activeModule',
-        inputs: Scope.data.moduleInputs,
-        on: {
-          test: function (event) {
-            console.info(event);
+      ]
+    },
+    {
+      tag: 'div',
+      id: 'main-content',
+      class: 'main-content',
+      children: [
+        {
+          tag: 'main',
+          module: '<>data.activeModule',
+          inputs: Scope.data.moduleInputs,
+          on: {
+            test: function (event) {
+              console.info(event);
+            }
           }
+          // children: [
+          //   {
+          //     tag: 'p',
+          //     text: 'No content at the moment!'
+          //   },
+          //   {
+          //     tag: 'p',
+          //     text: '[moduleInputs.text]'
+          //   },
+          //   {
+          //     tag: 'p',
+          //     text: '[moduleInputs.content]'
+          //   }
+          // ]
         }
-        // children: [
-        //   {
-        //     tag: 'p',
-        //     text: 'No content at the moment!'
-        //   },
-        //   {
-        //     tag: 'p',
-        //     text: '[moduleInputs.text]'
-        //   },
-        //   {
-        //     tag: 'p',
-        //     text: '[moduleInputs.content]'
-        //   }
-        // ]
-      }
-    ]
-  }
-]);
+      ]
+    }
+  ]);
+});

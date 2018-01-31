@@ -1,6 +1,6 @@
 /* global Scope */
 
-Scope.exports = {
+const animations = {
   cardInOut: {
     enter: {
       sequence: 'card',
@@ -11,13 +11,15 @@ Scope.exports = {
       },
       duration: .3,
       position: '-=.15',
+
       chainToParent: true
     },
     leave: {
       sequence: 'card',
+      fixedPosition: true,
       from: {
         transformOrigin: 'top center',
-        position: 'absolute',
+        // position: 'absolute',
         x: function (val, node) {
           return node.offsetLeft;
         }
@@ -26,7 +28,7 @@ Scope.exports = {
         scale: .9,
         opacity: 0
       },
-      duration: .3
+      duration: 1.3
     }
   },
   itemInOut: {
@@ -112,3 +114,16 @@ Scope.exports = {
     };
   }
 };
+
+animations.mainNav = {
+  enter: {
+    sequence: 'card',
+    from: {
+      ease: Power3.easeOut,
+      x: '-100%'
+    },
+    duration: .5
+  }
+};
+
+Scope.exports = animations;
