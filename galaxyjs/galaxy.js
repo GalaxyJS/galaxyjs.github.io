@@ -1018,25 +1018,38 @@ if (typeof Object.assign != 'function') {
         }
       };
 
+      const unique = [];
       let imports = [];
 
       if (typeof moduleConstructor === 'function') {
         imports = moduleMetaData.imports ? moduleMetaData.imports.slice(0) : [];
         imports = imports.map(function (item) {
+          if (unique.indexOf(item) !== -1) {
+            return null;
+          }
+
+          unique.push(item);
           return {url: item};
-        });
+        }).filter(Boolean);
       } else {
         // extract imports from the source code
         // removing comments cause an bug
-        // let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
-        moduleConstructor = moduleConstructor.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+
+        moduleConstructor = moduleConstructor.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)^[^\n]?\s*\/\/.*\n?$/gm, '');
+        moduleConstructor = moduleConstructor.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
           let query = path.match(/([\S]+)/gm);
+          let url = query[query.length - 1];
+          if (unique.indexOf(url) !== -1) {
+            return 'Scope.imports[\'' + url + '\']';
+          }
+
+          unique.push(url);
           imports.push({
-            url: query[query.length - 1],
+            url: url,
             fresh: query.indexOf('new') !== -1
           });
 
-          return 'Scope.imports[\'' + query[query.length - 1] + '\']';
+          return 'Scope.imports[\'' + url + '\']';
         });
       }
 
@@ -1312,25 +1325,6 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyURI = /**@class*/(function () {
-  /**
-   *
-   * @param url
-   * @constructor
-   */
-  function GalaxyURI(url) {
-    let urlParser = document.createElement('a');
-    urlParser.href = url;
-    let myRegexp = /([^\t\n]+)\//g;
-    let match = myRegexp.exec(urlParser.pathname);
-
-    this.paresdURL = urlParser.href;
-    this.path = match ? match[0] : '/';
-  }
-
-  return GalaxyURI;
-})();
-
 Galaxy.GalaxyScope = /** @class*/(function () {
   /**
    *
@@ -1350,8 +1344,11 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this.observers = [];
     this.on('module.destroy', this.destroy.bind(this));
     this.data = {};
-    // Object.preventExtensions(this);
   }
+
+  GalaxyScope.prototype.import = function (libId) {
+    return this.imports[libId];
+  };
 
   GalaxyScope.prototype.destroy = function () {
     this.observers.forEach(function (observer) {
@@ -1614,6 +1611,28 @@ Galaxy.GalaxySequence = /** @class */ (function () {
   };
 
   return GalaxySequence;
+})();
+
+/* global Galaxy */
+'use strict';
+
+Galaxy.GalaxyURI = /**@class*/(function () {
+  /**
+   *
+   * @param url
+   * @constructor
+   */
+  function GalaxyURI(url) {
+    let urlParser = document.createElement('a');
+    urlParser.href = url;
+    let myRegexp = /([^\t\n]+)\//g;
+    let match = myRegexp.exec(urlParser.pathname);
+
+    this.paresdURL = urlParser.href;
+    this.path = match ? match[0] : '/';
+  }
+
+  return GalaxyURI;
 })();
 
 /* global Galaxy, Promise */
@@ -3227,719 +3246,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 /* global Galaxy */
 
 (function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
-    type: 'reactive',
-    name: 'inputs'
-  };
-
-  GV.REACTIVE_BEHAVIORS['inputs'] = {
-    regex: null,
-    /**
-     *
-     * @this {Galaxy.GalaxyView.ViewNode}
-     * @param context
-     * @param value
-     */
-    bind: function (context, value) {
-      if (value !== null && typeof  value !== 'object') {
-        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
-      }
-      let live = GV.bindSubjectsToData(value, context, true);
-      // Object.preventExtensions(live);
-      // console.info(Object.isSealed(live), live);
-      // if (this.virtual) {
-      //   console.info(this);
-      // }
-
-      if (this.addons.inputs && live !== this.addons.inputs.live) {
-        Galaxy.resetObjectTo(this.addons.inputs, {
-          live: live,
-          original: value
-        });
-      } else if (this.addons.inputs === undefined) {
-        this.addons.inputs = {
-          live: live,
-          original: value
-        };
-      }
-
-      this.inputs = live;
-      this.addDependedObject(live);
-    },
-    onApply: function (cache, value, oldValue, context) {
-    }
-  };
-
-  Galaxy.registerAddOnProvider('galaxy/inputs', function (scope) {
-    return {
-      create: function () {
-        scope.inputs = scope.element.addons.inputs.live;
-
-        return scope.inputs;
-      },
-      finalize: function () {
-        // By linking the live to original we make sure that changes on the local copy of the input data will be
-        // reflected to the original one
-        GV.link(scope.element.addons.inputs.live, scope.element.addons.inputs.original);
-      }
-    };
-  });
-})(Galaxy.GalaxyView);
-
-/* global Galaxy */
-
-(function (G) {
-
-  const elements = [
-    // Content sectioning
-    'address',
-    'article',
-    'aside',
-    'footer',
-    'header',
-    'h1',
-    'h2',
-    'h3',
-    'h4',
-    'h5',
-    'h6',
-    'hgroup',
-    'nav',
-    'section',
-    // Text content
-    'blockquote',
-    'div',
-    'li',
-    'main',
-    'ol',
-    'p',
-    'pre',
-    'ul',
-    // Inline text semantics
-    'a',
-    'br',
-    'code',
-    'span',
-    'strong',
-    'time',
-    // Image and multimedia
-    'area',
-    'audio',
-    'img',
-    'map',
-    'track',
-    'video',
-    // Embedded content
-    'object',
-    'param',
-    // Table content
-    'caption',
-    'col',
-    'colgroup',
-    'table',
-    'tbody',
-    'td',
-    'tfoot',
-    'th',
-    'thead',
-    'tr',
-    // Forms
-    'button',
-    'datalist',
-    'fieldset',
-    'form',
-    'input',
-    'label',
-    'legend',
-    'meter',
-    'optgroup',
-    'option',
-    'output',
-    'progress',
-    'select',
-    'textarea',
-    // Interactive elements
-    'details',
-    'dialog',
-    // 'menu',
-    // 'menuitem',
-    'summary',
-    // Web Components
-    // 'content',
-    // 'element',
-    // 'shadow',
-    'slot',
-    'template'
-  ];
-  const decorators = [
-    'type',
-    'text',
-    'html',
-    'value',
-    'checked',
-    'disabled',
-    'id',
-    'title',
-    'translate',
-    'dir',
-    'lang',
-    'spellcheck',
-    'draggable',
-    'dropzone',
-    'hidden',
-    'accesskey',
-    'tabindex',
-    'lifecycle',
-    'inputs',
-    'for',
-    'if'
-  ];
-
-  function Tag(tag) {
-    const _this = this;
-    _this.tag = tag;
-
-  }
-
-  Object.defineProperty(Tag.prototype, '_decorate', {
-    value: function (id, value) {
-      if (value === undefined) {
-        Reflect.deleteProperty(this, id);
-
-        return this;
-      }
-
-      this[id] = value;
-
-      return this;
-    },
-    enumerable: false
-  });
-
-  Object.defineProperty(Tag.prototype, '_attr', {
-    value: function (id, value) {
-      if (value === undefined) {
-        Reflect.deleteProperty(this, id);
-
-        return this;
-      }
-
-      this[id] = value;
-
-      return this;
-    },
-    enumerable: false
-  });
-
-  Object.defineProperty(Tag.prototype, 'class', {
-    value: function (value) {
-      return this._decorate('class', value);
-    },
-    enumerable: false,
-    writable: true
-  });
-
-  Object.defineProperty(Tag.prototype, 'css', {
-    value: function (value) {
-      return this._decorate('style', value);
-    },
-    enumerable: false
-  });
-
-  Object.defineProperty(Tag.prototype, 'onEvent', {
-    value: function (event, handler) {
-      this.on = this.on || {};
-
-      this.on[event] = handler;
-
-      return this;
-    },
-    enumerable: false
-  });
-
-  decorators.forEach(function (decorator) {
-    Object.defineProperty(Tag.prototype, decorator, {
-      value: function (value) {
-        return this._decorate(decorator, value);
-      },
-      enumerable: false,
-      writable: true
-    });
-  });
-
-  elements.forEach(function (element) {
-    Tag[element] = function (text) {
-      const tag = new Tag(element);
-
-      if (text) {
-        tag.text(text);
-      }
-
-      return tag;
-    };
-  });
-
-  G.registerAddOnProvider('galaxy/tag', function (scope) {
-    return {
-      create: function () {
-        return Tag;
-      },
-      finalize: function () {
-
-      }
-    };
-  });
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.registerAddOnProvider('galaxy/view', function (scope) {
-    return {
-      create: function () {
-        let view = new Galaxy.GalaxyView(scope);
-
-        return view;
-      },
-      finalize: function () {
-
-      }
-    };
-  });
-})(Galaxy);
-
-/* global Galaxy, TweenLite, TimelineLite */
-'use strict';
-
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
-    type: 'custom',
-    name: 'animation',
-    /**
-     *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param attr
-     * @param config
-     * @param scopeData
-     */
-    handler: function (viewNode, attr, config, oldConfig, scopeData) {
-      if (viewNode.virtual || !config) {
-        return;
-      }
-      let enterAnimationConfig = config.enter;
-      if (enterAnimationConfig) {
-        if (enterAnimationConfig.sequence) {
-          AnimationMeta.get(enterAnimationConfig.sequence).configs.enter = enterAnimationConfig;
-        }
-
-        viewNode.populateEnterSequence = function (sequence) {
-          sequence.onTruncate(function () {
-            TweenLite.killTweensOf(viewNode.node);
-
-            // if (enterAnimationConfig.sequence && AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence]) {
-            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].lastChildPosition = 0;
-            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].parent = null;
-            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
-            // }
-            //
-            // if (enterAnimationConfig.parent && AnimationMeta.ANIMATIONS[enterAnimationConfig.parent]) {
-            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].lastChildPosition = 0;
-            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].parent = null;
-            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
-            // }
-          });
-
-          sequence.next(function (done) {
-            viewNode.visible = true;
-            if (enterAnimationConfig.sequence) {
-              let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
-              // animationMeta.NODE = viewNode;
-              // if(enterAnimationConfig.sequence ==='card')debugger;
-              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
-              lastStep.clearProps = 'all';
-              animationMeta.add(viewNode.node, enterAnimationConfig, done);
-
-              // Add to parent should happen after the animation is added to the child
-              if (enterAnimationConfig.parent) {
-                const parent = AnimationMeta.get(enterAnimationConfig.parent);
-                parent.addChild(animationMeta, animationMeta.configs.enter || {}, parent.configs.enter || {});
-              }
-            } else {
-              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
-              lastStep.clearProps = 'all';
-              AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
-            }
-          });
-        };
-      }
-
-      let leaveAnimationConfig = config.leave;
-      if (leaveAnimationConfig) {
-        if (leaveAnimationConfig.sequence) {
-          AnimationMeta.get(leaveAnimationConfig.sequence).configs.leave = leaveAnimationConfig;
-        }
-
-        viewNode.populateLeaveSequence = function (sequence) {
-          sequence.onTruncate(function () {
-            TweenLite.killTweensOf(viewNode.node);
-            // debugger;
-            // if (leaveAnimationConfig.sequence && AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence]) {
-            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence].lastChildPosition = 0;
-            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence].parent = null;
-            //   // AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence] = null;
-            // }
-            //
-            // if (leaveAnimationConfig.parent && AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent]) {
-            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent].lastChildPosition = 0;
-            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent].parent = null;
-            //   // AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent] = null;
-            // }
-          });
-
-          // debugger;
-          // in the case which the viewNode is not visible, then ignore its animation
-          if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
-            return sequence.next(function (done) {
-              done();
-            });
-          }
-
-          let animationDone;
-          const pr = new Promise(function (res) {
-            animationDone = res;
-          });
-
-          sequence.next((function (promise) {
-            return function (done) {
-              promise.then(done);
-            };
-          })(pr));
-
-          if (leaveAnimationConfig.sequence) {
-            // in the case which the viewNode is not visible, then ignore its animation
-            // if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
-            //   return animationDone();
-            // }
-
-            const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-            // animationMeta.NODE = viewNode;
-            // if (enterAnimationConfig.sequence === 'card') debugger;
-            // debugger;
-            animationMeta.add(viewNode.node, leaveAnimationConfig, animationDone);
-
-            // Add to parent should happen after the animation is added to the child
-            if (leaveAnimationConfig.parent) {
-              const parent = AnimationMeta.get(leaveAnimationConfig.parent);
-              parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
-            }
-          } else {
-            // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
-            // lastStep.clearProps = 'all';
-            AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, animationDone);
-          }
-
-          // sequence.next(function (done) {
-          //   if (leaveAnimationConfig.sequence) {
-          //
-          //     // in the case which the viewNode is not visible, then ignore its animation
-          //     if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
-          //       return done();
-          //     }
-          //
-          //     const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-          //     // animationMeta.NODE = viewNode;
-          //     // if (enterAnimationConfig.sequence === 'card') debugger;
-          //
-          //     animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-          //
-          //     // Add to parent should happen after the animation is added to the child
-          //     if (leaveAnimationConfig.parent) {
-          //       const parent = AnimationMeta.get(leaveAnimationConfig.parent);
-          //       // debugger;
-          //       parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
-          //     }
-          //   } else {
-          //     // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
-          //     // lastStep.clearProps = 'all';
-          //     AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
-          //   }
-          // });
-        };
-      }
-
-      viewNode.rendered.then(function () {
-        viewNode.observer.on('class', function (value, oldValue) {
-          value.forEach(function (item) {
-            if (item && oldValue.indexOf(item) === -1) {
-              let _config = config['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
-              }
-            }
-          });
-
-          oldValue.forEach(function (item) {
-            if (item && value.indexOf(item) === -1) {
-              let _config = config['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = {className: '-=' + item || ''};
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
-              }
-            }
-          });
-        });
-      });
-    }
-  };
-
-  function AnimationMeta(name) {
-    const _this = this;
-    _this.name = name;
-    this.timeline = new TimelineLite({
-      autoRemoveChildren: true,
-      smoothChildTiming: true,
-      onComplete: function () {
-        _this.lastChildPosition = 0;
-        if (_this.parent) {
-          _this.parent.timeline.remove(_this.timeline);
-        }
-      }
-    });
-
-    this.timeline.addLabel('beginning', 0);
-    // this.duration = 0;
-    // this.position = '+=0';
-    this.configs = {};
-    this.lastChildPosition = 0;
-    this.parent = null;
-  }
-
-  AnimationMeta.ANIMATIONS = {};
-  AnimationMeta.TIMELINES = {};
-
-  AnimationMeta.getTimeline = function (name, onComplete) {
-    if (!AnimationMeta.TIMELINES[name]) {
-      AnimationMeta.TIMELINES[name] = new TimelineLite({
-        autoRemoveChildren: true,
-        onComplete: onComplete
-      });
-    }
-
-    return AnimationMeta.TIMELINES[name];
-  };
-
-  AnimationMeta.get = function (name) {
-    if (!AnimationMeta.ANIMATIONS[name]) {
-      AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
-    }
-
-    return AnimationMeta.ANIMATIONS[name];
-  };
-
-  AnimationMeta.parseSequence = function (sequence) {
-    return sequence.split('/').filter(Boolean);
-  };
-
-  AnimationMeta.createTween = function (node, config, onComplete) {
-    let to = Object.assign({}, config.to || {});
-
-    if (to.onComplete) {
-      const userOnComplete = to.onComplete;
-      to.onComplete = function () {
-        userOnComplete();
-        onComplete();
-      };
-    } else {
-      to.onComplete = onComplete;
-    }
-    let tween = null;
-
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      let from = Object.assign({}, config.from || {});
-
-      if (from.onComplete) {
-        const userOnComplete = to.onComplete;
-        from.onComplete = function () {
-          userOnComplete();
-          onComplete();
-        };
-      } else {
-        from.onComplete = onComplete;
-      }
-
-      tween = TweenLite.from(node,
-        config.duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(node,
-        config.duration || 0,
-        to || {});
-    }
-
-    return tween;
-  };
-
-  AnimationMeta.calculateDuration = function (duration, position) {
-    let po = position.replace('=', '');
-    return ((duration * 10) + (Number(po) * 10)) / 10;
-  };
-
-  AnimationMeta.prototype.calculateLastChildPosition = function (duration, position) {
-    const calc = AnimationMeta.calculateDuration(duration, position || '+=0');
-    const lcp = (this.lastChildPosition * 10);
-    const c = (calc * 10);
-    this.lastChildPosition = (lcp + c) / 10;
-
-  };
-
-  AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
-    const _this = this;
-    child.parent = _this;
-
-    const children = this.timeline.getChildren(false);
-
-    if (children.indexOf(child.timeline) === -1) {
-      if (_this.timeline.getChildren(false, true, false).length === 0) {
-        // _this.calculateLastChildPosition(parentConf.duration);
-        _this.timeline.add(child.timeline, 0);
-      } else {
-        // debugger
-
-        _this.timeline.add(child.timeline, childConf.chainToParent ? childConf.position : '+=0');
-
-        // _this.lastChildPosition = AnimationMeta.calculateDuration(_this.lastChildPosition, childConf.chainToParent ? childConf.position : '+=0');
-        // _this.timeline.add(child.timeline, _this.lastChildPosition);
-      }
-    } else {
-      // _this.calculateLastChildPosition(childConf.duration, childConf.chainToParent ? childConf.position : null);
-    }
-  };
-
-  AnimationMeta.prototype.add = function (node, config, onComplete) {
-    const _this = this;
-    let to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
-    to.onStartParams = [node['__viewNode__']];
-    to.onStart = config.onStart;
-
-    let tween = null;
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      let from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
-      from.onStartParams = [node['__viewNode__']];
-      from.onStart = config.onStart;
-      tween = TweenLite.from(node,
-        config.duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(node,
-        config.duration || 0,
-        to || {});
-    }
-
-    tween.data = {
-      am: _this,
-      config: config
-    };
-
-    // First animation in the timeline should always start at zero
-    if (this.timeline.getChildren(false, true, false).length === 0) {
-      // debugger;
-      // _this.lastChildPosition = 0;
-      let progress = _this.timeline.progress();
-      _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      // _this.timeline.add(tween, _this.lastChildPosition);
-      // debugger;
-      if (!progress) {
-        _this.timeline.play(0);
-      }
-      // _this.calculateLastChildPosition(config.duration, config.position);
-    } else {
-      // debugger;
-      _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      // _this.timeline.add(tween, _this.lastChildPosition);
-      // _this.calculateLastChildPosition(config.duration, config.position);
-    }
-  };
-
-  /**
-   *
-   * @param {number} order
-   * @param {callback} operation
-   */
-  // AnimationMeta.prototype.addToQueue = function (order, node, operation) {
-  //   if (this.parent) {
-  //     return this.parent.addToQueue(order, node, operation);
-  //   }
-  //
-  //   if (!this.queue[order]) {
-  //     this.queue[order] = [];
-  //   }
-  //   this.queue[order].push({node: node, operation: operation});
-  //   this.list.push({node: node, operation: operation, order: order});
-  // };
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
-    type: 'custom',
-    name: 'on',
-    handler: function (viewNode, attr, events, oldEvents, scopeData) {
-      if (events !== null && typeof events === 'object') {
-        for (let name in events) {
-          if (events.hasOwnProperty(name)) {
-            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
-          }
-        }
-      }
-    }
-  };
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (GV) {
   // GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
   //   type: 'reactive',
   //   name: 'checked'
@@ -4529,3 +3835,722 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   };
 })(Galaxy.GalaxyView);
 
+
+/* global Galaxy, TweenLite, TimelineLite */
+'use strict';
+
+(function (G) {
+  if(!window.TweenLite || !window.TimelineLite) {
+    return console.warn('please load GSAP - GreenSock in order to activate animations');
+  }
+
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
+    type: 'custom',
+    name: 'animation',
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param attr
+     * @param config
+     * @param scopeData
+     */
+    handler: function (viewNode, attr, config, oldConfig, scopeData) {
+      if (viewNode.virtual || !config) {
+        return;
+      }
+      let enterAnimationConfig = config.enter;
+      if (enterAnimationConfig) {
+        if (enterAnimationConfig.sequence) {
+          AnimationMeta.get(enterAnimationConfig.sequence).configs.enter = enterAnimationConfig;
+        }
+
+        viewNode.populateEnterSequence = function (sequence) {
+          sequence.onTruncate(function () {
+            TweenLite.killTweensOf(viewNode.node);
+
+            // if (enterAnimationConfig.sequence && AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence]) {
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].lastChildPosition = 0;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].parent = null;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
+            // }
+            //
+            // if (enterAnimationConfig.parent && AnimationMeta.ANIMATIONS[enterAnimationConfig.parent]) {
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].lastChildPosition = 0;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].parent = null;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
+            // }
+          });
+
+          sequence.next(function (done) {
+            viewNode.visible = true;
+            if (enterAnimationConfig.sequence) {
+              let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
+              // animationMeta.NODE = viewNode;
+              // if(enterAnimationConfig.sequence ==='card')debugger;
+              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              lastStep.clearProps = 'all';
+              animationMeta.add(viewNode.node, enterAnimationConfig, done);
+
+              // Add to parent should happen after the animation is added to the child
+              if (enterAnimationConfig.parent) {
+                const parent = AnimationMeta.get(enterAnimationConfig.parent);
+                parent.addChild(animationMeta, animationMeta.configs.enter || {}, parent.configs.enter || {});
+              }
+            } else {
+              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              lastStep.clearProps = 'all';
+              AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
+            }
+          });
+        };
+      }
+
+      let leaveAnimationConfig = config.leave;
+      if (leaveAnimationConfig) {
+        if (leaveAnimationConfig.sequence) {
+          AnimationMeta.get(leaveAnimationConfig.sequence).configs.leave = leaveAnimationConfig;
+        }
+
+        viewNode.populateLeaveSequence = function (sequence) {
+          sequence.onTruncate(function () {
+            TweenLite.killTweensOf(viewNode.node);
+            // debugger;
+            // if (leaveAnimationConfig.sequence && AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence]) {
+            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence].lastChildPosition = 0;
+            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence].parent = null;
+            //   // AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence] = null;
+            // }
+            //
+            // if (leaveAnimationConfig.parent && AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent]) {
+            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent].lastChildPosition = 0;
+            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent].parent = null;
+            //   // AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent] = null;
+            // }
+          });
+
+          // debugger;
+          // in the case which the viewNode is not visible, then ignore its animation
+          if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
+            return sequence.next(function (done) {
+              done();
+            });
+          }
+
+          let animationDone;
+          const pr = new Promise(function (res) {
+            animationDone = res;
+          });
+
+          sequence.next((function (promise) {
+            return function (done) {
+              promise.then(done);
+            };
+          })(pr));
+
+          if (leaveAnimationConfig.sequence) {
+            // in the case which the viewNode is not visible, then ignore its animation
+            // if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
+            //   return animationDone();
+            // }
+
+            const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+            // animationMeta.NODE = viewNode;
+            // if (enterAnimationConfig.sequence === 'card') debugger;
+            // debugger;
+            animationMeta.add(viewNode.node, leaveAnimationConfig, animationDone);
+
+            // Add to parent should happen after the animation is added to the child
+            if (leaveAnimationConfig.parent) {
+              const parent = AnimationMeta.get(leaveAnimationConfig.parent);
+              parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
+            }
+          } else {
+            // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
+            // lastStep.clearProps = 'all';
+            AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, animationDone);
+          }
+
+          // sequence.next(function (done) {
+          //   if (leaveAnimationConfig.sequence) {
+          //
+          //     // in the case which the viewNode is not visible, then ignore its animation
+          //     if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
+          //       return done();
+          //     }
+          //
+          //     const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+          //     // animationMeta.NODE = viewNode;
+          //     // if (enterAnimationConfig.sequence === 'card') debugger;
+          //
+          //     animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+          //
+          //     // Add to parent should happen after the animation is added to the child
+          //     if (leaveAnimationConfig.parent) {
+          //       const parent = AnimationMeta.get(leaveAnimationConfig.parent);
+          //       // debugger;
+          //       parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
+          //     }
+          //   } else {
+          //     // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
+          //     // lastStep.clearProps = 'all';
+          //     AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
+          //   }
+          // });
+        };
+      }
+
+      viewNode.rendered.then(function () {
+        viewNode.observer.on('class', function (value, oldValue) {
+          value.forEach(function (item) {
+            if (item && oldValue.indexOf(item) === -1) {
+              let _config = config['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+                  let classAnimationConfig = _config;
+                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+
+                  if (classAnimationConfig.sequence) {
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+
+          oldValue.forEach(function (item) {
+            if (item && value.indexOf(item) === -1) {
+              let _config = config['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+                  let classAnimationConfig = _config;
+                  classAnimationConfig.to = {className: '-=' + item || ''};
+
+                  if (classAnimationConfig.sequence) {
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+        });
+      });
+    }
+  };
+
+  function AnimationMeta(name) {
+    const _this = this;
+    _this.name = name;
+    this.timeline = new TimelineLite({
+      autoRemoveChildren: true,
+      smoothChildTiming: true,
+      onComplete: function () {
+        _this.lastChildPosition = 0;
+        if (_this.parent) {
+          _this.parent.timeline.remove(_this.timeline);
+        }
+      }
+    });
+
+    this.timeline.addLabel('beginning', 0);
+    // this.duration = 0;
+    // this.position = '+=0';
+    this.configs = {};
+    this.lastChildPosition = 0;
+    this.parent = null;
+  }
+
+  AnimationMeta.ANIMATIONS = {};
+  AnimationMeta.TIMELINES = {};
+
+  AnimationMeta.getTimeline = function (name, onComplete) {
+    if (!AnimationMeta.TIMELINES[name]) {
+      AnimationMeta.TIMELINES[name] = new TimelineLite({
+        autoRemoveChildren: true,
+        onComplete: onComplete
+      });
+    }
+
+    return AnimationMeta.TIMELINES[name];
+  };
+
+  AnimationMeta.get = function (name) {
+    if (!AnimationMeta.ANIMATIONS[name]) {
+      AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
+    }
+
+    return AnimationMeta.ANIMATIONS[name];
+  };
+
+  AnimationMeta.parseSequence = function (sequence) {
+    return sequence.split('/').filter(Boolean);
+  };
+
+  AnimationMeta.createTween = function (node, config, onComplete) {
+    let to = Object.assign({}, config.to || {});
+
+    if (to.onComplete) {
+      const userOnComplete = to.onComplete;
+      to.onComplete = function () {
+        userOnComplete();
+        onComplete();
+      };
+    } else {
+      to.onComplete = onComplete;
+    }
+    let tween = null;
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      let from = Object.assign({}, config.from || {});
+
+      if (from.onComplete) {
+        const userOnComplete = to.onComplete;
+        from.onComplete = function () {
+          userOnComplete();
+          onComplete();
+        };
+      } else {
+        from.onComplete = onComplete;
+      }
+
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+    return tween;
+  };
+
+  AnimationMeta.calculateDuration = function (duration, position) {
+    let po = position.replace('=', '');
+    return ((duration * 10) + (Number(po) * 10)) / 10;
+  };
+
+  AnimationMeta.prototype.calculateLastChildPosition = function (duration, position) {
+    const calc = AnimationMeta.calculateDuration(duration, position || '+=0');
+    const lcp = (this.lastChildPosition * 10);
+    const c = (calc * 10);
+    this.lastChildPosition = (lcp + c) / 10;
+
+  };
+
+  AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
+    const _this = this;
+    child.parent = _this;
+
+    const children = this.timeline.getChildren(false);
+
+    if (children.indexOf(child.timeline) === -1) {
+      if (_this.timeline.getChildren(false, true, false).length === 0) {
+        // _this.calculateLastChildPosition(parentConf.duration);
+        _this.timeline.add(child.timeline, 0);
+      } else {
+        // debugger
+
+        _this.timeline.add(child.timeline, childConf.chainToParent ? childConf.position : '+=0');
+
+        // _this.lastChildPosition = AnimationMeta.calculateDuration(_this.lastChildPosition, childConf.chainToParent ? childConf.position : '+=0');
+        // _this.timeline.add(child.timeline, _this.lastChildPosition);
+      }
+    } else {
+      // _this.calculateLastChildPosition(childConf.duration, childConf.chainToParent ? childConf.position : null);
+    }
+  };
+
+  AnimationMeta.prototype.add = function (node, config, onComplete) {
+    const _this = this;
+    let to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+    to.onStartParams = [node['__viewNode__']];
+    to.onStart = config.onStart;
+
+    let tween = null;
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      let from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      from.onStartParams = [node['__viewNode__']];
+      from.onStart = config.onStart;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+    tween.data = {
+      am: _this,
+      config: config
+    };
+
+    // First animation in the timeline should always start at zero
+    if (this.timeline.getChildren(false, true, false).length === 0) {
+      // debugger;
+      // _this.lastChildPosition = 0;
+      let progress = _this.timeline.progress();
+      _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
+      // _this.timeline.add(tween, _this.lastChildPosition);
+      // debugger;
+      if (!progress) {
+        _this.timeline.play(0);
+      }
+      // _this.calculateLastChildPosition(config.duration, config.position);
+    } else {
+      // debugger;
+      _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
+      // _this.timeline.add(tween, _this.lastChildPosition);
+      // _this.calculateLastChildPosition(config.duration, config.position);
+    }
+  };
+
+  /**
+   *
+   * @param {number} order
+   * @param {callback} operation
+   */
+  // AnimationMeta.prototype.addToQueue = function (order, node, operation) {
+  //   if (this.parent) {
+  //     return this.parent.addToQueue(order, node, operation);
+  //   }
+  //
+  //   if (!this.queue[order]) {
+  //     this.queue[order] = [];
+  //   }
+  //   this.queue[order].push({node: node, operation: operation});
+  //   this.list.push({node: node, operation: operation, order: order});
+  // };
+})(Galaxy);
+
+/* global Galaxy */
+
+(function (G) {
+  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
+    type: 'custom',
+    name: 'on',
+    handler: function (viewNode, attr, events, oldEvents, scopeData) {
+      if (events !== null && typeof events === 'object') {
+        for (let name in events) {
+          if (events.hasOwnProperty(name)) {
+            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
+          }
+        }
+      }
+    }
+  };
+})(Galaxy);
+
+/* global Galaxy */
+'use strict';
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
+    type: 'reactive',
+    name: 'inputs'
+  };
+
+  GV.REACTIVE_BEHAVIORS['inputs'] = {
+    regex: null,
+    /**
+     *
+     * @this {Galaxy.GalaxyView.ViewNode}
+     * @param context
+     * @param value
+     */
+    bind: function (context, value) {
+      if (value !== null && typeof  value !== 'object') {
+        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
+      }
+      let live = GV.bindSubjectsToData(value, context, true);
+      // Object.preventExtensions(live);
+      // console.info(Object.isSealed(live), live);
+      // if (this.virtual) {
+      //   console.info(this);
+      // }
+
+      if (this.addons.inputs && live !== this.addons.inputs.live) {
+        Galaxy.resetObjectTo(this.addons.inputs, {
+          live: live,
+          original: value
+        });
+      } else if (this.addons.inputs === undefined) {
+        this.addons.inputs = {
+          live: live,
+          original: value
+        };
+      }
+
+      this.inputs = live;
+      this.addDependedObject(live);
+    },
+    onApply: function (cache, value, oldValue, context) {
+    }
+  };
+
+  Galaxy.registerAddOnProvider('galaxy/inputs', function (scope) {
+    return {
+      create: function () {
+        scope.inputs = scope.element.addons.inputs.live;
+
+        return scope.inputs;
+      },
+      finalize: function () {
+        // By linking the live to original we make sure that changes on the local copy of the input data will be
+        // reflected to the original one
+        GV.link(scope.element.addons.inputs.live, scope.element.addons.inputs.original);
+      }
+    };
+  });
+})(Galaxy.GalaxyView);
+
+/* global Galaxy */
+'use strict';
+
+(function (G) {
+
+  const elements = [
+    // Content sectioning
+    'address',
+    'article',
+    'aside',
+    'footer',
+    'header',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'hgroup',
+    'nav',
+    'section',
+    // Text content
+    'blockquote',
+    'div',
+    'li',
+    'main',
+    'ol',
+    'p',
+    'pre',
+    'ul',
+    // Inline text semantics
+    'a',
+    'br',
+    'code',
+    'span',
+    'strong',
+    'time',
+    // Image and multimedia
+    'area',
+    'audio',
+    'img',
+    'map',
+    'track',
+    'video',
+    // Embedded content
+    'object',
+    'param',
+    // Table content
+    'caption',
+    'col',
+    'colgroup',
+    'table',
+    'tbody',
+    'td',
+    'tfoot',
+    'th',
+    'thead',
+    'tr',
+    // Forms
+    'button',
+    'datalist',
+    'fieldset',
+    'form',
+    'input',
+    'label',
+    'legend',
+    'meter',
+    'optgroup',
+    'option',
+    'output',
+    'progress',
+    'select',
+    'textarea',
+    // Interactive elements
+    'details',
+    'dialog',
+    // 'menu',
+    // 'menuitem',
+    'summary',
+    // Web Components
+    // 'content',
+    // 'element',
+    // 'shadow',
+    'slot',
+    'template'
+  ];
+  const decorators = [
+    'type',
+    'text',
+    'html',
+    'value',
+    'checked',
+    'disabled',
+    'id',
+    'title',
+    'translate',
+    'dir',
+    'lang',
+    'spellcheck',
+    'draggable',
+    'dropzone',
+    'hidden',
+    'accesskey',
+    'tabindex',
+    'lifecycle',
+    'inputs',
+    'for',
+    'if'
+  ];
+
+  function Tag(tag) {
+    const _this = this;
+    _this.tag = tag;
+  }
+
+  Object.defineProperty(Tag.prototype, '_decorate', {
+    value: function (id, value) {
+      if (value === undefined) {
+        Reflect.deleteProperty(this, id);
+
+        return this;
+      }
+
+      this[id] = value;
+
+      return this;
+    },
+    enumerable: false
+  });
+
+  Object.defineProperty(Tag.prototype, '_attr', {
+    value: function (id, value) {
+      if (value === undefined) {
+        Reflect.deleteProperty(this, id);
+
+        return this;
+      }
+
+      this[id] = value;
+
+      return this;
+    },
+    enumerable: false
+  });
+
+  Object.defineProperty(Tag.prototype, 'class', {
+    value: function (value) {
+      return this._decorate('class', value);
+    },
+    enumerable: false,
+    writable: true
+  });
+
+  Object.defineProperty(Tag.prototype, 'css', {
+    value: function (value) {
+      return this._decorate('style', value);
+    },
+    enumerable: false
+  });
+
+  Object.defineProperty(Tag.prototype, 'onEvent', {
+    value: function (event, handler) {
+      this.on = this.on || {};
+
+      this.on[event] = handler;
+
+      return this;
+    },
+    enumerable: false
+  });
+
+  decorators.forEach(function (decorator) {
+    Object.defineProperty(Tag.prototype, decorator, {
+      value: function (value) {
+        return this._decorate(decorator, value);
+      },
+      enumerable: false,
+      writable: true
+    });
+  });
+
+  elements.forEach(function (element) {
+    Tag[element] = function (text) {
+      const tag = new Tag(element);
+
+      if (text) {
+        tag.text(text);
+      }
+
+      return tag;
+    };
+  });
+
+  G.registerAddOnProvider('galaxy/tag', function (scope) {
+    return {
+      create: function () {
+        return Tag;
+      },
+      finalize: function () {
+
+      }
+    };
+  });
+})(Galaxy);
+
+/* global Galaxy */
+'use strict';
+
+(function (G) {
+  G.registerAddOnProvider('galaxy/view', function (scope) {
+    return {
+      create: function () {
+        let view = new Galaxy.GalaxyView(scope);
+
+        return view;
+      },
+      finalize: function () {
+
+      }
+    };
+  });
+})(Galaxy);
