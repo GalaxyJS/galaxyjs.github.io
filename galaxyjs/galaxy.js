@@ -3630,7 +3630,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         // debugger;
         let pn = viewNode.node.getBoundingClientRect();
 
-        debugger;
+        // debugger;
         // pn.appendChild(hiddenPlaceholder, viewNode.getPlaceholder());
         // viewNode.destroyed.then(function () {
         //   pn.style.height = null;

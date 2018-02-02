@@ -19,7 +19,7 @@ const animations = {
       fixedPosition: true,
       from: {
         transformOrigin: 'top center',
-        // position: 'absolute',
+        position: 'absolute',
         x: function (val, node) {
           return node.offsetLeft;
         }
@@ -28,7 +28,7 @@ const animations = {
         scale: .9,
         opacity: 0
       },
-      duration: 1.3
+      duration: .3
     }
   },
   itemInOut: {
