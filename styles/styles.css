@@ -76,9 +76,9 @@ a {
 
 .main-content {
   position: absolute;
-  width: calc(100% - 300px);
+  width: calc(100% - 270px);
   height: 100%;
-  left: 300px;
+  left: 270px;
   overflow: auto;
   overflow-y: scroll;
 }
@@ -91,24 +91,26 @@ a {
 
 .main-nav {
   position: absolute;
-  width: 300px;
+  width: 270px;
   height: 100%;
   color: #455a64;
   top: 0;
   left: 0;
   overflow: auto;
   padding: 25px;
-  border-right: 1px solid rgba(0, 0, 0, .1);
+  /* border-right: 1px solid rgba(0, 0, 0, .1); */
+  background-color:  #fff;
+  box-shadow: 0 0 30px rgba(80,80,80,.1);
 }
 
 .main-nav > a {
-  min-width: 100px;
+  /* min-width: 100px; */
   display: block;
   padding: 15px 20px;
   color: inherit;
   text-decoration: none;
   margin: 0 0 15px;
-  border-radius: 26px;
+  border-radius: 10px;
   font-weight: 500;
   line-height: 20px;
 }
@@ -117,7 +119,7 @@ a {
   background-color: #455a64;
   color: #fff;
   cursor: default;
-  box-shadow: 0 0 9px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(0, 0, 0, .1);
+  box-shadow: 0 8px 25px 0 rgba(69,90,100, .5);
 }
 
 .main-nav > a:hover {

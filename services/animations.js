@@ -119,8 +119,20 @@ animations.mainNav = {
   enter: {
     sequence: 'card',
     from: {
-      ease: Power3.easeOut,
+      ease: 'Power3.easeOut',
       x: '-100%'
+    },
+    duration: .5
+  }
+};
+// debugger;
+animations.mainNavItem = {
+  enter: {
+    sequence: 'card',
+    from: {
+      opacity: 0,
+      y: '-25%',
+      ease: Elastic.easeOut.config(3, 1),
     },
     duration: .5
   }
