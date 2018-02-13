@@ -63,11 +63,11 @@ pre * {
 }
 
 * {
-   font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', sans-serif;
 }
 
 *, *:before, *:after {
-   box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 a {
@@ -93,37 +93,37 @@ a {
   position: absolute;
   width: 270px;
   height: 100%;
-  color: #455a64;
+  color: #777;
   top: 0;
   left: 0;
   overflow: auto;
-  padding: 25px;
-  /* border-right: 1px solid rgba(0, 0, 0, .1); */
-  background-color:  #fff;
-  box-shadow: 0 0 30px rgba(80,80,80,.1);
+  padding: 25px 0;
+  font-weight: normal;
+  background-color: #fff;
+  box-shadow: 0 0 30px rgba(80, 80, 80, .1);
 }
 
 .main-nav > a {
-  /* min-width: 100px; */
   display: block;
   padding: 15px 20px;
   color: inherit;
   text-decoration: none;
   margin: 0 0 15px;
-  border-radius: 10px;
-  font-weight: 500;
   line-height: 20px;
+  box-shadow: 0 0 0 0 rgba(69, 90, 100, 0);
+  border-left: 0 solid #455a64;
+  transition: all .2s ease-in-out;
 }
 
 .main-nav > a.active, .main-nav > a.active:hover {
-  background-color: #455a64;
-  color: #fff;
+  color: #455a64;
   cursor: default;
-  box-shadow: 0 8px 25px 0 rgba(69,90,100, .5);
+  font-weight: bold;
+  border-left: 15px solid #455a64;
 }
 
 .main-nav > a:hover {
-  background-color: rgba(0, 0, 0, .1);
+  background-color: rgba(0, 0, 0, .08);
 }
 
 .card {

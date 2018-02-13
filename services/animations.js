@@ -128,12 +128,16 @@ animations.mainNav = {
 // debugger;
 animations.mainNavItem = {
   enter: {
-    sequence: 'card',
+    parent: 'card',
+    sequence: 'main-nav-items',
     from: {
-      opacity: 0,
-      y: '-25%',
-      ease: Elastic.easeOut.config(3, 1),
+      transition: 'none',
+      autoAlpha: 0,
+      x: '-25%',
+      ease: Elastic.easeOut.config(1, .5),
     },
+    position: '-=.4',
+    // chainToParent: true,
     duration: .5
   }
 };
