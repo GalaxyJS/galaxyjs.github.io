@@ -103,7 +103,6 @@ Scope.data.newItem = {
 };
 
 requestAnimationFrame(function () {
-
   view.init([
     {
       tag: 'div',
@@ -133,10 +132,6 @@ requestAnimationFrame(function () {
             click: function () {
               Scope.data.activeModule = this.inputs.item.module;
             }
-          },
-          onDataChange: {
-            'item.title': function () {
-            }
           }
         }
       ]
@@ -155,20 +150,6 @@ requestAnimationFrame(function () {
               console.info(event);
             }
           }
-          // children: [
-          //   {
-          //     tag: 'p',
-          //     text: 'No content at the moment!'
-          //   },
-          //   {
-          //     tag: 'p',
-          //     text: '[moduleInputs.text]'
-          //   },
-          //   {
-          //     tag: 'p',
-          //     text: '[moduleInputs.content]'
-          //   }
-          // ]
         }
       ]
     }
