@@ -26,30 +26,43 @@ view.init({
           children: [
             {
               tag: 'li',
+              class: 'flex-row',
               $for: {
                 data: '<>data.products',
                 as: 'product'
               },
-              text: [
-                'product.quantity',
-                'product.title',
-                function (q, t) {
-                  return q + ' ' + t;
-                }
-              ],
+              // text: [
+              //   'product.quantity',
+              //   'product.title',
+              //   function (q, t) {
+              //     return q + ' ' + t;
+              //   }
+              // ],
               children: [
                 {
-                  tag: 'span',
-                  text: ' - OUT OF STOCK',
-                  $if: [
-                    'product.quantity',
-                    function (q) {
-                      return q === 0;
-                    }
-                  ]
+                  tag: 'input',
+                  class: 'flex-item-25',
+                  value: '<number>product.quantity'
                 },
                 {
+                  tag: 'label',
+                  class: 'flex-item-50',
+                  text: '<>product.title',
+                  children: {
+                    tag: 'span',
+                    text: ' - OUT OF STOCK',
+                    $if: [
+                      'product.quantity',
+                      function (q) {
+                        return q === 0;
+                      }
+                    ]
+                  }
+                },
+
+                {
                   tag: 'button',
+                  class: 'flex-item-al',
                   text: 'Add',
                   inputs: {
                     productQ: '<>product.quantity'

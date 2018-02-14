@@ -428,7 +428,7 @@ section > section {
   transition: all .3s ease-in-out;
 }
 
-.field > input, .field > select {
+input, select {
   font-weight: 500;
   font-size: 15px;
   line-height: 20px;
@@ -528,5 +528,30 @@ button:disabled:hover {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+}
+
+.flex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items:  center;
+
+}
+
+.flex-row > * {
+  flex: 0 1 auto;
+}
+.flex-item-50 {
+  flex: 1 1 auto;
+  max-width: 50%;
+}
+
+.flex-item-25 {
+  flex: 1 1 auto;
+  max-width: 25%;
+}
+
+.flex-item-al {
+  align-self: inherit;
+  /* justify-self: flex-end; */
 }
 

@@ -130,6 +130,7 @@ requestAnimationFrame(function () {
           },
           on: {
             click: function () {
+              console.dir(this);
               Scope.data.activeModule = this.inputs.item.module;
             }
           }
