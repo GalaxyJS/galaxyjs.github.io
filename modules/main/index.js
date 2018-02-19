@@ -108,7 +108,13 @@ requestAnimationFrame(function () {
       tag: 'div',
       id: 'main-nav',
       class: 'main-nav',
-      animation: animations.mainNav,
+      // animation: animations.mainNav,
+      animation: {
+        enter: {
+          cssName: 'slidein',
+          duration: 5
+        }
+      },
       children: [
         {
           tag: 'a',

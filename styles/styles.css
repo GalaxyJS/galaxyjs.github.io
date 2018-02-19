@@ -5,6 +5,15 @@
 /*@import url('https://fonts.googleapis.com/css?family=Rubik:300,400,500,700');*/
 @import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');
 /*@import url('https://fonts.googleapis.com/css?family=Ubuntu+Mono');*/
+@keyframes slidein {
+  from {
+    background-color: red;
+  }
+
+  to {
+    background-color: blue;
+  }
+}
 
 p {
   margin: 15px 0;
