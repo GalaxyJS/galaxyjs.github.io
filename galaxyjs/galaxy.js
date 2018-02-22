@@ -766,8 +766,9 @@ if (typeof Object.assign != 'function') {
     let a = this.concat();
     for (let i = 0; i < a.length; ++i) {
       for (let j = i + 1; j < a.length; ++j) {
-        if (a[i] === a[j])
+        if (a[i] === a[j]) {
           a.splice(j--, 1);
+        }
       }
     }
 
@@ -802,10 +803,11 @@ if (typeof Object.assign != 'function') {
     clone.__proto__ = obj.__proto__;
     for (let i in obj) {
       if (obj.hasOwnProperty(i)) {
-        if (typeof(obj[i]) === 'object' && obj[i] !== null)
+        if (typeof(obj[i]) === 'object' && obj[i] !== null) {
           clone[i] = Galaxy.clone(obj[i]);
-        else
+        } else {
           clone[i] = obj[i];
+        }
       }
     }
     return clone;
@@ -837,17 +839,19 @@ if (typeof Object.assign != 'function') {
     for (let i = 1; i < arguments.length; i++) {
       obj = arguments[i];
 
-      if (!obj)
+      if (!obj) {
         continue;
+      }
 
       for (let key in obj) {
         if (obj.hasOwnProperty(key)) {
-          if (obj[key] instanceof Array)
+          if (obj[key] instanceof Array) {
             result[key] = this.extend(result[key] || [], obj[key]);
-          else if (typeof obj[key] === 'object' && obj[key] !== null)
+          } else if (typeof obj[key] === 'object' && obj[key] !== null) {
             result[key] = this.extend(result[key] || {}, obj[key]);
-          else
+          } else {
             result[key] = obj[key];
+          }
         }
       }
     }
@@ -927,9 +931,8 @@ if (typeof Object.assign != 'function') {
     for (p in obj) {
       if (obj.hasOwnProperty(p)) {
         let k = prefix ? prefix + '[' + p + ']' : p, v = obj[p];
-        str.push((v !== null && typeof v === 'object') ?
-          _this.convertToURIString(v, k) :
-          encodeURIComponent(k) + '=' + encodeURIComponent(v));
+        str.push((v !== null && typeof v === 'object') ? _this.convertToURIString(v, k) : encodeURIComponent(k) + '=' +
+          encodeURIComponent(v));
       }
     }
 
@@ -944,7 +947,6 @@ if (typeof Object.assign != 'function') {
     }
 
     let promise = new Promise(function (resolve, reject) {
-
 
       if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
         module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
@@ -1032,7 +1034,7 @@ if (typeof Object.assign != 'function') {
           }
 
           unique.push(item);
-          return {url: item};
+          return { url: item };
         }).filter(Boolean);
       } else {
         // extract imports from the source code
@@ -1043,7 +1045,7 @@ if (typeof Object.assign != 'function') {
           let query = path.match(/([\S]+)/gm);
           let url = query[query.length - 1];
           if (unique.indexOf(url) !== -1) {
-            return 'Scope.imports[\'' + url + '\']';
+            return 'Scope.__imports__[\'' + url + '\']';
           }
 
           unique.push(url);
@@ -1052,7 +1054,7 @@ if (typeof Object.assign != 'function') {
             fresh: query.indexOf('new') !== -1
           });
 
-          return 'Scope.imports[\'' + url + '\']';
+          return 'Scope.__imports__[\'' + url + '\']';
         });
       }
 
@@ -1111,14 +1113,14 @@ if (typeof Object.assign != 'function') {
   GalaxyCore.prototype.executeCompiledModule = function (module) {
     let promise = new Promise(function (resolve, reject) {
       for (let item in module.addOns) {
-        module.scope.imports[item] = module.addOns[item];
+        module.scope.inject(item, module.addOns[item]);
       }
 
       for (let item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
           let asset = importedLibraries[item];
           if (asset.module) {
-            module.scope.imports[asset.name] = asset.module;
+            module.scope.inject(asset.name, asset.module);
           }
         }
       }
@@ -1329,6 +1331,8 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
 'use strict';
 
 Galaxy.GalaxyScope = /** @class*/(function () {
+  const defineProp = Object.defineProperty;
+
   /**
    *
    * @param {Object} module
@@ -1340,17 +1344,32 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;
     this.element = element || null;
-    this.imports = {};
     this.exports = {};
     this.uri = new Galaxy.GalaxyURI(module.url);
     this.eventHandlers = {};
     this.observers = [];
     this.on('module.destroy', this.destroy.bind(this));
     this.data = {};
+
+    defineProp(this, '__imports__', {
+      value: {},
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
   }
 
+  /**
+   *
+   * @param id ID string which is going to be used for importing
+   * @param instance The assigned object to this id
+   */
+  GalaxyScope.prototype.inject = function (id, instance) {
+    this['__imports__'][id] = instance;
+  };
+
   GalaxyScope.prototype.import = function (libId) {
-    return this.imports[libId];
+    return this['__imports__'][libId];
   };
 
   GalaxyScope.prototype.destroy = function () {
@@ -1659,7 +1678,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     value: null
   };
 
-  GalaxyView.BINDING_SYNTAX_REGEX = new RegExp('^<(.*)>\\s*([^\\[\\]]*)\\s*$');
+  GalaxyView.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]<>]*)>\\s*([^\\[\\]<>]*)\\s*$');
   GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
   GalaxyView.REACTIVE_BEHAVIORS = {};
@@ -2520,7 +2539,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         attributeValue = nodeSchema[attributeName];
 
         let bindings = GalaxyView.getBindings(attributeValue);
-
         if (bindings.variableNamePaths) {
           GalaxyView.makeBinding(viewNode, scopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
         } else {
@@ -3035,9 +3053,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
-      _this.sequences.enter.nextAction(function () {
-        animationDone();
-      });
+      _this.sequences.enter.nextAction(animationDone);
     } else if (!flag && _this.node.parentNode) {
       _this.sequences.enter.truncate();
       _this.callLifecycleEvent('preRemove');
@@ -3172,7 +3188,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
-          // debugger;
           animationDone();
         });
       }
@@ -3382,13 +3397,15 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
 
                     if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
+                      animationMeta =
+                        animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position ||
+                          '+=0');
                     }
 
                     animationMeta.add(viewNode.node, classAnimationConfig, done);
@@ -3406,7 +3423,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = {className: '-=' + item || ''};
+                  classAnimationConfig.to = { className: '-=' + item || '' };
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);

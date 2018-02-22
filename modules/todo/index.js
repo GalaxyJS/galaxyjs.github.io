@@ -78,7 +78,6 @@ view.init({
             })
           ]
         },
-
         {
           tag: 'ul',
           children: {

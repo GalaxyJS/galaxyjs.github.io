@@ -68,7 +68,7 @@ view.init({
         {
           tag: 'h2',
           text: 'Galaxy.GalaxyView.ViewNode'
-        },
+        }
       ]
     }
   ]

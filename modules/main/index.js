@@ -47,7 +47,7 @@ Scope.data.navItems = [
   }
 ];
 
-Scope.data.activeModule = Scope.data.navItems[0].module;
+Scope.data.activeModule = Scope.data.navItems[ 0 ].module;
 
 Scope.data.todos = [
   {
@@ -108,13 +108,7 @@ requestAnimationFrame(function () {
       tag: 'div',
       id: 'main-nav',
       class: 'main-nav',
-      // animation: animations.mainNav,
-      animation: {
-        enter: {
-          cssName: 'slidein',
-          duration: 5
-        }
-      },
+      animation: animations.mainNav,
       children: [
         {
           tag: 'a',
