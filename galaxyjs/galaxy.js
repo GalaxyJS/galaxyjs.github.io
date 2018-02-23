@@ -1256,7 +1256,7 @@ if (typeof Object.assign != 'function') {
 Galaxy.GalaxyObserver = /** @class */ (function () {
   const G = Galaxy;
 
-  GalaxyObserver.notify = function (obj, key, value, oldValue) {
+  GalaxyObserver.notify = function (obj, key, value, oldValue,caller) {
     const observers = obj.__observers__;
     const parents = obj.__parents__;
 
@@ -1268,7 +1268,9 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
 
     if (parents !== undefined) {
       parents.forEach(function (bp) {
-        GalaxyObserver.notify(bp.host[bp.name], key, value, oldValue);
+        if(bp.host[bp.name] !== caller) {
+          GalaxyObserver.notify(bp.host[bp.name], key, value, oldValue, bp.host[bp.name]);
+        }
       });
     }
   };
@@ -1379,7 +1381,10 @@ Galaxy.GalaxyScope = /** @class*/(function () {
   };
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
+    // debugger
     let newModuleMetaData = Object.assign({}, moduleMeta, config || {});
+    Galaxy.GalaxyView.link(moduleMeta, newModuleMetaData);
+    // debugger;
     if (newModuleMetaData.url.indexOf('./') === 0) {
       newModuleMetaData.url = this.path + moduleMeta.url.substr(2);
     }
@@ -1764,8 +1769,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     delete obj[key];
   };
 
-  GalaxyView.createMirror = function (obj, newProp) {
-    let result = {};
+  GalaxyView.createMirror = function (obj, forObj) {
+    let result = forObj || {};
 
     defineProp(result, '__parent__', {
       enumerable: false,
@@ -2107,7 +2112,19 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       let boundProperty = dataObject[referenceName];
 
       if (typeof boundProperty === 'undefined') {
-        boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, aliasPropertyName, referenceName, enumerable, childProperty, initValue);
+        boundProperty =
+          GalaxyView.createBoundProperty(dataObject, propertyName, aliasPropertyName, referenceName, enumerable, childProperty, initValue);
+      }
+
+      if (initValue !== null && typeof initValue === 'object' && !(initValue instanceof Array)) {
+        if (!initValue.hasOwnProperty('__parents__')) {
+          Galaxy.GalaxyView.BoundProperty.installParentFor(initValue, boundProperty);
+        }
+        for (let key in initValue) {
+          if (initValue.hasOwnProperty(key) && !initValue.hasOwnProperty('<>' + key)) {
+            GalaxyView.createBoundProperty(initValue, key, false, '<>' + key, true, null, initValue[key]);
+          }
+        }
       }
 
       // if (dataObject['__lists__'] !== undefined) {
@@ -2218,7 +2235,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        const newValue = property.parser ? property.parser(value) : value;
+        const newValue = property.parser ? property.parser(value, GalaxyView.getBindings(node.schema[property.name])) : value;
         node.node[property.name] = newValue;
         node.notifyObserver(property.name, newValue, oldValue);
       }
@@ -2448,7 +2465,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
-    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
     // let newValue = value;
     // let parser = property.parser;
     // worker.postMessage({viewNode: viewNode});
@@ -2638,23 +2655,39 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
   const GV = Galaxy.GalaxyView;
   /**
    *
-   * @param {Array} parent
+   * @param {Array|Object} host
    * @param {Galaxy.GalaxyView.BoundProperty} bp
    */
-  BoundProperty.installParentFor = function (parent, bp) {
-    let i = 0, len = parent.length, item, itemParent;
-    for (; i < len; i++) {
-      item = parent[i];
-      itemParent = item['__parents__'];
+  BoundProperty.installParentFor = function (host, bp) {
+    if (host instanceof Array) {
+      let i = 0, len = host.length, item, itemParent;
+      for (; i < len; i++) {
+        item = host[i];
+        itemParent = item['__parents__'];
+
+        if (itemParent === undefined) {
+          GV.defineProp(item, '__parents__', {
+            configurable: false,
+            enumerable: false,
+            value: [bp]
+          });
+        } else if (itemParent.indexOf(bp) === -1) {
+          itemParent.push(bp);
+        }
+      }
+    } else {
+      // debugger;
+      const itemParent = host['__parents__'];
 
       if (itemParent === undefined) {
-        GV.defineProp(item, '__parents__', {
+
+        GV.defineProp(host, '__parents__', {
           configurable: false,
           enumerable: false,
           value: [bp]
         });
       } else if (itemParent.indexOf(bp) === -1) {
-        itemParent.push(bp);
+        // itemParent.push(bp);
       }
     }
   };
@@ -2755,13 +2788,13 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
       let change = GV.createActiveArray(value, this.updateValue.bind(this));
       change.type = 'reset';
       change.result = oldValue;
-      this.updateValue(change, {original: oldValue});
-      Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
+      this.updateValue(change, { original: oldValue });
+      Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue, this);
     } else {
       for (let i = 0, len = this.nodes.length; i < len; i++) {
         this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
       }
-      Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
+      Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue, this);
 
       if (this.host['__parents__'] !== undefined) {
         this.host['__parents__'].forEach(function (con) {
@@ -2805,7 +2838,7 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
       host.setters[attributeName](value, oldValue, scopeData);
     } else {
       host[attributeName] = value;
-      Galaxy.GalaxyObserver.notify(host, attributeName, value, oldValue);
+      Galaxy.GalaxyObserver.notify(host, attributeName, value, oldValue, this);
     }
   };
 
@@ -2820,7 +2853,7 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
     } else {
-      Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges);
+      Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges, this);
     }
   };
 
@@ -4146,8 +4179,12 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         moduleMeta = expression();
       }
 
+      if (moduleMeta === undefined) {
+        // return;
+      }
+
       if (typeof moduleMeta !== 'object') {
-        return console.error('module property only accept objects as value');
+        return console.error('module property only accept objects as value', moduleMeta);
       }
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
@@ -4252,7 +4289,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       const id = bindings.variableNamePaths.split('.').pop();
       if (bindings.modifiers === 'number') {
         viewNode.node.addEventListener('keyup', function () {
-          dataObject[id] = Number(viewNode.node.value) || 0;
+          dataObject[id] = viewNode.node.value ? Number(viewNode.node.value) : null;
         });
       } else {
         viewNode.node.addEventListener('keyup', function () {

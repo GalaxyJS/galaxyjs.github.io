@@ -134,7 +134,7 @@ view.init({
           '                  // The path to your main module file\n' +
           '                  url: \'modules/main/index.js\',\n' +
           '                  // The container element for your app\n' +
-          '                  element: document.getElementById(\'body\')\n' +
+          '                  element: document.querySelector(\'body\')\n' +
           '              }).then(function (module) {\n' +
           '                  module.start();\n' +
           '              });\n' +
