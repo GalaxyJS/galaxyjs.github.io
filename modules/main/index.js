@@ -47,7 +47,7 @@ Scope.data.navItems = [
   }
 ];
 
-Scope.data.activeModule = Scope.data.navItems[ 0 ].module;
+Scope.data.activeModule = Scope.data.navItems[0].module;
 
 Scope.data.todos = [
   {
@@ -101,7 +101,7 @@ Scope.data.newItem = {
   title: '',
   done: false
 };
-
+console.info(Scope);
 requestAnimationFrame(function () {
   view.init([
     {
@@ -114,7 +114,7 @@ requestAnimationFrame(function () {
           tag: 'a',
           $for: 'item in data.navItems',
           inputs: {
-            item: '<>item'
+            in_item: '<>item'
           },
           animation: animations.mainNavItem,
           href: '<>item.link',
@@ -124,6 +124,7 @@ requestAnimationFrame(function () {
               'item.module',
               'data.activeModule',
               function (mod, actMod) {
+                console.info(mod, actMod, mod === actMod);
                 return mod === actMod;
               }
             ]
@@ -131,7 +132,7 @@ requestAnimationFrame(function () {
           on: {
             click: function () {
               console.dir(this);
-              Scope.data.activeModule = this.inputs.item.module;
+              Scope.data.activeModule = this.inputs.in_item.module;
             }
           }
         }
