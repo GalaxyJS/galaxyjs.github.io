@@ -44,7 +44,7 @@ view.init([
         return values;
       }
     ]
-  },
+  }
 ]);
 
 setTimeout(function () {
@@ -53,10 +53,9 @@ setTimeout(function () {
   //   prop: 'value 1',
   //   prop2: 'value 2'
   // };
-
   Scope.data.test1 = Scope.data.test2;
 
   setTimeout(function () {
-    Scope.data.test1.prop ='aaaa';
-  },1000)
+    Scope.data.test1.prop = 'aaaa';
+  }, 1000);
 }, 1000);
