@@ -88,6 +88,8 @@ Scope.data.todos = [
   }
 ];
 
+Scope.count = 10;
+
 Scope.data.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
@@ -124,7 +126,7 @@ requestAnimationFrame(function () {
               'item.module',
               'data.activeModule',
               function (mod, actMod) {
-                console.info(mod, actMod, mod === actMod);
+                // console.info(mod, actMod, mod === actMod);
                 return mod === actMod;
               }
             ]

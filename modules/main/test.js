@@ -6,8 +6,19 @@ Scope.data.test1 = {
 };
 
 Scope.data.test2 = {
-  prop: 't2 value'
+  prop: 'value 3'
 };
+
+Scope.data.list = [
+  {
+    title: 'Item 1'
+  },
+  {
+    title: 'Item 2'
+  }
+];
+
+Scope.count = 1;
 
 view.init([
   {
@@ -44,18 +55,61 @@ view.init([
         return values;
       }
     ]
+  },
+  {
+    module: {
+      url: './item-info.js'
+    },
+    inputs: {
+      test2: '<>data.test2',
+      data: {
+        count:'<>count'
+      }
+
+    }
+  },
+  {
+    tag: 'h4',
+    inputs: {
+      test2: '<>data.test2',
+      item: '<>item'
+    },
+    $for: {
+      data: '<>data.list',
+      as: 'item'
+    },
+    text: '<>item.title',
+    class: {
+      bold: [
+        'item.title',
+        'data.test2.prop',
+        function (title, prop2) {
+          console.info(title, prop2, title === prop2);
+          return title === prop2;
+          // return true;
+        }
+      ]
+    },
+    on: {
+      click: function () {
+        // debugger;
+        console.info(this);
+        this.inputs.test2.prop = this.inputs.item.title;
+        // this.inputs.item = 'value 1';
+      }
+    }
   }
 ]);
 
 setTimeout(function () {
   console.info(Scope);
-  // Scope.data.test1 = {
-  //   prop: 'value 1',
-  //   prop2: 'value 2'
+  // Scope.data.test2 = {
+  //   prop: 'Item 2',
+  //   axe: 'nice'
   // };
   Scope.data.test1 = Scope.data.test2;
 
   setTimeout(function () {
-    Scope.data.test1.prop = 'aaaa';
-  }, 1000);
+    Scope.data.test2.prop = 'Item 1';
+  }, 1500);
 }, 1000);

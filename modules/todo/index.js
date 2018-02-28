@@ -38,7 +38,7 @@ view.init({
       children: [
         tag.h2([
           'inputs.items.length',
-          function (len) {
+          function (len,c) {
             return 'ToDos, Count: ' + len;
           }
         ]),
