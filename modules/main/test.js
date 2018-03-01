@@ -15,6 +15,9 @@ Scope.data.list = [
   },
   {
     title: 'Item 2'
+  },
+  {
+    title: '<>data.test1.prop2'
   }
 ];
 
@@ -63,7 +66,7 @@ view.init([
     inputs: {
       test2: '<>data.test2',
       data: {
-        count:'<>count'
+        count: '<>count'
       }
 
     }
@@ -110,6 +113,17 @@ setTimeout(function () {
   Scope.data.test1 = Scope.data.test2;
 
   setTimeout(function () {
+    // Scope.data.list = [
+    //   {
+    //     title: 'new list1'
+    //   },
+    //   {
+    //     title: 'new list2'
+    //   },
+    //   {
+    //     title: '<>data.test1.prop'
+    //   }
+    // ];
     Scope.data.test2.prop = 'Item 1';
   }, 1500);
 }, 1000);

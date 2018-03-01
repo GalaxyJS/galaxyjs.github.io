@@ -126,7 +126,7 @@ requestAnimationFrame(function () {
               'item.module',
               'data.activeModule',
               function (mod, actMod) {
-                // console.info(mod, actMod, mod === actMod);
+                console.info(mod, actMod, mod === actMod);
                 return mod === actMod;
               }
             ]
