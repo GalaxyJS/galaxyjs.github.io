@@ -3,11 +3,12 @@ const inputs = Scope.import('galaxy/inputs');
 console.info(Scope)
 view.init([
   {
-    tag: 'p',
-    text: '<>inputs.test2.prop',
+    tag: 'h2',
+    text: '<>inputs.title',
     on: {
       click: function () {
-        inputs.test2.prop = 'none';
+        inputs.title = 'asdasd';
+        // inputs.test2.prop = 'none';
       }
     }
 

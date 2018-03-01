@@ -1,13 +1,17 @@
 const view = Scope.import('galaxy/view');
 
-Scope.data.test1 = {
-  prop: 'value 1',
-  prop2: 'value 2'
+Scope.data.personOne = {
+  name: 'Eeliya Rasta',
+  age: 26
+};
+let personOneCached = Scope.data.personOne;
+
+Scope.data.personTwo = {
+  name: 'Gandolf',
+  age: 121
 };
 
-Scope.data.test2 = {
-  prop: 'value 3'
-};
+console.info('personOne', personOneCached);
 
 Scope.data.list = [
   {
@@ -17,7 +21,7 @@ Scope.data.list = [
     title: 'Item 2'
   },
   {
-    title: '<>data.test1.prop2'
+    title: '<>data.personOne.prop2'
   }
 ];
 
@@ -25,9 +29,9 @@ Scope.count = 1;
 
 view.init([
   {
-    tag: 'h3',
+    tag: 'h1',
     text: [
-      '<>data.test1.prop',
+      '<>data.personTwo.name',
       function (p) {
         return '--- ' + p;
       }
@@ -36,10 +40,10 @@ view.init([
   {
     tag: 'p',
     text: [
-      '<>data.test1',
+      '<>data.personOne',
       function (values) {
         if (typeof values === 'object') {
-          return 'test1 -> ' + JSON.stringify(values, null, 2);
+          return 'personOne -> ' + JSON.stringify(values, null, 2);
         }
 
         return values;
@@ -49,10 +53,10 @@ view.init([
   {
     tag: 'p',
     text: [
-      '<>data.test2',
+      '<>data.personTwo',
       function (values) {
         if (typeof values === 'object') {
-          return 'test2 -> ' + JSON.stringify(values, null, 2);
+          return 'personTwo -> ' + JSON.stringify(values, null, 2);
         }
 
         return values;
@@ -64,55 +68,57 @@ view.init([
       url: './item-info.js'
     },
     inputs: {
-      test2: '<>data.test2',
+      title: '<>data.personTwo.name',
+      info: '<>data.personTwo',
       data: {
         count: '<>count'
       }
 
     }
-  },
-  {
-    tag: 'h4',
-    inputs: {
-      test2: '<>data.test2',
-      item: '<>item'
-    },
-    $for: {
-      data: '<>data.list',
-      as: 'item'
-    },
-    text: '<>item.title',
-    class: {
-      bold: [
-        'item.title',
-        'data.test2.prop',
-        function (title, prop2) {
-          console.info(title, prop2, title === prop2);
-          return title === prop2;
-          // return true;
-        }
-      ]
-    },
-    on: {
-      click: function () {
-        // debugger;
-        console.info(this);
-        this.inputs.test2.prop = this.inputs.item.title;
-        // this.inputs.item = 'value 1';
-      }
-    }
   }
+  // {
+  //   tag: 'h4',
+  //   inputs: {
+  //     personTwo: '<>data.personTwo',
+  //     item: '<>item'
+  //   },
+  //   $for: {
+  //     data: '<>data.list',
+  //     as: 'item'
+  //   },
+  //   text: '<>item.title',
+  //   class: {
+  //     bold: [
+  //       'item.title',
+  //       'data.personTwo.prop',
+  //       function (title, prop2) {
+  //         console.info(title, prop2, title === prop2);
+  //         return title === prop2;
+  //         // return true;
+  //       }
+  //     ]
+  //   },
+  //   on: {
+  //     click: function () {
+  //       // debugger;
+  //       console.info(this);
+  //       this.inputs.personTwo.prop = this.inputs.item.title;
+  //       // this.inputs.item = 'value 1';
+  //     }
+  //   }
+  // }
 ]);
 
 setTimeout(function () {
-  console.info(Scope);
-  // Scope.data.test2 = {
+  // Scope.data.personTwo = {
   //   prop: 'Item 2',
   //   axe: 'nice'
   // };
-  Scope.data.test1 = Scope.data.test2;
+  // Scope.data.personOne = Scope.data.personTwo;
 
   setTimeout(function () {
+    // console.info('Scope.data.personOne ', Scope.data.personOne);
+    // console.info('personOne cached', personOneCached);
     // Scope.data.list = [
     //   {
     //     title: 'new list1'
@@ -121,9 +127,14 @@ setTimeout(function () {
     //     title: 'new list2'
     //   },
     //   {
-    //     title: '<>data.test1.prop'
+    //     title: '<>data.personOne.prop'
     //   }
     // ];
-    Scope.data.test2.prop = 'Item 1';
+    // Scope.data.personTwo.name = 'Dakota';
+    Scope.data.personTwo = {
+      name: 'Dakota',
+      age: 22,
+      gender: 'female'
+    };
   }, 1500);
 }, 1000);

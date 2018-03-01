@@ -54,7 +54,7 @@ view.init({
                     $if: [
                       'product.quantity',
                       function (q) {
-                        return q === 0;
+                        return !q;
                       }
                     ]
                   }
