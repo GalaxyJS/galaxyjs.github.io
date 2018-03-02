@@ -33,7 +33,8 @@ view.init([
     text: [
       '<>data.personTwo.name',
       function (p) {
-        return '--- ' + p;
+        console.info(p);
+        return 'Person two name is ' + p;
       }
     ]
   },
@@ -46,7 +47,7 @@ view.init([
           return 'personOne -> ' + JSON.stringify(values, null, 2);
         }
 
-        return values;
+        return 'personOne(' + (typeof values) + ') -> ' + values;
       }
     ]
   },
@@ -59,7 +60,7 @@ view.init([
           return 'personTwo -> ' + JSON.stringify(values, null, 2);
         }
 
-        return values;
+        return 'personTwo(' + (typeof values) + ') -> ' + values;
       }
     ]
   },
@@ -131,10 +132,15 @@ setTimeout(function () {
     //   }
     // ];
     // Scope.data.personTwo.name = 'Dakota';
-    Scope.data.personTwo = {
-      name: 'Dakota',
-      age: 22,
-      gender: 'female'
-    };
-  }, 1500);
+    // Scope.data.personTwo = {
+    //   data: [
+    //     {
+    //       title: 'test'
+    //     }
+    //   ],
+    //   name: 'Dakota',
+    //   age: 22,
+    //   gender: 'female'
+    // };
+  }, 2500);
 }, 1000);
