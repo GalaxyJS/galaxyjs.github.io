@@ -19,7 +19,7 @@ Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
 // var observer = Scope.observe(inputs);
-// observer.on('items', function (value, oldValue) {
+// observer.on('items', function (value, valueBindingSample) {
 //   debugger;
 // });
 console.info(tag.h3('some text').class('test-class'));

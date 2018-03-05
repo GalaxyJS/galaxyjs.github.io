@@ -69,12 +69,9 @@ view.init([
       url: './item-info.js'
     },
     inputs: {
-      title: '<>data.personTwo.name',
-      info: '<>data.personTwo',
-      data: {
-        count: '<>count'
-      }
-
+      title: '<>data.personOne.name',
+      person: '<>data.personOne',
+      personTwo:'<>data.personTwo'
     }
   }
   // {
