@@ -11,7 +11,7 @@ Scope.data.personTwo = {
   age: 121
 };
 
-console.info('personOne', personOneCached);
+console.info('personOne', Scope);
 
 Scope.data.list = [
   {
@@ -24,8 +24,6 @@ Scope.data.list = [
     title: '<>data.personOne.prop2'
   }
 ];
-
-Scope.count = 1;
 
 view.init([
   {

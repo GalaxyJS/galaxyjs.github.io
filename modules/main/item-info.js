@@ -70,9 +70,25 @@ view.init([
             text: 'person = personTwo',
             on: {
               click: function () {
-                // inputs.title = null;
                 inputs.person = inputs.personTwo;
-                // inputs.test2.prop = 'none';
+              }
+            }
+          },
+          {
+            tag: 'button',
+            text: 'person.children = null',
+            on: {
+              click: function () {
+                inputs.person.children = null;
+              }
+            }
+          },
+          {
+            tag: 'button',
+            text: 'person.children[0].name = Helen',
+            on: {
+              click: function () {
+                inputs.person.children[0].name = 'Helen';
               }
             }
           },
@@ -81,9 +97,7 @@ view.init([
             text: 'Set null',
             on: {
               click: function () {
-                // inputs.title = null;
                 inputs.person = null;
-                // inputs.test2.prop = 'none';
               }
             }
           }
