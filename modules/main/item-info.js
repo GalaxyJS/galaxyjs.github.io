@@ -76,10 +76,10 @@ view.init([
           },
           {
             tag: 'button',
-            text: 'person.children = null',
+            text: 'person.name = new',
             on: {
               click: function () {
-                inputs.person.children = null;
+                inputs.person.name = 'New';
               }
             }
           },

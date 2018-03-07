@@ -31,7 +31,6 @@ view.init([
     text: [
       '<>data.personTwo.name',
       function (p) {
-        console.info(p);
         return 'Person two name is ' + p;
       }
     ]
@@ -41,6 +40,7 @@ view.init([
     text: [
       '<>data.personOne',
       function (values) {
+        console.info('exper', values)
         if (typeof values === 'object') {
           return 'personOne -> ' + JSON.stringify(values, null, 2);
         }
@@ -69,7 +69,7 @@ view.init([
     inputs: {
       title: '<>data.personOne.name',
       person: '<>data.personOne',
-      personTwo:'<>data.personTwo'
+      personTwo: '<>data.personTwo'
     }
   }
   // {
