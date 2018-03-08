@@ -30,7 +30,7 @@ console.info(Scope);
 view.init({
   tag: 'div',
   class: 'card',
-  animation: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -83,7 +83,7 @@ view.init({
           children: {
             tag: 'li',
             $for: 'item in inputs.items',
-            animation: {
+            animations: {
               enter: {
                 parent: 'card',
                 sequence: 'todo-items',

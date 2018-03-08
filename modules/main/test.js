@@ -40,7 +40,7 @@ view.init([
     text: [
       '<>data.personOne',
       function (values) {
-        console.info('exper', values)
+        console.info('exper', values);
         if (typeof values === 'object') {
           return 'personOne -> ' + JSON.stringify(values, null, 2);
         }

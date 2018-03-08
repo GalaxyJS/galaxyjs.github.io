@@ -5,7 +5,7 @@ var animations = Scope.import('services/animations.js');
 
 view.init({
   class: 'card big',
-  animation: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'img',

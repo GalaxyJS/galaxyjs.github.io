@@ -94,7 +94,7 @@ view.init([
           },
           {
             tag: 'button',
-            text: 'Set null',
+            text: 'inputs.person = null',
             on: {
               click: function () {
                 inputs.person = null;

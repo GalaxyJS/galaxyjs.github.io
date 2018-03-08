@@ -39,7 +39,7 @@ console.info(tag.h3('some text').class('test-class'));
 
 view.init({
   class: 'card big',
-  animation: animations.cardInOut,
+  animations: animations.cardInOut,
   lifecycle: {
     postInsert: function () {
       view;

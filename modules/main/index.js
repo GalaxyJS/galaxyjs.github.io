@@ -110,15 +110,19 @@ requestAnimationFrame(function () {
       tag: 'div',
       id: 'main-nav',
       class: 'main-nav',
-      animation: animations.mainNav,
+      animations: animations.mainNav,
       children: [
         {
           tag: 'a',
           $for: 'item in data.navItems',
+          // $for: {
+          //   data: '<>data.navItems',
+          //   as: 'item'
+          // },
           inputs: {
             in_item: '<>item'
           },
-          animation: animations.mainNavItem,
+          animations: animations.mainNavItem,
           href: '<>item.link',
           text: '<>item.title',
           class: {

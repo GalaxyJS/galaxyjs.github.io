@@ -11,7 +11,7 @@ console.info(Scope);
 view.init({
   tag: 'div',
   class: 'card',
-  animation: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
