@@ -1,29 +1,15 @@
 const view = Scope.import('galaxy/view');
 
 Scope.data.personOne = {
-  name: 'Eeliya Rasta',
-  age: 26
+  name: 'Eeliya Rasta'
 };
-let personOneCached = Scope.data.personOne;
 
 Scope.data.personTwo = {
-  name: 'Gandolf',
-  age: 121
+  name: 'Gandolf'
 };
 
 console.info('personOne', Scope);
 
-Scope.data.list = [
-  {
-    title: 'Item 1'
-  },
-  {
-    title: 'Item 2'
-  },
-  {
-    title: '<>data.personOne.prop2'
-  }
-];
 
 view.init([
   {
