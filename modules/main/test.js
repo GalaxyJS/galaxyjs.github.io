@@ -8,8 +8,25 @@ Scope.data.personTwo = {
   name: 'Gandolf'
 };
 
-console.info('personOne', Scope);
+const personOneCache = Scope.data.personOne;
+console.info('personOne cached', personOneCache);
 
+Scope.data.list = [
+  {
+    title: 'Title 1',
+    count: 3
+  },
+  {
+    title: 'Title 2',
+    count: 3
+  },
+  {
+    title: 'Title 3',
+    count: 3
+  }
+];
+
+console.info('Scope', Scope);
 
 view.init([
   {
@@ -49,6 +66,7 @@ view.init([
     ]
   },
   {
+    class: 'content',
     module: {
       url: './item-info.js'
     },
@@ -57,38 +75,63 @@ view.init([
       person: '<>data.personOne',
       personTwo: '<>data.personTwo'
     }
+  },
+  {
+    tag: 'h4',
+    text: [
+      'data.list.length',
+      function (length) {
+        return 'List length: ' + length;
+      }
+    ]
+  },
+  {
+    tag: 'h4',
+    text: [
+      'data.list',
+      function (list) {
+        return 'Total count:' + list.reduce(function (sum, item) {
+          return sum + item.count;
+        }, 0);
+      }
+    ]
+  },
+  {
+    tag: 'p',
+    $for: {
+      data: '<>data.list',
+      as: 'item'
+    },
+    text: [
+      'item',
+      // 'item.count',
+      function (item, count) {
+        return item.title + ' -> ' + item.count;
+      }
+    ]
+  },
+  {
+    tag: 'button',
+    text: 'Add new item to the list',
+    on: {
+      click: function () {
+        Scope.data.list.push({
+          title: 'Item ' + Date.now(),
+          count: 2
+        });
+      }
+    }
+  },
+  {
+    tag: 'button',
+    text: 'Change Item 1 count randomly',
+    on: {
+      click: function () {
+        Scope.data.list[0].count = Math.ceil(15 * Math.random());
+        // debugger;
+      }
+    }
   }
-  // {
-  //   tag: 'h4',
-  //   inputs: {
-  //     personTwo: '<>data.personTwo',
-  //     item: '<>item'
-  //   },
-  //   $for: {
-  //     data: '<>data.list',
-  //     as: 'item'
-  //   },
-  //   text: '<>item.title',
-  //   class: {
-  //     bold: [
-  //       'item.title',
-  //       'data.personTwo.prop',
-  //       function (title, prop2) {
-  //         console.info(title, prop2, title === prop2);
-  //         return title === prop2;
-  //         // return true;
-  //       }
-  //     ]
-  //   },
-  //   on: {
-  //     click: function () {
-  //       // debugger;
-  //       console.info(this);
-  //       this.inputs.personTwo.prop = this.inputs.item.title;
-  //       // this.inputs.item = 'value 1';
-  //     }
-  //   }
-  // }
 ]);
 
 setTimeout(function () {
