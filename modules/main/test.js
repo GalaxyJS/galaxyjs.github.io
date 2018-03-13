@@ -76,62 +76,62 @@ view.init([
       personTwo: '<>data.personTwo'
     }
   },
-  {
-    tag: 'h4',
-    text: [
-      'data.list.length',
-      function (length) {
-        return 'List length: ' + length;
-      }
-    ]
-  },
-  {
-    tag: 'h4',
-    text: [
-      'data.list',
-      function (list) {
-        return 'Total count:' + list.reduce(function (sum, item) {
-          return sum + item.count;
-        }, 0);
-      }
-    ]
-  },
-  {
-    tag: 'p',
-    $for: {
-      data: '<>data.list',
-      as: 'item'
-    },
-    text: [
-      'item',
-      // 'item.count',
-      function (item, count) {
-        return item.title + ' -> ' + item.count;
-      }
-    ]
-  },
-  {
-    tag: 'button',
-    text: 'Add new item to the list',
-    on: {
-      click: function () {
-        Scope.data.list.push({
-          title: 'Item ' + Date.now(),
-          count: 2
-        });
-      }
-    }
-  },
-  {
-    tag: 'button',
-    text: 'Change Item 1 count randomly',
-    on: {
-      click: function () {
-        Scope.data.list[0].count = Math.ceil(15 * Math.random());
-        // debugger;
-      }
-    }
-  }
+  // {
+  //   tag: 'h4',
+  //   text: [
+  //     'data.list.length',
+  //     function (length) {
+  //       return 'List length: ' + length;
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'h4',
+  //   text: [
+  //     'data.list',
+  //     function (list) {
+  //       return 'Total count:' + list.reduce(function (sum, item) {
+  //         return sum + item.count;
+  //       }, 0);
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'p',
+  //   $for: {
+  //     data: '<>data.list',
+  //     as: 'item'
+  //   },
+  //   text: [
+  //     'item',
+  //     // 'item.count',
+  //     function (item, count) {
+  //       return item.title + ' -> ' + item.count;
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'button',
+  //   text: 'Add new item to the list',
+  //   on: {
+  //     click: function () {
+  //       Scope.data.list.push({
+  //         title: 'Item ' + Date.now(),
+  //         count: 2
+  //       });
+  //     }
+  //   }
+  // },
+  // {
+  //   tag: 'button',
+  //   text: 'Change Item 1 count randomly',
+  //   on: {
+  //     click: function () {
+  //       Scope.data.list[0].count = Math.ceil(15 * Math.random());
+  //       // debugger;
+  //     }
+  //   }
+  // }
 ]);
 
 setTimeout(function () {

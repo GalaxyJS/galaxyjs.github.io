@@ -10,7 +10,7 @@ const ToDoService = {
   add: function (newItem) {
     newItem.title = newItem.title.trim();
     if (newItem.title) {
-      this.data.push(Object.assign({}, newItem));
+      this.data.push(newItem);
     }
   }
 };
@@ -38,7 +38,7 @@ view.init({
       children: [
         tag.h2([
           'inputs.items.length',
-          function (len,c) {
+          function (len, c) {
             return 'ToDos, Count: ' + len;
           }
         ]),
@@ -140,7 +140,9 @@ view.init({
           class: 'fa-end',
           children: [
             tag.button('Add').onEvent('click', function () {
+              debugger;
               ToDoService.add(Scope.data.newItem);
+
               Scope.data.newItem = {
                 title: '',
                 done: false
