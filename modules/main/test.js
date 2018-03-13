@@ -4,9 +4,7 @@ Scope.data.personOne = {
   name: 'Eeliya Rasta'
 };
 
-Scope.data.personTwo = {
-  name: 'Gandolf'
-};
+Scope.data.personTwo = null;
 
 const personOneCache = Scope.data.personOne;
 console.info('personOne cached', personOneCache);
@@ -31,12 +29,7 @@ console.info('Scope', Scope);
 view.init([
   {
     tag: 'h1',
-    text: [
-      '<>data.personTwo.name',
-      function (p) {
-        return 'Person two name is ' + p;
-      }
-    ]
+    text: '<>data.personTwo.name'
   },
   {
     tag: 'p',
@@ -67,13 +60,31 @@ view.init([
   },
   {
     class: 'content',
+    children: [
+      {
+        tag: 'button',
+        text: 'data.personTwo = {Gandolf}',
+        on: {
+          click: function () {
+            window.personTwo = Scope.data.personTwo = {
+              name: 'Gandolf'
+            };
+
+            console.info(Scope.data.personTwo);
+          }
+        }
+      },
+    ]
+  },
+  {
+    class: 'content',
     module: {
       url: './item-info.js'
     },
     inputs: {
       title: '<>data.personOne.name',
       person: '<>data.personOne',
-      personTwo: '<>data.personTwo'
+      // personTwo: '<>data.personTwo'
     }
   },
   // {

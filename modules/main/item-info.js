@@ -1,6 +1,6 @@
 const view = Scope.import('galaxy/view');
 const inputs = Scope.import('galaxy/inputs');
-console.info(Scope.inputs);
+console.info('inputs', Scope.inputs);
 view.init([
   {
     tag: 'h2',
@@ -36,6 +36,19 @@ view.init([
           },
           {
             tag: 'button',
+            text: 'person = {Dakota}',
+            on: {
+              click: function () {
+                inputs.person = {
+                  name: 'Dakota',
+                  age: 22,
+                  gender: 'female'
+                };
+              }
+            }
+          },
+          {
+            tag: 'button',
             text: 'Set new object with children list property',
             on: {
               click: function () {
@@ -48,19 +61,6 @@ view.init([
                   name: 'Edward',
                   age: 40,
                   gender: 'male'
-                };
-              }
-            }
-          },
-          {
-            tag: 'button',
-            text: 'person = {Dakota}',
-            on: {
-              click: function () {
-                inputs.person = {
-                  name: 'Dakota',
-                  age: 22,
-                  gender: 'female'
                 };
               }
             }
