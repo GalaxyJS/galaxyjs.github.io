@@ -1,6 +1,7 @@
 const view = Scope.import('galaxy/view');
 const inputs = Scope.import('galaxy/inputs');
 console.info('inputs', Scope.inputs);
+
 view.init([
   {
     tag: 'h2',
@@ -12,25 +13,48 @@ view.init([
         tag: 'h2',
         text: '<>inputs.title'
       },
+      // {
+      //   children: {
+      //     tag: 'a',
+      //     $for: {
+      //       data: '<>inputs.person.children',
+      //       as: 'child'
+      //     },
+      //     text: '<>child.name'
+      //   }
+      // },
       {
-        children: {
-          tag: 'a',
-          $for: {
-            data: '<>inputs.person.children',
-            as: 'child'
-          },
-          text: '<>child.name'
-        }
+        tag: 'p',
+        children: [
+          {
+            tag: 'button',
+            text: 'person.name = Elena',
+            on: {
+              click: function () {
+                inputs.person.name = 'Elena';
+              }
+            }
+          }
+        ]
       },
       {
         tag: 'p',
         children: [
           {
             tag: 'button',
+            text: 'inputs.person = null',
+            on: {
+              click: function () {
+                inputs.person = null;
+              }
+            }
+          },
+          {
+            tag: 'button',
             text: 'person = typeof string',
             on: {
               click: function () {
-                inputs.person = 'person text';
+                inputs.person = 'some string';
               }
             }
           },
@@ -67,24 +91,6 @@ view.init([
           },
           {
             tag: 'button',
-            text: 'person = personTwo',
-            on: {
-              click: function () {
-                inputs.person = inputs.personTwo;
-              }
-            }
-          },
-          {
-            tag: 'button',
-            text: 'person.name = new',
-            on: {
-              click: function () {
-                inputs.person.name = 'New';
-              }
-            }
-          },
-          {
-            tag: 'button',
             text: 'person.children[0].name = Helen',
             on: {
               click: function () {
@@ -94,10 +100,10 @@ view.init([
           },
           {
             tag: 'button',
-            text: 'inputs.person = null',
+            text: 'person = personTwo',
             on: {
               click: function () {
-                inputs.person = null;
+                inputs.person = inputs.personTwo;
               }
             }
           }

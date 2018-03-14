@@ -29,7 +29,7 @@ console.info('Scope', Scope);
 view.init([
   {
     tag: 'h1',
-    text: '<>data.personTwo.name'
+    text: '<>data.personOne.name'
   },
   {
     tag: 'p',
@@ -84,7 +84,7 @@ view.init([
     inputs: {
       title: '<>data.personOne.name',
       person: '<>data.personOne',
-      // personTwo: '<>data.personTwo'
+      personTwo: '<>data.personTwo'
     }
   },
   // {
