@@ -8,6 +8,7 @@ Scope.data.personTwo = null;
 
 const personOneCache = Scope.data.personOne;
 console.info('personOne cached', personOneCache);
+Scope.data.personThree = personOneCache;
 
 Scope.data.list = [
   {
@@ -59,8 +60,25 @@ view.init([
     ]
   },
   {
+    tag: 'p',
+    text: '<>data.personThree.name'
+  },
+  {
     class: 'content',
     children: [
+      {
+        tag: 'button',
+        text: 'data.personOne = {Emmy}',
+        on: {
+          click: function () {
+            Scope.data.personOne = {
+              name: 'Emmy'
+            };
+
+            console.info(Scope.data.personOne);
+          }
+        }
+      },
       {
         tag: 'button',
         text: 'data.personTwo = {Gandolf}',
@@ -73,7 +91,7 @@ view.init([
             console.info(Scope.data.personTwo);
           }
         }
-      },
+      }
     ]
   },
   {
