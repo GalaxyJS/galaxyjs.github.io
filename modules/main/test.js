@@ -60,7 +60,7 @@ view.init([
     ]
   },
   {
-    tag: 'p',
+    tag: 'a',
     text: '<>data.personThree.name'
   },
   {
