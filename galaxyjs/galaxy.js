@@ -2011,24 +2011,27 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       if (rp.value === newValue) {
         return;
       }
-debugger;
+
+      rp.removePlaceholder();
+
       if (newValue !== null && newValue !== undefined) {
         if (typeof newValue === 'object') {
           if (!newValue.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
             rp.unbindValue();
+            debugger;
             rp.setValue(newValue);
 
             const desc = Object.getOwnPropertyDescriptors(rp.structure);
             Object.defineProperties(newValue, desc);
             newValue[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].setSelf(rp);
           } else {
-            debugger;
+
             rp.setPlaceholder(newValue);
             debugger;
           }
         } else {
-          rp.setValue(newValue);
           debugger;
+          rp.setValue(newValue);
         }
       } else {
         // break all the relationships to value so it remains intact
@@ -2768,20 +2771,20 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    * @param {Galaxy.GalaxyView.ReactiveProperty} property
    */
   Portal.prototype.setProperty = function (property, key, name, refs) {
-    if (name) {
-      // _this.
-      GV.defineProp(this.refs, key, {
-        configurable: true,
-        enumerable: true,
-        get: function dynamicRef() {
-          return refs[name];
-        }
-      });
-
-      this.refs[key] = 'test';
-    } else {
+    // if (name) {
+    //   // _this.
+    //   GV.defineProp(this.refs, key, {
+    //     configurable: true,
+    //     enumerable: true,
+    //     get: function dynamicRef() {
+    //       return refs[name];
+    //     }
+    //   });
+    //
+    //   this.refs[key] = 'test';
+    // } else {
       this.refs[key] = property;
-    }
+    // }
   };
 
   Portal.prototype.getValueOf = function (key) {
@@ -2901,7 +2904,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    */
   ReactiveProperty.prototype.removeNode = function (node) {
     let nodeIndexInTheHost;
-    while ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
+    if ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
       this.nodes.splice(nodeIndexInTheHost, 1);
       this.keys.splice(nodeIndexInTheHost, 1);
     }
@@ -2913,8 +2916,14 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    */
   ReactiveProperty.prototype.removeNodesByProperty = function (property) {
     const _this = this;
-    property.nodes.forEach(function (node) {
-      _this.removeNode(node);
+    const keys = property.keys;
+    property.nodes.forEach(function (node, i) {
+      _this.nodes.forEach(function (n, ii) {
+        if (node === n && _this.keys[ii] === keys[i]) {
+          _this.nodes.splice(ii, 1);
+          _this.keys.splice(ii, 1);
+        }
+      });
     });
   };
 
@@ -3102,7 +3111,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
 
   ReactiveProperty.prototype.setPlaceholder = function (value) {
     const _this = this;
-    // this.placeholderFor = value;
+    this.placeholderFor = value;
     const valuePortal = value[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
     const valueStructure = valuePortal.self.structure;
     const valueRefs = valuePortal.refs;
@@ -3112,7 +3121,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     _this.unbindValue();
 
     valuePortal.self.concat(_this);
-    _this.portal.refs[_this.name] = valuePortal.self;
+    // _this.portal.refs[_this.name] = valuePortal.self;
 
     oldKeys.forEach(function (key) {
       if (valueRefs[key]) {
@@ -3141,13 +3150,16 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
 
     const _this = this;
     const placeholderPortal = this.placeholderFor[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+    debugger
     placeholderPortal.removeParent(_this);
     const keys = Object.keys(this.placeholderFor);
-    // const valueStructurePortal = this.structure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-
+    debugger;
+    placeholderPortal.self.removeNodesByProperty(_this);
+    const structureRefs = this.structure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].refs;
+    debugger;
     keys.forEach(function (key) {
       if (placeholderPortal.refs[key]) {
-        placeholderPortal.refs[key].removeNodesByProperty(_this);
+        placeholderPortal.refs[key].removeNodesByProperty(structureRefs[key]);
       }
       // valueStructurePortal.refs[key].softUpdate(this.placeholderFor[key]);
     });
