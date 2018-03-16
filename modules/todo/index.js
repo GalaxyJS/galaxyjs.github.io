@@ -140,9 +140,7 @@ view.init({
           class: 'fa-end',
           children: [
             tag.button('Add').onEvent('click', function () {
-              debugger;
               ToDoService.add(Scope.data.newItem);
-
               Scope.data.newItem = {
                 title: '',
                 done: false

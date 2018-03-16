@@ -10,20 +10,30 @@ const personOneCache = Scope.data.personOne;
 console.info('personOne cached', personOneCache);
 Scope.data.personThree = personOneCache;
 
-Scope.data.list = [
-  {
-    title: 'Title 1',
-    count: 3
-  },
-  {
-    title: 'Title 2',
-    count: 3
-  },
-  {
-    title: 'Title 3',
-    count: 3
-  }
-];
+// Scope.data.list = [
+//   {
+//     title: 'Title 1',
+//     count: 3
+//   },
+//   {
+//     title: 'Title 2',
+//     count: 3
+//   },
+//   {
+//     title: 'Title 3',
+//     count: 3
+//   }
+// ];
+
+Scope.data.newItem = {
+  count: 1,
+  title: null
+};
+
+Scope.data.newItem2 = {
+  count: 2,
+  title: null
+};
 
 console.info('Scope', Scope);
 
@@ -105,49 +115,62 @@ view.init([
   //     personTwo: '<>data.personTwo'
   //   }
   // },
+  // {
+  //   tag: 'h4',
+  //   text: [
+  //     'data.list.length',
+  //     function (length) {
+  //       return 'List length: ' + length;
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'h4',
+  //   text: [
+  //     'data.list',
+  //     function (list) {
+  //       return 'Total count:' + list.reduce(function (sum, item) {
+  //         return sum + item.count;
+  //       }, 0);
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'p',
+  //   $for: {
+  //     data: '<>data.list',
+  //     as: 'item'
+  //   },
+  //   text: [
+  //     'item',
+  //     // 'item.count',
+  //     function (item) {
+  //       return item.title + ' -> ' + item.count;
+  //     }
+  //   ]
+  // },
   {
-    tag: 'h4',
-    text: [
-      'data.list.length',
-      function (length) {
-        return 'List length: ' + length;
-      }
-    ]
-  },
-  {
-    tag: 'h4',
-    text: [
-      'data.list',
-      function (list) {
-        return 'Total count:' + list.reduce(function (sum, item) {
-          return sum + item.count;
-        }, 0);
-      }
-    ]
+    tag: 'p',
+    text: '<>data.newItem2.title'
   },
   {
     tag: 'p',
-    $for: {
-      data: '<>data.list',
-      as: 'item'
-    },
-    text: [
-      'item',
-      // 'item.count',
-      function (item) {
-        return item.title + ' -> ' + item.count;
-      }
-    ]
+    text: '<>data.newItem.title'
+  },
+  {
+    tag: 'input',
+    value: '<>data.newItem.title'
   },
   {
     tag: 'button',
     text: 'Add new item to the list',
     on: {
       click: function () {
-        Scope.data.list.push({
-          title: 'Item ' + Date.now(),
-          count: 2
-        });
+        Scope.data.list.push(Scope.data.newItem);
+        Scope.data.newItem = {
+          count: 1,
+          title: null
+        };
       }
     }
   },
@@ -156,7 +179,8 @@ view.init([
     text: 'Change Item 1 count randomly',
     on: {
       click: function () {
-        Scope.data.list[0].count = Math.ceil(15 * Math.random());
+        Scope.data.newItem = Scope.data.newItem2;
+        // Scope.data.list[0].count = Math.ceil(15 * Math.random());
         // debugger;
       }
     }
