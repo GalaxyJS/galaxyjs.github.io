@@ -47,6 +47,7 @@ Scope.data.navItems = [
   }
 ];
 
+// Scope.data.activeModule = null;
 Scope.data.activeModule = Scope.data.navItems[0].module;
 
 Scope.data.todos = [
@@ -88,15 +89,13 @@ Scope.data.todos = [
   }
 ];
 
-Scope.count = 10;
-
 Scope.data.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
   items: '<>data.todos',
-  data: {
-    count: '<>count'
-  }
+  // data: {
+  //   count: '<>count'
+  // }
 };
 
 Scope.data.newItem = {
@@ -115,10 +114,6 @@ requestAnimationFrame(function () {
         {
           tag: 'a',
           $for: 'item in data.navItems',
-          // $for: {
-          //   data: '<>data.navItems',
-          //   as: 'item'
-          // },
           inputs: {
             in_item: '<>item'
           },
@@ -137,7 +132,7 @@ requestAnimationFrame(function () {
           },
           on: {
             click: function () {
-              console.dir(this);
+              console.info(this);
               Scope.data.activeModule = this.inputs.in_item.module;
             }
           }

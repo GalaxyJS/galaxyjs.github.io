@@ -1296,15 +1296,15 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
       });
     }
 
-    if (portal !== undefined) {
-      portal.getParents().forEach(function (reactive) {
-        // console.info(reactive.portal !== caller);
-        // TODO: this if could be removed but more test is needed
-        if (reactive.portal !== caller) {
-          reactive.notify(caller);
-        }
-      });
-    }
+    // if (portal !== undefined) {
+    //   portal.getParents().forEach(function (reactive) {
+    //     // console.info(reactive.portal !== caller);
+    //     // TODO: this if could be removed but more test is needed
+    //     // if (reactive.portal !== caller) {
+    //     reactive.reSync();
+    //     // }
+    //   });
+    // }
   };
 
   /**
@@ -1425,6 +1425,7 @@ Galaxy.GalaxyScope = /** @class*/(function () {
   };
 
   GalaxyScope.prototype.loadModuleInto = function (moduleMetaData, viewNode) {
+    debugger;
     return this.load(moduleMetaData, {
       element: viewNode
     }).then(function (module) {
@@ -1957,16 +1958,21 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
   /**
    *
-   * @param {Object|Array} structure
-   * @param {string} propertyName
+   * @param {Object} structure
+   * @param {string} key
    * @param {any} config
    * @returns {Galaxy.GalaxyView.ReactiveProperty}
    */
-  GalaxyView.createReactiveProperty = function (structure, propertyName, config) {
-    const portal = GalaxyView.getPortal(structure);
-    const referenceName = propertyName;
+  GalaxyView.createReactiveProperty = function (structure, key, config) {
+    let portal = GalaxyView.getPortal(structure);
+    const referenceName = key;
     let scope = structure;
     let reactiveProperty;
+
+    // if (config.initValue && config.initValue[GalaxyView.PORTAL_PROPERTY_IDENTIFIER]) {
+    //   portal = config.initValue[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+    //   GalaxyView.setPortalFor(structure, portal);
+    // }
 
     if (config.referencePropertyName) {
       // If referencePropertyName is set and it refers to a value of the type of object
@@ -1974,30 +1980,30 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       // this means that there will be only one ReactiveProperty for each property and we are going to bind to that
       // through this property
       scope = config.referencePropertyScope;
-      const reference = scope[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].refs[config.referencePropertyName];
+      const reference = scope[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].props[config.referencePropertyName];
       if (reference.value instanceof Array || Object.keys(reference.structure).length) {
         reactiveProperty = reference;
-        portal.setProperty(reactiveProperty, propertyName, config.referencePropertyName, scope[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].refs);
+        portal.setProperty(reactiveProperty, key, config.referencePropertyName, scope[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].props);
       }
-
     }
 
     if (!reactiveProperty) {
-      reactiveProperty = new GalaxyView.ReactiveProperty(config.expression ? {} : portal, config.alias || propertyName, config.initValue);
-      portal.setProperty(reactiveProperty, propertyName);
+      reactiveProperty = new GalaxyView.ReactiveProperty(config.expression ? {} : portal, config.alias || key);
+      portal.setProperty(reactiveProperty, key);
+      reactiveProperty.initValue(config.initValue);
     }
 
     // Default getter
     let getter = function () {
-      const property = this[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].refs[referenceName];
+      /** @type {Galaxy.GalaxyView.ReactiveProperty} */
+      const property = this[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].props[referenceName];
+      // reactiveProperty;
 
       if (!property) {
-        console.info('lets do it from here', referenceName);
+        debugger;
+        reactiveProperty;
+        console.info('lets do it from here', referenceName, this);
         return property;
-      }
-
-      if (property.placeholderFor) {
-        return property.placeholderFor;
       }
 
       return property.value;
@@ -2006,43 +2012,14 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     // Default setter
     let setter = function (val) {
       const p = this[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-      const rp = p.refs[referenceName];
-
-      // if placeholder is set, then it has the priority to be checked first
-      if (rp.placeholderFor) {
-        if (rp.placeholderFor === val) {
-          return;
-        }
-      } else if (rp.value === val) {
-        return;
-      }
-
-      // if(referenceName==='activeModule') debugger;
-      rp.removePlaceholder();
-
-      if (val !== null && val !== undefined) {
-        if (typeof val === 'object') {
-          if (!val.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
-            rp.unbindValue();
-            rp.setValue(val);
-            const desc = Object.getOwnPropertyDescriptors(rp.structure);
-            Object.defineProperties(val, desc);
-            val[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].setSelf(rp);
-          } else {
-            // debugger;
-            rp.setPlaceholder(val);
-            // debugger;
-          }
-        } else {
-          // debugger;
-          rp.setValue(val);
-        }
-      } else {
-        // debugger
-        // break all the relationships to value so it remains intact
-        rp.unbindValue();
-        rp.setValue(val);
-      }
+      const rp = p.props[referenceName];
+      const all = rp.allNodes(referenceName);
+      debugger;
+      all.forEach(function (p, i) {
+        console.info(i, p);
+        all;
+        p.notify(val, key);
+      });
     };
 
     if (config.expression) {
@@ -2056,15 +2033,18 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     setterAndGetter.enumerable = config.enumerable;
     setterAndGetter.get = getter;
     setterAndGetter.set = setter;
-    defineProp(structure, propertyName, setterAndGetter);
+    defineProp(structure, key, setterAndGetter);
 
     if (config.valueScope) {
       if (!config.valueScope.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
         GalaxyView.setPortalFor(config.valueScope, portal);
+      } else {
+        console.info(referenceName, config.valueScope[GalaxyView.PORTAL_PROPERTY_IDENTIFIER] === portal);
+        debugger;
       }
 
       if (!config.referencePropertyName) {
-        defineProp(config.valueScope, propertyName, setterAndGetter);
+        defineProp(config.valueScope, key, setterAndGetter);
       }
     }
 
@@ -2120,19 +2100,33 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {Galaxy.GalaxyView.ReactiveProperty} self
    */
   GalaxyView.makeReactive = function (data, self) {
-    if (data !== null && typeof data === 'object' && !(data instanceof Array)) {
-      const initValuePortal = GalaxyView.getPortal(data);
-      initValuePortal.setSelf(self);
-      let sp = self.structure[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-      sp.setSelf(self)
+    if (data instanceof Array) {
+      data.forEach(function (item) {
+        GalaxyView.makeReactive(item);
+      });
+    } else if (data !== null && typeof data === 'object') {
+      let initValuePortal;
+      if (!self) {
+        self = {
+          structure: data
+        };
+        debugger;
+        initValuePortal = GalaxyView.getPortal(data);
+      } else {
+        initValuePortal = GalaxyView.getPortal(self.structure);
+        initValuePortal.addParent(self);
+      }
+
       for (let key in data) {
-        if (data.hasOwnProperty(key) && !initValuePortal.refs.hasOwnProperty(key)) {
+        if (data.hasOwnProperty(key) && !initValuePortal.props.hasOwnProperty(key)) {
+
           let rp = GalaxyView.createReactiveProperty(self.structure, key, {
             enumerable: true,
             valueScope: data,
             initValue: data[key]
           });
-          initValuePortal.setProperty(rp, key);
+          // initValuePortal.setProperty(rp, key);
+          GalaxyView.makeReactive(data[key], rp);
         }
       }
     }
@@ -2155,7 +2149,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     // Create reactive property for each property on the scope data
     // Use that property structure to create further bindings
 
-    let structure = {};
+    let structure = scopeData;
     let value = scopeData;
 
     if (scopeData instanceof GalaxyView.ReactiveProperty) {
@@ -2209,7 +2203,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         childPropertyKeyPath = propertyKeyPathItems.join('.');
       }
 
-      const structurePortal = GalaxyView.getPortal(structure);
+      let structurePortal = GalaxyView.getPortal(structure);
 
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
       if (i === 0 && propertyKeyPath === 'this' && target instanceof Galaxy.GalaxyView.ViewNode) {
@@ -2218,9 +2212,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         childPropertyKeyPath = null;
         aliasPropertyName = 'this.' + propertyKeyPath;
         structure = GalaxyView.propertyLookup(target.data, propertyKeyPath);
-        // value = GalaxyView.propertyLookup(value || {}, propertyKeyPath);
       } else {
         structure = GalaxyView.propertyLookup(structure, propertyKeyPath);
+        structurePortal = GalaxyView.getPortal(structure);
+
         if (value) {
           value = GalaxyView.propertyLookup(value, propertyKeyPath);
         }
@@ -2238,10 +2233,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         enumerable = false;
       }
 
-      // const propertyKeyPath = propertyKeyPath;
-
       /** @type Galaxy.GalaxyView.ReactiveProperty */
-      let reactiveProperty = structurePortal.refs[propertyKeyPath];
+      let reactiveProperty = structurePortal.props[propertyKeyPath];
 
       if (typeof reactiveProperty === 'undefined') {
         reactiveProperty = GalaxyView.createReactiveProperty(structure, propertyKeyPath, {
@@ -2251,14 +2244,13 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           initValue: initValue
         });
 
-        if (scopeData instanceof Galaxy.GalaxyView.ReactiveProperty) {
-          structurePortal.setSelf(scopeData);
-          // debugger;
-          reactiveProperty.portal.addParent(scopeData);
-        }
-      } else {
-        // reactiveProperty.portal.addParent(scopeData);
+      }
+
+      if (scopeData instanceof Galaxy.GalaxyView.ReactiveProperty) {
+        structurePortal.addParent(scopeData);
         // debugger;
+        // TODO: Not sure if this is needed anymore
+        // reactiveProperty.portal.addParent(scopeData);
       }
 
       GalaxyView.makeReactive(initValue, reactiveProperty);
@@ -2267,18 +2259,18 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         if (!(target instanceof Galaxy.GalaxyView.ViewNode)) {
           // Property mapping
           // We map target[targetKeyName] to structure[propertyKeyPath]
-          GalaxyView.createReactiveProperty(target, targetKeyName, {
-            referencePropertyName: propertyKeyPath,
-            referencePropertyScope: structure,
-            enumerable: enumerable,
-            valueScope: value,
-            initValue: initValue,
-            expression: expression
-          });
+          // GalaxyView.createReactiveProperty(target, targetKeyName, {
+          //   referencePropertyName: propertyKeyPath,
+          //   referencePropertyScope: structure,
+          //   enumerable: enumerable,
+          //   valueScope: value,
+          //   initValue: initValue,
+          //   expression: expression
+          // });
         }
-        // TODO: sending structure can be problematic here because if that property is a placeholder, then structure refers to the
-        // TODO: property structure and not the placeholder structure
+        // debugger;
         reactiveProperty.addNode(target, targetKeyName, expression, scopeData);
+        // console.info(reactiveProperty, targetKeyName);
       }
 
       if (childPropertyKeyPath !== null) {
@@ -2516,7 +2508,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -2583,7 +2575,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let attributeValue, attributeName;
       const keys = Object.keys(nodeSchema);
-      keys.splice(keys.indexOf('tag'), 1);
+      // keys.splice(keys.indexOf('tag'), 1);
 
       const viewNode = new GalaxyView.ViewNode(nodeSchema);
       parent.registerChild(viewNode, position);
@@ -2696,26 +2688,17 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
 /* global Galaxy */
 
-Galaxy.GalaxyView.Portal = /** @class */(function () {
+Galaxy.GalaxyView.Portal = /** @class */ (function () {
   const GV = Galaxy.GalaxyView;
 
   /**
-   * @param {Galaxy.GalaxyView.ReactiveProperty} self
    * @constructor
    */
   function Portal() {
     /** @type Galaxy.GalaxyView.ReactiveProperty */
     this.parents = [];
-    this.refs = {};
-    this.self = null;
+    this.props = {};
   }
-
-  Portal.prototype.setSelf = function (self) {
-    this.removeParent(this.self);
-
-    this.self = self;
-    this.addParent(self);
-  };
 
   Portal.prototype.getParents = function () {
     return this.parents;
@@ -2748,11 +2731,11 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    */
   Portal.prototype.getPropertiesList = function () {
     let list = [];
-    const keys = Object.keys(this.refs);
+    const keys = Object.keys(this.props);
     let i = 0;
 
     for (const len = keys.length; i < len; i++) {
-      list.push(this.refs[keys[i]]);
+      list.push(this.props[keys[i]]);
     }
 
     return list;
@@ -2761,26 +2744,27 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
   /**
    *
    * @param {Galaxy.GalaxyView.ReactiveProperty} property
+   * @param {string} key
    */
-  Portal.prototype.setProperty = function (property, key, name, refs) {
+  Portal.prototype.setProperty = function (property, key) {
     // if (name) {
     //   // _this.
-    //   GV.defineProp(this.refs, key, {
+    //   GV.defineProp(this.props, key, {
     //     configurable: true,
     //     enumerable: true,
     //     get: function dynamicRef() {
-    //       return refs[name];
+    //       return props[name];
     //     }
     //   });
     //
-    //   this.refs[key] = 'test';
+    //   this.props[key] = 'test';
     // } else {
-    this.refs[key] = property;
+    this.props[key] = property;
     // }
   };
 
   Portal.prototype.getValueOf = function (key) {
-    const prop = this.refs[key];
+    const prop = this.props[key];
 
     return prop ? prop.value : undefined;
   };
@@ -2793,8 +2777,51 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
     }
   };
 
+  Portal.prototype.clone = function () {
+    const clone = new Portal();
+    clone.props = Object.assign({}, this.props);
+    let prop, cloneProp;
+    for (let key in this.props) {
+      prop = this.props[key];
+      cloneProp = prop.clone(clone);
+      cloneProp.value = prop.value;
+      clone.setProperty(cloneProp, key);
+    }
+
+    return clone;
+  };
+
   return Portal;
 }());
+
+/* global Galaxy */
+
+Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
+  const GV = Galaxy.GalaxyView;
+  const objKeys = Object.keys;
+  const defineProp = Object.defineProperty;
+
+  /**
+   *
+   * @param {Object|Galaxy.GalaxyView.Portal} portal
+   * @param {string} name
+   * @param {*} value
+   * @constructor
+   * @memberOf Galaxy.GalaxyView
+   */
+  function ReactiveData(data, key) {
+    this.value = data[key];
+
+
+  }
+
+  ReactiveData.prototype.notify = function () {
+
+  };
+
+  return ReactiveData;
+
+})();
 
 /* global Galaxy */
 
@@ -2812,6 +2839,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       let i = 0, len = host.length, itemPortal;
       for (; i < len; i++) {
         itemPortal = GV.getPortal(host[i]);
+
         if (itemPortal !== undefined) {
           itemPortal.addParent(reactiveProperty);
         }
@@ -2847,12 +2875,12 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy.GalaxyView
    */
-  function ReactiveProperty(portal, name, value) {
+  function ReactiveProperty(portal, name) {
     const _this = this;
     _this.name = name;
 
     _this.oldValue = undefined;
-    _this.value = value;
+    _this.value = undefined;
 
     /** @type {Galaxy.GalaxyView.Portal} */
     _this.portal = portal;
@@ -2863,12 +2891,6 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     _this.placeholderFor = null;
     // Holds the structure of bindings
     _this.structure = {};
-
-    if (value && value[GV.PORTAL_PROPERTY_IDENTIFIER]) {
-      GV.setPortalFor(_this.structure, value[GV.PORTAL_PROPERTY_IDENTIFIER]);
-    } else {
-      GV.initPortalFor(_this.structure);
-    }
 
     defineProp(_this, 'valueScope', {
       configurable: false,
@@ -2882,6 +2904,89 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       }
     });
   }
+
+  ReactiveProperty.prototype.initValue = function (value) {
+    GV.initPortalFor(this.structure);
+
+    if (value && value[GV.PORTAL_PROPERTY_IDENTIFIER]) {
+      const valuePortal = value[GV.PORTAL_PROPERTY_IDENTIFIER];
+      valuePortal.addParent(this);
+      this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].parents = valuePortal.parents;
+      // GV.setPortalFor(this.structure, valuePortal);
+    }
+
+    this.value = value;
+  };
+
+  ReactiveProperty.prototype.getPlaceholders = function () {
+    // Arrays will be also in parents but they don't have the structure for value so they should be ignored
+    return this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].parents.filter(function (parent) {
+      return !(parent.value instanceof Array);
+    });
+  };
+
+  ReactiveProperty.prototype.getParents = function () {
+    return this.portal.parents;
+  };
+
+  ReactiveProperty.prototype.getProperty = function (key) {
+    return this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].props[key];
+  };
+
+  ReactiveProperty.prototype.allNodes = function (alias) {
+    const key = alias || this.name;
+    const clones = [];
+    this.portal.parents.forEach(function (parent) {
+      const prop = parent.getProperty(key);
+      if (prop) {
+        clones.push(prop);
+      }
+    });
+
+    return clones;
+  };
+
+  ReactiveProperty.prototype.unbindValue = function () {
+    const _this = this;
+    if (!_this.value || typeof _this.value !== 'object') {
+      return;
+    }
+
+    // If there is a copy, then use that structure of that copy
+    // because that copy still has the old value
+    const copy = this.getPlaceholders()[0];
+    if (copy) {
+      return Object.defineProperties(_this.value, Object.getOwnPropertyDescriptors(copy.structure));
+    }
+
+    const oldKeys = objKeys(_this.value);
+    oldKeys.forEach(function (key) {
+      const temp = _this.value[key];
+      defineProp(_this.value, key, {
+        enumerable: true,
+        configurable: true,
+        value: temp
+      });
+    });
+
+    Reflect.deleteProperty(_this.value, GV.PORTAL_PROPERTY_IDENTIFIER);
+  };
+
+  ReactiveProperty.prototype.reactivate = function () {
+    if (this.placeholderFor.hasOwnProperty(GV.PORTAL_PROPERTY_IDENTIFIER)) {
+      return;
+    }
+
+    const portal = this.structure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+    GV.setPortalFor(this.placeholderFor, portal);
+    const _this = this;
+    const keys = Object.keys(this.placeholderFor);
+    keys.forEach(function (key) {
+      if (portal.props[key]) {
+        defineProp(_this.placeholderFor, key, Object.getOwnPropertyDescriptor(_this.structure, key));
+      }
+    });
+  };
 
   /**
    *
@@ -2949,25 +3054,6 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     }
   };
 
-  ReactiveProperty.prototype.unbindValue = function () {
-    const _this = this;
-    if (!_this.value || typeof _this.value !== 'object') {
-      return;
-    }
-
-    const oldKeys = objKeys(_this.value);
-    oldKeys.forEach(function (key) {
-      const temp = _this.value[key];
-      defineProp(_this.value, key, {
-        enumerable: true,
-        configurable: true,
-        value: temp
-      });
-    });
-
-    Reflect.deleteProperty(_this.value, GV.PORTAL_PROPERTY_IDENTIFIER);
-  };
-
   ReactiveProperty.prototype.setValue = function (value) {
     if (value === this.value) {
       return;
@@ -2986,28 +3072,31 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       let change = GV.createActiveArray(value, this.update.bind(this));
       change.type = 'reset';
       change.result = oldValue;
-      this.update(change, { original: oldValue });
-      Galaxy.GalaxyObserver.notify(this.portal, this.name, change, oldValue, this.portal);
+      this.update(change, {original: oldValue});
+      Galaxy.GalaxyObserver.notify(this.portal, this.name, change, oldValue);
     } else {
       let i = 0, len = this.nodes.length;
       for (; i < len; i++) {
         this.setValueFor(this.nodes[i], this.keys[i], value, oldValue);
       }
-      Galaxy.GalaxyObserver.notify(this.portal, this.name, value, oldValue, this.portal);
+      Galaxy.GalaxyObserver.notify(this.portal, this.name, value, oldValue);
     }
   };
 
   ReactiveProperty.prototype.syncStructure = function (value) {
     const _this = this;
     const keys = objKeys(_this.structure);
+    const props = _this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].props;
+    console.info(_this.value[GV.PORTAL_PROPERTY_IDENTIFIER] === _this.structure[GV.PORTAL_PROPERTY_IDENTIFIER]);
+    debugger
     if (value === null || value === undefined) {
       keys.forEach(function (key) {
-        _this.structure[key] = undefined;
+        props[key].setValue(undefined);
       });
     }
     else {
       keys.forEach(function (key) {
-        _this.structure[key] = value[key];
+        props[key].setValue(value[key]);
       });
     }
   };
@@ -3028,20 +3117,60 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     }
   };
 
-  ReactiveProperty.prototype.notify = function (caller) {
-    if (this.value instanceof Array) {
-      // Ignore when the value is type of array because the value will take care of the changes itself
-    } else {
+  ReactiveProperty.prototype.sync = function () {
+    debugger;
+    // if (this.value instanceof Array) {
+    //   // Ignore when the value is type of array because the value will take care of the changes itself
+    // } else {
       for (let i = 0, len = this.nodes.length; i < len; i++) {
         this.setUpdateFor(this.nodes[i], this.keys[i], this.value, this.oldValue);
       }
-    }
+    // }
+  };
 
-    if (!this.placeholderFor) {
-      Galaxy.GalaxyObserver.notify(this.portal, this.name, this.value, this.oldValue, caller);
-    } else {
-      debugger;
+  ReactiveProperty.prototype.notify = function (value, key) {
+    const _this = this;
+    const placeholders = this.getPlaceholders();
+
+    if (value !== null && typeof value === 'object') {
+      if (value.hasOwnProperty(GV.PORTAL_PROPERTY_IDENTIFIER)) {
+        const structurePortal = _this.structure[GV.PORTAL_PROPERTY_IDENTIFIER];
+        structurePortal.parents = value[GV.PORTAL_PROPERTY_IDENTIFIER].parents;
+        structurePortal.addParent(_this);
+        console.log(this.value === value);
+        const valuePortalProps = value[GV.PORTAL_PROPERTY_IDENTIFIER].props;
+
+        for (let k in valuePortalProps) {
+          let oP = valuePortalProps[k];
+          if (!structurePortal.props.hasOwnProperty(k)) {
+            const nP = oP.clone(structurePortal, true);
+            nP.value = oP.value;
+            structurePortal.setProperty(nP, k);
+          }
+        }
+        console.log(this.value === value);
+        debugger;
+      } else {
+        debugger;
+        this.removePlaceholder();
+        this.unbindValue();
+        this.setValue(value);
+        const portalClone = this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].clone();
+        portalClone.addParent(_this);
+        GV.setPortalFor(this.structure, portalClone);
+        debugger;
+        return Object.defineProperties(value, Object.getOwnPropertyDescriptors(this.structure));
+      }
     }
+    const parents = this.getParents();
+    debugger;
+    this.setValue(value);
+    debugger;
+    parents.forEach(function (parent) {
+      parent.sync(parent.value);
+      parent.syncStructure(parent.value);
+    });
+
   };
 
   /**
@@ -3075,7 +3204,11 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       host.setters[attributeName](changes, oldChanges);
     } else {
       // TODO: Find out why you need a notify here
-      Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges, this);
+      // if (changes && changes.original) {
+      //   debugger;
+      // host[attributeName] = changes.original;
+      // } else
+      // Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges, this);
     }
   };
 
@@ -3085,7 +3218,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    */
   ReactiveProperty.prototype.concat = function (property) {
     // TODO: only concat uniques
-    const _this = this;
+    // const _this = this;
     this.nodes.forEach(function (node, i) {
 
     });
@@ -3094,74 +3227,22 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     this.keys = this.keys.concat(property.keys);
   };
 
-  ReactiveProperty.prototype.clone = function (portal) {
-    const clone = new Galaxy.GalaxyView.ReactiveProperty(portal, this.name, null);
-    clone.concat(this);
+  ReactiveProperty.prototype.clone = function (portal, clean) {
+    const clone = new Galaxy.GalaxyView.ReactiveProperty(portal, this.name);
     clone.structure = this.structure;
+
+    if (!clean) {
+      clone.concat(this);
+    }
 
     return clone;
   };
 
-  ReactiveProperty.prototype.setPlaceholder = function (value) {
-    const _this = this;
-    this.placeholderFor = value;
-    const valuePortal = value[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-    const valueStructure = valuePortal.self.structure;
-    const valueRefs = valuePortal.refs;
-    const oldKeys = Object.keys(_this.structure);
-    const currentStructurePortalRefs = _this.structure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].refs;
-    debugger
-    _this.sp = _this.value[GV.PORTAL_PROPERTY_IDENTIFIER];
-    _this.unbindValue();
-    // debugger;
-    valuePortal.self.concat(_this);
-
-    oldKeys.forEach(function (key) {
-      if (valueRefs[key]) {
-        valueRefs[key].concat(currentStructurePortalRefs[key]);
-      } else if (currentStructurePortalRefs[key]) {
-        const cloned = currentStructurePortalRefs[key].clone(valuePortal);
-        cloned.value = value[key];
-        valuePortal.setProperty(cloned, key);
-        if (!valueStructure[key]) {
-          defineProp(valueStructure, key, Object.getOwnPropertyDescriptor(_this.structure, key));
-        }
-
-        defineProp(value, key, Object.getOwnPropertyDescriptor(_this.structure, key));
-      }
-
-      // valuePortal.refs[key].syncNodes(value[key]);
-    });
-    debugger;
-    valuePortal.self.notify(this);
-  };
-
   ReactiveProperty.prototype.removePlaceholder = function () {
-    if (!this.placeholderFor) {
-      return;
+    const parents = this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].parents;
+    if (parents.indexOf(this) !== -1) {
+      parents.splice(parents.indexOf(this), 1);
     }
-
-    const _this = this;
-    const placeholderPortal = this.placeholderFor[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-    debugger
-    placeholderPortal.removeParent(_this);
-    const keys = Object.keys(this.placeholderFor);
-    // debugger;
-    placeholderPortal.self.removeNodesByProperty(_this);
-
-    // TODO structure and value structure are different
-    const structureRefs = this.structure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].refs;
-    // debugger;
-    GV.setPortalFor(_this.value, this.structure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER]);
-    keys.forEach(function (key) {
-      if (placeholderPortal.refs[key]) {
-        placeholderPortal.refs[key].removeNodesByProperty(structureRefs[key]);
-      }
-
-      defineProp(_this.value, key, Object.getOwnPropertyDescriptor(_this.structure, key));
-    });
-    debugger
-    this.placeholderFor = null;
   };
 
   return ReactiveProperty;
@@ -3637,63 +3718,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
 })(Galaxy.GalaxyView);
 
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
-    type: 'prop',
-    name: 'checked',
-    util: function (viewNode, rp, prop, expression) {
-      if (expression && viewNode.schema.tag === 'input') {
-        throw new Error('input.checked property does not support binding expressions ' +
-          'because it must be able to change its data.\n' +
-          'It uses its bound value as its `model` and expressions can not be used as model.\n');
-      }
-
-      const bindings = GV.getBindings(viewNode.schema.checked);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      viewNode.node.addEventListener('change', function () {
-        rp[id] = viewNode.node.checked;
-      });
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
-    type: 'none'
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
-    type: 'prop',
-    name: 'value',
-    util: function (viewNode, scopeProperty, prop, expression) {
-      if (expression) {
-        throw new Error('input.value property does not support binding expressions ' +
-          'because it must be able to change its data.\n' +
-          'It uses its bound value as its `model` and expressions can not be used as model.\n');
-      }
-
-      const bindings = GV.getBindings(viewNode.schema.value);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      const nativeNode = viewNode.node;
-      if (bindings.modifiers === 'number') {
-        nativeNode.addEventListener('keyup', function () {
-          scopeProperty.valueScope[id] = nativeNode.value ? Number(nativeNode.value) : null;
-        });
-      } else {
-        nativeNode.addEventListener('keyup', function () {
-          scopeProperty.valueScope[id] = nativeNode.value;
-        });
-      }
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
 /* global Galaxy, TweenLite, TimelineLite */
 'use strict';
 
@@ -4095,6 +4119,63 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 /* global Galaxy */
 
 (function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
+    type: 'prop',
+    name: 'checked',
+    util: function (viewNode, scopeProperty, prop, expression) {
+      if (expression && viewNode.schema.tag === 'input') {
+        throw new Error('input.checked property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
+      }
+
+      const bindings = GV.getBindings(viewNode.schema.checked);
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      viewNode.node.addEventListener('change', function () {
+        scopeProperty.valueScope[id] = viewNode.node.checked;
+      });
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
+    type: 'none'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
+    type: 'prop',
+    name: 'value',
+    util: function (viewNode, scopeProperty, prop, expression) {
+      if (expression) {
+        throw new Error('input.value property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
+      }
+
+      const bindings = GV.getBindings(viewNode.schema.value);
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      const nativeNode = viewNode.node;
+      if (bindings.modifiers === 'number') {
+        nativeNode.addEventListener('keyup', function () {
+          scopeProperty.valueScope[id] = nativeNode.value ? Number(nativeNode.value) : null;
+        });
+      } else {
+        nativeNode.addEventListener('keyup', function () {
+          scopeProperty.valueScope[id] = nativeNode.value;
+        });
+      }
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
   GV.NODE_SCHEMA_PROPERTY_MAP['class'] = {
     type: 'reactive',
     name: 'class'
@@ -4115,7 +4196,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
      * @param data
      * @param value
      * @param oldValue
-     * @param scope
+     * @param expression
      * @this {Galaxy.GalaxyView.ViewNode}
      */
     apply: function (data, value, oldValue, expression) {
@@ -4292,8 +4373,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
      * @param expression
      */
     apply: function (data, changes, oldChanges, expression) {
-      if(changes instanceof Array){
-        debugger;
+      debugger;
+      if (changes instanceof Array) {
+        return;
       }
       if (!changes || typeof changes === 'string') {
         changes = {
@@ -4307,7 +4389,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       }
 
       const _this = this;
-
       createResetProcess(_this, data, changes, data.scope);
     }
   };
@@ -4393,7 +4474,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           itemDataScope[p] = c[i];
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
+          // debugger
           let vn = GV.createNode(parentNode, itemDataScope, cns, position);
+          // debugger;
           action.call(n, vn);
         }
       }

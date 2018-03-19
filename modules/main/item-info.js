@@ -13,6 +13,10 @@ view.init([
         tag: 'h2',
         text: '<>inputs.title'
       },
+      {
+        tag: 'h2',
+        text: '<>inputs.person.name'
+      },
       // {
       //   children: {
       //     tag: 'a',

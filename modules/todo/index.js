@@ -8,6 +8,7 @@ const animations = Scope.import('services/animations.js');
 const ToDoService = {
   data: inputs.items,
   add: function (newItem) {
+    debugger;
     newItem.title = newItem.title.trim();
     if (newItem.title) {
       this.data.push(newItem);
@@ -127,6 +128,7 @@ view.init({
             tag.label('ToDo item'),
             tag.input().value('<>data.newItem.title').onEvent('keyup', function (event) {
               if (event.keyCode === 13) {
+                debugger;
                 ToDoService.add(Scope.data.newItem);
                 Scope.data.newItem = {
                   title: '',
