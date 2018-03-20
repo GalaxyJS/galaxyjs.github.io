@@ -1,16 +1,18 @@
 const view = Scope.import('galaxy/view');
 
-// Scope.data.personOne = {
-//   name: 'Eeliya Rasta'
-// };
+Scope.data.personOne = {
+  name: 'Eeliya Rasta'
+};
 
-// Scope.data.personTwo = null;
+Scope.data.personTwo = {
+  name: 'Gandolf'
+};
 
-// const personOneCache = Scope.data.personOne;
-// console.info('personOne cached', personOneCache);
+const personOneCache = Scope.data.personOne;
+console.info('personOne cached', personOneCache);
 // Scope.data.personThree = Scope.data.personOne;
 // Scope.data.personThree = null;
-
+//
 Scope.data.list = [
   {
     title: 'Title 1',
@@ -20,10 +22,10 @@ Scope.data.list = [
     title: 'Title 2',
     count: 3
   },
-  {
-    title: 'Title 3',
-    count: 3
-  }
+  // {
+  //   title: 'Title 3',
+  //   count: 3
+  // }
 ];
 //
 Scope.data.newItem = {
@@ -39,135 +41,135 @@ Scope.data.newItem = {
 console.info('Scope', Scope);
 
 view.init([
-  // {
-  //   tag: 'h1',
-  //   text: '<>data.personOne.name'
-  // },
-  // {
-  //   tag: 'p',
-  //   text: [
-  //     '<>data.personOne',
-  //     function (values) {
-  //       console.info('exper', values);
-  //       if (typeof values === 'object') {
-  //         return 'personOne -> ' + JSON.stringify(values, null, 2);
-  //       }
-  //
-  //       return 'personOne(' + (typeof values) + ') -> ' + values;
-  //     }
-  //   ]
-  // },
-  // {
-  //   tag: 'p',
-  //   text: [
-  //     '<>data.personTwo',
-  //     function (values) {
-  //       if (typeof values === 'object') {
-  //         return 'personTwo -> ' + JSON.stringify(values, null, 2);
-  //       }
-  //
-  //       return 'personTwo(' + (typeof values) + ') -> ' + values;
-  //     }
-  //   ]
-  // },
-  // {
-  //   tag: 'h2',
-  //   text:'<>data.personTwo.name'
-  // },
-  // {
-  //   tag: 'p',
-  //   text: [
-  //     '<>data.personThree',
-  //     function (values) {
-  //       if (typeof values === 'object') {
-  //         return 'personThree is personOne -> ' + JSON.stringify(values, null, 2);
-  //       }
-  //
-  //       return 'personThree(' + (typeof values) + ') -> ' + values;
-  //     }
-  //   ]
-  // },
-  // {
-  //   tag: 'h3',
-  //   text:'<>data.personThree.name'
-  // },
-  // {
-  //   class: 'content',
-  //   children: [
-  //     {
-  //       tag: 'button',
-  //       text: 'data.personOne = {Emmy}',
-  //       on: {
-  //         click: function () {
-  //           Scope.data.personOne = {
-  //             name: 'Emmy'
-  //           };
-  //
-  //           console.info(Scope.data.personOne);
-  //         }
-  //       }
-  //     },
-  //     {
-  //       tag: 'button',
-  //       text: 'data.personOne.name = Matilda',
-  //       on: {
-  //         click: function () {
-  //           Scope.data.personOne.name = 'Matilda';
-  //
-  //           console.info(Scope.data.personOne);
-  //         }
-  //       }
-  //     },
-  //     {
-  //       tag: 'button',
-  //       text: 'data.personTwo = {Gandolf}',
-  //       on: {
-  //         click: function () {
-  //           window.personTwo = Scope.data.personTwo = {
-  //             name: 'Gandolf'
-  //           };
-  //
-  //           // Scope.data.personTwo = Scope.data.personOne;
-  //
-  //           console.info(Scope.data.personTwo);
-  //         }
-  //       }
-  //     },
-  //     {
-  //       tag: 'button',
-  //       text: 'data.personThree = {Elena}',
-  //       on: {
-  //         click: function () {
-  //           Scope.data.personThree = {
-  //             name: 'Elena'
-  //           };
-  //         }
-  //       }
-  //     },
-  //     {
-  //       tag: 'button',
-  //       text: 'data.personThree.name = Jey Jey',
-  //       on: {
-  //         click: function () {
-  //           Scope.data.personThree.name = 'Jey Jey';
-  //         }
-  //       }
-  //     }
-  //   ]
-  // },
-  // {
-  //   class: 'content',
-  //   module: {
-  //     url: './item-info.js'
-  //   },
-  //   inputs: {
-  //     title: '<>data.personOne.name',
-  //     // title: Scope.data.personOne.name,
-  //     // person: Scope.data.personOne,
-  //     person: '<>data.personOne',
-  //     // personTwo: '<>data.personTwo'
-  //   }
-  // },
+  {
+    tag: 'h1',
+    text: '<>data.personOne.name'
+  },
+  {
+    tag: 'p',
+    text: [
+      '<>data.personOne',
+      function (values) {
+        console.info('exper', values);
+        if (typeof values === 'object') {
+          return 'personOne -> ' + JSON.stringify(values, null, 2);
+        }
+
+        return 'personOne(' + (typeof values) + ') -> ' + values;
+      }
+    ]
+  },
+  {
+    tag: 'p',
+    text: [
+      '<>data.personTwo',
+      function (values) {
+        if (typeof values === 'object') {
+          return 'personTwo -> ' + JSON.stringify(values, null, 2);
+        }
+
+        return 'personTwo(' + (typeof values) + ') -> ' + values;
+      }
+    ]
+  },
+  {
+    tag: 'h2',
+    text:'<>data.personTwo.name'
+  },
+  {
+    tag: 'p',
+    text: [
+      '<>data.personThree',
+      function (values) {
+        if (typeof values === 'object') {
+          return 'personThree is personOne -> ' + JSON.stringify(values, null, 2);
+        }
+
+        return 'personThree(' + (typeof values) + ') -> ' + values;
+      }
+    ]
+  },
+  {
+    tag: 'h3',
+    text:'<>data.personThree.name'
+  },
+  {
+    class: 'content',
+    children: [
+      {
+        tag: 'button',
+        text: 'data.personOne = {Emmy}',
+        on: {
+          click: function () {
+            Scope.data.personOne = {
+              name: 'Emmy'
+            };
+
+            console.info(Scope.data.personOne);
+          }
+        }
+      },
+      {
+        tag: 'button',
+        text: 'data.personOne.name = Matilda',
+        on: {
+          click: function () {
+            Scope.data.personOne.name = 'Matilda';
+
+            console.info(Scope.data.personOne);
+          }
+        }
+      },
+      {
+        tag: 'button',
+        text: 'data.personTwo = {Gandolf}',
+        on: {
+          click: function () {
+            window.personTwo = Scope.data.personTwo = {
+              name: 'Gandolf'
+            };
+
+            // Scope.data.personTwo = Scope.data.personOne;
+
+            console.info(Scope.data.personTwo);
+          }
+        }
+      },
+      {
+        tag: 'button',
+        text: 'data.personThree = {Elena}',
+        on: {
+          click: function () {
+            Scope.data.personThree = {
+              name: 'Elena'
+            };
+          }
+        }
+      },
+      {
+        tag: 'button',
+        text: 'data.personThree.name = Jey Jey',
+        on: {
+          click: function () {
+            Scope.data.personThree.name = 'Jey Jey';
+          }
+        }
+      }
+    ]
+  },
+  {
+    class: 'content',
+    module: {
+      url: './item-info.js'
+    },
+    inputs: {
+      title: '<>data.personOne.name',
+      // title: Scope.data.personOne.name,
+      // person: Scope.data.personOne,
+      person: '<>data.personOne',
+      // personTwo: '<>data.personTwo'
+    }
+  },
   {
     tag: 'h4',
     text: [

@@ -15,7 +15,7 @@ const ToDoService = {
     }
   }
 };
-
+debugger;
 const observer = Scope.observe(inputs.items);
 observer.on('length', function (value, oldValue) {
   console.info('length has been changed from', value, 'to', oldValue);
