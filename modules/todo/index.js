@@ -8,14 +8,14 @@ const animations = Scope.import('services/animations.js');
 const ToDoService = {
   data: inputs.items,
   add: function (newItem) {
-    debugger;
+
     newItem.title = newItem.title.trim();
     if (newItem.title) {
       this.data.push(newItem);
     }
   }
 };
-debugger;
+
 const observer = Scope.observe(inputs.items);
 observer.on('length', function (value, oldValue) {
   console.info('length has been changed from', value, 'to', oldValue);
@@ -49,9 +49,11 @@ view.init({
             tag.button('Check All').disabled([
               'inputs.items',
               function (items) {
-                return items.filter(function (item) {
+                let res = items.filter(function (item) {
                   return !item.done;
-                }).length === 0;
+                });
+                console.info(items, JSON.stringify(res));
+                return res.length === 0;
               }
             ]).onEvent('click', function () {
               inputs.items.forEach(function (item) {
@@ -83,7 +85,7 @@ view.init({
           tag: 'ul',
           children: {
             tag: 'li',
-            $for: 'item in inputs.items',
+            $for: 'titem in inputs.items',
             animations: {
               enter: {
                 parent: 'card',
@@ -112,12 +114,12 @@ view.init({
             },
             // id: '<>item.title',
             class: {
-              done: '<>item.done'
+              done: '<>titem.done'
             },
 
             children: [
-              tag.span('<>item.title'),
-              tag.input().type('checkbox').checked('<>item.done')
+              tag.span('<>titem.title'),
+              tag.input().type('checkbox').checked('<>titem.done')
             ]
           }
         },
@@ -128,7 +130,6 @@ view.init({
             tag.label('ToDo item'),
             tag.input().value('<>data.newItem.title').onEvent('keyup', function (event) {
               if (event.keyCode === 13) {
-                debugger;
                 ToDoService.add(Scope.data.newItem);
                 Scope.data.newItem = {
                   title: '',

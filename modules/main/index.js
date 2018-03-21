@@ -59,34 +59,34 @@ Scope.data.todos = [
     title: 'Should add new item to todos 2',
     done: false
   },
-  {
-    title: 'Should add new item to todos 3',
-    done: false
-  },
-  {
-    title: 'Should add new item to todos 4',
-    done: false
-  },
-  {
-    title: 'Should add new item to todos 5',
-    done: false
-  },
-  {
-    title: 'Should add new item to todos 6',
-    done: false
-  },
-  {
-    title: 'Should add new item to todos 7',
-    done: false
-  },
-  {
-    title: 'Should add new item to todos 8',
-    done: false
-  },
-  {
-    title: 'Should add new item to todos 9',
-    done: false
-  }
+  // {
+  //   title: 'Should add new item to todos 3',
+  //   done: false
+  // },
+  // {
+  //   title: 'Should add new item to todos 4',
+  //   done: false
+  // },
+  // {
+  //   title: 'Should add new item to todos 5',
+  //   done: false
+  // },
+  // {
+  //   title: 'Should add new item to todos 6',
+  //   done: false
+  // },
+  // {
+  //   title: 'Should add new item to todos 7',
+  //   done: false
+  // },
+  // {
+  //   title: 'Should add new item to todos 8',
+  //   done: false
+  // },
+  // {
+  //   title: 'Should add new item to todos 9',
+  //   done: false
+  // }
 ];
 
 Scope.data.moduleInputs = {
