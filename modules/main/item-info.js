@@ -17,16 +17,16 @@ view.init([
         tag: 'h2',
         text: '<>inputs.person.name'
       },
-      // {
-      //   children: {
-      //     tag: 'a',
-      //     $for: {
-      //       data: '<>inputs.person.children',
-      //       as: 'child'
-      //     },
-      //     text: '<>child.name'
-      //   }
-      // },
+      {
+        children: {
+          tag: 'a',
+          $for: {
+            data: '<>inputs.person.children',
+            as: 'child'
+          },
+          text: '<>child.name'
+        }
+      },
       {
         tag: 'p',
         children: [
