@@ -21,7 +21,7 @@ Scope.data.list = [
   {
     title: 'Title 2',
     count: 3
-  },
+  }
   // {
   //   title: 'Title 3',
   //   count: 3
@@ -74,7 +74,7 @@ view.init([
   },
   {
     tag: 'h2',
-    text:'<>data.personTwo.name'
+    text: '<>data.personTwo.name'
   },
   {
     tag: 'p',
@@ -91,7 +91,7 @@ view.init([
   },
   {
     tag: 'h3',
-    text:'<>data.personThree.name'
+    text: '<>data.personThree.name'
   },
   {
     class: 'content',
@@ -117,6 +117,22 @@ view.init([
             Scope.data.personOne.name = 'Matilda';
 
             console.info(Scope.data.personOne);
+          }
+        }
+      },
+      {
+        tag: 'button',
+        text: 'data.personOne = Anna',
+        on: {
+          click: function () {
+            Scope.data.personOne = {
+              children: [
+                {
+                  name: 'Matilda'
+                }
+              ],
+              name: 'Anna'
+            };
           }
         }
       },
@@ -166,79 +182,79 @@ view.init([
       title: '<>data.personOne.name',
       // title: Scope.data.personOne.name,
       // person: Scope.data.personOne,
-      person: '<>data.personOne',
+      person: '<>data.personOne'
       // personTwo: '<>data.personTwo'
     }
   },
-  {
-    tag: 'h4',
-    text: [
-      'data.newItem',
-      function (length) {
-        return JSON.stringify(length);
-      }
-    ]
-  },
-  {
-    tag: 'h4',
-    text: [
-      'data.list',
-      function (list) {
-        return 'Total count:' + list.reduce(function (sum, item) {
-          return sum + item.count;
-        }, 0);
-      }
-    ]
-  },
-  {
-    tag: 'p',
-    $for: {
-      data: '<>data.list',
-      as: 'item'
-    },
-    text: [
-      'item',
-      function (item) {
-        return item.title + ' - ' + item.count;
-      }
-    ]
-  },
+  // {
+  //   tag: 'h4',
+  //   text: [
+  //     'data.newItem',
+  //     function (length) {
+  //       return JSON.stringify(length);
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'h4',
+  //   text: [
+  //     'data.list',
+  //     function (list) {
+  //       return 'Total count:' + list.reduce(function (sum, item) {
+  //         return sum + item.count;
+  //       }, 0);
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'p',
+  //   $for: {
+  //     data: '<>data.list',
+  //     as: 'item'
+  //   },
+  //   text: [
+  //     'item',
+  //     function (item) {
+  //       return item.title + ' - ' + item.count;
+  //     }
+  //   ]
+  // },
   // {
   //   tag: 'p',
   //   text: '<>data.newItem2.title'
   // },
-  {
-    tag: 'p',
-    text: '<>data.newItem.title'
-  },
-  {
-    tag: 'input',
-    value: '<>data.newItem.title'
-  },
-  {
-    tag: 'button',
-    text: 'Add new item to the list',
-    on: {
-      click: function () {
-        Scope.data.list.push(Scope.data.newItem);
-        Scope.data.newItem = {
-          count: 1,
-          title: ''
-        };
-      }
-    }
-  },
-  {
-    tag: 'button',
-    text: 'Change Item 1 count randomly',
-    on: {
-      click: function () {
-        // Scope.data.newItem = Scope.data.newItem2;
-        Scope.data.list[0].count = Math.ceil(15 * Math.random());
-        // debugger;
-      }
-    }
-  }
+  // {
+  //   tag: 'p',
+  //   text: '<>data.newItem.title'
+  // },
+  // {
+  //   tag: 'input',
+  //   value: '<>data.newItem.title'
+  // },
+  // {
+  //   tag: 'button',
+  //   text: 'Add new item to the list',
+  //   on: {
+  //     click: function () {
+  //       Scope.data.list.push(Scope.data.newItem);
+  //       Scope.data.newItem = {
+  //         count: 1,
+  //         title: ''
+  //       };
+  //     }
+  //   }
+  // },
+  // {
+  //   tag: 'button',
+  //   text: 'Change Item 1 count randomly',
+  //   on: {
+  //     click: function () {
+  //       // Scope.data.newItem = Scope.data.newItem2;
+  //       Scope.data.list[0].count = Math.ceil(15 * Math.random());
+  //       // debugger;
+  //     }
+  //   }
+  // }
 ]);
 
 setTimeout(function () {

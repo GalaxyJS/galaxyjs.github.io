@@ -1,7 +1,7 @@
 const view = Scope.import('galaxy/view');
 const inputs = Scope.import('galaxy/inputs');
 console.info('inputs', Scope.inputs);
-
+debugger;
 view.init([
   {
     tag: 'h2',
