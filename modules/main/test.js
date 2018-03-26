@@ -1,191 +1,205 @@
 const view = Scope.import('galaxy/view');
 
-Scope.data.personOne = {
-  name: 'Eeliya Rasta'
+Scope.data.person1 = {
+  name: 'Eeliya Rasta',
+  children: [
+    {
+      name: 'foo bar'
+    }
+  ],
+  address: {
+    city: 'Nijkerk'
+  }
 };
 
-Scope.data.personTwo = {
+Scope.data.person2 = {
   name: 'Gandolf'
 };
 
-const personOneCache = Scope.data.personOne;
-console.info('personOne cached', personOneCache);
-// Scope.data.personThree = Scope.data.personOne;
-// Scope.data.personThree = null;
-//
-Scope.data.list = [
+Scope.name = 'Some name';
+
+Scope.data.people = [
   {
-    title: 'Title 1',
-    count: 3
+    name: 'foo',
+    children: [
+      {
+        name: 'foo bar'
+      }
+    ]
   },
   {
-    title: 'Title 2',
-    count: 3
+    name: 'baz',
+    children: [
+      {
+        name: 'baz bar'
+      }
+    ]
   }
-  // {
-  //   title: 'Title 3',
-  //   count: 3
-  // }
 ];
+// const personOneCache = Scope.data.personOne;
+// console.info('personOne cached', personOneCache);
+Scope.data.person3 = Scope.data.person1;
+// Scope.data.person4 = Scope.data.person1;
+// Scope.data.personThree = null;
+
+// Scope.data.list = [];
 //
-Scope.data.newItem = {
-  count: 1,
-  title: 'old val'
-};
-//
-// Scope.data.newItem2 = {
-//   count: 2,
-//   title: null
+// Scope.data.newItem = {
+//   count: 1,
+//   title: 'old val'
 // };
+
 
 console.info('Scope', Scope);
 
 view.init([
   {
     tag: 'h1',
-    text: '<>data.personOne.name'
+    text: '<>data.person1.name'
   },
   {
-    tag: 'p',
-    text: [
-      '<>data.personOne',
-      function (values) {
-        console.info('exper', values);
-        if (typeof values === 'object') {
-          return 'personOne -> ' + JSON.stringify(values, null, 2);
-        }
-
-        return 'personOne(' + (typeof values) + ') -> ' + values;
-      }
-    ]
+    tag: 'h1',
+    text: '<>data.person3.name'
   },
-  {
-    tag: 'p',
-    text: [
-      '<>data.personTwo',
-      function (values) {
-        if (typeof values === 'object') {
-          return 'personTwo -> ' + JSON.stringify(values, null, 2);
-        }
-
-        return 'personTwo(' + (typeof values) + ') -> ' + values;
-      }
-    ]
-  },
-  {
-    tag: 'h2',
-    text: '<>data.personTwo.name'
-  },
-  {
-    tag: 'p',
-    text: [
-      '<>data.personThree',
-      function (values) {
-        if (typeof values === 'object') {
-          return 'personThree is personOne -> ' + JSON.stringify(values, null, 2);
-        }
-
-        return 'personThree(' + (typeof values) + ') -> ' + values;
-      }
-    ]
-  },
-  {
-    tag: 'h3',
-    text: '<>data.personThree.name'
-  },
+  // {
+  //   tag: 'p',
+  //   text: [
+  //     '<>data.personOne',
+  //     function (values) {
+  //       console.info('exper', values);
+  //       if (typeof values === 'object') {
+  //         return 'personOne -> ' + JSON.stringify(values, null, 2);
+  //       }
+  //
+  //       return 'personOne(' + (typeof values) + ') -> ' + values;
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'p',
+  //   text: [
+  //     '<>data.personTwo',
+  //     function (values) {
+  //       if (typeof values === 'object') {
+  //         return 'personTwo -> ' + JSON.stringify(values, null, 2);
+  //       }
+  //
+  //       return 'personTwo(' + (typeof values) + ') -> ' + values;
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'h2',
+  //   text: '<>data.personTwo.name'
+  // },
+  // {
+  //   tag: 'p',
+  //   text: [
+  //     '<>data.personThree',
+  //     function (values) {
+  //       if (typeof values === 'object') {
+  //         return 'personThree is personOne -> ' + JSON.stringify(values, null, 2);
+  //       }
+  //
+  //       return 'personThree(' + (typeof values) + ') -> ' + values;
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'h3',
+  //   text: '<>data.personThree.name'
+  // },
   {
     class: 'content',
     children: [
+      // {
+      //   tag: 'button',
+      //   text: 'data.personOne = {Emmy}',
+      //   on: {
+      //     click: function () {
+      //       Scope.data.personOne = {
+      //         name: 'Emmy'
+      //       };
+      //
+      //       console.info(Scope.data.personOne);
+      //     }
+      //   }
+      // },
+      // {
+      //   tag: 'button',
+      //   text: 'data.personOne.name = Matilda',
+      //   on: {
+      //     click: function () {
+      //       Scope.data.personOne.name = 'Matilda';
+      //
+      //       console.info(Scope.data.personOne);
+      //     }
+      //   }
+      // },
+      // {
+      //   tag: 'button',
+      //   text: 'data.personOne = Anna',
+      //   on: {
+      //     click: function () {
+      //       Scope.data.personOne = {
+      //         children: [
+      //           {
+      //             name: 'Matilda'
+      //           }
+      //         ],
+      //         name: 'Anna'
+      //       };
+      //     }
+      //   }
+      // },
+      // {
+      //   tag: 'button',
+      //   text: 'data.personTwo = {Gandolf}',
+      //   on: {
+      //     click: function () {
+      //       window.personTwo = Scope.data.personTwo = {
+      //         name: 'Gandolf'
+      //       };
+      //
+      //       // Scope.data.personTwo = Scope.data.personOne;
+      //
+      //       console.info(Scope.data.personTwo);
+      //     }
+      //   }
+      // },
       {
         tag: 'button',
-        text: 'data.personOne = {Emmy}',
+        text: 'data.personOne = people1',
         on: {
           click: function () {
-            Scope.data.personOne = {
-              name: 'Emmy'
-            };
-
-            console.info(Scope.data.personOne);
+            Scope.data.personOne = Scope.data.people[0];
           }
         }
       },
       {
         tag: 'button',
-        text: 'data.personOne.name = Matilda',
+        text: 'data.personOne = people2',
         on: {
           click: function () {
-            Scope.data.personOne.name = 'Matilda';
-
-            console.info(Scope.data.personOne);
-          }
-        }
-      },
-      {
-        tag: 'button',
-        text: 'data.personOne = Anna',
-        on: {
-          click: function () {
-            Scope.data.personOne = {
-              children: [
-                {
-                  name: 'Matilda'
-                }
-              ],
-              name: 'Anna'
-            };
-          }
-        }
-      },
-      {
-        tag: 'button',
-        text: 'data.personTwo = {Gandolf}',
-        on: {
-          click: function () {
-            window.personTwo = Scope.data.personTwo = {
-              name: 'Gandolf'
-            };
-
-            // Scope.data.personTwo = Scope.data.personOne;
-
-            console.info(Scope.data.personTwo);
-          }
-        }
-      },
-      {
-        tag: 'button',
-        text: 'data.personThree = {Elena}',
-        on: {
-          click: function () {
-            Scope.data.personThree = {
-              name: 'Elena'
-            };
-          }
-        }
-      },
-      {
-        tag: 'button',
-        text: 'data.personThree.name = Jey Jey',
-        on: {
-          click: function () {
-            Scope.data.personThree.name = 'Jey Jey';
+            Scope.data.personOne = Scope.data.people[1];
           }
         }
       }
     ]
   },
-  {
-    class: 'content',
-    module: {
-      url: './item-info.js'
-    },
-    inputs: {
-      title: '<>data.personOne.name',
-      // title: Scope.data.personOne.name,
-      // person: Scope.data.personOne,
-      person: '<>data.personOne'
-      // personTwo: '<>data.personTwo'
-    }
-  },
+  // {
+  //   class: 'content',
+  //   module: {
+  //     url: './item-info.js'
+  //   },
+  //   inputs: {
+  //     // title: '<>data.personOne.name',
+  //     // title: Scope.data.personOne.name,
+  //     // person: Scope.data.personOne,
+  //     person: '<>data.person1'
+  //     // personTwo: '<>data.personTwo'
+  //   }
+  // },
   // {
   //   tag: 'h4',
   //   text: [
@@ -258,6 +272,7 @@ view.init([
 ]);
 
 setTimeout(function () {
+  // Scope.data.personOne = Scope.data.people[0];
   // Scope.data.personTwo = {
   //   prop: 'Item 2',
   //   axe: 'nice'

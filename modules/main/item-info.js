@@ -11,7 +11,7 @@ view.init([
     children: [
       {
         tag: 'h2',
-        text: '<>inputs.title'
+        // text: '<>inputs.title'
       },
       {
         tag: 'h2',
