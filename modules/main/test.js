@@ -2,43 +2,45 @@ const view = Scope.import('galaxy/view');
 
 Scope.data.person1 = {
   name: 'Eeliya Rasta',
-  children: [
-    {
-      name: 'foo bar'
-    }
-  ],
+  // children: [
+  //   {
+  //     name: 'foo bar'
+  //   }
+  // ],
   address: {
     city: 'Nijkerk'
-  }
+  },
+  age: 25
 };
 
 Scope.data.person2 = {
-  name: 'Gandolf'
+  name: 'Gandolf',
+  age: 11000
 };
+//
+Scope.name = 'Scope name';
 
-Scope.name = 'Some name';
-
-Scope.data.people = [
-  {
-    name: 'foo',
-    children: [
-      {
-        name: 'foo bar'
-      }
-    ]
-  },
-  {
-    name: 'baz',
-    children: [
-      {
-        name: 'baz bar'
-      }
-    ]
-  }
-];
+// Scope.data.people = [
+//   {
+//     name: 'foo',
+//     children: [
+//       {
+//         name: 'foo bar'
+//       }
+//     ]
+//   },
+//   {
+//     name: 'baz',
+//     children: [
+//       {
+//         name: 'baz bar'
+//       }
+//     ]
+//   }
+// ];
 // const personOneCache = Scope.data.personOne;
 // console.info('personOne cached', personOneCache);
-Scope.data.person3 = Scope.data.person1;
+// Scope.data.person3 = Scope.data.person1;
 // Scope.data.person4 = Scope.data.person1;
 // Scope.data.personThree = null;
 
@@ -49,7 +51,6 @@ Scope.data.person3 = Scope.data.person1;
 //   title: 'old val'
 // };
 
-
 console.info('Scope', Scope);
 
 view.init([
@@ -59,7 +60,11 @@ view.init([
   },
   {
     tag: 'h1',
-    text: '<>data.person3.name'
+    text: '<>data.person2.age'
+  },
+  {
+    tag: 'p',
+    text: '<>data.person3.address.city'
   },
   // {
   //   tag: 'p',
@@ -187,19 +192,19 @@ view.init([
       }
     ]
   },
-  // {
-  //   class: 'content',
-  //   module: {
-  //     url: './item-info.js'
-  //   },
-  //   inputs: {
-  //     // title: '<>data.personOne.name',
-  //     // title: Scope.data.personOne.name,
-  //     // person: Scope.data.personOne,
-  //     person: '<>data.person1'
-  //     // personTwo: '<>data.personTwo'
-  //   }
-  // },
+  {
+    class: 'content',
+    module: {
+      url: './item-info.js'
+    },
+    inputs: {
+      // title: '<>data.personOne.name',
+      // title: Scope.data.personOne.name,
+      // person: Scope.data.personOne,
+      person: '<>data.person1'
+      // personTwo: '<>data.personTwo'
+    }
+  },
   // {
   //   tag: 'h4',
   //   text: [
@@ -277,9 +282,10 @@ setTimeout(function () {
   //   prop: 'Item 2',
   //   axe: 'nice'
   // };
-  // Scope.data.personOne = Scope.data.personTwo;
+  // Scope.data.person3 = Scope.data.person2;
 
   setTimeout(function () {
+    //   Scope.data.person3 = {};
     // console.info('Scope.data.personOne ', Scope.data.personOne);
     // console.info('personOne cached', personOneCached);
     // Scope.data.list = [
