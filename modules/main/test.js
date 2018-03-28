@@ -13,31 +13,37 @@ Scope.data.person1 = {
   age: 25
 };
 
+// Scope.data.person3 = { name: 'Steve' };
+// const cached = Scope.data.person3;
+
+// console.info('cached', cached);
+
 Scope.data.person2 = {
   name: 'Gandolf',
   age: 11000
 };
+
 //
 Scope.name = 'Scope name';
 
-// Scope.data.people = [
-//   {
-//     name: 'foo',
-//     children: [
-//       {
-//         name: 'foo bar'
-//       }
-//     ]
-//   },
-//   {
-//     name: 'baz',
-//     children: [
-//       {
-//         name: 'baz bar'
-//       }
-//     ]
-//   }
-// ];
+Scope.data.people = [
+  {
+    name: 'foo',
+    children: [
+      {
+        name: 'foo bar'
+      }
+    ]
+  },
+  {
+    name: 'baz',
+    children: [
+      {
+        name: 'baz bar'
+      }
+    ]
+  }
+];
 // const personOneCache = Scope.data.personOne;
 // console.info('personOne cached', personOneCache);
 // Scope.data.person3 = Scope.data.person1;
@@ -46,18 +52,27 @@ Scope.name = 'Scope name';
 
 // Scope.data.list = [];
 //
-// Scope.data.newItem = {
-//   count: 1,
-//   title: 'old val'
-// };
+Scope.data.newItem = {
+  count: 1,
+  title: 'old val'
+};
 
 console.info('Scope', Scope);
 
 view.init([
   {
     tag: 'h1',
-    text: '<>data.person1.name'
+    text: [
+      'data.person1',
+      function (person) {
+        return JSON.stringify(person);
+      }
+    ]
   },
+  // {
+  //   tag: 'h1',
+  //   text: '<>data.person1.address.city'
+  // },
   {
     tag: 'h1',
     text: '<>data.person2.age'
@@ -174,10 +189,15 @@ view.init([
       // },
       {
         tag: 'button',
-        text: 'data.personOne = people1',
+        text: 'data.person1 = {Steve}',
         on: {
           click: function () {
-            Scope.data.personOne = Scope.data.people[0];
+            Scope.data.person1 = {
+              name: 'Steve',
+              address: {
+                city: 'London'
+              }
+            };
           }
         }
       },
@@ -186,58 +206,49 @@ view.init([
         text: 'data.personOne = people2',
         on: {
           click: function () {
-            Scope.data.personOne = Scope.data.people[1];
+            Scope.data.person1 = Scope.data.people[1];
           }
         }
       }
     ]
   },
-  {
-    class: 'content',
-    module: {
-      url: './item-info.js'
-    },
-    inputs: {
-      // title: '<>data.personOne.name',
-      // title: Scope.data.personOne.name,
-      // person: Scope.data.personOne,
-      person: '<>data.person1'
-      // personTwo: '<>data.personTwo'
-    }
-  },
   // {
-  //   tag: 'h4',
-  //   text: [
-  //     'data.newItem',
-  //     function (length) {
-  //       return JSON.stringify(length);
-  //     }
-  //   ]
-  // },
-  // {
-  //   tag: 'h4',
-  //   text: [
-  //     'data.list',
-  //     function (list) {
-  //       return 'Total count:' + list.reduce(function (sum, item) {
-  //         return sum + item.count;
-  //       }, 0);
-  //     }
-  //   ]
-  // },
-  // {
-  //   tag: 'p',
-  //   $for: {
-  //     data: '<>data.list',
-  //     as: 'item'
+  //   class: 'content',
+  //   module: {
+  //     url: './item-info.js'
   //   },
-  //   text: [
-  //     'item',
-  //     function (item) {
-  //       return item.title + ' - ' + item.count;
-  //     }
-  //   ]
-  // },
+  //   inputs: {
+  //     // title: '<>data.personOne.name',
+  //     // title: Scope.data.personOne.name,
+  //     // person: Scope.data.personOne,
+  //     person: '<>data.person1'
+  //     // personTwo: '<>data.personTwo'
+  //   }
+  // }
+  {
+    tag: 'h4',
+    text: [
+      'data.people',
+      function (list) {
+        // return 'Total count:' + list.reduce(function (sum, item) {
+        //   return sum + item.count;
+        // }, 0);
+        return 'Total' + list.length;
+      }
+    ]
+  },
+  {
+    tag: 'h2',
+    text: '<>data.people.length'
+  },
+  {
+    tag: 'p',
+    $for: {
+      data: '<>data.people',
+      as: 'per'
+    },
+    text: '<>per.name'
+  },
   // {
   //   tag: 'p',
   //   text: '<>data.newItem2.title'
@@ -246,23 +257,24 @@ view.init([
   //   tag: 'p',
   //   text: '<>data.newItem.title'
   // },
-  // {
-  //   tag: 'input',
-  //   value: '<>data.newItem.title'
-  // },
-  // {
-  //   tag: 'button',
-  //   text: 'Add new item to the list',
-  //   on: {
-  //     click: function () {
-  //       Scope.data.list.push(Scope.data.newItem);
-  //       Scope.data.newItem = {
-  //         count: 1,
-  //         title: ''
-  //       };
-  //     }
-  //   }
-  // },
+  {
+    tag: 'input',
+    value: '<>data.newItem.title'
+  },
+  {
+    tag: 'button',
+    text: 'Add new item to the list',
+    on: {
+      click: function () {
+        console.info(Scope.data.newItem);
+        // Scope.data.people.push(Scope.data.newItem);
+        Scope.data.newItem = {
+          title: '',
+          count: 0
+        };
+      }
+    }
+  }
   // {
   //   tag: 'button',
   //   text: 'Change Item 1 count randomly',
@@ -282,9 +294,17 @@ setTimeout(function () {
   //   prop: 'Item 2',
   //   axe: 'nice'
   // };
-  // Scope.data.person3 = Scope.data.person2;
+  // Scope.data.person3 = Scope.data.person1;
 
   setTimeout(function () {
+    // Scope.data.people = [
+    //   {
+    //     name: 'new array'
+    //   }
+    // ];
+    // console.info(Scope.data.people.pop());
+    // Scope.data.person1.name = 'Name has changed!';
+    // Scope.data.person3 = cached;
     //   Scope.data.person3 = {};
     // console.info('Scope.data.personOne ', Scope.data.personOne);
     // console.info('personOne cached', personOneCached);
@@ -310,5 +330,5 @@ setTimeout(function () {
     //   age: 22,
     //   gender: 'female'
     // };
-  }, 2500);
+  }, 1500);
 }, 1000);

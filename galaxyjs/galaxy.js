@@ -23,7 +23,7 @@
   'use strict';
 
   if (self.fetch) {
-    return;
+    return
   }
 
   var support = {
@@ -31,15 +31,15 @@
     iterable: 'Symbol' in self && 'iterator' in Symbol,
     blob: 'FileReader' in self && 'Blob' in self && (function () {
       try {
-        new Blob();
-        return true;
+        new Blob()
+        return true
       } catch (e) {
-        return false;
+        return false
       }
     })(),
     formData: 'FormData' in self,
     arrayBuffer: 'ArrayBuffer' in self
-  };
+  }
 
   if (support.arrayBuffer) {
     var viewClasses = [
@@ -52,370 +52,364 @@
       '[object Uint32Array]',
       '[object Float32Array]',
       '[object Float64Array]'
-    ];
+    ]
 
     var isDataView = function (obj) {
-      return obj && DataView.prototype.isPrototypeOf(obj);
-    };
+      return obj && DataView.prototype.isPrototypeOf(obj)
+    }
 
     var isArrayBufferView = ArrayBuffer.isView || function (obj) {
-      return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1;
-    };
+      return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
+    }
   }
 
   function normalizeName(name) {
     if (typeof name !== 'string') {
-      name = String(name);
+      name = String(name)
     }
     if (/[^a-z0-9\-#$%&'*+.\^_`|~]/i.test(name)) {
-      throw new TypeError('Invalid character in header field name');
+      throw new TypeError('Invalid character in header field name')
     }
-    return name.toLowerCase();
+    return name.toLowerCase()
   }
 
   function normalizeValue(value) {
     if (typeof value !== 'string') {
-      value = String(value);
+      value = String(value)
     }
-    return value;
+    return value
   }
 
   // Build a destructive iterator for the value list
   function iteratorFor(items) {
     var iterator = {
       next: function () {
-        var value = items.shift();
-        return {done: value === undefined, value: value};
+        var value = items.shift()
+        return { done: value === undefined, value: value }
       }
-    };
+    }
 
     if (support.iterable) {
       iterator[Symbol.iterator] = function () {
-        return iterator;
-      };
+        return iterator
+      }
     }
 
-    return iterator;
+    return iterator
   }
 
   function Headers(headers) {
-    this.map = {};
+    this.map = {}
 
     if (headers instanceof Headers) {
       headers.forEach(function (value, name) {
-        this.append(name, value);
-      }, this);
+        this.append(name, value)
+      }, this)
     } else if (Array.isArray(headers)) {
       headers.forEach(function (header) {
-        this.append(header[0], header[1]);
-      }, this);
+        this.append(header[0], header[1])
+      }, this)
     } else if (headers) {
       Object.getOwnPropertyNames(headers).forEach(function (name) {
-        this.append(name, headers[name]);
-      }, this);
+        this.append(name, headers[name])
+      }, this)
     }
   }
 
   Headers.prototype.append = function (name, value) {
-    name = normalizeName(name);
-    value = normalizeValue(value);
-    var oldValue = this.map[name];
-    this.map[name] = oldValue ? oldValue + ',' + value : value;
-  };
+    name = normalizeName(name)
+    value = normalizeValue(value)
+    var oldValue = this.map[name]
+    this.map[name] = oldValue ? oldValue + ',' + value : value
+  }
 
   Headers.prototype['delete'] = function (name) {
-    delete this.map[normalizeName(name)];
-  };
+    delete this.map[normalizeName(name)]
+  }
 
   Headers.prototype.get = function (name) {
-    name = normalizeName(name);
-    return this.has(name) ? this.map[name] : null;
-  };
+    name = normalizeName(name)
+    return this.has(name) ? this.map[name] : null
+  }
 
   Headers.prototype.has = function (name) {
-    return this.map.hasOwnProperty(normalizeName(name));
-  };
+    return this.map.hasOwnProperty(normalizeName(name))
+  }
 
   Headers.prototype.set = function (name, value) {
-    this.map[normalizeName(name)] = normalizeValue(value);
-  };
+    this.map[normalizeName(name)] = normalizeValue(value)
+  }
 
   Headers.prototype.forEach = function (callback, thisArg) {
     for (var name in this.map) {
       if (this.map.hasOwnProperty(name)) {
-        callback.call(thisArg, this.map[name], name, this);
+        callback.call(thisArg, this.map[name], name, this)
       }
     }
-  };
+  }
 
   Headers.prototype.keys = function () {
-    var items = [];
-    this.forEach(function (value, name) {
-      items.push(name);
-    });
-    return iteratorFor(items);
-  };
+    var items = []
+    this.forEach(function (value, name) { items.push(name) })
+    return iteratorFor(items)
+  }
 
   Headers.prototype.values = function () {
-    var items = [];
-    this.forEach(function (value) {
-      items.push(value);
-    });
-    return iteratorFor(items);
-  };
+    var items = []
+    this.forEach(function (value) { items.push(value) })
+    return iteratorFor(items)
+  }
 
   Headers.prototype.entries = function () {
-    var items = [];
-    this.forEach(function (value, name) {
-      items.push([name, value]);
-    });
-    return iteratorFor(items);
-  };
+    var items = []
+    this.forEach(function (value, name) { items.push([name, value]) })
+    return iteratorFor(items)
+  }
 
   if (support.iterable) {
-    Headers.prototype[Symbol.iterator] = Headers.prototype.entries;
+    Headers.prototype[Symbol.iterator] = Headers.prototype.entries
   }
 
   function consumed(body) {
     if (body.bodyUsed) {
-      return Promise.reject(new TypeError('Already read'));
+      return Promise.reject(new TypeError('Already read'))
     }
-    body.bodyUsed = true;
+    body.bodyUsed = true
   }
 
   function fileReaderReady(reader) {
     return new Promise(function (resolve, reject) {
       reader.onload = function () {
-        resolve(reader.result);
-      };
+        resolve(reader.result)
+      }
       reader.onerror = function () {
-        reject(reader.error);
-      };
-    });
+        reject(reader.error)
+      }
+    })
   }
 
   function readBlobAsArrayBuffer(blob) {
-    var reader = new FileReader();
-    var promise = fileReaderReady(reader);
-    reader.readAsArrayBuffer(blob);
-    return promise;
+    var reader = new FileReader()
+    var promise = fileReaderReady(reader)
+    reader.readAsArrayBuffer(blob)
+    return promise
   }
 
   function readBlobAsText(blob) {
-    var reader = new FileReader();
-    var promise = fileReaderReady(reader);
-    reader.readAsText(blob);
-    return promise;
+    var reader = new FileReader()
+    var promise = fileReaderReady(reader)
+    reader.readAsText(blob)
+    return promise
   }
 
   function readArrayBufferAsText(buf) {
-    var view = new Uint8Array(buf);
-    var chars = new Array(view.length);
+    var view = new Uint8Array(buf)
+    var chars = new Array(view.length)
 
     for (var i = 0; i < view.length; i++) {
-      chars[i] = String.fromCharCode(view[i]);
+      chars[i] = String.fromCharCode(view[i])
     }
-    return chars.join('');
+    return chars.join('')
   }
 
   function bufferClone(buf) {
     if (buf.slice) {
-      return buf.slice(0);
+      return buf.slice(0)
     } else {
-      var view = new Uint8Array(buf.byteLength);
-      view.set(new Uint8Array(buf));
-      return view.buffer;
+      var view = new Uint8Array(buf.byteLength)
+      view.set(new Uint8Array(buf))
+      return view.buffer
     }
   }
 
   function Body() {
-    this.bodyUsed = false;
+    this.bodyUsed = false
 
     this._initBody = function (body) {
-      this._bodyInit = body;
+      this._bodyInit = body
       if (!body) {
-        this._bodyText = '';
+        this._bodyText = ''
       } else if (typeof body === 'string') {
-        this._bodyText = body;
+        this._bodyText = body
       } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
-        this._bodyBlob = body;
+        this._bodyBlob = body
       } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
-        this._bodyFormData = body;
+        this._bodyFormData = body
       } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-        this._bodyText = body.toString();
+        this._bodyText = body.toString()
       } else if (support.arrayBuffer && support.blob && isDataView(body)) {
-        this._bodyArrayBuffer = bufferClone(body.buffer);
+        this._bodyArrayBuffer = bufferClone(body.buffer)
         // IE 10-11 can't handle a DataView body.
-        this._bodyInit = new Blob([this._bodyArrayBuffer]);
+        this._bodyInit = new Blob([this._bodyArrayBuffer])
       } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
-        this._bodyArrayBuffer = bufferClone(body);
+        this._bodyArrayBuffer = bufferClone(body)
       } else {
-        throw new Error('unsupported BodyInit type');
+        throw new Error('unsupported BodyInit type')
       }
 
       if (!this.headers.get('content-type')) {
         if (typeof body === 'string') {
-          this.headers.set('content-type', 'text/plain;charset=UTF-8');
+          this.headers.set('content-type', 'text/plain;charset=UTF-8')
         } else if (this._bodyBlob && this._bodyBlob.type) {
-          this.headers.set('content-type', this._bodyBlob.type);
+          this.headers.set('content-type', this._bodyBlob.type)
         } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
         }
       }
-    };
+    }
 
     if (support.blob) {
       this.blob = function () {
-        var rejected = consumed(this);
+        var rejected = consumed(this)
         if (rejected) {
-          return rejected;
+          return rejected
         }
 
         if (this._bodyBlob) {
-          return Promise.resolve(this._bodyBlob);
+          return Promise.resolve(this._bodyBlob)
         } else if (this._bodyArrayBuffer) {
-          return Promise.resolve(new Blob([this._bodyArrayBuffer]));
+          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
         } else if (this._bodyFormData) {
-          throw new Error('could not read FormData body as blob');
+          throw new Error('could not read FormData body as blob')
         } else {
-          return Promise.resolve(new Blob([this._bodyText]));
+          return Promise.resolve(new Blob([this._bodyText]))
         }
-      };
+      }
 
       this.arrayBuffer = function () {
         if (this._bodyArrayBuffer) {
-          return consumed(this) || Promise.resolve(this._bodyArrayBuffer);
+          return consumed(this) || Promise.resolve(this._bodyArrayBuffer)
         } else {
-          return this.blob().then(readBlobAsArrayBuffer);
+          return this.blob().then(readBlobAsArrayBuffer)
         }
-      };
+      }
     }
 
     this.text = function () {
-      var rejected = consumed(this);
+      var rejected = consumed(this)
       if (rejected) {
-        return rejected;
+        return rejected
       }
 
       if (this._bodyBlob) {
-        return readBlobAsText(this._bodyBlob);
+        return readBlobAsText(this._bodyBlob)
       } else if (this._bodyArrayBuffer) {
-        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer));
+        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
       } else if (this._bodyFormData) {
-        throw new Error('could not read FormData body as text');
+        throw new Error('could not read FormData body as text')
       } else {
-        return Promise.resolve(this._bodyText);
+        return Promise.resolve(this._bodyText)
       }
-    };
+    }
 
     if (support.formData) {
       this.formData = function () {
-        return this.text().then(decode);
-      };
+        return this.text().then(decode)
+      }
     }
 
     this.json = function () {
-      return this.text().then(JSON.parse);
-    };
+      return this.text().then(JSON.parse)
+    }
 
-    return this;
+    return this
   }
 
   // HTTP methods whose capitalization should be normalized
-  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT'];
+  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
 
   function normalizeMethod(method) {
-    var upcased = method.toUpperCase();
-    return (methods.indexOf(upcased) > -1) ? upcased : method;
+    var upcased = method.toUpperCase()
+    return (methods.indexOf(upcased) > -1) ? upcased : method
   }
 
   function Request(input, options) {
-    options = options || {};
-    var body = options.body;
+    options = options || {}
+    var body = options.body
 
     if (input instanceof Request) {
       if (input.bodyUsed) {
-        throw new TypeError('Already read');
+        throw new TypeError('Already read')
       }
-      this.url = input.url;
-      this.credentials = input.credentials;
+      this.url = input.url
+      this.credentials = input.credentials
       if (!options.headers) {
-        this.headers = new Headers(input.headers);
+        this.headers = new Headers(input.headers)
       }
-      this.method = input.method;
-      this.mode = input.mode;
+      this.method = input.method
+      this.mode = input.mode
       if (!body && input._bodyInit != null) {
-        body = input._bodyInit;
-        input.bodyUsed = true;
+        body = input._bodyInit
+        input.bodyUsed = true
       }
     } else {
-      this.url = String(input);
+      this.url = String(input)
     }
 
-    this.credentials = options.credentials || this.credentials || 'omit';
+    this.credentials = options.credentials || this.credentials || 'omit'
     if (options.headers || !this.headers) {
-      this.headers = new Headers(options.headers);
+      this.headers = new Headers(options.headers)
     }
-    this.method = normalizeMethod(options.method || this.method || 'GET');
-    this.mode = options.mode || this.mode || null;
-    this.referrer = null;
+    this.method = normalizeMethod(options.method || this.method || 'GET')
+    this.mode = options.mode || this.mode || null
+    this.referrer = null
 
     if ((this.method === 'GET' || this.method === 'HEAD') && body) {
-      throw new TypeError('Body not allowed for GET or HEAD requests');
+      throw new TypeError('Body not allowed for GET or HEAD requests')
     }
-    this._initBody(body);
+    this._initBody(body)
   }
 
   Request.prototype.clone = function () {
-    return new Request(this, {body: this._bodyInit});
-  };
+    return new Request(this, { body: this._bodyInit })
+  }
 
   function decode(body) {
-    var form = new FormData();
+    var form = new FormData()
     body.trim().split('&').forEach(function (bytes) {
       if (bytes) {
-        var split = bytes.split('=');
-        var name = split.shift().replace(/\+/g, ' ');
-        var value = split.join('=').replace(/\+/g, ' ');
-        form.append(decodeURIComponent(name), decodeURIComponent(value));
+        var split = bytes.split('=')
+        var name = split.shift().replace(/\+/g, ' ')
+        var value = split.join('=').replace(/\+/g, ' ')
+        form.append(decodeURIComponent(name), decodeURIComponent(value))
       }
-    });
-    return form;
+    })
+    return form
   }
 
   function parseHeaders(rawHeaders) {
-    var headers = new Headers();
+    var headers = new Headers()
     // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
     // https://tools.ietf.org/html/rfc7230#section-3.2
-    var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/, ' ');
+    var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ')
     preProcessedHeaders.split(/\r?\n/).forEach(function (line) {
-      var parts = line.split(':');
-      var key = parts.shift().trim();
+      var parts = line.split(':')
+      var key = parts.shift().trim()
       if (key) {
-        var value = parts.join(':').trim();
-        headers.append(key, value);
+        var value = parts.join(':').trim()
+        headers.append(key, value)
       }
-    });
-    return headers;
+    })
+    return headers
   }
 
-  Body.call(Request.prototype);
+  Body.call(Request.prototype)
 
   function Response(bodyInit, options) {
     if (!options) {
-      options = {};
+      options = {}
     }
 
-    this.type = 'default';
-    this.status = 'status' in options ? options.status : 200;
-    this.ok = this.status >= 200 && this.status < 300;
-    this.statusText = 'statusText' in options ? options.statusText : 'OK';
-    this.headers = new Headers(options.headers);
-    this.url = options.url || '';
-    this._initBody(bodyInit);
+    this.type = 'default'
+    this.status = options.status === undefined ? 200 : options.status
+    this.ok = this.status >= 200 && this.status < 300
+    this.statusText = 'statusText' in options ? options.statusText : 'OK'
+    this.headers = new Headers(options.headers)
+    this.url = options.url || ''
+    this._initBody(bodyInit)
   }
 
-  Body.call(Response.prototype);
+  Body.call(Response.prototype)
 
   Response.prototype.clone = function () {
     return new Response(this._bodyInit, {
@@ -423,71 +417,73 @@
       statusText: this.statusText,
       headers: new Headers(this.headers),
       url: this.url
-    });
-  };
+    })
+  }
 
   Response.error = function () {
-    var response = new Response(null, {status: 0, statusText: ''});
-    response.type = 'error';
-    return response;
-  };
+    var response = new Response(null, { status: 0, statusText: '' })
+    response.type = 'error'
+    return response
+  }
 
-  var redirectStatuses = [301, 302, 303, 307, 308];
+  var redirectStatuses = [301, 302, 303, 307, 308]
 
   Response.redirect = function (url, status) {
     if (redirectStatuses.indexOf(status) === -1) {
-      throw new RangeError('Invalid status code');
+      throw new RangeError('Invalid status code')
     }
 
-    return new Response(null, {status: status, headers: {location: url}});
-  };
+    return new Response(null, { status: status, headers: { location: url } })
+  }
 
-  self.Headers = Headers;
-  self.Request = Request;
-  self.Response = Response;
+  self.Headers = Headers
+  self.Request = Request
+  self.Response = Response
 
   self.fetch = function (input, init) {
     return new Promise(function (resolve, reject) {
-      var request = new Request(input, init);
-      var xhr = new XMLHttpRequest();
+      var request = new Request(input, init)
+      var xhr = new XMLHttpRequest()
 
       xhr.onload = function () {
         var options = {
           status: xhr.status,
           statusText: xhr.statusText,
           headers: parseHeaders(xhr.getAllResponseHeaders() || '')
-        };
-        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL');
-        var body = 'response' in xhr ? xhr.response : xhr.responseText;
-        resolve(new Response(body, options));
-      };
+        }
+        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL')
+        var body = 'response' in xhr ? xhr.response : xhr.responseText
+        resolve(new Response(body, options))
+      }
 
       xhr.onerror = function () {
-        reject(new TypeError('Network request failed'));
-      };
+        reject(new TypeError('Network request failed'))
+      }
 
       xhr.ontimeout = function () {
-        reject(new TypeError('Network request failed'));
-      };
+        reject(new TypeError('Network request failed'))
+      }
 
-      xhr.open(request.method, request.url, true);
+      xhr.open(request.method, request.url, true)
 
       if (request.credentials === 'include') {
-        xhr.withCredentials = true;
+        xhr.withCredentials = true
+      } else if (request.credentials === 'omit') {
+        xhr.withCredentials = false
       }
 
       if ('responseType' in xhr && support.blob) {
-        xhr.responseType = 'blob';
+        xhr.responseType = 'blob'
       }
 
       request.headers.forEach(function (value, name) {
-        xhr.setRequestHeader(name, value);
-      });
+        xhr.setRequestHeader(name, value)
+      })
 
-      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit);
-    });
-  };
-  self.fetch.polyfill = true;
+      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit)
+    })
+  }
+  self.fetch.polyfill = true
 })(typeof self !== 'undefined' ? self : this);
 
 if (typeof Object.assign != 'function') {
@@ -497,13 +493,13 @@ if (typeof Object.assign != 'function') {
       throw new TypeError('Cannot convert undefined or null to object');
     }
 
-    var to = Object(target);
+    const to = Object(target);
 
-    for (var index = 1; index < arguments.length; index++) {
-      var nextSource = arguments[index];
+    for (let index = 1; index < arguments.length; index++) {
+      let nextSource = arguments[index];
 
       if (nextSource != null) { // Skip over if undefined or null
-        for (var nextKey in nextSource) {
+        for (let nextKey in nextSource) {
           // Avoid bugs when hasOwnProperty is shadowed
           if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
             to[nextKey] = nextSource[nextKey];
@@ -516,268 +512,1181 @@ if (typeof Object.assign != 'function') {
 }
 
 /* eslint-disable */
+/*!
+ * @overview es6-promise - a tiny implementation of Promises/A+.
+ * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
+ * @license   Licensed under MIT license
+ *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
+ * @version   v4.2.4+314e4831
+ */
+
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined'
-    ? module.exports = factory()
-    : typeof define === 'function' && define.amd
-    ? define(factory)
-    : (global.Promise = factory());
-}(this, (function () {
-  'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+      (global.ES6Promise = factory());
+}(this, (function () { 'use strict';
 
-// Store setTimeout reference so promise-polyfill will be unaffected by
-// other code modifying setTimeout (like sinon.useFakeTimers())
-  var setTimeoutFunc = setTimeout;
+  function objectOrFunction(x) {
+    var type = typeof x;
+    return x !== null && (type === 'object' || type === 'function');
+  }
 
-  function noop() {}
+  function isFunction(x) {
+    return typeof x === 'function';
+  }
 
-// Polyfill for Function.prototype.bind
-  function bind(fn, thisArg) {
-    return function () {
-      fn.apply(thisArg, arguments);
+
+
+  var _isArray = void 0;
+  if (Array.isArray) {
+    _isArray = Array.isArray;
+  } else {
+    _isArray = function (x) {
+      return Object.prototype.toString.call(x) === '[object Array]';
     };
   }
 
-  function Promise(fn) {
-    if (!(this instanceof Promise)) {
-      throw new TypeError('Promises must be constructed via new');
-    }
-    if (typeof fn !== 'function') {
-      throw new TypeError('not a function');
-    }
-    this._state = 0;
-    this._handled = false;
-    this._value = undefined;
-    this._deferreds = [];
+  var isArray = _isArray;
 
-    doResolve(fn, this);
+  var len = 0;
+  var vertxNext = void 0;
+  var customSchedulerFn = void 0;
+
+  var asap = function asap(callback, arg) {
+    queue[len] = callback;
+    queue[len + 1] = arg;
+    len += 2;
+    if (len === 2) {
+      // If len is 2, that means that we need to schedule an async flush.
+      // If additional callbacks are queued before the queue is flushed, they
+      // will be processed by this flush that we are scheduling.
+      if (customSchedulerFn) {
+        customSchedulerFn(flush);
+      } else {
+        scheduleFlush();
+      }
+    }
+  };
+
+  function setScheduler(scheduleFn) {
+    customSchedulerFn = scheduleFn;
   }
 
-  function handle(self, deferred) {
-    while (self._state === 3) {
-      self = self._value;
-    }
-    if (self._state === 0) {
-      self._deferreds.push(deferred);
-      return;
-    }
-    self._handled = true;
-    Promise._immediateFn(function () {
-      var cb = self._state === 1 ? deferred.onFulfilled : deferred.onRejected;
-      if (cb === null) {
-        (self._state === 1 ? resolve : reject)(deferred.promise, self._value);
-        return;
-      }
-      var ret;
-      try {
-        ret = cb(self._value);
-      } catch (e) {
-        reject(deferred.promise, e);
-        return;
-      }
-      resolve(deferred.promise, ret);
-    });
+  function setAsap(asapFn) {
+    asap = asapFn;
   }
 
-  function resolve(self, newValue) {
+  var browserWindow = typeof window !== 'undefined' ? window : undefined;
+  var browserGlobal = browserWindow || {};
+  var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+  var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+
+// test for web worker but not in IE10
+  var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
+
+// node
+  function useNextTick() {
+    // node version 0.10.x displays a deprecation warning when nextTick is used recursively
+    // see https://github.com/cujojs/when/issues/410 for details
+    return function () {
+      return process.nextTick(flush);
+    };
+  }
+
+// vertx
+  function useVertxTimer() {
+    if (typeof vertxNext !== 'undefined') {
+      return function () {
+        vertxNext(flush);
+      };
+    }
+
+    return useSetTimeout();
+  }
+
+  function useMutationObserver() {
+    var iterations = 0;
+    var observer = new BrowserMutationObserver(flush);
+    var node = document.createTextNode('');
+    observer.observe(node, { characterData: true });
+
+    return function () {
+      node.data = iterations = ++iterations % 2;
+    };
+  }
+
+// web worker
+  function useMessageChannel() {
+    var channel = new MessageChannel();
+    channel.port1.onmessage = flush;
+    return function () {
+      return channel.port2.postMessage(0);
+    };
+  }
+
+  function useSetTimeout() {
+    // Store setTimeout reference so es6-promise will be unaffected by
+    // other code modifying setTimeout (like sinon.useFakeTimers())
+    var globalSetTimeout = setTimeout;
+    return function () {
+      return globalSetTimeout(flush, 1);
+    };
+  }
+
+  var queue = new Array(1000);
+  function flush() {
+    for (var i = 0; i < len; i += 2) {
+      var callback = queue[i];
+      var arg = queue[i + 1];
+
+      callback(arg);
+
+      queue[i] = undefined;
+      queue[i + 1] = undefined;
+    }
+
+    len = 0;
+  }
+
+  function attemptVertx() {
     try {
-      // Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
-      if (newValue === self) {
-        throw new TypeError('A promise cannot be resolved with itself.');
-      }
-      if (
-        newValue &&
-        (typeof newValue === 'object' || typeof newValue === 'function')
-      ) {
-        var then = newValue.then;
-        if (newValue instanceof Promise) {
-          self._state = 3;
-          self._value = newValue;
-          finale(self);
-          return;
-        } else if (typeof then === 'function') {
-          doResolve(bind(then, newValue), self);
-          return;
-        }
-      }
-      self._state = 1;
-      self._value = newValue;
-      finale(self);
+      var vertx = Function('return this')().require('vertx');
+      vertxNext = vertx.runOnLoop || vertx.runOnContext;
+      return useVertxTimer();
     } catch (e) {
-      reject(self, e);
+      return useSetTimeout();
     }
   }
 
-  function reject(self, newValue) {
-    self._state = 2;
-    self._value = newValue;
-    finale(self);
+  var scheduleFlush = void 0;
+// Decide what async method to use to triggering processing of queued callbacks:
+  if (isNode) {
+    scheduleFlush = useNextTick();
+  } else if (BrowserMutationObserver) {
+    scheduleFlush = useMutationObserver();
+  } else if (isWorker) {
+    scheduleFlush = useMessageChannel();
+  } else if (browserWindow === undefined && typeof require === 'function') {
+    scheduleFlush = attemptVertx();
+  } else {
+    scheduleFlush = useSetTimeout();
   }
 
-  function finale(self) {
-    if (self._state === 2 && self._deferreds.length === 0) {
-      Promise._immediateFn(function () {
-        if (!self._handled) {
-          Promise._unhandledRejectionFn(self._value);
-        }
+  function then(onFulfillment, onRejection) {
+    var parent = this;
+
+    var child = new this.constructor(noop);
+
+    if (child[PROMISE_ID] === undefined) {
+      makePromise(child);
+    }
+
+    var _state = parent._state;
+
+
+    if (_state) {
+      var callback = arguments[_state - 1];
+      asap(function () {
+        return invokeCallback(_state, child, callback, parent._result);
       });
+    } else {
+      subscribe(parent, child, onFulfillment, onRejection);
     }
 
-    for (var i = 0, len = self._deferreds.length; i < len; i++) {
-      handle(self, self._deferreds[i]);
-    }
-    self._deferreds = null;
-  }
-
-  function Handler(onFulfilled, onRejected, promise) {
-    this.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null;
-    this.onRejected = typeof onRejected === 'function' ? onRejected : null;
-    this.promise = promise;
+    return child;
   }
 
   /**
-   * Take a potentially misbehaving resolver function and make sure
-   * onFulfilled and onRejected are only called once.
-   *
-   * Makes no guarantees about asynchrony.
+   `Promise.resolve` returns a promise that will become resolved with the
+   passed `value`. It is shorthand for the following:
+
+   ```javascript
+   let promise = new Promise(function(resolve, reject){
+    resolve(1);
+  });
+
+   promise.then(function(value){
+    // value === 1
+  });
+   ```
+
+   Instead of writing the above, your code now simply becomes the following:
+
+   ```javascript
+   let promise = Promise.resolve(1);
+
+   promise.then(function(value){
+    // value === 1
+  });
+   ```
+
+   @method resolve
+   @static
+   @param {Any} value value that the returned promise will be resolved with
+   Useful for tooling.
+   @return {Promise} a promise that will become fulfilled with the given
+   `value`
    */
-  function doResolve(fn, self) {
-    var done = false;
+  function resolve$1(object) {
+    /*jshint validthis:true */
+    var Constructor = this;
+
+    if (object && typeof object === 'object' && object.constructor === Constructor) {
+      return object;
+    }
+
+    var promise = new Constructor(noop);
+    resolve(promise, object);
+    return promise;
+  }
+
+  var PROMISE_ID = Math.random().toString(36).substring(2);
+
+  function noop() {}
+
+  var PENDING = void 0;
+  var FULFILLED = 1;
+  var REJECTED = 2;
+
+  var TRY_CATCH_ERROR = { error: null };
+
+  function selfFulfillment() {
+    return new TypeError("You cannot resolve a promise with itself");
+  }
+
+  function cannotReturnOwn() {
+    return new TypeError('A promises callback cannot return that same promise.');
+  }
+
+  function getThen(promise) {
     try {
-      fn(
-        function (value) {
-          if (done) {
-            return;
-          }
-          done = true;
-          resolve(self, value);
-        },
-        function (reason) {
-          if (done) {
-            return;
-          }
-          done = true;
-          reject(self, reason);
-        }
-      );
-    } catch (ex) {
-      if (done) {
-        return;
-      }
-      done = true;
-      reject(self, ex);
+      return promise.then;
+    } catch (error) {
+      TRY_CATCH_ERROR.error = error;
+      return TRY_CATCH_ERROR;
     }
   }
 
-  Promise.prototype['catch'] = function (onRejected) {
-    return this.then(null, onRejected);
-  };
+  function tryThen(then$$1, value, fulfillmentHandler, rejectionHandler) {
+    try {
+      then$$1.call(value, fulfillmentHandler, rejectionHandler);
+    } catch (e) {
+      return e;
+    }
+  }
 
-  Promise.prototype.then = function (onFulfilled, onRejected) {
-    var prom = new this.constructor(noop);
+  function handleForeignThenable(promise, thenable, then$$1) {
+    asap(function (promise) {
+      var sealed = false;
+      var error = tryThen(then$$1, thenable, function (value) {
+        if (sealed) {
+          return;
+        }
+        sealed = true;
+        if (thenable !== value) {
+          resolve(promise, value);
+        } else {
+          fulfill(promise, value);
+        }
+      }, function (reason) {
+        if (sealed) {
+          return;
+        }
+        sealed = true;
 
-    handle(this, new Handler(onFulfilled, onRejected, prom));
-    return prom;
-  };
+        reject(promise, reason);
+      }, 'Settle: ' + (promise._label || ' unknown promise'));
 
-  Promise.prototype['finally'] = function (callback) {
-    var constructor = this.constructor;
-    return this.then(
-      function (value) {
-        return constructor.resolve(callback()).then(function () {
-          return value;
-        });
-      },
-      function (reason) {
-        return constructor.resolve(callback()).then(function () {
-          return constructor.reject(reason);
-        });
+      if (!sealed && error) {
+        sealed = true;
+        reject(promise, error);
       }
-    );
-  };
+    }, promise);
+  }
 
-  Promise.all = function (arr) {
-    return new Promise(function (resolve, reject) {
-      if (!arr || typeof arr.length === 'undefined') {
-        throw new TypeError('Promise.all accepts an array');
-      }
-      var args = Array.prototype.slice.call(arr);
-      if (args.length === 0) {
-        return resolve([]);
-      }
-      var remaining = args.length;
+  function handleOwnThenable(promise, thenable) {
+    if (thenable._state === FULFILLED) {
+      fulfill(promise, thenable._result);
+    } else if (thenable._state === REJECTED) {
+      reject(promise, thenable._result);
+    } else {
+      subscribe(thenable, undefined, function (value) {
+        return resolve(promise, value);
+      }, function (reason) {
+        return reject(promise, reason);
+      });
+    }
+  }
 
-      function res(i, val) {
-        try {
-          if (val && (typeof val === 'object' || typeof val === 'function')) {
-            var then = val.then;
-            if (typeof then === 'function') {
-              then.call(
-                val,
-                function (val) {
-                  res(i, val);
-                },
-                reject
-              );
-              return;
-            }
+  function handleMaybeThenable(promise, maybeThenable, then$$1) {
+    if (maybeThenable.constructor === promise.constructor && then$$1 === then && maybeThenable.constructor.resolve === resolve$1) {
+      handleOwnThenable(promise, maybeThenable);
+    } else {
+      if (then$$1 === TRY_CATCH_ERROR) {
+        reject(promise, TRY_CATCH_ERROR.error);
+        TRY_CATCH_ERROR.error = null;
+      } else if (then$$1 === undefined) {
+        fulfill(promise, maybeThenable);
+      } else if (isFunction(then$$1)) {
+        handleForeignThenable(promise, maybeThenable, then$$1);
+      } else {
+        fulfill(promise, maybeThenable);
+      }
+    }
+  }
+
+  function resolve(promise, value) {
+    if (promise === value) {
+      reject(promise, selfFulfillment());
+    } else if (objectOrFunction(value)) {
+      handleMaybeThenable(promise, value, getThen(value));
+    } else {
+      fulfill(promise, value);
+    }
+  }
+
+  function publishRejection(promise) {
+    if (promise._onerror) {
+      promise._onerror(promise._result);
+    }
+
+    publish(promise);
+  }
+
+  function fulfill(promise, value) {
+    if (promise._state !== PENDING) {
+      return;
+    }
+
+    promise._result = value;
+    promise._state = FULFILLED;
+
+    if (promise._subscribers.length !== 0) {
+      asap(publish, promise);
+    }
+  }
+
+  function reject(promise, reason) {
+    if (promise._state !== PENDING) {
+      return;
+    }
+    promise._state = REJECTED;
+    promise._result = reason;
+
+    asap(publishRejection, promise);
+  }
+
+  function subscribe(parent, child, onFulfillment, onRejection) {
+    var _subscribers = parent._subscribers;
+    var length = _subscribers.length;
+
+
+    parent._onerror = null;
+
+    _subscribers[length] = child;
+    _subscribers[length + FULFILLED] = onFulfillment;
+    _subscribers[length + REJECTED] = onRejection;
+
+    if (length === 0 && parent._state) {
+      asap(publish, parent);
+    }
+  }
+
+  function publish(promise) {
+    var subscribers = promise._subscribers;
+    var settled = promise._state;
+
+    if (subscribers.length === 0) {
+      return;
+    }
+
+    var child = void 0,
+      callback = void 0,
+      detail = promise._result;
+
+    for (var i = 0; i < subscribers.length; i += 3) {
+      child = subscribers[i];
+      callback = subscribers[i + settled];
+
+      if (child) {
+        invokeCallback(settled, child, callback, detail);
+      } else {
+        callback(detail);
+      }
+    }
+
+    promise._subscribers.length = 0;
+  }
+
+  function tryCatch(callback, detail) {
+    try {
+      return callback(detail);
+    } catch (e) {
+      TRY_CATCH_ERROR.error = e;
+      return TRY_CATCH_ERROR;
+    }
+  }
+
+  function invokeCallback(settled, promise, callback, detail) {
+    var hasCallback = isFunction(callback),
+      value = void 0,
+      error = void 0,
+      succeeded = void 0,
+      failed = void 0;
+
+    if (hasCallback) {
+      value = tryCatch(callback, detail);
+
+      if (value === TRY_CATCH_ERROR) {
+        failed = true;
+        error = value.error;
+        value.error = null;
+      } else {
+        succeeded = true;
+      }
+
+      if (promise === value) {
+        reject(promise, cannotReturnOwn());
+        return;
+      }
+    } else {
+      value = detail;
+      succeeded = true;
+    }
+
+    if (promise._state !== PENDING) {
+      // noop
+    } else if (hasCallback && succeeded) {
+      resolve(promise, value);
+    } else if (failed) {
+      reject(promise, error);
+    } else if (settled === FULFILLED) {
+      fulfill(promise, value);
+    } else if (settled === REJECTED) {
+      reject(promise, value);
+    }
+  }
+
+  function initializePromise(promise, resolver) {
+    try {
+      resolver(function resolvePromise(value) {
+        resolve(promise, value);
+      }, function rejectPromise(reason) {
+        reject(promise, reason);
+      });
+    } catch (e) {
+      reject(promise, e);
+    }
+  }
+
+  var id = 0;
+  function nextId() {
+    return id++;
+  }
+
+  function makePromise(promise) {
+    promise[PROMISE_ID] = id++;
+    promise._state = undefined;
+    promise._result = undefined;
+    promise._subscribers = [];
+  }
+
+  function validationError() {
+    return new Error('Array Methods must be provided an Array');
+  }
+
+  var Enumerator = function () {
+    function Enumerator(Constructor, input) {
+      this._instanceConstructor = Constructor;
+      this.promise = new Constructor(noop);
+
+      if (!this.promise[PROMISE_ID]) {
+        makePromise(this.promise);
+      }
+
+      if (isArray(input)) {
+        this.length = input.length;
+        this._remaining = input.length;
+
+        this._result = new Array(this.length);
+
+        if (this.length === 0) {
+          fulfill(this.promise, this._result);
+        } else {
+          this.length = this.length || 0;
+          this._enumerate(input);
+          if (this._remaining === 0) {
+            fulfill(this.promise, this._result);
           }
-          args[i] = val;
-          if (--remaining === 0) {
-            resolve(args);
-          }
-        } catch (ex) {
-          reject(ex);
+        }
+      } else {
+        reject(this.promise, validationError());
+      }
+    }
+
+    Enumerator.prototype._enumerate = function _enumerate(input) {
+      for (var i = 0; this._state === PENDING && i < input.length; i++) {
+        this._eachEntry(input[i], i);
+      }
+    };
+
+    Enumerator.prototype._eachEntry = function _eachEntry(entry, i) {
+      var c = this._instanceConstructor;
+      var resolve$$1 = c.resolve;
+
+
+      if (resolve$$1 === resolve$1) {
+        var _then = getThen(entry);
+
+        if (_then === then && entry._state !== PENDING) {
+          this._settledAt(entry._state, i, entry._result);
+        } else if (typeof _then !== 'function') {
+          this._remaining--;
+          this._result[i] = entry;
+        } else if (c === Promise$2) {
+          var promise = new c(noop);
+          handleMaybeThenable(promise, entry, _then);
+          this._willSettleAt(promise, i);
+        } else {
+          this._willSettleAt(new c(function (resolve$$1) {
+            return resolve$$1(entry);
+          }), i);
+        }
+      } else {
+        this._willSettleAt(resolve$$1(entry), i);
+      }
+    };
+
+    Enumerator.prototype._settledAt = function _settledAt(state, i, value) {
+      var promise = this.promise;
+
+
+      if (promise._state === PENDING) {
+        this._remaining--;
+
+        if (state === REJECTED) {
+          reject(promise, value);
+        } else {
+          this._result[i] = value;
         }
       }
 
-      for (var i = 0; i < args.length; i++) {
-        res(i, args[i]);
+      if (this._remaining === 0) {
+        fulfill(promise, this._result);
       }
-    });
-  };
-
-  Promise.resolve = function (value) {
-    if (value && typeof value === 'object' && value.constructor === Promise) {
-      return value;
-    }
-
-    return new Promise(function (resolve) {
-      resolve(value);
-    });
-  };
-
-  Promise.reject = function (value) {
-    return new Promise(function (resolve, reject) {
-      reject(value);
-    });
-  };
-
-  Promise.race = function (values) {
-    return new Promise(function (resolve, reject) {
-      for (var i = 0, len = values.length; i < len; i++) {
-        values[i].then(resolve, reject);
-      }
-    });
-  };
-
-// Use polyfill for setImmediate for performance gains
-  Promise._immediateFn =
-    (typeof setImmediate === 'function' &&
-      function (fn) {
-        setImmediate(fn);
-      }) ||
-    function (fn) {
-      setTimeoutFunc(fn, 0);
     };
 
-  Promise._unhandledRejectionFn = function _unhandledRejectionFn(err) {
-    if (typeof console !== 'undefined' && console) {
-      console.warn('Possible Unhandled Promise Rejection:', err); // eslint-disable-line no-console
-    }
-  };
+    Enumerator.prototype._willSettleAt = function _willSettleAt(promise, i) {
+      var enumerator = this;
 
-  return Promise;
+      subscribe(promise, undefined, function (value) {
+        return enumerator._settledAt(FULFILLED, i, value);
+      }, function (reason) {
+        return enumerator._settledAt(REJECTED, i, reason);
+      });
+    };
+
+    return Enumerator;
+  }();
+
+  /**
+   `Promise.all` accepts an array of promises, and returns a new promise which
+   is fulfilled with an array of fulfillment values for the passed promises, or
+   rejected with the reason of the first passed promise to be rejected. It casts all
+   elements of the passed iterable to promises as it runs this algorithm.
+
+   Example:
+
+   ```javascript
+   let promise1 = resolve(1);
+   let promise2 = resolve(2);
+   let promise3 = resolve(3);
+   let promises = [ promise1, promise2, promise3 ];
+
+   Promise.all(promises).then(function(array){
+    // The array here would be [ 1, 2, 3 ];
+  });
+   ```
+
+   If any of the `promises` given to `all` are rejected, the first promise
+   that is rejected will be given as an argument to the returned promises's
+   rejection handler. For example:
+
+   Example:
+
+   ```javascript
+   let promise1 = resolve(1);
+   let promise2 = reject(new Error("2"));
+   let promise3 = reject(new Error("3"));
+   let promises = [ promise1, promise2, promise3 ];
+
+   Promise.all(promises).then(function(array){
+    // Code here never runs because there are rejected promises!
+  }, function(error) {
+    // error.message === "2"
+  });
+   ```
+
+   @method all
+   @static
+   @param {Array} entries array of promises
+   @param {String} label optional string for labeling the promise.
+   Useful for tooling.
+   @return {Promise} promise that is fulfilled when all `promises` have been
+   fulfilled, or rejected if any of them become rejected.
+   @static
+   */
+  function all(entries) {
+    return new Enumerator(this, entries).promise;
+  }
+
+  /**
+   `Promise.race` returns a new promise which is settled in the same way as the
+   first passed promise to settle.
+
+   Example:
+
+   ```javascript
+   let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+   let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 2');
+    }, 100);
+  });
+
+   Promise.race([promise1, promise2]).then(function(result){
+    // result === 'promise 2' because it was resolved before promise1
+    // was resolved.
+  });
+   ```
+
+   `Promise.race` is deterministic in that only the state of the first
+   settled promise matters. For example, even if other promises given to the
+   `promises` array argument are resolved, but the first settled promise has
+   become rejected before the other promises became fulfilled, the returned
+   promise will become rejected:
+
+   ```javascript
+   let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+   let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      reject(new Error('promise 2'));
+    }, 100);
+  });
+
+   Promise.race([promise1, promise2]).then(function(result){
+    // Code here never runs
+  }, function(reason){
+    // reason.message === 'promise 2' because promise 2 became rejected before
+    // promise 1 became fulfilled
+  });
+   ```
+
+   An example real-world use case is implementing timeouts:
+
+   ```javascript
+   Promise.race([ajax('foo.json'), timeout(5000)])
+   ```
+
+   @method race
+   @static
+   @param {Array} promises array of promises to observe
+   Useful for tooling.
+   @return {Promise} a promise which settles in the same way as the first passed
+   promise to settle.
+   */
+  function race(entries) {
+    /*jshint validthis:true */
+    var Constructor = this;
+
+    if (!isArray(entries)) {
+      return new Constructor(function (_, reject) {
+        return reject(new TypeError('You must pass an array to race.'));
+      });
+    } else {
+      return new Constructor(function (resolve, reject) {
+        var length = entries.length;
+        for (var i = 0; i < length; i++) {
+          Constructor.resolve(entries[i]).then(resolve, reject);
+        }
+      });
+    }
+  }
+
+  /**
+   `Promise.reject` returns a promise rejected with the passed `reason`.
+   It is shorthand for the following:
+
+   ```javascript
+   let promise = new Promise(function(resolve, reject){
+    reject(new Error('WHOOPS'));
+  });
+
+   promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+   ```
+
+   Instead of writing the above, your code now simply becomes the following:
+
+   ```javascript
+   let promise = Promise.reject(new Error('WHOOPS'));
+
+   promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+   ```
+
+   @method reject
+   @static
+   @param {Any} reason value that the returned promise will be rejected with.
+   Useful for tooling.
+   @return {Promise} a promise rejected with the given `reason`.
+   */
+  function reject$1(reason) {
+    /*jshint validthis:true */
+    var Constructor = this;
+    var promise = new Constructor(noop);
+    reject(promise, reason);
+    return promise;
+  }
+
+  function needsResolver() {
+    throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+  }
+
+  function needsNew() {
+    throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
+  }
+
+  /**
+   Promise objects represent the eventual result of an asynchronous operation. The
+   primary way of interacting with a promise is through its `then` method, which
+   registers callbacks to receive either a promise's eventual value or the reason
+   why the promise cannot be fulfilled.
+
+   Terminology
+   -----------
+
+   - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
+   - `thenable` is an object or function that defines a `then` method.
+   - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
+   - `exception` is a value that is thrown using the throw statement.
+   - `reason` is a value that indicates why a promise was rejected.
+   - `settled` the final resting state of a promise, fulfilled or rejected.
+
+   A promise can be in one of three states: pending, fulfilled, or rejected.
+
+   Promises that are fulfilled have a fulfillment value and are in the fulfilled
+   state.  Promises that are rejected have a rejection reason and are in the
+   rejected state.  A fulfillment value is never a thenable.
+
+   Promises can also be said to *resolve* a value.  If this value is also a
+   promise, then the original promise's settled state will match the value's
+   settled state.  So a promise that *resolves* a promise that rejects will
+   itself reject, and a promise that *resolves* a promise that fulfills will
+   itself fulfill.
+
+
+   Basic Usage:
+   ------------
+
+   ```js
+   let promise = new Promise(function(resolve, reject) {
+    // on success
+    resolve(value);
+
+    // on failure
+    reject(reason);
+  });
+
+   promise.then(function(value) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+   ```
+
+   Advanced Usage:
+   ---------------
+
+   Promises shine when abstracting away asynchronous interactions such as
+   `XMLHttpRequest`s.
+
+   ```js
+   function getJSON(url) {
+    return new Promise(function(resolve, reject){
+      let xhr = new XMLHttpRequest();
+
+      xhr.open('GET', url);
+      xhr.onreadystatechange = handler;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.send();
+
+      function handler() {
+        if (this.readyState === this.DONE) {
+          if (this.status === 200) {
+            resolve(this.response);
+          } else {
+            reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
+          }
+        }
+      };
+    });
+  }
+
+   getJSON('/posts.json').then(function(json) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+   ```
+
+   Unlike callbacks, promises are great composable primitives.
+
+   ```js
+   Promise.all([
+   getJSON('/posts'),
+   getJSON('/comments')
+   ]).then(function(values){
+    values[0] // => postsJSON
+    values[1] // => commentsJSON
+
+    return values;
+  });
+   ```
+
+   @class Promise
+   @param {Function} resolver
+   Useful for tooling.
+   @constructor
+   */
+
+  var Promise$2 = function () {
+    function Promise(resolver) {
+      this[PROMISE_ID] = nextId();
+      this._result = this._state = undefined;
+      this._subscribers = [];
+
+      if (noop !== resolver) {
+        typeof resolver !== 'function' && needsResolver();
+        this instanceof Promise ? initializePromise(this, resolver) : needsNew();
+      }
+    }
+
+    /**
+     The primary way of interacting with a promise is through its `then` method,
+     which registers callbacks to receive either a promise's eventual value or the
+     reason why the promise cannot be fulfilled.
+     ```js
+     findUser().then(function(user){
+    // user is available
+  }, function(reason){
+    // user is unavailable, and you are given the reason why
+  });
+     ```
+     Chaining
+     --------
+     The return value of `then` is itself a promise.  This second, 'downstream'
+     promise is resolved with the return value of the first promise's fulfillment
+     or rejection handler, or rejected if the handler throws an exception.
+     ```js
+     findUser().then(function (user) {
+    return user.name;
+  }, function (reason) {
+    return 'default name';
+  }).then(function (userName) {
+    // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
+    // will be `'default name'`
+  });
+     findUser().then(function (user) {
+    throw new Error('Found user, but still unhappy');
+  }, function (reason) {
+    throw new Error('`findUser` rejected and we're unhappy');
+  }).then(function (value) {
+    // never reached
+  }, function (reason) {
+    // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
+    // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
+  });
+     ```
+     If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
+     ```js
+     findUser().then(function (user) {
+    throw new PedagogicalException('Upstream error');
+  }).then(function (value) {
+    // never reached
+  }).then(function (value) {
+    // never reached
+  }, function (reason) {
+    // The `PedgagocialException` is propagated all the way down to here
+  });
+     ```
+     Assimilation
+     ------------
+     Sometimes the value you want to propagate to a downstream promise can only be
+     retrieved asynchronously. This can be achieved by returning a promise in the
+     fulfillment or rejection handler. The downstream promise will then be pending
+     until the returned promise is settled. This is called *assimilation*.
+     ```js
+     findUser().then(function (user) {
+    return findCommentsByAuthor(user);
+  }).then(function (comments) {
+    // The user's comments are now available
+  });
+     ```
+     If the assimliated promise rejects, then the downstream promise will also reject.
+     ```js
+     findUser().then(function (user) {
+    return findCommentsByAuthor(user);
+  }).then(function (comments) {
+    // If `findCommentsByAuthor` fulfills, we'll have the value here
+  }, function (reason) {
+    // If `findCommentsByAuthor` rejects, we'll have the reason here
+  });
+     ```
+     Simple Example
+     --------------
+     Synchronous Example
+     ```javascript
+     let result;
+     try {
+    result = findResult();
+    // success
+  } catch(reason) {
+    // failure
+  }
+     ```
+     Errback Example
+     ```js
+     findResult(function(result, err){
+    if (err) {
+      // failure
+    } else {
+      // success
+    }
+  });
+     ```
+     Promise Example;
+     ```javascript
+     findResult().then(function(result){
+    // success
+  }, function(reason){
+    // failure
+  });
+     ```
+     Advanced Example
+     --------------
+     Synchronous Example
+     ```javascript
+     let author, books;
+     try {
+    author = findAuthor();
+    books  = findBooksByAuthor(author);
+    // success
+  } catch(reason) {
+    // failure
+  }
+     ```
+     Errback Example
+     ```js
+     function foundBooks(books) {
+   }
+     function failure(reason) {
+   }
+     findAuthor(function(author, err){
+    if (err) {
+      failure(err);
+      // failure
+    } else {
+      try {
+        findBoooksByAuthor(author, function(books, err) {
+          if (err) {
+            failure(err);
+          } else {
+            try {
+              foundBooks(books);
+            } catch(reason) {
+              failure(reason);
+            }
+          }
+        });
+      } catch(error) {
+        failure(err);
+      }
+      // success
+    }
+  });
+     ```
+     Promise Example;
+     ```javascript
+     findAuthor().
+     then(findBooksByAuthor).
+     then(function(books){
+      // found books
+  }).catch(function(reason){
+    // something went wrong
+  });
+     ```
+     @method then
+     @param {Function} onFulfilled
+     @param {Function} onRejected
+     Useful for tooling.
+     @return {Promise}
+     */
+
+    /**
+     `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
+     as the catch block of a try/catch statement.
+     ```js
+     function findAuthor(){
+  throw new Error('couldn't find that author');
+  }
+     // synchronous
+     try {
+  findAuthor();
+  } catch(reason) {
+  // something went wrong
+  }
+     // async with promises
+     findAuthor().catch(function(reason){
+  // something went wrong
+  });
+     ```
+     @method catch
+     @param {Function} onRejection
+     Useful for tooling.
+     @return {Promise}
+     */
+
+
+    Promise.prototype.catch = function _catch(onRejection) {
+      return this.then(null, onRejection);
+    };
+
+    /**
+     `finally` will be invoked regardless of the promise's fate just as native
+     try/catch/finally behaves
+
+     Synchronous example:
+
+     ```js
+     findAuthor() {
+      if (Math.random() > 0.5) {
+        throw new Error();
+      }
+      return new Author();
+    }
+
+     try {
+      return findAuthor(); // succeed or fail
+    } catch(error) {
+      return findOtherAuther();
+    } finally {
+      // always runs
+      // doesn't affect the return value
+    }
+     ```
+
+     Asynchronous example:
+
+     ```js
+     findAuthor().catch(function(reason){
+      return findOtherAuther();
+    }).finally(function(){
+      // author was either found, or not
+    });
+     ```
+
+     @method finally
+     @param {Function} callback
+     @return {Promise}
+     */
+
+
+    Promise.prototype.finally = function _finally(callback) {
+      var promise = this;
+      var constructor = promise.constructor;
+
+      return promise.then(function (value) {
+        return constructor.resolve(callback()).then(function () {
+          return value;
+        });
+      }, function (reason) {
+        return constructor.resolve(callback()).then(function () {
+          throw reason;
+        });
+      });
+    };
+
+    return Promise;
+  }();
+
+  Promise$2.prototype.then = then;
+  Promise$2.all = all;
+  Promise$2.race = race;
+  Promise$2.resolve = resolve$1;
+  Promise$2.reject = reject$1;
+  Promise$2._setScheduler = setScheduler;
+  Promise$2._setAsap = setAsap;
+  Promise$2._asap = asap;
+
+  /*global self*/
+  function polyfill() {
+    var local = void 0;
+
+    if (typeof global !== 'undefined') {
+      local = global;
+    } else if (typeof self !== 'undefined') {
+      local = self;
+    } else {
+      try {
+        local = Function('return this')();
+      } catch (e) {
+        throw new Error('polyfill failed because global object is unavailable in this environment');
+      }
+    }
+
+    var P = local.Promise;
+
+    if (P) {
+      var promiseToString = null;
+      try {
+        promiseToString = Object.prototype.toString.call(P.resolve());
+      } catch (e) {
+        // silently ignored
+      }
+
+      if (promiseToString === '[object Promise]' && !P.cast) {
+        return;
+      }
+    }
+
+    local.Promise = Promise$2;
+  }
+
+// Strange compat..
+  Promise$2.polyfill = polyfill;
+  Promise$2.Promise = Promise$2;
+
+  Promise$2.polyfill();
+
+  return Promise$2;
 
 })));
 
@@ -1884,6 +2793,42 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     };
   };
 
+  GalaxyView.safePropertyLookup = function (data, properties) {
+    properties = properties.split('.');
+    let property = properties[0];
+    const original = data;
+    let target = data;
+    let temp = data;
+    // var nestingLevel = 0;
+    if (data[property] === undefined) {
+      while (temp.__parent__) {
+        if (temp.__parent__.hasOwnProperty(property)) {
+          target = temp.__parent__;
+          break;
+        }
+
+        temp = temp.__parent__;
+      }
+
+      // if the property is not found in the parents then return the original object as the context
+      if (target[property] === undefined) {
+        target = original;
+      }
+    }
+
+    target = target || {};
+    const lastIndex = properties.length - 1;
+    properties.forEach(function (key, i) {
+      target = target[key];
+
+      if (i !== lastIndex && !(target instanceof Object)) {
+        target = {};
+      }
+    });
+
+    return target;
+  };
+
   GalaxyView.propertyLookup = function (data, properties) {
     properties = properties.split('.');
     let property = properties[0];
@@ -1907,28 +2852,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
       // if the property is not found in the parents then return the original object as the context
       if (target[property] === undefined) {
-        // debugger;
-        // let ph = original;
-        // properties.forEach(function (key) {
-        //   if(ph && ph.hasOwnProperty(key)) {
-        //     ph = ph[key];
-        //   } else {
-        //     debugger;
-        //   }
-        // });
-
         return original;
       }
     }
-
-    // let ph = target;
-    // properties.forEach(function (key) {
-    //   if(ph && ph.hasOwnProperty(key)) {
-    //     ph = ph[key];
-    //   } else {
-    //     debugger;
-    //   }
-    // });
 
     return target;
   };
@@ -1943,155 +2869,81 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     return target;
   };
 
-  /**
-   *
-   * @param {Array|Object} host
-   * @param {Galaxy.GalaxyView.ReactiveProperty} parent
-   */
-  GalaxyView.installParentFor = function (host, parent) {
-    if (host instanceof Array) {
-      let i = 0, len = host.length, itemPortal;
-      for (; i < len; i++) {
-        itemPortal = GalaxyView.getPortal(host[i]);
+  // /**
+  //  *
+  //  * @param {Array|Object} host
+  //  * @param {Galaxy.GalaxyView.ReactiveProperty} parent
+  //  */
+  // GalaxyView.installParentFor = function (host, parent) {
+  //   if (host instanceof Array) {
+  //     let i = 0, len = host.length, itemPortal;
+  //     for (; i < len; i++) {
+  //       itemPortal = GalaxyView.getPortal(host[i]);
+  //
+  //       if (parent instanceof Galaxy.GalaxyView.Portal) {
+  //         parent.parents.forEach(function (p) {
+  //           itemPortal.addParent(p, true);
+  //         });
+  //       } else {
+  //         itemPortal.addParent(parent, true);
+  //       }
+  //     }
+  //   } else {
+  //     const itemPortal = GalaxyView.getPortal(host);
+  //     if (parent instanceof Galaxy.GalaxyView.Portal) {
+  //       parent.parents.forEach(function (p) {
+  //         itemPortal.addParent(p, true);
+  //       });
+  //       // itemPortal.parents = parent.parents.slice(0);
+  //     } else {
+  //       itemPortal.addParent(parent, true);
+  //     }
+  //   }
+  // };
+  //
+  // /**
+  //  *
+  //  * @param {Array} list
+  //  * @param {Galaxy.GalaxyView.ReactiveProperty} parent
+  //  */
+  // GalaxyView.uninstallParentFor = function (list, parent) {
+  //   let itemPortal;
+  //   list.forEach(function (item) {
+  //     itemPortal = item[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+  //     if (parent instanceof Galaxy.GalaxyView.Portal) {
+  //       parent.parents.forEach(function (p) {
+  //         itemPortal.removeParent(p);
+  //       });
+  //     } else {
+  //       itemPortal.removeParent(parent);
+  //     }
+  //   });
+  // };
 
-        if (parent instanceof Galaxy.GalaxyView.Portal) {
-          parent.parents.forEach(function (p) {
-            itemPortal.addParent(p, true);
-          });
-        } else {
-          itemPortal.addParent(parent, true);
-        }
-      }
-    } else {
-      const itemPortal = GalaxyView.getPortal(host);
-      if (parent instanceof Galaxy.GalaxyView.Portal) {
-        parent.parents.forEach(function (p) {
-          itemPortal.addParent(p, true);
-        });
-        // itemPortal.parents = parent.parents.slice(0);
-      } else {
-        itemPortal.addParent(parent, true);
-      }
-    }
-  };
-
-  /**
-   *
-   * @param {Array} list
-   * @param {Galaxy.GalaxyView.ReactiveProperty} parent
-   */
-  GalaxyView.uninstallParentFor = function (list, parent) {
-    let itemPortal;
-    list.forEach(function (item) {
-      itemPortal = item[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-      if (parent instanceof Galaxy.GalaxyView.Portal) {
-        parent.parents.forEach(function (p) {
-          itemPortal.removeParent(p);
-        });
-      } else {
-        itemPortal.removeParent(parent);
-      }
-    });
-  };
-
-  GalaxyView.getPortal = function (host, parent) {
-    const portal = host[GalaxyView.PORTAL_PROPERTY_IDENTIFIER] || GalaxyView.initPortalFor(host, true);
-
-    if (parent) {
-      portal.addParent(parent);
-    }
-
-    return portal;
-  };
-
-  GalaxyView.setPortalFor = function (data, portal) {
-    if (!data.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
-      defineProp(data, GalaxyView.PORTAL_PROPERTY_IDENTIFIER, {
-        writable: true,
-        configurable: true,
-        enumerable: false,
-        value: portal
-      });
-    } else {
-      data[GalaxyView.PORTAL_PROPERTY_IDENTIFIER] = portal;
-    }
-
-    return data[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-  };
-
-  /**
-   *
-   * @param {Object} structure
-   * @param {string} key
-   * @param {any} config
-   * @returns {Galaxy.GalaxyView.ReactiveProperty}
-   */
-  GalaxyView.createReactiveProperty = function (structure, key, config) {
-    // structure will be null if the direct parent og config.scopeValue is an array
-    if (!structure) {
-      structure = config.valueScope;
-      defineProp(config.valueScope, '__shadow__', {
-        enumerable: false,
-        configurable: true,
-        value: true
-      });
-    }
-
-    const portal = GalaxyView.getPortal(structure);
-
-    const referenceName = key;
-    const reactiveProperty = new GalaxyView.ReactiveProperty(config.expression ? {} : portal, config.alias || key);
-    const parentId = config.parentId ? config.parentId + '.' : '';
-    reactiveProperty.id = parentId + key;
-    portal.setProperty(reactiveProperty, key);
-    reactiveProperty.initValue(config.initValue);
-
-    // Default getter
-    let getter = function () {
-      /** @type {Galaxy.GalaxyView.ReactiveProperty} */
-      const property = this[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].props[referenceName];
-      // reactiveProperty;
-
-      if (!property) {
-        debugger;
-        reactiveProperty;
-        console.info('lets do it from here', referenceName, this);
-        return property;
-      }
-
-      return property.value;
-    };
-
-    // Default setter
-    let setter = function (val) {
-      const p = this[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-      p.notify(key, val);
-      // p.notifyParents();
-    };
-
-    if (config.expression) {
-      getter = function exp() {
-        console.info('exp getter', this);
-        return config.expression();
-      };
-      setter = undefined;
-    }
-
-    setterAndGetter.enumerable = config.enumerable;
-    setterAndGetter.get = getter;
-    setterAndGetter.set = setter;
-    defineProp(structure, key, setterAndGetter);
-
-    if (config.valueScope) {
-      if (!config.valueScope.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER) || config.valueScope instanceof Array) {
-        GalaxyView.setPortalFor(config.valueScope, portal);
-      }
-
-      defineProp(config.valueScope, key, setterAndGetter);
-    }
-
-    return reactiveProperty;
-  };
+  // GalaxyView.getPortal = function (host, parent) {
+  //   const portal = host[GalaxyView.PORTAL_PROPERTY_IDENTIFIER] || GalaxyView.initPortalFor(host, true);
+  //
+  //   if (parent) {
+  //     portal.addParent(parent);
+  //   }
+  //
+  //   return portal;
+  // };
+  //
+  // GalaxyView.setPortalFor = function (data, portal) {
+  //   if (!data.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
+  //     defineProp(data, GalaxyView.PORTAL_PROPERTY_IDENTIFIER, {
+  //       writable: true,
+  //       configurable: true,
+  //       enumerable: false,
+  //       value: portal
+  //     });
+  //   } else {
+  //     data[GalaxyView.PORTAL_PROPERTY_IDENTIFIER] = portal;
+  //   }
+  //
+  //   return data[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+  // };
 
   GalaxyView.EXPRESSION_ARGS_FUNC_CACHE = {};
 
@@ -2106,7 +2958,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     let middle = '';
     for (let i = 0, len = variables.length; i < len; i++) {
-      middle += 'prop(scope, "' + variables[i] + '").' + variables[i] + ',';
+      // middle += 'prop(scope, "' + variables[i] + '").' + variables[i] + ',';
+      middle += 'prop(scope, "' + variables[i] + '"),';
     }
 
     // Take care of variables that contain square brackets like '[variable_name]'
@@ -2121,13 +2974,13 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     return func;
   };
 
-  GalaxyView.createExpressionFunction = function (host, handler, variables, scope, on) {
+  GalaxyView.createExpressionFunction = function (host, handler, variables, scope) {
     let getExpressionArguments = Galaxy.GalaxyView.createExpressionArgumentsProvider(variables);
 
     return function () {
       let args = [];
       try {
-        args = getExpressionArguments.call(host, Galaxy.GalaxyView.propertyLookup, scope);
+        args = getExpressionArguments.call(host, Galaxy.GalaxyView.safePropertyLookup, scope);
       } catch (ex) {
         console.error('Can\'t find the property: \n' + variables.join('\n'), '\n\nIt is recommended to inject the parent object instead' +
           ' of its property.\n\n', scope, '\n', ex);
@@ -2138,47 +2991,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
   /**
    *
-   * @param data
-   * @param {Galaxy.GalaxyView.ReactiveProperty} parent
-   */
-  GalaxyView.makeReactive = function (data, parent) {
-    if (data instanceof Array) {
-      data.forEach(function (item) {
-        // We don't want to use array indexes as keys or make array indexes reactive for that matter
-        // So we add the array as a parent, for each of its item.
-        // This will cause that the array items will be orphan
-        GalaxyView.makeReactive(item);
-        GalaxyView.getPortal(item).addParent(parent, true);
-      });
-    } else if (data !== null && typeof data === 'object') {
-      let initValuePortal;
-      let structure = null;
-      if (!parent) {
-        initValuePortal = GalaxyView.getPortal(data);
-      } else {
-        initValuePortal = GalaxyView.getPortal(parent.structure);
-        initValuePortal.addParent(parent, false);
-        structure = parent.structure;
-      }
-
-      for (let key in data) {
-        if (data.hasOwnProperty(key) && !initValuePortal.props.hasOwnProperty(key)) {
-          GalaxyView.createReactiveProperty(structure, key, {
-            enumerable: true,
-            valueScope: data,
-            initValue: data[key],
-            parentId: parent ? parent.id : ''
-          });
-        }
-      }
-    }
-  };
-
-  /**
-   *
    * @param {Galaxy.GalaxyView.ViewNode | Object} target
    * @param {String} targetKeyName
-   * @param {Galaxy.GalaxyView.ReactiveProperty} scopeData
+   * @param {Galaxy.GalaxyView.ReactiveData} scopeData
    * @param {Object} bindings
    * @param {number} expressionArgumentsCount
    * @param {Galaxy.GalaxyView.ReactiveData} parentReactiveData
@@ -2192,16 +3007,25 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     // Create reactive property for each property on the scope data
     // Use that property structure to create further bindings
 
-    let shadow = scopeData;
+    // let shadow = scopeData;
     let value = scopeData;
 
-    if (scopeData instanceof GalaxyView.ReactiveProperty) {
-      shadow = scopeData.structure;
-      value = scopeData.value;
+    if (!parentReactiveData && !(scopeData instanceof Galaxy.GalaxyScope)) {
+      if (scopeData.hasOwnProperty('__rd__')) {
+        parentReactiveData = scopeData.__rd__;
+      } else {
+        parentReactiveData = new Galaxy.GalaxyView.ReactiveData(targetKeyName, value);
+      }
+      // debugger;
     }
+
+    // if (scopeData instanceof GalaxyView.ReactiveProperty) {
+    //   // shadow = scopeData.structure;
+    //   value = scopeData.value;
+    // }
     // else if (scopeData.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
-      // If scopeData has a portal already, then set that portal as the structure portal
-      // GalaxyView.setPortalFor(structure, scopeData[GalaxyView.PORTAL_PROPERTY_IDENTIFIER]);
+    // If scopeData has a portal already, then set that portal as the structure portal
+    // GalaxyView.setPortalFor(structure, scopeData[GalaxyView.PORTAL_PROPERTY_IDENTIFIER]);
     // }
 
     let propertyKeysPaths = bindings.propertyKeysPaths;
@@ -2233,13 +3057,13 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let propertyKeyPath = null;
     let childPropertyKeyPath = null;
     let initValue = null;
-    let aliasPropertyName = false;
+    // let aliasPropertyName = false;
     let propertyKeyPathItems = [];
 
     for (let i = 0, len = propertyKeysPaths.length; i < len; i++) {
       propertyKeyPath = propertyKeysPaths[i];
       childPropertyKeyPath = null;
-      aliasPropertyName = false;
+      // aliasPropertyName = false;
 
       propertyKeyPathItems = propertyKeyPath.split('.');
       if (propertyKeyPathItems.length > 1) {
@@ -2255,7 +3079,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         i = 1;
         propertyKeyPath = propertyKeyPathItems.shift();
         childPropertyKeyPath = null;
-        aliasPropertyName = 'this.' + propertyKeyPath;
+        // aliasPropertyName = 'this.' + propertyKeyPath;
         // shadow = GalaxyView.propertyLookup(target.data, propertyKeyPath);
       } else {
         // shadow = GalaxyView.propertyLookup(shadow, propertyKeyPath);
@@ -2275,15 +3099,15 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         initValue = value[propertyKeyPath];
       }
 
-      let enumerable = true;
-      if (propertyKeyPath === 'length' && value instanceof Array) {
-        propertyKeyPath = '_length';
-        aliasPropertyName = 'length';
-        enumerable = false;
-      }
+      // let enumerable = true;
+      // if (propertyKeyPath === 'length' && value instanceof Array) {
+      //   propertyKeyPath = '_length';
+      //   aliasPropertyName = 'length';
+      //   enumerable = false;
+      // }
 
       /** @type Galaxy.GalaxyView.ReactiveProperty */
-      // let reactiveProperty = shadowPortal.props[propertyKeyPath];
+        // let reactiveProperty = shadowPortal.props[propertyKeyPath];
 
       let reactiveData;
 
@@ -2299,7 +3123,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       } else {
         parentReactiveData.addKeyToShadow(propertyKeyPath);
       }
-      parentReactiveData;
+      // parentReactiveData;
       // debugger;
       // if (typeof reactiveProperty === 'undefined') {
       //   reactiveProperty = GalaxyView.createReactiveProperty(shadow, propertyKeyPath, {
@@ -2338,6 +3162,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           // TODO: you can somehow specify the interlink here, then you can implement a process that keeps the top-down data flow
           // reactiveProperty.addNode(target, targetKeyName, expression, scopeData);
         }
+        // if(propertyKeyPath === 'people') debugger;
         // reactiveProperty.addNode(target, targetKeyName, expression, scopeData);
         parentReactiveData.addNode(target, targetKeyName, propertyKeyPath, expression, scopeData);
       }
@@ -2465,79 +3290,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
   /**
    *
-   * @param {Array} value
-   * @param {Galaxy.GalaxyView.Portal} portal
-   * @returns {{original: *, type: string, params: *}}
-   */
-  GalaxyView.createActiveArray = function (value, portal, newProperty) {
-    let changes = {
-      original: value,
-      type: 'reset',
-      params: value
-    };
-
-    let oldChanges = Object.assign({}, changes);
-
-    if (value['reactive']) {
-      portal.update(changes, oldChanges, newProperty);
-
-      return changes;
-    }
-
-    const arrayProto = Array.prototype;
-    const methods = [
-      'push',
-      'pop',
-      'shift',
-      'unshift',
-      'splice',
-      'sort',
-      'reverse'
-    ];
-    let arr = value;
-    let i = 0;
-    let args;
-
-    boundPropertyReference.value = true;
-    defineProp(value, 'reactive', boundPropertyReference);
-
-    methods.forEach(function (method) {
-      let original = arrayProto[method];
-      defineProp(value, method, {
-        value: function () {
-          i = arguments.length;
-          args = new Array(i);
-          while (i--) {
-            args[i] = arguments[i];
-          }
-
-          let result = original.apply(this, args);
-
-          if (typeof arr._length !== 'undefined') {
-            arr._length = arr.length;
-          }
-
-          changes.type = method;
-          changes.params = args;
-          changes.result = result;
-
-          portal.update(changes, oldChanges);
-          oldChanges = Object.assign({}, changes);
-
-          return result;
-        },
-        writable: false,
-        configurable: true
-      });
-    });
-
-    portal.update(changes, oldChanges, newProperty);
-
-    return changes;
-  };
-
-  /**
-   *
    * @param {Galaxy.GalaxyView.ViewNode} node
    * @param {string} key
    * @param scopeData
@@ -2568,7 +3320,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
   };
 
-  GalaxyView.createSetter = function (viewNode, key, valueProperty, scopeProperty, expression) {
+  GalaxyView.createSetter = function (viewNode, key, scopeProperty, expression) {
     let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[key];
 
     if (!property) {
@@ -2633,7 +3385,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {Object} scopeData
    * @param {Object} nodeSchema
    * @param position
-   * @param {Array} domManipulationBus
    * @param {null|Object} localScope
    */
   GalaxyView.createNode = function (parent, scopeData, nodeSchema, position, localScope) {
@@ -2770,232 +3521,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
 /* global Galaxy */
 
-Galaxy.GalaxyView.Portal = /** @class */ (function () {
-  const GV = Galaxy.GalaxyView;
-
-  /**
-   * @constructor
-   */
-  function Portal(data) {
-    if (data && data.hasOwnProperty(GV.PORTAL_PROPERTY_IDENTIFIER)) {
-      return data[GV.PORTAL_PROPERTY_IDENTIFIER];
-    }
-
-    /** @type Galaxy.GalaxyView.ReactiveProperty */
-    this.parents = [];
-    this.props = {};
-  }
-
-  Portal.prototype.notify = function (key, value) {
-    const props = this.getPropertiesByKey(key);
-
-    let valuePortal;
-    // if (value && value[GV.PORTAL_PROPERTY_IDENTIFIER]) {
-    //   valuePortal = value[GV.PORTAL_PROPERTY_IDENTIFIER];
-    //   // TODO: Add this portal to the valuePortal
-    // }
-
-    if (value instanceof Array) {
-      // Make the array reactive if it's not
-      // TODO: if key has a value, this portal should be removed from it
-      // valuePortal = new Portal(value);
-      // value.forEach(function (item) {
-      //   props.forEach(function (prop) {
-      //     item[GV.PORTAL_PROPERTY_IDENTIFIER].addParent(prop);
-      //   });
-      // });
-    } else if (value instanceof Object) {
-      // Make object reactive if it's not
-      // TODO: if key has a value, this portal should be removed from it
-      // valuePortal = new Portal(value);
-      // props.forEach(function (prop) {
-      //   let oldPortalShadowPortal = prop.structure[GV.PORTAL_PROPERTY_IDENTIFIER];
-      //   oldPortalShadowPortal.removeParent(props[key]);
-      // });
-    }
-
-    props.forEach(function (prop) {
-      prop.notify(value);
-    });
-  };
-
-  Portal.prototype.update = function (changes, oldChanges, newProperty) {
-    if (changes) {
-      if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
-        GV.installParentFor(changes.params, this);
-      } else if (changes.type === 'shift' || changes.type === 'pop') {
-        GV.uninstallParentFor([changes.result], this);
-      } else if (changes.type === 'splice' || changes.type === 'reset') {
-        GV.uninstallParentFor(changes.result, this);
-      }
-    }
-
-    if (newProperty) {
-      return newProperty.setValueChange(changes, oldChanges);
-    }
-
-    for (let i = 0, len = this.parents.length; i < len; i++) {
-      this.parents[i].setValueChange(changes, oldChanges);
-    }
-  };
-
-  Portal.prototype.getPropertiesByKey = function (key) {
-    const properties = [];
-    this.parents.forEach(function (parent) {
-      const prop = parent.getProperty(key);
-      if (prop) {
-        properties.push(prop);
-      }
-    });
-
-    return properties;
-  };
-
-  // Portal.prototype.observe = function (data) {
-  //   for (let key in data) {
-  //     this.setupProp(data, key);
-  //   }
-  // };
-  //
-  Portal.prototype.setupProp = function (structure, key) {
-    const _this = this;
-    let _value = structure[key];
-
-    Object.defineProperty(structure, key, {
-      get: function () {
-        return _value;
-      },
-      set: function (newValue) {
-        _value = newValue;
-        _this.notify(key);
-      },
-      enumerable: true,
-      configurable: true
-    });
-  };
-
-  Portal.prototype.getParents = function () {
-    return this.parents;
-  };
-
-  Portal.prototype.getParents = function () {
-    return this.parents;
-  };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ReactiveProperty} owner
-   * @param {boolean} inIsolation
-   */
-  Portal.prototype.addParent = function (owner, inIsolation,data) {
-    if (this.parents.indexOf(owner) === -1) {
-      this.parents.push(owner);
-    }
-
-    if (!inIsolation) {
-      owner.structure[GV.PORTAL_PROPERTY_IDENTIFIER].parents = this.parents;
-    }
-  };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ReactiveProperty} owner
-   */
-  Portal.prototype.removeParent = function (owner) {
-    let index = this.parents.indexOf(owner);
-    if (index !== -1) {
-      this.parents.splice(index, 1);
-    }
-  };
-
-  /**
-   *
-   * @return {Array<Galaxy.GalaxyView.ReactiveProperty>}
-   */
-  Portal.prototype.getPropertiesList = function () {
-    let list = [];
-    const keys = Object.keys(this.props);
-    let i = 0;
-
-    for (const len = keys.length; i < len; i++) {
-      list.push(this.props[keys[i]]);
-    }
-
-    return list;
-  };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ReactiveProperty} property
-   * @param {string} key
-   */
-  Portal.prototype.setProperty = function (property, key) {
-    this.props[key] = property;
-  };
-
-  Portal.prototype.getValueOf = function (key) {
-    const prop = this.props[key];
-
-    return prop ? prop.value : undefined;
-  };
-
-  Portal.prototype.clone = function (clean) {
-    const clone = new Portal();
-    clone.props = {};
-    let prop, cloneProp;
-    for (let key in this.props) {
-      prop = this.props[key];
-      cloneProp = prop.clone(clone, clean);
-      cloneProp.value = prop.value;
-      clone.setProperty(cloneProp, key);
-    }
-
-    return clone;
-  };
-
-  /**
-   *
-   * @param data
-   * @param {Galaxy.GalaxyView.ReactiveProperty} parent
-   */
-  Portal.prototype.prepare = function (data) {
-    const _this = this;
-    if (data instanceof Array) {
-      data.forEach(function (item) {
-        // We don't want to use array indexes as keys or make array indexes reactive for that matter
-        // So we add the array as a parent, for each of its item.
-        // This will cause that the array items will be orphan
-        _this.prepare(item);
-        // GalaxyView.getPortal(item).addParent(parent, true);
-      });
-    } else if (data !== null && typeof data === 'object') {
-      let initValuePortal;
-      let structure = null;
-      if (!parent) {
-        initValuePortal = _this.getPortal(data);
-      } else {
-        initValuePortal = _this.getPortal(parent.structure);
-        initValuePortal.addParent(parent);
-        structure = parent.structure;
-      }
-
-      for (let key in data) {
-        if (data.hasOwnProperty(key) && !initValuePortal.props.hasOwnProperty(key)) {
-          _this.setupProperty(structure, key, {
-            enumerable: true,
-            valueScope: data,
-            initValue: data[key]
-          });
-        }
-      }
-    }
-  };
-
-  return Portal;
-}());
-
-/* global Galaxy */
-
 Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
   const GV = Galaxy.GalaxyView;
   const objKeys = Object.keys;
@@ -3009,10 +3534,20 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
 
       },
 
-      makeReactive: function () {
+      makeReactiveObject: function () {
 
       }
     };
+  };
+
+  const uninstallRefFor = function (list, ref) {
+    let itemRD;
+    list.forEach(function (item) {
+      itemRD = item.__rd__;
+      if (itemRD) {
+        itemRD.removeRef(ref);
+      }
+    });
   };
 
   /**
@@ -3026,6 +3561,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     const parent = p || scopeBuilder();
     this.data = data;
     this.id = parent.id + '.' + id;
+    this.keyInParent = id;
     this.nodesMap = {};
     this.parent = parent;
     this.refs = [];
@@ -3044,9 +3580,8 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
 
       // data === null means that parent does not have this id
       if (this.data === null) {
-        debugger;
         this.data = {};
-        this.parent.makeReactive(this.parent.data, id);
+        this.parent.makeReactiveObject(this.parent.data, id, true);
       }
 
       defineProp(this.data, '__rd__', {
@@ -3059,16 +3594,30 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     }
 
     // this.parent.shadow[id] = this.shadow;
-    this.parent.shadow[id] = this;
+    if (this.parent.data instanceof Array) {
+
+    } else {
+      this.parent.shadow[id] = this;
+    }
   }
 
   ReactiveData.prototype.setData = function (data) {
     this.removeMyRef();
 
+    if (!(data instanceof Object)) {
+      this.data = {};
+      for (let key in this.shadow) {
+        this.notify(key);
+      }
+
+      return;
+    }
+
     this.data = data;
     if (data.hasOwnProperty('__rd__')) {
       this.data.__rd__.addRef(this);
       this.refs = this.data.__rd__.refs;
+      this.syncAll();
     } else {
       defineProp(this.data, '__rd__', {
         enumerable: false,
@@ -3076,30 +3625,31 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
         value: this
       });
 
-      this.walk(this.data);
-      debugger;
-    }
-
-    // Setup shadow properties
-    for (let key in this.shadow) {
-      if (!this.data.hasOwnProperty(key)) {
-        this.makeReactive(this.data, key);
+      if (this.data instanceof Array) {
+        this.makeReactiveArray(this.data);
+      } else {
+        this.walk(this.data);
       }
     }
-    debugger;
+
+    this.setupShadowProperties();
   };
 
   ReactiveData.prototype.walk = function (data) {
+    const _this = this;
     if (data instanceof Array) {
-      throw Error('Not implemented yet');
+      _this.makeReactiveArray(data);
+      // data.forEach(function (item, i) {
+      //   new Galaxy.GalaxyView.ReactiveData(i, item, _this);
+      // });
     } else if (data instanceof Object) {
       for (let key in data) {
-        this.makeReactive(data, key);
+        _this.makeReactiveObject(data, key);
       }
     }
   };
 
-  ReactiveData.prototype.makeReactive = function (data, key) {
+  ReactiveData.prototype.makeReactiveObject = function (data, key, shadow) {
     const _this = this;
     let value = data[key];
 
@@ -3108,7 +3658,10 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
         return value;
       },
       set: function (val) {
+        // This means that the property suppose to be an object and there probably active binds to it
         if (_this.shadow[key]) {
+          _this.makeKeyEnum(key);
+          // setData provide downward data flow
           _this.shadow[key].setData(val);
         }
 
@@ -3118,48 +3671,188 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
 
         value = val;
 
-        _this.notify(key);
+        if (value instanceof Array) {
+          _this.updateNode(key, _this.makeReactiveArray(value));
+        } else {
+          _this.notify(key);
+        }
       },
-      enumerable: true,
+      enumerable: !shadow,
       configurable: true
     });
 
-    if (value instanceof Array) {
-      throw Error('Not implemented yet');
-    } else if (value instanceof Object) {
+    /*if (value instanceof Array) {
+      console.warn('makeReactive: Array is not implemented yet');
+      debugger;
+    } else*/
+    if (value instanceof Object) {
       this.data[key] = value;
-      // new Galaxy.GalaxyView.ReactiveData(key, value, _this);
     } else {
       this.shadow[key] = null;
     }
+
+    // Update the ui for this key
+    // This is for when the makeReactive method has been called by setData
+    this.sync(key);
   };
 
-  ReactiveData.prototype.notify = function (key) {
+  ReactiveData.prototype.makeReactiveArray = function (value) {
+    /**
+     *
+     * @type {Galaxy.GalaxyView.ReactiveData}
+     * @private
+     */
     const _this = this;
+    let changes = {
+      original: value,
+      type: 'reset',
+      params: value
+    };
+
+    let oldChanges = Object.assign({}, changes);
+
+    if (value.hasOwnProperty('live')) {
+      return changes;
+    }
+
+    const arrayProto = Array.prototype;
+    const methods = [
+      'push',
+      'pop',
+      'shift',
+      'unshift',
+      'splice',
+      'sort',
+      'reverse'
+    ];
+    // let arr = value;
+    let i = 0;
+    let args;
+
+    // boundPropertyReference.value = true;
+    // defineProp(value, 'reactive', boundPropertyReference);
+    _this.makeReactiveObject(value, 'live', true);
+    _this.sync('length');
+
+    methods.forEach(function (method) {
+      let original = arrayProto[method];
+      defineProp(value, method, {
+        value: function () {
+          i = arguments.length;
+          args = new Array(i);
+          while (i--) {
+            args[i] = arguments[i];
+          }
+
+          let result = original.apply(this, args);
+
+          // if (typeof arr._length !== 'undefined') {
+          //   arr._length = arr.length;
+          // }
+
+          changes.type = method;
+          changes.params = args;
+          changes.result = result;
+
+          // length nodes will be in this ReactiveData object
+          _this.sync('length');
+          // $for nodes will be in parent ReactiveData object
+          _this.parent.update(_this.keyInParent, changes, oldChanges);
+          oldChanges = Object.assign({}, changes);
+
+          return result;
+        },
+        writable: false,
+        configurable: true
+      });
+    });
+
+    return changes;
+  };
+
+  ReactiveData.prototype.notify = function (key, refs) {
+    const _this = this;
+
+    if (this.refs === refs) {
+      console.info('same refs', this.id);
+      // TODO: it seems that there is not need to sync ui here but test more to be sure!
+      // _this.sync(key);
+      return;
+    }
+
     _this.refs.forEach(function (ref) {
       if (_this === ref) {
         return;
       }
 
-      ref.notify(key);
+      ref.notify(key, _this.refs);
     });
 
-    // _this.sync(key);
-    _this.parent.sync(key);
+    _this.sync(key);
+    _this.parent.sync(_this.keyInParent);
   };
 
   ReactiveData.prototype.sync = function (key) {
+    const _this = this;
     const map = this.nodesMap[key];
     const value = this.data[key];
     if (map) {
       let key;
       map.nodes.forEach(function (node, i) {
         key = map.keys[i];
-        if (node instanceof Galaxy.GalaxyView.ViewNode) {
-          node.setters[key](value);
-        } else {
-          node[key] = value;
-        }
+        _this.syncNode(node, key, value);
+      });
+    }
+  };
+
+  ReactiveData.prototype.syncAll = function () {
+    const _this = this;
+    const keys = objKeys(this.data);
+    keys.forEach(function (key) {
+      _this.sync(key);
+    });
+  };
+
+  ReactiveData.prototype.syncNode = function (node, key, value) {
+    if (node instanceof Galaxy.GalaxyView.ViewNode) {
+      node.setters[key](value);
+    } else {
+      node[key] = value;
+    }
+  };
+
+  ReactiveData.prototype.update = function (key, changes) {
+    const _this = this;
+
+    if (changes) {
+      if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
+        changes.params.forEach(function (item) {
+          new Galaxy.GalaxyView.ReactiveData(changes.original.indexOf(item), item, _this);
+        });
+        // GV.installParentFor(changes.params, this);
+      } else if (changes.type === 'shift' || changes.type === 'pop') {
+        // GV.uninstallParentFor([changes.result], this);
+        // debugger;
+        // uninstallRefFor([changes.result], _this);
+        // debugger;
+      } else if (changes.type === 'splice' || changes.type === 'reset') {
+        // GV.uninstallParentFor(changes.result, this);
+        // uninstallRefFor(changes.result, _this);
+      }
+    }
+
+    this.updateNode(key, changes);
+  };
+
+  ReactiveData.prototype.updateNode = function (key, changes) {
+    const _this = this;
+    const map = this.nodesMap[key];
+
+    if (map) {
+      let key;
+      map.nodes.forEach(function (node, i) {
+        key = map.keys[i];
+        _this.syncNode(node, key, changes);
       });
     }
   };
@@ -3182,9 +3875,14 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
   };
 
   ReactiveData.prototype.removeMyRef = function () {
-    if (this.data && this.data.hasOwnProperty('__rd__') && this.data.__rd__ !== this) {
-      this.refs = [this];
-      this.data.__rd__.removeRef(this);
+    if (this.data && this.data.hasOwnProperty('__rd__')) {
+      if (this.data.__rd__ !== this) {
+        this.refs = [this];
+        this.data.__rd__.removeRef(this);
+      } else if (this.refs.length === 1) {
+        // TODO: Should be tested as much as possible to make sure it works with no bug
+        delete this.data.__rd__;
+      }
     }
   };
 
@@ -3194,7 +3892,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     })[0];
   };
 
-  ReactiveData.prototype.addNode = function (node, nodeKey, dataKey, expression, scopeProperty) {
+  ReactiveData.prototype.addNode = function (node, nodeKey, dataKey, expression/*, scopeProperty*/) {
     console.info('rd', nodeKey, dataKey);
 
     let map = this.nodesMap[dataKey];
@@ -3210,495 +3908,67 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     // Insure that same node with different property bind can exist
     if (index === -1 || map.keys[index] !== nodeKey) {
       if (node instanceof Galaxy.GalaxyView.ViewNode && !node.setters[nodeKey]) {
-        // node.installPropertySetter(this, nodeKey, expression, scopeProperty);
+        node.installSetter(this, nodeKey, expression);
       }
 
       map.keys.push(nodeKey);
       map.nodes.push(node);
+
+      let initValue = this.data[dataKey];
+      // We need initValue for cases where ui is bound to a property of an null object
+      if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {
+        initValue = {};
+      }
+
+      if (initValue instanceof Array) {
+        // this can not be in the syncNode because in the case of array, it is only called once
+        if (node instanceof Galaxy.GalaxyView.ViewNode) {
+          node.setters[nodeKey](this.makeReactiveArray(initValue));
+        } else {
+          node[nodeKey] = initValue;
+        }
+      } else {
+        this.syncNode(node, nodeKey, initValue);
+      }
+    }
+  };
+
+  ReactiveData.prototype.removeNode = function (node) {
+    let map;
+    for (let prop in this.nodesMap) {
+      map = this.nodesMap[prop];
+
+      let index = -1;
+      while ((index = map.nodes.indexOf(node)) !== -1) {
+        map.nodes.splice(index, 1);
+        map.keys.splice(index, 1);
+      }
     }
   };
 
   ReactiveData.prototype.addKeyToShadow = function (key) {
     this.shadow[key] = null;
-    // debugger;
-    // this.makeReactive(this.data, key);
+  };
+
+  ReactiveData.prototype.setupShadowProperties = function () {
+    for (let key in this.shadow) {
+      if (!this.data.hasOwnProperty(key)) {
+        this.makeReactiveObject(this.data, key, true);
+      } else if (this.shadow[key] instanceof Galaxy.GalaxyView.ReactiveData) {
+        this.shadow[key].setData(this.data[key]);
+      }
+    }
+  };
+
+  ReactiveData.prototype.makeKeyEnum = function (key) {
+    const desc = Object.getOwnPropertyDescriptor(this.data, key);
+    if (desc && desc.enumerable === false) {
+      desc.enumerable = true;
+      defineProp(this.data, key, desc);
+    }
   };
 
   return ReactiveData;
-
-})();
-
-/* global Galaxy */
-
-Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
-  const GV = Galaxy.GalaxyView;
-  const objKeys = Object.keys;
-  const defineProp = Object.defineProperty;
-
-  /**
-   *
-   * @param {Object|Galaxy.GalaxyView.Portal} portal
-   * @param {string} name
-   * @param {*} value
-   * @constructor
-   * @memberOf Galaxy.GalaxyView
-   */
-  function ReactiveProperty(portal, name) {
-    const _this = this;
-    _this.name = name;
-    _this.id = '';
-
-    _this.oldValue = undefined;
-    _this.value = undefined;
-
-    /** @type {Galaxy.GalaxyView.Portal} */
-    _this.portal = portal;
-
-    _this.keys = [];
-    _this.nodes = [];
-
-    // Holds the structure of bindings
-    _this.structure = {};
-
-    defineProp(_this, 'valueScope', {
-      configurable: false,
-      enumerable: true,
-      get: function () {
-        return _this.value;
-      }
-    });
-  }
-
-  ReactiveProperty.prototype.initValue = function (value) {
-    // Shadow values are also representing their structure.
-    // If detected, we will define this property structure with the value, so any changes to the value
-    // will also be reflected on structure and they will stay in sync. This means that from this point further,
-    // value is not shadow anymore
-    if (value && value.__shadow__ === true) {
-      Reflect.deleteProperty(value, '__shadow__');
-      if (value instanceof Array) {
-        if (value.hasOwnProperty('_length')) {
-          Object.defineProperties(this.structure, Object.getOwnPropertyDescriptor(value, '_length'));
-        }
-        GV.setPortalFor(this.structure, value[GV.PORTAL_PROPERTY_IDENTIFIER]);
-      } else {
-        Object.defineProperties(this.structure, Object.getOwnPropertyDescriptors(value));
-      }
-    } else {
-      GV.initPortalFor(this.structure);
-    }
-
-    // If value has portal then it's already reactive and this property should be added as a parent for value
-    if (value && value[GV.PORTAL_PROPERTY_IDENTIFIER]) {
-      const valuePortal = value[GV.PORTAL_PROPERTY_IDENTIFIER];
-      valuePortal.addParent(this);
-    } else if (value instanceof Array) {
-      GV.setPortalFor(value, this.structure[GV.PORTAL_PROPERTY_IDENTIFIER]);
-      this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].addParent(this);
-    }
-
-    // GV.makeReactive(value, this);
-
-    this.value = value;
-  };
-
-  ReactiveProperty.prototype.getPlaceholders = function () {
-    const _this = this;
-    // Arrays will be also in parents but they don't have the structure for value so they should be ignored
-    return this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].parents.filter(function (parent) {
-      let isInterlinked = parent.nodes.some(function (node) {
-        return node.__portal__ === _this.portal;
-      });
-
-//       isInterlinked = isInterlinked || _this.nodes.some(function (node) {
-//         return node.__portal__ === parent.portal;
-//       });
-// debugger;
-      return !(parent.value instanceof Array) && !isInterlinked;
-    });
-  };
-
-  ReactiveProperty.prototype.getParents = function () {
-    return this.portal.parents;
-  };
-
-  ReactiveProperty.prototype.getProperty = function (key) {
-    return this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].props[key];
-  };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ViewNode} node
-   * @param {string} attributeName
-   * @param {Function} expression
-   * @param {Galaxy.GalaxyView.ReactiveProperty} scopeProperty
-   * @public
-   */
-  ReactiveProperty.prototype.addNode = function (node, attributeName, expression, scopeProperty) {
-    let index = this.nodes.indexOf(node);
-    // Check if the node with the same property already exist
-    // Insure that same node with different property bind can exist
-    if (index === -1 || this.keys[index] !== attributeName) {
-      if (node instanceof Galaxy.GalaxyView.ViewNode && !node.setters[attributeName]) {
-        node.installPropertySetter(this, attributeName, expression, scopeProperty);
-      } else {
-        // debugger
-      }
-
-      this.keys.push(attributeName);
-      this.nodes.push(node);
-    }
-  };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ViewNode} node
-   */
-  ReactiveProperty.prototype.removeNode = function (node) {
-    let nodeIndexInTheHost;
-    while ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
-      this.nodes.splice(nodeIndexInTheHost, 1);
-      this.keys.splice(nodeIndexInTheHost, 1);
-    }
-  };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ReactiveProperty} property
-   */
-  ReactiveProperty.prototype.removeNodesByProperty = function (property) {
-    const _this = this;
-    const keys = property.keys;
-    property.nodes.forEach(function (node, i) {
-      _this.nodes.forEach(function (n, ii) {
-        if (node === n && _this.keys[ii] === keys[i]) {
-          _this.nodes.splice(ii, 1);
-          _this.keys.splice(ii, 1);
-        }
-      });
-    });
-  };
-
-  ReactiveProperty.prototype.initValueFor = function (target, key, value) {
-    this.value = value;
-
-    if (this.value instanceof Array) {
-      debugger;
-      console.error('no array', this);
-      // ReactiveProperty.installParentFor(this.value, this);
-      // const init = GV.createActiveArray(this.value, this.update.bind(this),this);
-      // if (target instanceof GV.ViewNode) {
-      //   this.setUpdateFor(target, key, init);
-      // }
-    } else {
-      this.setValueFor(target, key, this.value, this.oldValue);
-    }
-  };
-
-  ReactiveProperty.prototype.setValue = function (value) {
-    if (value === this.value) {
-      return;
-    }
-
-    this.oldValue = this.value;
-    this.value = value;
-    this.syncNodes(value);
-    this.syncStructure(value);
-  };
-
-  ReactiveProperty.prototype.setValueChange = function (changes, oldChanges) {
-    if (changes) {
-      if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
-        // debugger;
-        GV.installParentFor(changes.params, this);
-      } else if (changes.type === 'shift' || changes.type === 'pop') {
-        GV.uninstallParentFor([changes.result], this);
-      } else if (changes.type === 'splice' || changes.type === 'reset') {
-        GV.uninstallParentFor(changes.result, this);
-      }
-    }
-
-    for (let i = 0, len = this.nodes.length; i < len; i++) {
-      this.setValueFor(this.nodes[i], this.keys[i], changes, oldChanges);
-    }
-  };
-
-  ReactiveProperty.prototype.syncNodes = function (value) {
-    const oldValue = this.oldValue;
-
-    if (value instanceof Array) {
-      if (!value['reactive']) {
-        debugger;
-        GV.createActiveArray(value, this.portal, this);
-        // debugger;
-      }
-      // } else {
-      //   GV.createActiveArray(value, this.portal);
-      //   // console.error('no array', this);
-      // }
-    } else {
-      let i = 0, len = this.nodes.length;
-      for (; i < len; i++) {
-        this.setValueFor(this.nodes[i], this.keys[i], value, oldValue);
-      }
-      Galaxy.GalaxyObserver.notify(this.portal, this.name, value, oldValue);
-    }
-  };
-
-  ReactiveProperty.prototype.syncStructure = function (value) {
-    const _this = this;
-    const keys = objKeys(_this.structure);
-    const props = _this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].props;
-    // debugger;
-    if (value === null || value === undefined) {
-      keys.forEach(function (key) {
-        props[key].setValue(undefined);
-      });
-    }
-    else {
-      keys.forEach(function (key) {
-        // if (value[key] instanceof Array) {
-        //   return;
-        // }
-        if (props[key]) {
-          props[key].setValue(value[key]);
-        }
-      });
-    }
-  };
-
-  ReactiveProperty.prototype.syncUI = function () {
-    if (this.value instanceof Array) {
-      // Ignore when the value is type of array because the value will take care of the changes itself
-      debugger;
-      // return;
-    }
-
-    for (let i = 0, len = this.nodes.length; i < len; i++) {
-      this.setUpdateFor(this.nodes[i], this.keys[i], this.value, this.oldValue);
-    }
-  };
-
-  /**
-   *
-   * @param {(Galaxy.GalaxyView.ViewNode|Object)} host
-   * @param {string} attributeName
-   * @param value
-   * @param oldValue
-   */
-  ReactiveProperty.prototype.setValueFor = function (host, attributeName, value, oldValue) {
-    if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      // if (!host.setters[attributeName]) {
-      //   return console.info(host, attributeName, value);
-      // }
-
-      host.setters[attributeName](value, oldValue);
-    } else {
-      // debugger;
-      GV.getPortal(host).notify(attributeName, value);
-      Galaxy.GalaxyObserver.notify(host, attributeName, value, oldValue, this);
-    }
-  };
-
-  /**
-   *
-   * @param {(Galaxy.GalaxyView.ViewNode|Object)} host
-   * @param {string} attributeName
-   * @param {*} changes
-   * @param {*} oldChanges
-   */
-  ReactiveProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
-    if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      if (GV.REACTIVE_BEHAVIORS.hasOwnProperty(attributeName) && changes instanceof Array) {
-        // console.warn('value is array, reactive behavior ignored, ', attributeName);
-        // We don't pass changes to the reactive properties because
-        // they are responsible to handle the data changes themselves
-        return;
-      }
-      host.setters[attributeName](changes, oldChanges);
-    } else {
-      Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges, this);
-    }
-  };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ReactiveProperty} property
-   */
-  ReactiveProperty.prototype.concat = function (property) {
-    // TODO: only concat uniques
-    // const _this = this;
-    this.nodes.forEach(function (node, i) {
-
-    });
-
-    this.nodes = this.nodes.concat(property.nodes);
-    this.keys = this.keys.concat(property.keys);
-  };
-
-  ReactiveProperty.prototype.clone = function (portal, clean) {
-    const clone = new Galaxy.GalaxyView.ReactiveProperty(portal, this.name);
-    clone.structure = this.structure;
-
-    if (!clean) {
-      clone.concat(this);
-    }
-
-    return clone;
-  };
-
-  ReactiveProperty.prototype.unbindValue = function () {
-    const _this = this;
-    if (!_this.value || typeof _this.value !== 'object') {
-      return;
-    }
-
-    // If there is a copy, then use the structure of that copy for _this.value
-    // All the copies structures have same parents, so by using any copy's structure for _this.value,
-    // the access to the parents will remain intact.
-    // e. g. _this.structure !== copy.structure but _this.structure.parents === copy.structure.parents
-    // Take into account that copies that have a array as value and interlinks are not considered as copy.
-    const copy = this.getPlaceholders()[0];
-    if (copy) {
-      debugger;
-      return Object.defineProperties(_this.value, Object.getOwnPropertyDescriptors(copy.structure));
-    } else {
-      GV.toShadow(_this.value);
-    }
-
-    const currentValuePortal = _this.value[GV.PORTAL_PROPERTY_IDENTIFIER];
-    if (!currentValuePortal) {
-      return;
-    }
-    // debugger;
-    _this.value[GV.PORTAL_PROPERTY_IDENTIFIER] = currentValuePortal.clone(true);
-    // _this.value[GV.PORTAL_PROPERTY_IDENTIFIER].parents = currentValuePortal.parents.slice(0);
-
-    // const oldKeys = objKeys(_this.value);
-    // oldKeys.forEach(function (key) {
-    //   const temp = _this.value[key];
-    //   defineProp(_this.value, key, {
-    //     enumerable: true,
-    //     configurable: true,
-    //     value: temp
-    //   });
-    // });
-    //
-    // Reflect.deleteProperty(_this.value, GV.PORTAL_PROPERTY_IDENTIFIER);
-  };
-
-  ReactiveProperty.prototype.isolate = function () {
-    // TODO: Array value is a special case
-    const _this = this;
-    const parents = this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].parents;
-    if (parents.indexOf(_this) !== -1) {
-      parents.splice(parents.indexOf(_this), 1);
-    }
-
-    const interlinks = [];
-    this.nodes.forEach(function (node, index) {
-      if (!(node instanceof GV.ViewNode) && node[_this.keys[index]] === _this.value) {
-        interlinks.push(node[GV.PORTAL_PROPERTY_IDENTIFIER].props[_this.keys[index]]);
-      }
-    });
-
-    interlinks.forEach(function (interlink) {
-      if (parents.indexOf(interlink) !== -1) {
-        parents.splice(parents.indexOf(interlink), 1);
-      }
-    });
-
-    this.unbindValue();
-  };
-
-  ReactiveProperty.prototype.reCreateFor = function (value) {
-    if (this.value instanceof Array) {
-      let p = this.structure[GV.PORTAL_PROPERTY_IDENTIFIER];
-      this.isolate();
-      // debugger;
-      GV.createActiveArray(value, p, this);
-      this.value = value;
-      // debugger;
-    } else {
-      this.isolate();
-      // debugger;
-      // let cache = this.value
-      // let p = GV.getPortal(value)
-      // debugger;
-      this.setValue(value);
-    }
-    // this.initValue(value);
-    // this.syncNodes(value);
-    // this.syncStructure(value);
-    // debugger;
-    // debugger
-    // this.setValue(value);
-    const structure = this.structure;
-    // in the case where an object is bound to this property
-    if (value.hasOwnProperty(GV.PORTAL_PROPERTY_IDENTIFIER)) {
-      GV.getPortal(value).addParent(this, value instanceof Array);
-      debugger;
-    } else {
-      const newPortal = structure[GV.PORTAL_PROPERTY_IDENTIFIER].clone();
-      newPortal.addParent(this, value instanceof Array);
-      GV.setPortalFor(structure, newPortal);
-      Object.defineProperties(value, Object.getOwnPropertyDescriptors(structure));
-      debugger;
-    }
-  };
-
-  ReactiveProperty.prototype.notify = function (value) {
-    const _this = this;
-
-    if (value !== null && typeof value === 'object') {
-      if (value.hasOwnProperty(GV.PORTAL_PROPERTY_IDENTIFIER)) {
-        // if (this.value instanceof Array) {
-        //   let p = this.structure[GV.PORTAL_PROPERTY_IDENTIFIER];
-        //   this.isolate();
-        //   // debugger;
-        //   GV.createActiveArray(value, p, this);
-        //   // this.value = value;
-        //   // debugger;
-        // } else if (this.value && this.value[GV.PORTAL_PROPERTY_IDENTIFIER]) {
-        //   this.isolate();
-        //   // debugger;
-        //   // let cache = this.value
-        //   // let p = GV.getPortal(value)
-        //   // debugger;
-        //   // this.setValue(value);
-        // }
-        this.isolate();
-
-        const structurePortal = _this.structure[GV.PORTAL_PROPERTY_IDENTIFIER];
-        debugger;
-        value[GV.PORTAL_PROPERTY_IDENTIFIER].addParent(_this, value instanceof Array);
-        debugger;
-        console.log(this.value === value);
-        // const valuePortalProps = value[GV.PORTAL_PROPERTY_IDENTIFIER].props;
-        // debugger;
-        // for (let k in valuePortalProps) {
-        //   let oP = valuePortalProps[k];
-        //   if (!structurePortal.props.hasOwnProperty(k)) {
-        //     const nP = oP.clone(structurePortal, true);
-        //     nP.value = oP.value;
-        //     structurePortal.setProperty(nP, k);
-        //   }
-        // }
-        debugger;
-      } else {
-        return this.reCreateFor(value);
-      }
-    }
-
-    const parents = this.getParents();
-    this.setValue(value);
-    parents.forEach(function (parent) {
-      parent.syncUI();
-      parent.syncStructure(parent.value);
-    });
-  };
-
-  return ReactiveProperty;
 
 })();
 
@@ -3798,7 +4068,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // _this.localScope = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
-    _this.properties = {};
+    _this.properties = [];
     // _this.behaviors = {};
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
@@ -3978,17 +4248,37 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Function} expression
    * @param {Galaxy.GalaxyView.ReactiveProperty} scopeProperty
    */
-  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression, scopeProperty) {
-    const exist = this.properties[boundProperty.name];
-    if (exist) {
-      if (exist.indexOf(boundProperty) === -1) {
-        exist.push(boundProperty);
-      }
-    } else {
-      this.properties[boundProperty.name] = [boundProperty];
+  // ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression, scopeProperty) {
+  //   const exist = this.properties[boundProperty.name];
+  //   if (exist) {
+  //     if (exist.indexOf(boundProperty) === -1) {
+  //       exist.push(boundProperty);
+  //     }
+  //   } else {
+  //     this.properties[boundProperty.name] = [boundProperty];
+  //   }
+  //
+  //   this.setters[propertyName] = GV.createSetter(this, propertyName, boundProperty, scopeProperty, expression);
+  //   if (!this.setters[propertyName]) {
+  //     const _this = this;
+  //     this.setters[propertyName] = function () {
+  //       console.error('No setter for property :', propertyName, '\nNode:', _this);
+  //     };
+  //   }
+  // };
+
+  /**
+   * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
+   * @param {string} propertyName
+   * @param {Function} expression
+   * @param {Galaxy.GalaxyView.ReactiveProperty} scopeProperty
+   */
+  ViewNode.prototype.installSetter = function (reactiveData, propertyName, expression) {
+    if (this.properties.indexOf(reactiveData) === -1) {
+      this.properties.push(reactiveData);
     }
 
-    this.setters[propertyName] = GV.createSetter(this, propertyName, boundProperty, scopeProperty, expression);
+    this.setters[propertyName] = GV.createSetter(this, propertyName, reactiveData, expression);
     if (!this.setters[propertyName]) {
       const _this = this;
       this.setters[propertyName] = function () {
@@ -4066,15 +4356,20 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       }
     }
 
-    let property, properties = _this.properties;
-    const removeItem = function (item) {
-      item.removeNode(_this);
-    };
+    // let property, properties = _this.properties;
+    // const removeItem = function (item) {
+    //   item.removeNode(_this);
+    // };
+    //
+    // for (let key in properties) {
+    //   property = properties[key];
+    //   property.forEach(removeItem);
+    // }
 
-    for (let key in properties) {
-      property = properties[key];
-      property.forEach(removeItem);
-    }
+    _this.properties.forEach(function (reactiveData) {
+      reactiveData.removeNode(_this);
+    });
+    _this.properties = [];
 
     _this.dependedObjects.forEach(function (item) {
       let temp = GV.getBoundProperties(item);
@@ -4095,26 +4390,26 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     }
   };
 
-  ViewNode.prototype.refreshBinds = function () {
-    let property, properties = this.properties;
-    for (let key in properties) {
-      property = properties[key];
-
-      if (property instanceof Array) {
-        property.forEach(function (item) {
-          if (item.nodes.indexOf(this) === -1) {
-            item.nodes.push(this);
-            item.keys.push(key);
-          }
-        });
-      } else {
-        if (property.value.nodes.indexOf(this) === -1) {
-          property.value.nodes.push(this);
-          property.value.keys.push(key);
-        }
-      }
-    }
-  };
+  // ViewNode.prototype.refreshBinds = function () {
+  //   let property, properties = this.properties;
+  //   for (let key in properties) {
+  //     property = properties[key];
+  //
+  //     if (property instanceof Array) {
+  //       property.forEach(function (item) {
+  //         if (item.nodes.indexOf(this) === -1) {
+  //           item.nodes.push(this);
+  //           item.keys.push(key);
+  //         }
+  //       });
+  //     } else {
+  //       if (property.value.nodes.indexOf(this) === -1) {
+  //         property.value.nodes.push(this);
+  //         property.value.keys.push(key);
+  //       }
+  //     }
+  //   }
+  // };
 
   ViewNode.prototype.clean = function (leaveSequence) {
     let toBeRemoved = [], node, _this = this;
@@ -4614,11 +4909,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       const nativeNode = viewNode.node;
       if (bindings.modifiers === 'number') {
         nativeNode.addEventListener('keyup', function () {
-          scopeProperty.valueScope[id] = nativeNode.value ? Number(nativeNode.value) : null;
+          scopeProperty.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
         });
       } else {
         nativeNode.addEventListener('keyup', function () {
-          scopeProperty.valueScope[id] = nativeNode.value;
+          scopeProperty.data[id] = nativeNode.value;
         });
       }
     }
@@ -4812,7 +5107,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       } else if (data.matches) {
         const bindings = GV.getBindings(data.matches.data);
         if (bindings.propertyKeysPaths) {
+          // debugger;
           GV.makeBinding(this, '$for', data.scope, bindings);
+          // debugger;
         }
       }
 
@@ -4928,7 +5225,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
 
-          // if(cns.tag==='button')debugger;
           const vn = GV.createNode(parentNode, itemDataScope, cns, position);
           action.call(n, vn);
         }

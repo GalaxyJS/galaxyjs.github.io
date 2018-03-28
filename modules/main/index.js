@@ -48,7 +48,7 @@ Scope.data.navItems = [
 ];
 
 // Scope.data.activeModule = null;
-Scope.data.activeModule = Scope.data.navItems[0].module;
+Scope.data.activeModule = {};
 
 Scope.data.todos = [
   {
