@@ -2,11 +2,11 @@ const view = Scope.import('galaxy/view');
 
 Scope.data.person1 = {
   name: 'Eeliya Rasta',
-  // children: [
-  //   {
-  //     name: 'foo bar'
-  //   }
-  // ],
+  children: [
+    {
+      name: 'foo bar'
+    }
+  ],
   address: {
     city: 'Nijkerk'
   },
@@ -22,6 +22,8 @@ Scope.data.person2 = {
   name: 'Gandolf',
   age: 11000
 };
+
+Scope.data.activePerson = null;
 
 //
 Scope.name = 'Scope name';
@@ -203,44 +205,57 @@ view.init([
       },
       {
         tag: 'button',
-        text: 'data.personOne = people2',
+        text: 'data.activePerson = person1',
         on: {
           click: function () {
-            Scope.data.person1 = Scope.data.people[1];
+            Scope.data.activePerson = Scope.data.person1;
+
+            // Scope.data.activePerson = {
+            //   name: 'Eeliya Rasta',
+            //   children: [
+            //     {
+            //       name: 'foo bar'
+            //     }
+            //   ],
+            //   address: {
+            //     city: 'Nijkerk'
+            //   },
+            //   age: 25
+            // };
           }
         }
       }
     ]
   },
+  {
+    class: 'content',
+    module: {
+      url: './item-info.js'
+    },
+    inputs: {
+      // title: '<>data.personOne.name',
+      // title: Scope.data.personOne.name,
+      // person: Scope.data.personOne,
+      person: '<>data.activePerson'
+      // personTwo: '<>data.personTwo'
+    }
+  },
   // {
-  //   class: 'content',
-  //   module: {
-  //     url: './item-info.js'
-  //   },
-  //   inputs: {
-  //     // title: '<>data.personOne.name',
-  //     // title: Scope.data.personOne.name,
-  //     // person: Scope.data.personOne,
-  //     person: '<>data.person1'
-  //     // personTwo: '<>data.personTwo'
-  //   }
-  // }
-  {
-    tag: 'h4',
-    text: [
-      'data.people',
-      function (list) {
-        // return 'Total count:' + list.reduce(function (sum, item) {
-        //   return sum + item.count;
-        // }, 0);
-        return 'Total' + list.length;
-      }
-    ]
-  },
-  {
-    tag: 'h2',
-    text: '<>data.people.length'
-  },
+  //   tag: 'h4',
+  //   text: [
+  //     'data.people',
+  //     function (list) {
+  //       // return 'Total count:' + list.reduce(function (sum, item) {
+  //       //   return sum + item.count;
+  //       // }, 0);
+  //       return 'Total' + list.length;
+  //     }
+  //   ]
+  // },
+  // {
+  //   tag: 'h2',
+  //   text: '<>data.people.length'
+  // },
   {
     tag: 'p',
     $for: {
@@ -257,24 +272,24 @@ view.init([
   //   tag: 'p',
   //   text: '<>data.newItem.title'
   // },
-  {
-    tag: 'input',
-    value: '<>data.newItem.title'
-  },
-  {
-    tag: 'button',
-    text: 'Add new item to the list',
-    on: {
-      click: function () {
-        console.info(Scope.data.newItem);
-        // Scope.data.people.push(Scope.data.newItem);
-        Scope.data.newItem = {
-          title: '',
-          count: 0
-        };
-      }
-    }
-  }
+  // {
+  //   tag: 'input',
+  //   value: '<>data.newItem.title'
+  // },
+  // {
+  //   tag: 'button',
+  //   text: 'Add new item to the list',
+  //   on: {
+  //     click: function () {
+  //       console.info(Scope.data.newItem);
+  //       // Scope.data.people.push(Scope.data.newItem);
+  //       Scope.data.newItem = {
+  //         title: '',
+  //         count: 0
+  //       };
+  //     }
+  //   }
+  // }
   // {
   //   tag: 'button',
   //   text: 'Change Item 1 count randomly',

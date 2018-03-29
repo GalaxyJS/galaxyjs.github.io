@@ -48,7 +48,7 @@ Scope.data.navItems = [
 ];
 
 // Scope.data.activeModule = null;
-Scope.data.activeModule = {};
+Scope.data.activeModule = Scope.data.navItems[0].module;
 
 Scope.data.todos = [
   {
@@ -125,14 +125,15 @@ requestAnimationFrame(function () {
               'item.module',
               'data.activeModule',
               function (mod, actMod) {
-                console.info(mod, actMod, mod === actMod);
+              // debugger;
+              //   console.info(mod, actMod, mod === actMod);
                 return mod === actMod;
               }
             ]
           },
           on: {
             click: function () {
-              console.info(this);
+              // console.info(this);
               Scope.data.activeModule = this.inputs.in_item.module;
             }
           }
