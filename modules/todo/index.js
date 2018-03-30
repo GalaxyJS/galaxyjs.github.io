@@ -8,7 +8,6 @@ const animations = Scope.import('services/animations.js');
 const ToDoService = {
   data: inputs.items,
   add: function (newItem) {
-
     newItem.title = newItem.title.trim();
     if (newItem.title) {
       this.data.push(newItem);
@@ -52,7 +51,7 @@ view.init({
                 let res = items.filter(function (item) {
                   return !item.done;
                 });
-                console.info(items, JSON.stringify(res));
+                // console.info(items, JSON.stringify(res));
                 return res.length === 0;
               }
             ]).onEvent('click', function () {

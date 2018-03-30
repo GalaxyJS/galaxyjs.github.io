@@ -42,7 +42,8 @@ view.init({
                 {
                   tag: 'input',
                   class: 'flex-item-25',
-                  value: '<number>product.quantity'
+                  type: 'number',
+                  value: '<>product.quantity'
                 },
                 {
                   tag: 'label',
@@ -65,11 +66,11 @@ view.init({
                   class: 'flex-item-al',
                   text: 'Add',
                   inputs: {
-                    productQ: '<>product.quantity'
+                    product: '<>product'
                   },
                   on: {
                     click: function () {
-                      this.inputs.productQ += 1;
+                      this.inputs.product.quantity += 1;
                     }
                   }
                 }

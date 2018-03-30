@@ -1,16 +1,16 @@
 const view = Scope.import('galaxy/view');
 
 Scope.data.person1 = {
-  name: 'Eeliya Rasta',
+  // name: 'Eeliya Rasta',
   children: [
     {
       name: 'foo bar'
     }
-  ],
-  address: {
-    city: 'Nijkerk'
-  },
-  age: 25
+  ]
+  // address: {
+  //   city: 'Nijkerk'
+  // },
+  // age: 25
 };
 
 // Scope.data.person3 = { name: 'Steve' };
@@ -30,20 +30,20 @@ Scope.name = 'Scope name';
 
 Scope.data.people = [
   {
-    name: 'foo',
-    children: [
-      {
-        name: 'foo bar'
-      }
-    ]
+    name: 'foo'
+    // children: [
+    //   {
+    //     name: 'foo bar'
+    //   }
+    // ]
   },
   {
-    name: 'baz',
-    children: [
-      {
-        name: 'baz bar'
-      }
-    ]
+    name: 'baz'
+    // children: [
+    //   {
+    //     name: 'baz bar'
+    //   }
+    // ]
   }
 ];
 // const personOneCache = Scope.data.personOne;
@@ -62,27 +62,27 @@ Scope.data.newItem = {
 console.info('Scope', Scope);
 
 view.init([
-  {
-    tag: 'h1',
-    text: [
-      'data.person1',
-      function (person) {
-        return JSON.stringify(person);
-      }
-    ]
-  },
+  // {
+  //   tag: 'h1',
+  //   text: [
+  //     'data.person1',
+  //     function (person) {
+  //       return JSON.stringify(person);
+  //     }
+  //   ]
+  // },
   // {
   //   tag: 'h1',
   //   text: '<>data.person1.address.city'
   // },
-  {
-    tag: 'h1',
-    text: '<>data.person2.age'
-  },
-  {
-    tag: 'p',
-    text: '<>data.person3.address.city'
-  },
+  // {
+  //   tag: 'h1',
+  //   text: '<>data.person2.age'
+  // },
+  // {
+  //   tag: 'p',
+  //   text: '<>data.person3.address.city'
+  // },
   // {
   //   tag: 'p',
   //   text: [
@@ -194,11 +194,11 @@ view.init([
         text: 'data.person1 = {Steve}',
         on: {
           click: function () {
-            Scope.data.person1 = {
-              name: 'Steve',
-              address: {
-                city: 'London'
-              }
+            Scope.data.activePerson = {
+              // name: 'Steve',
+              // address: {
+              //   city: 'London'
+              // }
             };
           }
         }
@@ -229,15 +229,16 @@ view.init([
   },
   {
     class: 'content',
-    module: {
-      url: './item-info.js'
-    },
+
     inputs: {
       // title: '<>data.personOne.name',
       // title: Scope.data.personOne.name,
       // person: Scope.data.personOne,
       person: '<>data.activePerson'
       // personTwo: '<>data.personTwo'
+    },
+    module: {
+      url: './item-info.js'
     }
   },
   // {
@@ -276,20 +277,26 @@ view.init([
   //   tag: 'input',
   //   value: '<>data.newItem.title'
   // },
-  // {
-  //   tag: 'button',
-  //   text: 'Add new item to the list',
-  //   on: {
-  //     click: function () {
-  //       console.info(Scope.data.newItem);
-  //       // Scope.data.people.push(Scope.data.newItem);
-  //       Scope.data.newItem = {
-  //         title: '',
-  //         count: 0
-  //       };
-  //     }
-  //   }
-  // }
+  {
+    tag: 'button',
+    text: 'Add new item to the list',
+    on: {
+      click: function () {
+        // console.info(Scope.data.newItem);
+        // Scope.data.people.push({
+        //   name: 'New person'
+        // });
+
+        Scope.data.people = [
+          { name: 'new people' }
+        ];
+        // Scope.data.newItem = {
+        //   title: '',
+        //   count: 0
+        // };
+      }
+    }
+  }
   // {
   //   tag: 'button',
   //   text: 'Change Item 1 count randomly',

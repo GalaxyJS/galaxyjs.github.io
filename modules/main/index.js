@@ -109,7 +109,7 @@ requestAnimationFrame(function () {
       tag: 'div',
       id: 'main-nav',
       class: 'main-nav',
-      animations: animations.mainNav,
+      // animations: animations.mainNav,
       children: [
         {
           tag: 'a',
@@ -117,7 +117,7 @@ requestAnimationFrame(function () {
           inputs: {
             in_item: '<>item'
           },
-          animations: animations.mainNavItem,
+          // animations: animations.mainNavItem,
           href: '<>item.link',
           text: '<>item.title',
           class: {

@@ -18,7 +18,6 @@ view.init([
   }
 ]);
 
-
 setTimeout(function () {
   Scope.mod = {
     url: 'modules/text-field.js'
