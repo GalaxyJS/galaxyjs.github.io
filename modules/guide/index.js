@@ -1,9 +1,8 @@
 /* globals Scope, Promise, PR */
 Scope.import('galaxy/inputs');
 
-let view = Scope.import('galaxy/view');
-let tag = Scope.import('galaxy/tag');
-let animations = Scope.import('services/animations.js');
+const view = Scope.import('galaxy/view');
+const animations = Scope.import('services/animations.js');
 
 Scope.on('module.init', function () {
   // console.info('Module guide initialized');
@@ -18,24 +17,6 @@ Scope.on('module.destroy', function () {
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
-// var observer = Scope.observe(inputs);
-// observer.on('items', function (value, valueBindingSample) {
-//   debugger;
-// });
-console.info(tag.h3('some text').class('test-class'));
-
-// fetch('https://bertplantagie-clientapi-accept.3dimerce.mybit.nl/api/products/blake_joni_tara').then(function (response) {
-//   response.json().then(function (data) {
-//     // let s = performance.now();
-//     let surfaces = data.data.productData.data[0].data.filter(function (item) {
-//       return item.type === 'surfaces';
-//     });
-//
-//     ha = surfaces;
-//     // Scope.surfaces = surfaces.slice(2, 5);
-//     // Scope.progressText = 'Done! After ' + (Math.round(performance.now() - s));
-//   });
-// });
 
 view.init({
   class: 'card big',
@@ -59,7 +40,8 @@ view.init({
     {
       tag: 'img',
       class: 'banner',
-      src: 'assets/images/guide.jpg'
+      src: 'assets/images/guide.jpg',
+      height: '580'
     },
     {
       class: 'content',
@@ -82,8 +64,10 @@ view.init({
           class: 'prettyprint lang-html',
           text: '<script src="https://gitcdn.xyz/repo/GalaxyJS/galaxyjs.github.io/wip/galaxyjs/galaxy.js"></script>'
         },
-        tag.h2('Recommended project file & folder structure'),
-
+        {
+          tag: 'h2',
+          text: 'Recommended project file & folder structure'
+        },
         {
           tag: 'p',
           text: 'You can have whatever directory structure you like as long as you know how to the load modules. The following structure is recommended and we are using this structure though out our guide.'

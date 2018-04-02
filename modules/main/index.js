@@ -117,7 +117,7 @@ requestAnimationFrame(function () {
           inputs: {
             in_item: '<>item'
           },
-          // animations: animations.mainNavItem,
+          animations: animations.mainNavItem,
           href: '<>item.link',
           text: '<>item.title',
           class: {

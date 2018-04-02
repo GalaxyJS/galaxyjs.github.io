@@ -10,7 +10,8 @@ view.init({
     {
       tag: 'img',
       class: 'banner',
-      src: 'assets/images/tools.jpg'
+      src: 'assets/images/tools.jpg',
+      height: '600'
     },
     {
       tag: 'section',
