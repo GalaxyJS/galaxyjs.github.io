@@ -3919,16 +3919,17 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Galaxy.GalaxyView.ViewNode} node
    * @param {Array} toBeRemoved
    * @param {Galaxy.GalaxySequence} sequence
+   * @param {Galaxy.GalaxySequence} root
    * @memberOf Galaxy.GalaxyView.ViewNode
    * @static
    */
-  ViewNode.destroyNodes = function (node, toBeRemoved, sequence) {
+  ViewNode.destroyNodes = function (node, toBeRemoved, sequence, root) {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
       remove.renderingFlow.truncate();
-      remove.destroy(sequence);
+      remove.destroy(sequence, root);
     }
   };
 
@@ -4154,8 +4155,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.GalaxySequence} leaveSequence
+   * @param {Galaxy.GalaxySequence} root
    */
-  ViewNode.prototype.destroy = function (leaveSequence) {
+  ViewNode.prototype.destroy = function (leaveSequence, root) {
     const _this = this;
 
     // The node is the original node that is being removed
@@ -4178,10 +4180,16 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         });
 
         // Add children leave sequence to this node(parent node) leave sequence
-        _this.clean(_this.sequences.leave);
+        _this.clean(_this.sequences.leave, root);
         _this.populateLeaveSequence(_this.sequences.leave);
         _this.sequences.leave.nextAction(function () {
-          removeChild(_this.node.parentNode, _this.node);
+          if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
+            root.nextAction(function () {
+              removeChild(_this.node.parentNode, _this.node);
+            });
+          } else {
+            removeChild(_this.node.parentNode, _this.node);
+          }
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
@@ -4195,7 +4203,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         _this.sequences.enter.truncate();
         _this.callLifecycleEvent('preDestroy');
 
-        _this.clean(_this.sequences.leave);
+        _this.clean(_this.sequences.leave, root);
         _this.populateLeaveSequence(_this.sequences.leave);
 
         let animationDone;
@@ -4240,10 +4248,10 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
-  ViewNode.prototype.clean = function (leaveSequence) {
+  ViewNode.prototype.clean = function (leaveSequence, root) {
     let toBeRemoved = [], node, _this = this;
 
     const cn = Array.prototype.slice.call(_this.node.childNodes, 0);
@@ -4255,10 +4263,16 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       }
     }
 
+    if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
+      toBeRemoved.reverse().forEach(function (node) {
+        node.schema.renderConfig = node.schema.renderConfig || {};
+        node.schema.renderConfig.domManipulationOrder = 'cascade';
+      });
+    }
     // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
     // children should also get destroyed as child
     if (leaveSequence) {
-      ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence);
+      ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence, root);
       return _this.renderingFlow;
     }
 
@@ -4268,7 +4282,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         return _this.renderingFlow;
       }
 
-      ViewNode.destroyNodes(_this, toBeRemoved);
+      ViewNode.destroyNodes(_this, toBeRemoved, null, root || _this.sequences.leave);
 
       _this.sequences.leave.nextAction(function () {
         next();
@@ -4297,6 +4311,63 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   return ViewNode;
 
 })(Galaxy.GalaxyView);
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
+    type: 'prop',
+    name: 'checked',
+    util: function (viewNode, scopeProperty, prop, expression) {
+      if (expression && viewNode.schema.tag === 'input') {
+        throw new Error('input.checked property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
+      }
+
+      const bindings = GV.getBindings(viewNode.schema.checked);
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      viewNode.node.addEventListener('change', function () {
+        scopeProperty.data[id] = viewNode.node.checked;
+      });
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
+    type: 'none'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
+    type: 'prop',
+    name: 'value',
+    util: function (viewNode, scopeProperty, prop, expression) {
+      if (expression) {
+        throw new Error('input.value property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
+      }
+
+      const bindings = GV.getBindings(viewNode.schema.value);
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      const nativeNode = viewNode.node;
+      if (bindings.modifiers === 'number') {
+        nativeNode.addEventListener('keyup', function () {
+          scopeProperty.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
+        });
+      } else {
+        nativeNode.addEventListener('keyup', function () {
+          scopeProperty.data[id] = nativeNode.value;
+        });
+      }
+    }
+  };
+})(Galaxy.GalaxyView);
+
 
 /* global Galaxy, TweenLite, TimelineLite */
 'use strict';
@@ -4360,15 +4431,15 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           }
 
           let animationDone;
-          const pr = new Promise(function (res) {
-            animationDone = res;
+          const waitForAnimation = new Promise(function (resolve) {
+            animationDone = resolve;
           });
 
           sequence.next((function (promise) {
             return function (done) {
               promise.then(done);
             };
-          })(pr));
+          })(waitForAnimation));
 
           if (leaveAnimationConfig.sequence) {
             // in the case which the viewNode is not visible, then ignore its animation
@@ -4699,63 +4770,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 /* global Galaxy */
 
 (function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
-    type: 'prop',
-    name: 'checked',
-    util: function (viewNode, scopeProperty, prop, expression) {
-      if (expression && viewNode.schema.tag === 'input') {
-        throw new Error('input.checked property does not support binding expressions ' +
-          'because it must be able to change its data.\n' +
-          'It uses its bound value as its `model` and expressions can not be used as model.\n');
-      }
-
-      const bindings = GV.getBindings(viewNode.schema.checked);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      viewNode.node.addEventListener('change', function () {
-        scopeProperty.data[id] = viewNode.node.checked;
-      });
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
-    type: 'none'
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
-    type: 'prop',
-    name: 'value',
-    util: function (viewNode, scopeProperty, prop, expression) {
-      if (expression) {
-        throw new Error('input.value property does not support binding expressions ' +
-          'because it must be able to change its data.\n' +
-          'It uses its bound value as its `model` and expressions can not be used as model.\n');
-      }
-
-      const bindings = GV.getBindings(viewNode.schema.value);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      const nativeNode = viewNode.node;
-      if (bindings.modifiers === 'number') {
-        nativeNode.addEventListener('keyup', function () {
-          scopeProperty.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
-        });
-      } else {
-        nativeNode.addEventListener('keyup', function () {
-          scopeProperty.data[id] = nativeNode.value;
-        });
-      }
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
   GV.NODE_SCHEMA_PROPERTY_MAP['class'] = {
     type: 'reactive',
     name: 'class'
@@ -4976,9 +4990,13 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     node.renderingFlow.truncate();
     if (changes.type === 'reset') {
       node.renderingFlow.next(function forResetProcess(next) {
-        GV.ViewNode.destroyNodes(node, data.nodes.reverse());
-        data.nodes = [];
+        if (node.schema.renderConfig && node.schema.renderConfig.domManipulationOrder === 'cascade') {
+          GV.ViewNode.destroyNodes(node, data.nodes, null, node.parent.sequences.leave);
+        } else {
+          GV.ViewNode.destroyNodes(node, data.nodes.reverse());
+        }
 
+        data.nodes = [];
         node.parent.sequences.leave.nextAction(function () {
           next();
         });
@@ -5081,11 +5099,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     install: function (data) {
     },
     apply: function (data, value, oldValue, expression) {
+      const _this = this;
       if (expression) {
         value = expression();
       }
-
-      createProcess(this, value);
+      createProcess(_this, value);
     }
   };
 
@@ -5100,7 +5118,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       //   next();
       // });
     } else if (!value && node.inDOM) {
-      // debugger;
       node.setInDOM(false);
       // node.sequences.leave.next(next);
     } else {
