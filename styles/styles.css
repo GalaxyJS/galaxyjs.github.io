@@ -496,6 +496,10 @@ input, select {
   margin: 0 5px 5px 0;
 }
 
+.content li {
+  transition: opacity .1s linear;
+}
+
 .done {
   opacity: .3;
 }
