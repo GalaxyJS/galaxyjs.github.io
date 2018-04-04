@@ -160,7 +160,37 @@ view.init({
         {
           tag: 'p',
           html: '<pre class="prettyprint inline lang-js">Scope.import(\'galaxy/view\')</pre> is loading the view addon which provides functionality ' +
-          'necessary to create the UI/UX of your module and/or component'
+          'necessary to create the UI/UX of your module and/or component.'
+        },
+
+        {
+          tag: 'h2',
+          text: 'The Progressive Way'
+        },
+        {
+          tag: 'p',
+          text: 'Sometimes you already have a page and you just want to add some reactive functionality to some elements.' +
+          'You can easily do this by transforming your target element into a Galaxy module:'
+        },
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-js',
+          text: 'const module = {\n' +
+          '        // Addons that you need for your module\n' +
+          '        imports: [\'galaxy/view\'],\n' +
+          '        // The element which is going to be the module\n' +
+          '        element: document.querySelector(\'#target\'),\n' +
+          '        constructor: function (Scope) {\n' +
+          '           const view = Scope.import(\'galaxy/view\');\n' +
+          '           view.init({\n' +
+          '             tag: \'h2\',\n' +
+          '             text: \'Hello World from GalaxyJS!\'\n' +
+          '           });\n' +
+          '        }\n' +
+          '      };\n' +
+          '\n' +
+          '// load module\n' +
+          'Galaxy.load(module);'
         }
       ]
     }

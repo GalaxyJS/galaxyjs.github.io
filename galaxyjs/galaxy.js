@@ -3218,9 +3218,18 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 /* global Galaxy */
 
 Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
-  const GV = Galaxy.GalaxyView;
+  const ARRAY_PROTO = Array.prototype;
+  const ARRAY_MUTATOR_METHODS = [
+    'push',
+    'pop',
+    'shift',
+    'unshift',
+    'splice',
+    'sort',
+    'reverse'
+  ];
   const objKeys = Object.keys;
-  const defineProp = Object.defineProperty;
+  const defProp = Object.defineProperty;
   const scopeBuilder = function () {
     return {
       id: 'Scope',
@@ -3236,16 +3245,6 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
 
       }
     };
-  };
-
-  const uninstallRefFor = function (list, ref) {
-    let itemRD;
-    list.forEach(function (item) {
-      itemRD = item.__rd__;
-      if (itemRD) {
-        itemRD.removeRef(ref);
-      }
-    });
   };
 
   /**
@@ -3287,7 +3286,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
         this.parent.makeReactiveObject(this.parent.data, id, true);
       }
 
-      defineProp(this.data, '__rd__', {
+      defProp(this.data, '__rd__', {
         enumerable: false,
         configurable: true,
         value: this
@@ -3328,7 +3327,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
         this.syncAll();
       }
     } else {
-      defineProp(this.data, '__rd__', {
+      defProp(this.data, '__rd__', {
         enumerable: false,
         configurable: true,
         value: this
@@ -3355,7 +3354,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     const _this = this;
     let value = data[key];
 
-    defineProp(data, key, {
+    defProp(data, key, {
       get: function () {
         return value;
       },
@@ -3418,17 +3417,6 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
       new Galaxy.GalaxyView.ReactiveData(initialChanges.original.indexOf(item), item, _this);
     });
 
-    const arrayProto = Array.prototype;
-    const methods = [
-      'push',
-      'pop',
-      'shift',
-      'unshift',
-      'splice',
-      'sort',
-      'reverse'
-    ];
-
     let i = 0;
     let args;
 
@@ -3438,9 +3426,10 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     value.changes = initialChanges;
     _this.makeReactiveObject(value, 'changes');
 
-    methods.forEach(function (method) {
-      const originalMethod = arrayProto[method];
-      defineProp(value, method, {
+    // We override all the array methods which mutate the array
+    ARRAY_MUTATOR_METHODS.forEach(function (method) {
+      const originalMethod = ARRAY_PROTO[method];
+      defProp(value, method, {
         value: function () {
           i = arguments.length;
           args = new Array(i);
@@ -3463,14 +3452,11 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
           _this.oldValue = value.changes;
 
           if (method === 'push' || method === 'reset' || method === 'unshift') {
-            // if (!_this.shadow[key]) {
-            //   console.error('no shadow for array')
-            //   debugger;
-            // }
-
             changes.params.forEach(function (item) {
               new Galaxy.GalaxyView.ReactiveData(changes.original.indexOf(item), item, _this);
             });
+          } else if (method === 'pop' || method === 'splice' || method === 'shift') {
+            //
           }
 
           // For arrays we have to sync length manually
@@ -3550,6 +3536,10 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     }
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
+   */
   ReactiveData.prototype.removeRef = function (reactiveData) {
     const index = this.refs.indexOf(reactiveData);
     if (index !== -1) {
@@ -3557,8 +3547,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     }
   };
 
-  ReactiveData.prototype.removeMyRef = function (data) {
-
+  ReactiveData.prototype.removeMyRef = function () {
     if (this.data && this.data.hasOwnProperty('__rd__')) {
       // if I am not the original reference, then remove me from the refs
       if (this.data.__rd__ !== this) {
@@ -3578,14 +3567,14 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
       else {
         this.data.__rd__.removeRef(this);
 
-        const nextOriginal = this.refs[0];
-        defineProp(this.data, '__rd__', {
+        const nextOwener = this.refs[0];
+        defProp(this.data, '__rd__', {
           enumerable: false,
           configurable: true,
-          value: nextOriginal
+          value: nextOwener
         });
 
-        nextOriginal.walk(this.data);
+        nextOwener.walk(this.data);
 
         this.refs = [this];
       }
@@ -3600,8 +3589,6 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
   };
 
   ReactiveData.prototype.addNode = function (node, nodeKey, dataKey, expression/*, scopeProperty*/) {
-    // console.info('rd', nodeKey, dataKey);
-
     let map = this.nodesMap[dataKey];
     if (!map) {
       map = this.nodesMap[dataKey] = {
@@ -3610,7 +3597,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
       };
     }
 
-    let index = map.nodes.indexOf(node);
+    const index = map.nodes.indexOf(node);
     // Check if the node with the same property already exist
     // Insure that same node with different property bind can exist
     if (index === -1 || map.keys[index] !== nodeKey) {
@@ -3674,7 +3661,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     const desc = Object.getOwnPropertyDescriptor(this.data, key);
     if (desc && desc.enumerable === false) {
       desc.enumerable = true;
-      defineProp(this.data, key, desc);
+      defProp(this.data, key, desc);
     }
   };
 
@@ -4569,6 +4556,63 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 /* global Galaxy */
 
 (function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
+    type: 'prop',
+    name: 'checked',
+    util: function (viewNode, scopeProperty, prop, expression) {
+      if (expression && viewNode.schema.tag === 'input') {
+        throw new Error('input.checked property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
+      }
+
+      const bindings = GV.getBindings(viewNode.schema.checked);
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      viewNode.node.addEventListener('change', function () {
+        scopeProperty.data[id] = viewNode.node.checked;
+      });
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
+    type: 'none'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
+    type: 'prop',
+    name: 'value',
+    util: function valueUtil(viewNode, scopeProperty, prop, expression) {
+      if (expression) {
+        throw new Error('input.value property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
+      }
+
+      const bindings = GV.getBindings(viewNode.schema.value);
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      const nativeNode = viewNode.node;
+      if(nativeNode.type === 'number') {
+        nativeNode.addEventListener('input', function () {
+          scopeProperty.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
+        });
+      } else {
+        nativeNode.addEventListener('keyup', function () {
+          scopeProperty.data[id] = nativeNode.value;
+        });
+      }
+    }
+  };
+})(Galaxy.GalaxyView);
+
+
+/* global Galaxy */
+
+(function (GV) {
   GV.NODE_SCHEMA_PROPERTY_MAP['class'] = {
     type: 'reactive',
     name: 'class'
@@ -5115,63 +5159,6 @@ Galaxy.GalaxyView.PROPERTY_SETTERS.prop = function (viewNode,attrName, property,
     };
   }
 })();
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
-    type: 'prop',
-    name: 'checked',
-    util: function (viewNode, scopeProperty, prop, expression) {
-      if (expression && viewNode.schema.tag === 'input') {
-        throw new Error('input.checked property does not support binding expressions ' +
-          'because it must be able to change its data.\n' +
-          'It uses its bound value as its `model` and expressions can not be used as model.\n');
-      }
-
-      const bindings = GV.getBindings(viewNode.schema.checked);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      viewNode.node.addEventListener('change', function () {
-        scopeProperty.data[id] = viewNode.node.checked;
-      });
-    }
-  };
-})(Galaxy.GalaxyView);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
-    type: 'none'
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
-    type: 'prop',
-    name: 'value',
-    util: function valueUtil(viewNode, scopeProperty, prop, expression) {
-      if (expression) {
-        throw new Error('input.value property does not support binding expressions ' +
-          'because it must be able to change its data.\n' +
-          'It uses its bound value as its `model` and expressions can not be used as model.\n');
-      }
-
-      const bindings = GV.getBindings(viewNode.schema.value);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      const nativeNode = viewNode.node;
-      if(nativeNode.type === 'number') {
-        nativeNode.addEventListener('input', function () {
-          scopeProperty.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
-        });
-      } else {
-        nativeNode.addEventListener('keyup', function () {
-          scopeProperty.data[id] = nativeNode.value;
-        });
-      }
-    }
-  };
-})(Galaxy.GalaxyView);
-
 
 /* global Galaxy */
 'use strict';
