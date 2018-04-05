@@ -1,6 +1,7 @@
-/* global Scope */
+/** @typedef {Galaxy.GalaxyScope} Scope */
 
 const inputs = Scope.import('galaxy/inputs');
+/** @type Galaxy.GalaxyView */
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
@@ -14,17 +15,10 @@ const ToDoService = {
   }
 };
 
-const observer = Scope.observe(inputs.items);
-observer.on('length', function (value, oldValue) {
-  console.info('length has been changed from', value, 'to', oldValue);
-});
-
 Scope.data.newItem = {
   title: '',
   done: false
 };
-
-console.info(Scope);
 
 view.init({
   tag: 'div',
@@ -143,9 +137,9 @@ view.init({
               },
               {
                 tag: 'input',
-                type:'checkbox',
+                type: 'checkbox',
                 checked: '<>titem.done'
-              },
+              }
             ]
           }
         },
@@ -170,7 +164,7 @@ view.init({
                   }
                 }
               }
-            },
+            }
           ]
         },
         {

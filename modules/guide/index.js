@@ -143,7 +143,10 @@ view.init({
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          text: 'var view = Scope.import(\'galaxy/view\');\n' +
+          text: '//Import the view addon\n' +
+          'const view = Scope.import(\'galaxy/view\');\n\n' +
+          '// This will remove all the contents of the parent element which in this case is body\n' +
+          'view.config.cleanContainer = true;\n' +
           'view.init({\n' +
           '  tag:\'h1\',\n' +
           '  text:\'Hello World!\'\n' +
@@ -155,14 +158,23 @@ view.init({
         },
         {
           tag: 'p',
-          html: '<strong>Lets see what is going on here</strong>'
+          html: '<strong>Now, lets see what is going on here!</strong>'
         },
         {
           tag: 'p',
           html: '<pre class="prettyprint inline lang-js">Scope.import(\'galaxy/view\')</pre> is loading the view addon which provides functionality ' +
           'necessary to create the UI/UX of your module and/or component.'
         },
-
+        {
+          tag: 'p',
+          html: '<pre class="prettyprint inline lang-js">view.config.cleanContainer = true</pre> tells the view addon to start by' +
+          ' cleaning the parent. In this case, this code will remove the \'Loading...\' from the body. This is also useful when you want' +
+          ' to start with a clean element.'
+        },
+        {
+          tag: 'p',
+          html: 'Then we initialize our view with a <strong>h1</strong> tag with the <strong>\'Hello World!\'</strong> as its text content'
+        },
         {
           tag: 'h2',
           text: 'The Progressive Way'
@@ -182,6 +194,7 @@ view.init({
           '        element: document.querySelector(\'#target\'),\n' +
           '        constructor: function (Scope) {\n' +
           '           const view = Scope.import(\'galaxy/view\');\n' +
+          '           view.config.cleanContainer = true;\n' +
           '           view.init({\n' +
           '             tag: \'h2\',\n' +
           '             text: \'Hello World from GalaxyJS!\'\n' +
