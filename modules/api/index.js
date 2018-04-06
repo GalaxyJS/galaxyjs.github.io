@@ -2,6 +2,16 @@
 var view = Scope.import('galaxy/view');
 var animations = Scope.import('services/animations.js');
 
+const router = Scope.import('galaxy/router');
+
+router.on('/',function () {
+  console.log('API Router');
+}).resolve();
+
+router.on('/:sub',function (params) {
+  console.log('API Router' ,params);
+}).resolve();
+
 view.init({
   tag: 'div',
   class: 'card big',

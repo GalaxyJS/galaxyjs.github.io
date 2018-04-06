@@ -4,16 +4,6 @@ Scope.import('galaxy/inputs');
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
-Scope.on('module.init', function () {
-  // console.info('Module guide initialized');
-});
-
-Scope.on('module.start', function () {
-});
-
-Scope.on('module.destroy', function () {
-  // console.info('Module guide destroyed');
-});
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
