@@ -1,7 +1,7 @@
 /** @typedef {Galaxy.GalaxyScope} Scope */
 
 const inputs = Scope.import('galaxy/inputs');
-/** @type Galaxy.GalaxyView */
+/** @type Galaxy.View */
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 

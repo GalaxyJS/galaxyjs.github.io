@@ -137,7 +137,7 @@ animations.mainNavItem = {
       ease: Elastic.easeOut.config(1, .5),
     },
     position: '-=.4',
-    // chainToParent: true,
+    chainToParent: true,
     duration: .5
   }
 };

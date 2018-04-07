@@ -88,12 +88,13 @@ router.notFound(function () {
 });
 
 requestAnimationFrame(function () {
+  view.config.cleanContainer = true;
   view.init([
     {
       tag: 'div',
       id: 'main-nav',
       class: 'main-nav',
-      // animations: animations.mainNav,
+      animations: animations.mainNav,
       children: [
         {
           tag: 'a',

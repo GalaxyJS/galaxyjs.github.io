@@ -74,11 +74,11 @@ view.init({
         },
         {
           tag: 'h2',
-          text: 'Galaxy.GalaxyView'
+          text: 'Galaxy.View'
         },
         {
           tag: 'h2',
-          text: 'Galaxy.GalaxyView.ViewNode'
+          text: 'Galaxy.View.ViewNode'
         }
       ]
     }
