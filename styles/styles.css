@@ -581,13 +581,15 @@ button:disabled:hover {
 .loader {
   width: 100px;
   height: 100px;
-  margin: calc((100% - 50px) / 2) auto;
+  top: calc((100% - 50px) / 2);
+  left: calc((100% - 50px) / 2);
   border-width: 4px;
   border-style: solid;
   border-color: #000 transparent;
   border-radius: 50%;
   display: block;
   animation: spin 1s infinite linear;
+  position:  absolute;
 }
 
 @keyframes spin {

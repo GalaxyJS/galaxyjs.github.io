@@ -2536,14 +2536,14 @@ Galaxy.View = /** @class */(function (G) {
     alt: {
       type: 'attr'
     },
-    style: {
-      type: 'prop',
-      name: 'style'
-    },
-    css: {
-      type: 'attr',
-      name: 'style'
-    },
+    // style: {
+    //   type: 'prop',
+    //   name: 'style'
+    // },
+    // css: {
+    //   type: 'attr',
+    //   name: 'style'
+    // },
     html: {
       type: 'prop',
       name: 'innerHTML'
@@ -2822,6 +2822,7 @@ Galaxy.View = /** @class */(function (G) {
       if (scopeData.hasOwnProperty('__rd__')) {
         parentReactiveData = scopeData.__rd__;
       } else {
+
         parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, value);
       }
     }
@@ -3078,7 +3079,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
@@ -3729,7 +3730,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      * @param {string} key
      */
     addKeyToShadow: function (key) {
-      this.shadow[key] = null;
+      // Don't empty the shadow object if it exist
+      if (!this.shadow[key]) {
+        this.shadow[key] = null;
+      }
     },
     /**
      *
@@ -4632,6 +4636,33 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
 /* global Galaxy */
 
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['style.config'] = {
+    type: 'none'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['style'] = {
+    type: 'custom',
+    name: 'style',
+    /**
+     *
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {string} attr
+     * @param value
+     */
+    handler: function (viewNode, attr, value) {
+      if (value instanceof Object) {
+        Object.assign(viewNode.node.style, value);
+      } else {
+        viewNode.node.setAttribute('style', value);
+      }
+    }
+  };
+})(Galaxy.View);
+
+
+/* global Galaxy */
+
 (function (G) {
   G.View.NODE_SCHEMA_PROPERTY_MAP['text'] = {
     type: 'custom',
@@ -4769,22 +4800,22 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return node.removeAttribute('class');
       }
 
-      // TODO: This should happen in the install
-      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
-
       node.setAttribute('class', []);
+
+      // when value is an object
+      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new Galaxy.GalaxyObserver(clone);
 
       observer.onAll(function (key, value, oldValue) {
-        toggles.call(_this, key, value, oldValue, clone);
+        applyClasses.call(_this, key, value, oldValue, clone);
       });
 
       if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
         _this.rendered.then(function () {
-          toggles.call(_this, '*', true, false, clone);
+          applyClasses.call(_this, '*', true, false, clone);
         });
       } else {
-        toggles.call(_this, '*', true, false, clone);
+        applyClasses.call(_this, '*', true, false, clone);
       }
     }
   };
@@ -4807,7 +4838,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
   }
 
-  function toggles(key, value, oldValue, classes) {
+  function applyClasses(key, value, oldValue, classes) {
     if (oldValue === value) {
       return;
     }
@@ -5370,9 +5401,11 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     if (names.length === 0) {
       return null;
     }
+
     if (!match) {
       return null;
     }
+
     return match.slice(1, match.length).reduce(function (params, value, index) {
       if (params === null) {
         params = {};
@@ -5396,7 +5429,11 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         }).replace(SimpleRouter.WILDCARD_REGEXP, SimpleRouter.REPLACE_WILDCARD) +
         SimpleRouter.FOLLOWED_BY_SLASH_REGEXP, SimpleRouter.MATCH_REGEXP_FLAGS);
     }
-    return {regexp: regexp, paramNames: paramNames};
+
+    return {
+      regexp: regexp,
+      paramNames: paramNames
+    };
   }
 
   function getUrlDepth(url) {
@@ -5422,7 +5459,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         return false;
       }
 
-      return match ? {match: match, route: route, params: params} : false;
+      return match ? { match: match, route: route, params: params } : false;
     }).filter(function (m) {
       return m;
     });
@@ -5448,6 +5485,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     } else if (matched.length === 1) {
       return matched[0];
     }
+
     return fallbackURL;
   }
 
@@ -5518,27 +5556,31 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
   }
 
   function SimpleRouter(r, useHash, hash) {
-    this.root = null;
-    this._routes = [];
-    this._useHash = useHash;
-    this._hash = typeof hash === 'undefined' ? '#' : hash;
-    this._paused = false;
-    this._destroyed = false;
-    this._lastRouteResolved = null;
-    this._notFoundHandler = null;
-    this._defaultHandler = null;
-    this._usePushState = !useHash && isPushStateAvailable();
-    this._onLocationChange = this._onLocationChange.bind(this);
-    this._genericHooks = null;
-    this._historyAPIUpdateMethod = 'pushState';
+    const _this = this;
+
+    _this.root = null;
+    _this._routes = [];
+    _this._useHash = useHash;
+    _this._hash = typeof hash === 'undefined' ? '#' : hash;
+    _this._paused = false;
+    _this._destroyed = false;
+    _this._lastRouteResolved = null;
+    _this._notFoundHandler = null;
+    _this._defaultHandler = null;
+    _this._usePushState = !useHash && isPushStateAvailable();
+    _this._onLocationChange = function () {
+      _this.resolve();
+    };
+    _this._genericHooks = null;
+    _this._historyAPIUpdateMethod = 'pushState';
 
     if (r) {
-      this.root = useHash ? r.replace(/\/$/, '/' + this._hash) : r.replace(/\/$/, '');
+      _this.root = useHash ? r.replace(/\/$/, '/' + _this._hash) : r.replace(/\/$/, '');
     } else if (useHash) {
-      this.root = this._cLoc().split(this._hash)[0].replace(/\/$/, '/' + this._hash);
+      _this.root = _this._cLoc().split(_this._hash)[0].replace(/\/$/, '/' + _this._hash);
     }
 
-    this._listen();
+    _this._listen();
   }
 
   SimpleRouter.prototype = {
@@ -5548,6 +5590,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       clean: clean,
       getOnlyURL: getOnlyURL
     },
+
     navigate: function navigate(path, absolute) {
       let to;
 
@@ -5562,35 +5605,29 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         if (path[0] !== '/') {
           path = '/' + path;
         }
-
-        const search = window.location.search || window.location.href.substring(window.location.href.indexOf('?'));
-        window.location.href = window.location.pathname + this._hash + path + search;
+        window.location.href = window.location.href.replace(/#$/, '').replace(new RegExp(this._hash + '.*$'), '') + this._hash + path;
       }
       return this;
     },
+
     on: function on() {
       const _this = this;
       let _len = arguments.length;
-      let args = Array(_len);
-      let _key = 0;
+      const args = new Array(_len);
 
-      for (; _key < _len; _key++) {
-        args[_key] = arguments[_key];
+      for (let key = 0; key < _len; key++) {
+        args[key] = arguments[key];
       }
 
       if (typeof args[0] === 'function') {
-        this._defaultHandler = {handler: args[0], hooks: args[1]};
+        _this._defaultHandler = { handler: args[0], hooks: args[1] };
       } else if (args.length >= 2) {
-        this._add(args[0], args[1], args[2]);
-      } else if (_typeof(args[0]) === 'object') {
-        const orderedRoutes = Object.keys(args[0]).sort(compareUrlDepth);
-
-        orderedRoutes.forEach(function (route) {
-          _this.on(route, args[0][route]);
-        });
+        _this._add(args[0], args[1], args[2]);
       }
+
       return this;
     },
+
     off: function off(handler) {
       if (this._defaultHandler !== null && handler === this._defaultHandler.handler) {
         this._defaultHandler = null;
@@ -5605,10 +5642,12 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       }, []);
       return this;
     },
+
     notFound: function notFound(handler, hooks) {
-      this._notFoundHandler = {handler: handler, hooks: hooks};
+      this._notFoundHandler = { handler: handler, hooks: hooks };
       return this;
     },
+
     resolve: function resolve(current) {
       const _this = this;
 
@@ -5634,7 +5673,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       }
 
       m = match(onlyURL, this._routes);
-      // debugger;
+
       if (m) {
         this._callLeave();
         this._lastRouteResolved = {
@@ -5656,7 +5695,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         manageHooks(function () {
           manageHooks(function () {
             _this._callLeave();
-            _this._lastRouteResolved = {url: onlyURL, query: GETParameters, hooks: _this._defaultHandler.hooks};
+            _this._lastRouteResolved = { url: onlyURL, query: GETParameters, hooks: _this._defaultHandler.hooks };
             _this._defaultHandler.handler(GETParameters);
           }, _this._defaultHandler.hooks);
         }, this._genericHooks);
@@ -5665,13 +5704,14 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         manageHooks(function () {
           manageHooks(function () {
             _this._callLeave();
-            _this._lastRouteResolved = {url: onlyURL, query: GETParameters, hooks: _this._notFoundHandler.hooks};
+            _this._lastRouteResolved = { url: onlyURL, query: GETParameters, hooks: _this._notFoundHandler.hooks };
             _this._notFoundHandler.handler(GETParameters);
           }, _this._notFoundHandler.hooks);
         }, this._genericHooks);
       }
       return false;
     },
+
     destroy: function destroy() {
       this._routes = [];
       this._destroyed = true;
@@ -5683,9 +5723,11 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         window.removeEventListener('hashchange', this._onLocationChange);
       }
     },
+
     link: function link(path) {
       return this._getRoot() + path;
     },
+
     pause: function pause() {
       const status = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
 
@@ -5696,27 +5738,28 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         this._historyAPIUpdateMethod = 'pushState';
       }
     },
+
     resume: function resume() {
       this.pause(false);
     },
-    historyAPIUpdateMethod: function historyAPIUpdateMethod(value) {
-      if (typeof value === 'undefined') {
-        return this._historyAPIUpdateMethod;
-      }
-      this._historyAPIUpdateMethod = value;
-      return value;
-    },
-    disableIfAPINotAvailable: function disableIfAPINotAvailable() {
-      if (!isPushStateAvailable()) {
-        this.destroy();
-      }
-    },
+
     lastRouteResolved: function lastRouteResolved() {
       return this._lastRouteResolved;
     },
 
     hooks: function hooks(_hooks) {
       this._genericHooks = _hooks;
+    },
+
+    init: function (routes) {
+      const _this = this;
+      const orderedRoutes = Object.keys(routes).sort(compareUrlDepth);
+      orderedRoutes.forEach(function (route) {
+        _this.on(route, routes[route]);
+      });
+
+      _this.resolve();
+      return _this;
     },
 
     _add: function _add(route) {
@@ -5731,10 +5774,11 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         handler: handler.uses,
         name: handler.as,
         hooks: hooks || handler.hooks
-      } : {route: route, handler: handler, hooks: hooks});
+      } : { route: route, handler: handler, hooks: hooks });
 
       return this._add;
     },
+
     _getRoot: function _getRoot() {
       if (this.root !== null) {
         return window.location.origin + this.root;
@@ -5743,22 +5787,21 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       this.root = root(this._cLoc().split('?')[0], this._routes);
       return this.root;
     },
+
     _listen: function _listen() {
       const _this = this;
-
       // use popstate for modern browsers
-      if (this._usePushState) {
-        window.addEventListener('popstate', this._onLocationChange);
+      if (_this._usePushState) {
+        window.addEventListener('popstate', _this._onLocationChange);
       } else if (isHashChangeAPIAvailable()) {
-        window.addEventListener('hashchange', this._onLocationChange);
+        window.addEventListener('hashchange', _this._onLocationChange);
       }
       // fallback for very old browser which don't support both hashchange and popstate
       else {
-        let cached = this._cLoc(),
-          current = void 0,
-          _check = void 0;
+        let cached = _this._cLoc();
+        let current = void 0;
 
-        _check = function check() {
+        const _check = function check() {
           current = _this._cLoc();
           if (cached !== current) {
             cached = current;
@@ -5766,9 +5809,11 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
           }
           _this._listeningInterval = setTimeout(_check, 50);
         };
+
         _check();
       }
     },
+
     _cLoc: function _cLoc() {
       if (typeof window !== 'undefined') {
         if (typeof window.__NAVIGO_WINDOW_LOCATION_MOCK__ !== 'undefined') {
@@ -5778,9 +5823,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       }
       return '';
     },
-    _onLocationChange: function _onLocationChange() {
-      this.resolve();
-    },
+
     _callLeave: function _callLeave() {
       const lastRouteResolved = this._lastRouteResolved;
 

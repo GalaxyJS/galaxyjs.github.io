@@ -1,16 +1,17 @@
 /* global Scope */
-var view = Scope.import('galaxy/view');
-var animations = Scope.import('services/animations.js');
+const view = Scope.import('galaxy/view');
+const animations = Scope.import('services/animations.js');
 
 const router = Scope.import('galaxy/router');
 
-router.on('/',function () {
-  console.log('API Router');
-}).resolve();
-
-router.on('/:sub',function (params) {
-  console.log('API Router' ,params);
-}).resolve();
+router.init({
+  '/': function () {
+    console.log('API Router');
+  },
+  '/:subId': function (params) {
+    console.log('API Router', params);
+  }
+});
 
 view.init({
   tag: 'div',

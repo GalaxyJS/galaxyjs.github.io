@@ -68,20 +68,21 @@ Scope.data.moduleInputs = {
   items: '<>data.todos'
 };
 
-router.on('/', function () {
-  router.navigate('start');
-}).resolve();
+router.init({
+  '/': function () {
+    router.navigate('start');
+  },
+  '/:moduleId*': function (params) {
+    const nav = Scope.data.navItems.filter(function (item) {
+      return item.module.id === params.moduleId;
+    })[0];
 
-router.on('/:moduleId*', function (params) {
-  const nav = Scope.data.navItems.filter(function (item) {
-    return item.module.id === params.moduleId;
-  })[0];
-
-  if (nav) {
-    Scope.data.activeModule = nav.module;
+    if (nav) {
+      Scope.data.activeModule = nav.module;
+    }
+    console.info(params);
   }
-  console.info(params);
-}).resolve();
+});
 
 router.notFound(function () {
   console.error('404, Not Found!');
