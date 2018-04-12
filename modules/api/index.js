@@ -71,7 +71,7 @@ view.init({
         },
         {
           tag: 'h2',
-          text: 'Galaxy.GalaxyObserver'
+          text: 'Galaxy.Observer'
         },
         {
           tag: 'h2',
