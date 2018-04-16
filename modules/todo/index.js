@@ -19,6 +19,10 @@ Scope.data.newItem = {
   title: '',
   done: false
 };
+let listAnimationDuration = 1 / (inputs.items.length || 1);
+if (listAnimationDuration < .12) {
+  listAnimationDuration = .12;
+}
 
 view.init({
   tag: 'div',
@@ -109,7 +113,7 @@ view.init({
                   paddingBottom: 0
                 },
                 position: '-=.1',
-                duration: .2,
+                duration: listAnimationDuration,
                 chainToParent: true
               },
               leave: {
