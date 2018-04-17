@@ -22,6 +22,14 @@ Scope.data.navItems = [
     }
   },
   {
+    title: 'Reactive',
+    link: 'reactive',
+    module: {
+      id: 'reactive',
+      url: 'modules/reactive/index.js'
+    }
+  },
+  {
     title: 'API',
     link: 'api',
     module: {

@@ -1,0 +1,62 @@
+/* globals Scope */
+
+const view = Scope.import('galaxy/view');
+const animations = Scope.import('services/animations.js');
+
+view.init({
+  class: 'card big',
+  animations: animations.cardInOut,
+  children: [
+    // {
+    //   tag: 'img',
+    //   class: 'banner',
+    //   src: 'modules/start/images/galaxy-1.jpeg',
+    //   height: '600'
+    // },
+    {
+      tag: 'section',
+      class: 'content',
+      children: [
+        {
+          tag: 'h1',
+          text: 'Reactive'
+        },
+        {
+          tag: 'h3',
+          text: 'GalaxyJS is framework that helps you to build a framework for your web application'
+        },
+        {
+          tag: 'p',
+          text: 'GalaxyJS automatically transform data that are bound to UI into reactive data so any changes to that data at the later' +
+          ' point will be reflected in the UI'
+        },
+        {
+          tag: 'p',
+          html: 'Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is life on that planet of course)</i>.'
+        },
+        {
+          tag: 'p',
+          html: 'With GalaxyJS you can create your own favorite application\'s ecosystem/<i>framework</i>, which suits your project the best.'
+        }
+        // {
+        //   tag: 'p',
+        //   text: 'Things you need to know before start using GalaxyJS'
+        // },
+        // {
+        //   tag: 'ul',
+        //   children: [
+        //     {
+        //       tag: 'li',
+        //       html: 'It\'s depends on Javascript <strong>new Function()</strong> feature'
+        //     },
+        //     {
+        //       tag: 'li',
+        //       text: ' Its structure encourages you to write more DRY code'
+        //     }
+        //   ]
+        // }
+      ]
+    }
+  ]
+})
+;

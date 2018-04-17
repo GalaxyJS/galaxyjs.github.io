@@ -37,23 +37,6 @@ view.init({
           tag: 'p',
           html: 'With GalaxyJS you can create your own favorite application\'s ecosystem/<i>framework</i>, which suits your project the best.'
         }
-        // {
-        //   tag: 'p',
-        //   text: 'Things you need to know before start using GalaxyJS'
-        // },
-        // {
-        //   tag: 'ul',
-        //   children: [
-        //     {
-        //       tag: 'li',
-        //       html: 'It\'s depends on Javascript <strong>new Function()</strong> feature'
-        //     },
-        //     {
-        //       tag: 'li',
-        //       text: ' Its structure encourages you to write more DRY code'
-        //     }
-        //   ]
-        // }
       ]
     },
     {
