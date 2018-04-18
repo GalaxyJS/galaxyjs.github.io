@@ -1,4 +1,4 @@
-/* globals Scope */
+/* globals Scope, PR */
 
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
@@ -6,6 +6,11 @@ const animations = Scope.import('services/animations.js');
 view.init({
   class: 'card big',
   animations: animations.cardInOut,
+  lifecycle: {
+    postChildrenInsert: function () {
+      PR.prettyPrint();
+    }
+  },
   children: [
     // {
     //   tag: 'img',
@@ -22,41 +27,82 @@ view.init({
           text: 'Reactive'
         },
         {
-          tag: 'h3',
-          text: 'GalaxyJS is framework that helps you to build a framework for your web application'
-        },
-        {
           tag: 'p',
           text: 'GalaxyJS automatically transform data that are bound to UI into reactive data so any changes to that data at the later' +
-          ' point will be reflected in the UI'
+          ' point will be reflected in the view'
         },
         {
           tag: 'p',
-          html: 'Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is life on that planet of course)</i>.'
+          html: '<strong>Keep in mind that the data that is not bound to view, is not reactive.</strong>'
         },
         {
           tag: 'p',
-          html: 'With GalaxyJS you can create your own favorite application\'s ecosystem/<i>framework</i>, which suits your project the best.'
+          text: 'If data that is bound to UI is type of array, then all the methods that mutate array are override by GalaxyJS so they' +
+          ' also trigger view update. The methods that are being overridden are:',
+          children: {
+            tag: 'ul',
+            children: [
+              {
+                tag: 'li',
+                text: 'push()'
+              },
+              {
+                tag: 'li',
+                text: 'pop()'
+              },
+              {
+                tag: 'li',
+                text: 'shift()'
+              },
+              {
+                tag: 'li',
+                text: 'unshift()'
+              },
+              {
+                tag: 'li',
+                text: 'splice()'
+              },
+              {
+                tag: 'li',
+                text: 'sort()'
+              },
+              {
+                tag: 'li',
+                text: 'reverse()'
+              }
+            ]
+          }
+        },
+        {
+          tag: 'p',
+          html: 'There are some <strong>limitations</strong> to array reactivity. Changing array in the following manners won\'t trigger' +
+          ' view update:',
+          children: {
+            tag: 'ul',
+            children: [
+              {
+                tag: 'li',
+                html: 'Setting an item with index directly, e.g. <pre class="prettyprint inline lang-js">Scope.data.list[index] =' +
+                ' newValue</pre>'
+              },
+              {
+                tag: 'li',
+                html: 'Setting array length, e.g. <pre class="prettyprint inline lang-js">Scope.data.list.length =' +
+                ' newLength</pre>'
+              }
+            ]
+          }
+        },
+        {
+          tag: 'h2',
+          text: 'ArrayChange'
+        },
+        {
+          tag: 'h3',
+          text: 'Galaxy.View.ArrayChange'
         }
-        // {
-        //   tag: 'p',
-        //   text: 'Things you need to know before start using GalaxyJS'
-        // },
-        // {
-        //   tag: 'ul',
-        //   children: [
-        //     {
-        //       tag: 'li',
-        //       html: 'It\'s depends on Javascript <strong>new Function()</strong> feature'
-        //     },
-        //     {
-        //       tag: 'li',
-        //       text: ' Its structure encourages you to write more DRY code'
-        //     }
-        //   ]
-        // }
       ]
     }
   ]
-})
-;
+});
+

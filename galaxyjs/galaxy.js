@@ -1699,10 +1699,6 @@
   return Promise$2;
 
 })));
-
-
-
-//# sourceMappingURL=es6-promise.auto.map
 /* global Galaxy, Promise */
 'use strict';
 /**
@@ -1832,12 +1828,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @return {Promise<any>}
      */
     load: function (module) {
-      const _this = this;
-
       if (!module) {
         throw new Error('Module meta data or constructor is missing');
       }
 
+      const _this = this;
       const promise = new Promise(function (resolve, reject) {
         if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
           module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
@@ -2045,11 +2040,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           }
 
           currentModule.init();
-
           resolve(currentModule);
         }
         catch (error) {
-          reject(error);
+          console.error(error.message + ': ' + module.url + ', Search for es6 features in your code and remove them, e.g. arrow function');
+          console.error(error);
           throw new Error(error);
         }
       });
@@ -2390,7 +2385,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    next: function (action, position) {
+    next: function (action) {
       const _this = this;
 
       // if sequence was finished, then reset the sequence
@@ -2401,12 +2396,10 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
-        // promise: promise,
-        // done: done,
         process: this.proceed,
         run: function run() {
           const local = this;
-          action.call(null, function () {
+          action.call(local.data, function () {
             local.process.call(_this);
             // done();
           }, function (e) {
@@ -3273,6 +3266,9 @@ Galaxy.View = /** @class */(function (G) {
     },
     broadcast: function (event) {
       this.container.broadcast(event);
+    },
+    createNode: function (schema, parent, position) {
+      return View.createNode(parent || this.container, this.scope, schema, position);
     }
   };
 
@@ -3503,7 +3499,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       initialChanges.type = 'reset';
       initialChanges.params = value;
       initialChanges.params.forEach(function (item) {
-        new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
+        if (item !== null && typeof item === 'object') {
+          new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
+        }
       });
 
       _this.sync('length');
@@ -3526,8 +3524,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             const result = originalMethod.apply(this, args);
             const changes = new Galaxy.View.ArrayChange();
             changes.original = value;
-            // changes.type = 'reset';
-            // changes.params = value;
 
             changes.type = method;
             changes.params = args;
@@ -3538,7 +3534,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
             if (method === 'push' || method === 'reset' || method === 'unshift') {
               changes.params.forEach(function (item) {
-                new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                if (item !== null && typeof item === 'object') {
+                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                }
               });
             } else if (method === 'pop' || method === 'splice' || method === 'shift') {
               //
@@ -4069,7 +4067,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
       _this.sequences.enter.nextAction(function () {
-        _this.callLifecycleEvent('postEnterAnimations');
+        _this.callLifecycleEvent('postEnter');
         _this.callLifecycleEvent('postAnimations');
         animationDone();
       });
@@ -4101,7 +4099,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.origin = false;
         _this.callLifecycleEvent('postRemove');
-        _this.callLifecycleEvent('postLeaveAnimations');
+        _this.callLifecycleEvent('postLeave');
         _this.callLifecycleEvent('postAnimations');
         animationDone();
       });
@@ -4359,6 +4357,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
+            const tweens = TweenLite.getTweensOf(viewNode.node);
+            tweens.forEach(function (tween) {
+              if(tween.vars.onComplete) {
+                tween.vars.onComplete();
+              }
+            });
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -4385,6 +4389,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
+            const tweens = TweenLite.getTweensOf(viewNode.node);
+            tweens.forEach(function (tween) {
+              if(tween.vars.onComplete) {
+                tween.vars.onComplete();
+              }
+            });
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -4567,9 +4577,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   AnimationMeta.installGSAPAnimation = function (viewNode, type, config, onComplete) {
     const from = AnimationMeta.parseStep(viewNode, config.from);
     const to = AnimationMeta.parseStep(viewNode, config.to);
-    const lastStep = to || from;
-    if (type !== 'leave') {
-      lastStep.clearProps = 'all';
+    // const lastStep = to || from;
+    if (type !== 'leave' && to) {
+      to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     }
 
     const newConfig = Object.assign({}, config);
@@ -5066,34 +5076,36 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       parentNode.cache._mainForLeaveQueue = parentNode.cache._mainForLeaveQueue || [];
 
       if (config.trackBy instanceof Function) {
-        const newTrackMap = changes.params.map(function (item, i) {
-          return config.trackBy.call(_this, item, i);
-        });
-
-        // list of nodes that should be removed
-        const hasBeenRemoved = [];
-        config.trackMap.forEach(function (id, i) {
-          if (newTrackMap.indexOf(id) === -1) {
-            hasBeenRemoved.push(config.nodes[i]);
-          }
-        });
-
-        if (hasBeenRemoved.length) {
-          config.nodes = config.nodes.filter(function (node) {
-            return hasBeenRemoved.indexOf(node) === -1;
+        // _this.renderingFlow.truncate();
+        _this.renderingFlow.next(function (nextStep) {
+          const newTrackMap = changes.params.map(function (item, i) {
+            return config.trackBy.call(_this, item, i);
           });
 
-          let destroyDone;
-          const destroyProcess = new Promise(function (resolve) {
-            destroyDone = function () {
-              destroyProcess.resolved = true;
-              resolve();
-            };
+          // list of nodes that should be removed
+          const hasBeenRemoved = [];
+          config.trackMap.forEach(function (id, i) {
+            if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
+              hasBeenRemoved.push(config.nodes[i]);
+            }
           });
 
-          parentNode.cache._mainForLeaveQueue.push(destroyProcess);
-          _this.renderingFlow.truncate();
-          _this.renderingFlow.next(function forResetProcess(next) {
+          if (hasBeenRemoved.length) {
+            config.nodes = config.nodes.filter(function (node) {
+              return hasBeenRemoved.indexOf(node) === -1;
+            });
+
+            let destroyDone;
+            const destroyProcess = new Promise(function (resolve) {
+              destroyDone = function () {
+                destroyProcess.resolved = true;
+                resolve();
+              };
+            });
+
+            parentNode.cache._mainForLeaveQueue.push(destroyProcess);
+            // _this.renderingFlow.truncate();
+            // _this.renderingFlow.next(function forResetProcess(next) {
             if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
               View.ViewNode.destroyNodes(_this, hasBeenRemoved, null, parentNode.sequences.leave);
             } else {
@@ -5101,70 +5113,85 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             }
 
             parentNode.sequences.leave.nextAction(function () {
-              parentNode.callLifecycleEvent('postLeaveAnimations');
+              parentNode.callLifecycleEvent('postLeave');
               parentNode.callLifecycleEvent('postAnimations');
-              next();
+              // next();
               destroyDone();
             });
-          });
-        }
-
-        const newParams = [];
-        const positions = [];
-        newTrackMap.forEach(function (id, i) {
-          if (config.trackMap.indexOf(id) === -1) {
-            newParams.push(changes.params[i]);
-            positions.push(i);
+            // });
           }
-        });
-        config.positions = positions;
 
-        const newChanges = new Galaxy.View.ArrayChange();
-        newChanges.init = changes.init;
-        newChanges.type = changes.type;
-        newChanges.original = changes.original;
-        newChanges.params = newParams;
-        newChanges.__rd__ = changes.__rd__;
-        changes = newChanges;
-        config.trackMap = newTrackMap;
-
-        // Don't process if the is no new parameter. The list has been shrank
-        if (!newChanges.params.length) {
-          return;
-        }
-        // When some old items have been removed and also some new items have been added
-        else if (newChanges.type === 'reset') {
-          newChanges.type = 'push';
-        }
-
-        const mainForQ = parentNode.cache._mainForLeaveQueue;
-        if (mainForQ.length) {
-          const whenAllDone = function () {
-            // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
-            // promises have resolved and if not we hav eto use Promise.all on the list again
-            const allNotResolved = mainForQ.some(function (promise) {
-              return promise.resolved !== true;
-            });
-
-            if (allNotResolved) {
-              // if not all resolved, then listen to the list again
-              Promise.all(mainForQ).then(whenAllDone);
-              return;
+          const newParams = [];
+          const positions = [];
+          newTrackMap.forEach(function (id, i) {
+            if (config.trackMap.indexOf(id) === -1) {
+              newParams.push(changes.params[i]);
+              positions.push(i);
             }
+          });
+          config.positions = positions;
 
-            mainForQ.splice(0);
-            runForProcess(_this, config, changes, config.scope);
-          };
+          const newChanges = new Galaxy.View.ArrayChange();
+          newChanges.init = changes.init;
+          newChanges.type = changes.type;
+          newChanges.original = changes.original;
+          newChanges.params = newParams;
+          newChanges.__rd__ = changes.__rd__;
+          changes = newChanges;
+          config.trackMap = newTrackMap;
+          debugger
 
-          Promise.all(mainForQ).then(whenAllDone);
-        } else {
-          runForProcess(_this, config, changes, config.scope);
-        }
+          // Don't process if the is no new parameter. The list has been shrank
+          if (!newChanges.params.length) {
+            return nextStep();
+          }
+          // When some old items have been removed and also some new items have been added
+          else if (newChanges.type === 'reset') {
+            newChanges.type = 'push';
+          }
+
+          const mainForQ = parentNode.cache._mainForLeaveQueue;
+          if (mainForQ.length) {
+            const whenAllDone = function () {
+              // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
+              // promises have resolved and if not we hav eto use Promise.all on the list again
+              const allNotResolved = mainForQ.some(function (promise) {
+                return promise.resolved !== true;
+              });
+
+              if (allNotResolved) {
+                // if not all resolved, then listen to the list again
+                Promise.all(mainForQ).then(whenAllDone);
+                return;
+              }
+
+              mainForQ.splice(0);
+              // _this.renderingFlow.truncate();
+
+              debugger;
+              nextStep();
+              // createPushProcess(_this, config, changes, config.scope);
+            };
+
+            Promise.all(mainForQ).then(whenAllDone);
+          } else {
+
+            debugger
+            nextStep();
+            // _this.renderingFlow.truncate();
+
+          }
+          debugger;
+        });
+
+        _this.renderingFlow.nextAction(function () {
+          debugger;
+          createPushProcess(_this, config, changes, config.scope);
+        });
       } else {
-        _this.renderingFlow.truncate();
+        // _this.renderingFlow.truncate();
         runForProcess(_this, config, changes, config.scope);
       }
-
     }
   };
 
@@ -5187,7 +5214,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
           config.nodes = [];
           node.parent.sequences.leave.nextAction(function () {
-            node.parent.callLifecycleEvent('postLeaveAnimations');
+            node.parent.callLifecycleEvent('postLeave');
             node.parent.callLifecycleEvent('postAnimations');
             next();
           });
@@ -5269,10 +5296,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
-      const listPlaceholder = node.placeholder;
-      if (listPlaceholder.parentNode !== parentNode.node) {
-        parentNode.contentRef = listPlaceholder.parentNode;
-      }
+      // const listPlaceholder = node.placeholder;
+      // if (listPlaceholder.parentNode !== parentNode.node) {
+      // parentNode.contentRef = listPlaceholder.parentNode;
+      // }
 
       const gClone = Galaxy.clone;
       const vCreateNode = View.createNode;
@@ -5290,7 +5317,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       parentNode.sequences.enter.nextAction(function () {
-        parentNode.callLifecycleEvent('postEnterAnimations');
+        parentNode.callLifecycleEvent('postEnter');
+        console.info('p', parentNode);
         parentNode.callLifecycleEvent('postAnimations');
         next();
       });
@@ -5329,10 +5357,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   };
 
   function runIfProcess(node, value) {
-    if (value && !node.inDOM) {
+    if (value && !node.inDOM && !node.node.parentNode) {
       node.setInDOM(true);
-    } else if (!value && node.inDOM) {
-      requestAnimationFrame(function () {
+    } else if (!value && node.inDOM && node.node.parentNode) {
+      cancelAnimationFrame(node.cache._ifLeaveId);
+      node.cache._ifLeaveId = requestAnimationFrame(function () {
         node.setInDOM(false);
       });
     } else {

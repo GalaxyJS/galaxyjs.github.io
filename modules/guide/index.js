@@ -12,18 +12,8 @@ view.init({
   class: 'card big',
   animations: animations.cardInOut,
   lifecycle: {
-    postInsert: function () {
-      view;
-      // debugger;
-    },
     postChildrenInsert: function () {
-      view;
-      // debugger;
       PR.prettyPrint();
-    },
-    rendered: function () {
-      view;
-      // debugger;
     }
   },
   children: [
