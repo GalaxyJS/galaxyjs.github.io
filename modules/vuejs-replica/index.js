@@ -28,7 +28,7 @@ view.init({
               tag: 'li',
               class: 'flex-row',
               $for: {
-                data: '<>data.products',
+                data: '<>data.products.changes',
                 as: 'product'
               },
               // text: [
