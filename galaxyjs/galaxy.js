@@ -5837,7 +5837,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       const params = regExpResultToParams(match, paramNames);
 
       if (route.route === '/' && match.input !== '/') {
-        return false;
+        return { match: match, route: route, params: params };
       }
 
       return match ? { match: match, route: route, params: params } : false;
