@@ -100,7 +100,12 @@ view.init({
         {
           tag: 'h3',
           text: 'Galaxy.View.ArrayChange'
-        }
+        },
+        {
+          tag: 'p',
+
+        },
+
       ]
     }
   ]
