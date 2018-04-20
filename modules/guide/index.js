@@ -184,6 +184,59 @@ view.init({
           '\n' +
           '// load module\n' +
           'Galaxy.load(module);'
+        },
+        {
+          tag: 'h2',
+          text: 'List Rendering'
+        },
+        {
+          tag: 'p',
+          html: 'GalaxyJS provide $for directive for list rendering. $for reacts to <pre class="prettyprint inline' +
+          ' lang-js">array.change</pre> property which is provided automatically by GalaxyJS on array values that are bound to view.'
+        },
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-js',
+          text: 'const module = {\n' +
+          '        // Addons that you need for your module\n' +
+          '        imports: [\'galaxy/view\'],\n' +
+          '        // The element which is going to be the module\n' +
+          '        element: document.querySelector(\'#target\'),\n' +
+          '        constructor: function (Scope) {\n' +
+          '           const view = Scope.import(\'galaxy/view\');\n' +
+          '\n' +
+          '           Scope.data.list = [\n' +
+          '             {\n' +
+          '                title: \'Item 1\'\n' +
+          '             },\n' +
+          '             {\n' +
+          '                title: \'Item 2\'\n' +
+          '             },\n' +
+          '             {\n' +
+          '                title: \'Item 3\'\n' +
+          '             },\n' +
+          '           ];\n' +
+          '\n' +
+          '           view.config.cleanContainer = true;\n' +
+          '           view.init({\n' +
+          '             tag: \'ul\',\n' +
+          '             children: {\n' +
+          '               $for: {\n' +
+          '                  // Use the list.changes property to keep track of array changes\n' +
+          '                  // and update the view accordingly\n' +
+          '                  data: \'<>data.list.changes\',\n' +
+          '                  // An alias for each list item\n' +
+          '                  as: \'item\'\n' +
+          '               },\n' +
+          '               tag: \'li\',\n' +
+          '               text: \'<>item.title\'\n' +
+          '             }\n' +
+          '           });\n' +
+          '        }\n' +
+          '      };\n' +
+          '\n' +
+          '// load module\n' +
+          'Galaxy.load(module);'
         }
       ]
     }
