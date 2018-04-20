@@ -1,43 +1,42 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>GalaxyJS - Welcome</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="styles/images/favicon.ico">    
-    <script src="https://vuejs.org/js/vue.js"></script>
-    <script src="galaxyjs/galaxy.js"></script>
-    <script src="galaxyjs/galaxy-tags.js"></script>
+<head>
+  <title>GalaxyJS - Welcome</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="styles/images/favicon.ico">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenLite.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TimelineLite.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/easing/EasePack.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/plugins/CSSPlugin.min.js"></script>
-    
-    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
-    <script src="https://cdn.rawgit.com/google/code-prettify/760e6e73/src/lang-css.js"></script>
-    
-    <script src="animation-effects/auto-height.js"></script>
-    <script src="animation-effects/in-out.js"></script>
-    <script src="animation-effects/zoom.js"></script>
-    
-    <link rel="stylesheet" href="styles/styles.css" />
+  <!-- google prettyprint -->
+  <script src="assets/prettify/prettify.js"></script>
+  <!-- End of google code prettyprint -->
 
-    <script>
-      (function () {
-        window.addEventListener('load', run);
+  <link rel="stylesheet" href="styles/styles.css"/>
 
-        function run() {
-          Galaxy.boot({url: 'modules/main/index.html'}, function (module) {
-            Galaxy.ui.setContent('body', module.scope.html);
-            module.start();
-          });
-        }
+  <script>
+    (function () {
+      window.addEventListener('load', run);
 
-      })();
-    </script>
-  </head>
-  
-  <body>
+      function run() {
+        Galaxy.boot({
+          // url: 'modules/main/test2.js',
+          // url: 'modules/main/test.js',
+          url: 'modules/main/index.js',
+          element: document.getElementById('body')
+        }).then(function (module) {
+          module.start();
+        });
+      }
 
-  </body>
+    })();
+  </script>
+</head>
+
+<body id="body">
+<div class="loader"></div>
+</body>
+<script src="assets/gsap/TweenLite.min.js" defer></script>
+<script src="assets/gsap/TimelineLite.min.js" defer></script>
+<script src="assets/gsap/easing/EasePack.min.js" defer></script>
+<script src="assets/gsap/plugins/CSSPlugin.min.js" defer></script>
+
+<script src="galaxyjs/galaxy.js" defer></script>
 </html>

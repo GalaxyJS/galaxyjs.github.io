@@ -1,18 +1,44 @@
-/* 
+/*
     Created on : Nov 10, 2016, 8:04:25 PM
     Author     : Eeliya
 */
-@import url('https://fonts.googleapis.com/css?family=Rubik:300,400,500,700');
+/*@import url('https://fonts.googleapis.com/css?family=Rubik:300,400,500,700');*/
+@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');
+/*@import url('https://fonts.googleapis.com/css?family=Ubuntu+Mono');*/
+@keyframes slidein {
+  from {
+    background-color: red;
+  }
+
+  to {
+    background-color: blue;
+  }
+}
+
+p {
+  margin: 15px 0;
+}
+
+.bold {
+  color: red;
+}
 
 h1 {
-  font-size: 1.9em;
+  font-size: 30px;
   cursor: default;
+  margin: 20px 0;
+  line-height: 30px;
+}
+
+h2 {
+  margin-top: 30px;
+  margin-bottom: 15px;
 }
 
 h2 > a {
   float: right;
   text-decoration: none;
-  font-size: 13px;
+  font-size: .87em;
   font-weight: 500;
   text-transform: capitalize;
   line-height: 26px;
@@ -28,13 +54,34 @@ h2 > a:hover {
 }
 
 html, body {
-  font-family: 'Rubik', sans-serif;
-  font-size: 18px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  line-height: 18px;
   background-color: #fafbfc;
   position: relative;
   height: 100%;
   max-width: 100%;
   margin: 0;
+  padding: 0;
+}
+
+html {
+  overflow: hidden;
+}
+
+pre {
+  font-size: 14px;
+  overflow: hidden;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+pre * {
+  font-family: 'Ubuntu Mono', monospace;
+}
+
+* {
+  font-family: 'Nunito', sans-serif;
 }
 
 *, *:before, *:after {
@@ -47,46 +94,54 @@ a {
 
 .main-content {
   position: absolute;
-  width: calc(100% - 300px);
+  width: calc(100% - 270px);
   height: 100%;
-  left: 300px;
+  left: 270px;
   overflow: auto;
   overflow-y: scroll;
 }
 
+.main-content > main {
+  position: relative;
+  overflow: hidden;
+  min-height: 100%;
+}
+
 .main-nav {
   position: absolute;
-  width: 300px;
+  width: 270px;
   height: 100%;
-  color: #455a64;
+  color: #777;
   top: 0;
   left: 0;
   overflow: auto;
-  padding: 25px;
-  border-right: 1px solid rgba(0, 0, 0, .1);
+  padding: 25px 0;
+  font-weight: normal;
+  background-color: #fff;
+  box-shadow: 0 0 30px rgba(80, 80, 80, .1);
+  overflow-x: hidden;
 }
 
 .main-nav > a {
-  min-width: 100px;
   display: block;
   padding: 15px 20px;
   color: inherit;
   text-decoration: none;
   margin: 0 0 15px;
-  border-radius: 26px;
-  font-weight: 500;
   line-height: 20px;
+  border-left: 0 solid #455a64;
+  transition: all .2s ease-in-out;
 }
 
 .main-nav > a.active, .main-nav > a.active:hover {
-  background-color: #455a64;
-  color: #fff;
+  color: #455a64;
   cursor: default;
-  box-shadow: 0 0 9px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(0, 0, 0, .1);
+  font-weight: bold;
+  border-left: 15px solid #455a64;
 }
 
 .main-nav > a:hover {
-  background-color: rgba(0, 0, 0, .1);
+  background-color: rgba(69, 90, 100, .1);
 }
 
 .card {
@@ -101,8 +156,8 @@ a {
 }
 
 .card.big {
-  width: calc(100% - 40px);
-  max-width: 800px;
+  width: 100%;
+  max-width: 840px;
   border-radius: 12px;
   margin-bottom: 45px;
 }
@@ -157,8 +212,41 @@ a {
   font-weight: 300;
 }
 
+ul {
+  padding: 0;
+}
+
 ul > li {
-  padding: .2em 0;
+  padding: 5px 0 5px 22px;
+  overflow: hidden;
+  position: relative;
+  display: block;
+}
+
+ul > li > span {
+  float: left;
+}
+
+input[type='checkbox'] {
+  margin: 0 5px;
+  border: 2px solid #000000;
+  border-radius: 2px;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+}
+
+ul > li:before {
+  content: ' ';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  line-height: 12px;
+  background-color: #009688;
+  margin: 8px 5px;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
 }
 
 ul.items-list > li {
@@ -167,16 +255,6 @@ ul.items-list > li {
 
 ul.items-list > li:hover {
   color: #009688;
-}
-
-galaxy-animation {
-  display: block;
-  position: relative;
-  overflow: hidden;
-}
-
-.main-content > galaxy-animation {
-  min-height: 100%;
 }
 
 @media only screen and (max-device-width: 319px) {
@@ -223,6 +301,7 @@ galaxy-animation {
 @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
   html, body {
     font-size: 15px;
+    line-height: 16px;
   }
 
   .main-content {
@@ -271,7 +350,12 @@ pre.prettyprint {
   border-radius: 4px;
   padding: 15px;
   background-color: #eee;
-  font-size: 16px;
+}
+
+pre.prettyprint.inline {
+  display: inline;
+  padding: 0 4px;
+  border-radius: 9px;
 }
 
 blockquote {
@@ -362,7 +446,7 @@ section > section {
   transition: all .3s ease-in-out;
 }
 
-.field > input, .field > select {
+input, select {
   font-weight: 500;
   font-size: 15px;
   line-height: 20px;
@@ -402,4 +486,114 @@ section > section {
 .field[focus] > input, .field[focused] > select {
   /*border-color: #696fb4;*/
   border-color: #009688;
+}
+
+.color-item {
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, .1);
+  background-clip: border-box;
+  outline: none;
+  margin: 0 5px 5px 0;
+}
+
+.content li {
+  transition: opacity .1s linear;
+}
+
+.done {
+  opacity: .3;
+}
+
+button {
+  background-color: #bfbfbf;
+  border: 2px solid transparent;
+  color: rgba(0, 0, 0, .87);
+  cursor: pointer;
+  font-weight: 600;
+  margin: 0 .6em;
+  outline: none;
+  padding: .6em 1em;
+  border-radius: 2px;
+  transition-property: transform, border-color, background-color;
+  transition: all 90ms linear;
+  user-select: none;
+  display: inline-block;
+}
+
+button:first-of-type {
+  margin-left: 0;
+}
+
+button:last-of-type {
+  margin-right: 0;
+}
+
+button:hover, button:focus {
+  border-color: #909090;
+}
+
+button:active {
+  background-color: #909090;
+  transform: scale(.94);
+}
+
+button:disabled {
+  cursor: default;
+  opacity: .5;
+}
+
+button:disabled:hover {
+  border-color: transparent;
+}
+
+.fa-end {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.flex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+}
+
+.flex-row > * {
+  flex: 0 1 auto;
+}
+
+.flex-item-50 {
+  flex: 1 1 auto;
+  max-width: 50%;
+}
+
+.flex-item-25 {
+  flex: 1 1 auto;
+  max-width: 25%;
+}
+
+.flex-item-al {
+  align-self: inherit;
+  /* justify-self: flex-end; */
+}
+
+.loader {
+  width: 100px;
+  height: 100px;
+  top: calc((100% - 50px) / 2);
+  left: calc((100% - 50px) / 2);
+  border-width: 4px;
+  border-style: solid;
+  border-color: #000 transparent;
+  border-radius: 50%;
+  display: block;
+  animation: spin 1s infinite linear;
+  position:  absolute;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }

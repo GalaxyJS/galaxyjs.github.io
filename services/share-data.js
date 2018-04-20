@@ -1,5 +1,5 @@
 /* global Scope */
 
-Scope.export = {
+Scope.exports = {
   name: 'Eeliya Rasta'
 };
