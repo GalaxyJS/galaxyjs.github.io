@@ -53,6 +53,15 @@ Scope.data.navItems = [
       id: 'vuejs-replica-demo',
       url: 'modules/vuejs-replica/index.js'
     }
+  },
+
+  {
+    title: 'List Demo',
+    link: 'list-demo',
+    module: {
+      id: 'list-demo',
+      url: 'modules/list-demo/index.js'
+    }
   }
 ];
 

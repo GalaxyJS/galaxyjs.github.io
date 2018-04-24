@@ -497,7 +497,7 @@ input, select {
 }
 
 .content li {
-  transition: opacity .1s linear;
+  /*transition: opacity .1s linear;*/
 }
 
 .done {
