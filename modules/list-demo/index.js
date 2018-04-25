@@ -5,6 +5,10 @@ const view = Scope.import('galaxy/view');
 Scope.data.list1 = [];
 Scope.data.list2 = [];
 
+function trackBy(item) {
+  return item.title;
+}
+
 const itemAnimations = {
   enter: {
     sequence: 'list-items',
@@ -19,11 +23,13 @@ const itemAnimations = {
     duration: .6
   },
   leave: {
+    parent: 'card',
     sequence: 'list-items',
     to: {
       x: 20,
       backgroundColor: 'red'
     },
+    position: '-=.3',
     duration: .6
   }
 };
@@ -31,7 +37,7 @@ const itemAnimations = {
 view.init({
   tag: 'div',
   class: 'card',
-  // animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -76,7 +82,11 @@ view.init({
               text: 'Empty',
               on: {
                 click: function () {
-                  Scope.data.list1 = [];
+                  Scope.data.list1 = [
+                    {
+                      title: '***** i-1'
+                    }
+                  ];
                   Scope.data.list2 = [];
                 }
               }
@@ -96,7 +106,8 @@ view.init({
               class: 'flex-row',
               $for: {
                 data: '<>data.list1.changes',
-                as: 'list1Item'
+                as: 'list1Item',
+                trackBy: trackBy
               },
               text: '<>list1Item.title'
             },
@@ -110,7 +121,8 @@ view.init({
               class: 'flex-row',
               $for: {
                 data: '<>data.list2.changes',
-                as: 'list2Item'
+                as: 'list2Item',
+                trackBy: trackBy
               },
               text: '<>list2Item.title'
             }
