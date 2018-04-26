@@ -2384,7 +2384,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    next: function (action) {
+    next: function (action, ref) {
       const _this = this;
 
       // if sequence was finished, then reset the sequence
@@ -2395,8 +2395,10 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
-        data: {},
-        process: this.proceed,
+        data: {
+          ref: ref
+        },
+        process: _this.proceed,
         run: function run() {
           const local = this;
           action.call(local.data, function () {
@@ -2406,12 +2408,6 @@ Galaxy.GalaxySequence = /** @class */ (function () {
           });
         }
       };
-
-      // This will fix and strange bug
-      // if (_this.isFinished === false && _this.processing && _this.actions.length === 0) {
-      //   debugger;
-      //   _this.processing = false;
-      // }
 
       _this.actions.push(act);
 
@@ -2423,19 +2419,16 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    proceed: function sequenceProceed(p) {
+    proceed: function sequenceProceed() {
       const _this = this;
       const oldAction = _this.actions.shift();
       const firstAction = _this.actions[0];
       // console.log('should end',_this.actions.length, firstAction);
       if (firstAction) {
-        // if (_this.actions.length === 0) {
-
-        // }
         _this.resolver.then(firstAction.run.bind(firstAction));
       } else if (oldAction) {
         // _this.resolver.then(function () {
-          _this.activeStateResolve();
+        _this.activeStateResolve();
         // });
       }
     },
@@ -2467,11 +2460,32 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    nextAction: function (action) {
+    removeByRef: function (ref) {
+      let first = false;
+      this.actions = this.actions.filter(function (item, i) {
+        const flag = item.data.ref !== ref;
+        if (flag && i === 0) {
+          first = true;
+        }
+        return flag;
+      });
+
+      if (first && this.actions[0]) {
+        // debugger;
+        this.actions[0].run();
+        // debugger;
+      } else if (first) {
+        // debugger;
+      } else if (!this.actions[0] && !first && this.processing && !this.isFinished) {
+        this.activeStateResolve();
+      }
+    },
+
+    nextAction: function (action, ref) {
       this.next(function (done) {
         action.call(this);
         done('sequence-action');
-      });
+      }, ref);
     }
   };
   return GalaxySequence;
@@ -3156,7 +3170,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Object} nodeSchema
    * @param position
    */
-  View.createNode = function (parent, scopeData, nodeSchema, position) {
+  View.createNode = function (parent, scopeData, nodeSchema, position, refNode) {
     let i = 0, len = 0;
 
     if (typeof nodeSchema === 'string') {
@@ -3172,14 +3186,14 @@ Galaxy.View = /** @class */(function (G) {
 
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        View.createNode(parent, scopeData, nodeSchema[i], null);
+        View.createNode(parent, scopeData, nodeSchema[i], null, refNode);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let attributeValue, attributeName;
       const keys = Object.keys(nodeSchema);
       const needInitKeys = [];
 
-      const viewNode = new View.ViewNode(nodeSchema);
+      const viewNode = new View.ViewNode(nodeSchema, null, refNode);
       parent.registerChild(viewNode, position);
 
       // Behaviors definition stage
@@ -3941,6 +3955,22 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
+   * @typedef {Object} RenderConfig
+   * @property {string} [domManipulationOrder] - Indicates the order which the dom should be render.
+   * @property {boolean} [applyClassListAfterRender] - Indicates whether classlist applies after the render.
+   */
+
+  /**
+   *
+   * @type {RenderConfig}
+   */
+  ViewNode.GLOBAL_RENDER_CONFIG = {
+    // domManipulationOrder: 'alternate',
+    applyClassListAfterRender: false
+  };
+
+  /**
+   *
    * @param schemas
    * @memberOf Galaxy.View.ViewNode
    * @static
@@ -3983,10 +4013,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(schema, node) {
+  function ViewNode(schema, node, refNode) {
     const _this = this;
     /** @type {Node|Element|*} */
     _this.node = node || createElem(schema.tag || 'div');
+    _this.refNode = refNode || _this.node;
     _this.schema = schema;
     _this.data = {};
     _this.cache = {};
@@ -4034,6 +4065,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     });
     _this.destroyed.resolved = false;
 
+    /**
+     *
+     * @type {RenderConfig}
+     */
+    this.schema.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, schema.renderConfig || {});
+
     __node__.value = this.node;
     defProp(this.schema, '__node__', __node__);
 
@@ -4079,6 +4116,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   ViewNode.prototype.virtualize = function () {
     this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
+    // this.placeholder.nodeValue = 'tag: ' + this.schema.tag;
     this.virtual = true;
     this.setInDOM(false);
   };
@@ -4112,6 +4150,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       _this.sequences.leave.truncate();
       _this.callLifecycleEvent('preInsert');
 
+      // remove the animation from the parent which are referring to this node
+      _this.sequences.enter.onTruncate(function () {
+        _this.parent.sequences.enter.removeByRef(_this.refNode);
+      });
+
       _this.sequences.enter.nextAction(function () {
         if (!_this.node.parentNode) {
           insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
@@ -4132,7 +4175,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       _this.parent.sequences.enter.next(function (next) {
         waitForNodeAnimation.then(next);
-      });
+      }, _this.refNode);
 
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
@@ -4145,6 +4188,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       _this.sequences.enter.truncate();
       _this.callLifecycleEvent('preRemove');
 
+      // remove the animation from the parent which are referring to this node
+      _this.sequences.leave.onTruncate(function () {
+        _this.parent.sequences.leave.removeByRef(_this.refNode);
+      });
+
       _this.origin = true;
 
       let animationDone;
@@ -4154,7 +4202,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       _this.parent.sequences.leave.next(function (next) {
         waitForNodeAnimation.then(next);
-      });
+      }, _this.refNode);
 
       _this.populateLeaveSequence(_this.sequences.leave);
       // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
@@ -4234,6 +4282,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.sequences.enter.truncate();
         _this.callLifecycleEvent('preDestroy');
 
+        // remove the animation from the parent which are referring to this node
+        _this.sequences.leave.onTruncate(function () {
+          _this.parent.sequences.leave.removeByRef(_this);
+        });
+
         let animationDone;
         const waitForNodeAnimation = new Promise(function (resolve) {
           animationDone = resolve;
@@ -4244,7 +4297,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             _this.hasBeenDestroyed();
             next();
           });
-        });
+        }, _this);
 
         // Add children leave sequence to this node(parent node) leave sequence
         _this.clean(_this.sequences.leave, root);
@@ -4263,7 +4316,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
           animationDone();
           _this.origin = false;
-        });
+        }, _this);
       }
     } else if (leaveSequence) {
       if (_this.inDOM) {
@@ -4340,8 +4393,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
       toBeRemoved.reverse().forEach(function (node) {
-        node.schema.renderConfig = node.schema.renderConfig || {};
-        node.schema.renderConfig.domManipulationOrder = 'cascade';
+        // Inherit parent domManipulationOrder if no explicit domManipulationOrder is specified
+        if (!node.schema.renderConfig.hasOwnProperty('domManipulationOrder')) {
+          node.schema.renderConfig.domManipulationOrder = 'cascade';
+        }
       });
     }
     // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
@@ -4427,6 +4482,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
+            // viewNode.parent.sequences.enter.removeByRef(viewNode);
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -4438,7 +4494,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           }
 
           sequence.next(function (done) {
-            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, done);
+            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
           });
         };
       }
@@ -4476,16 +4532,16 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             animationDone = resolve;
           });
 
-          sequence.next((function (promise) {
-            return function (done) {
-              promise.then(done);
-            };
-          })(waitForAnimation));
-          // sequence.next(function (done) {
-          //   waitForAnimation.then(done);
-          // });
+          // sequence.next((function (promise) {
+          //   return function (done) {
+          //     promise.then(done);
+          //   };
+          // })(waitForAnimation));
+          sequence.next(function (done) {
+            waitForAnimation.then(done);
+          });
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animationDone);
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animations.config, animationDone);
         };
       }
 
@@ -4632,25 +4688,31 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    *
    * @param {Galaxy.View.ViewNode} viewNode
    * @param {'enter'|'leave'} type
-   * @param config
+   * @param descriptions
    * @param {callback} onComplete
    */
-  AnimationMeta.installGSAPAnimation = function (viewNode, type, config, onComplete) {
-    const from = AnimationMeta.parseStep(viewNode, config.from);
-    const to = AnimationMeta.parseStep(viewNode, config.to);
+  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
+    const from = AnimationMeta.parseStep(viewNode, descriptions.from);
+    const to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
     if (type !== 'leave' && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     }
 
-    const newConfig = Object.assign({}, config);
+    const newConfig = Object.assign({}, descriptions);
     newConfig.from = from;
     newConfig.to = to;
 
     if (newConfig.sequence) {
       const animationMeta = AnimationMeta.get(newConfig.sequence);
 
-      animationMeta.add(viewNode.node, newConfig, onComplete);
+      if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
+        animationMeta.addOnComplete(onComplete);
+        animationMeta.add(viewNode.node, newConfig);
+      } else {
+        animationMeta.add(viewNode.node, newConfig, onComplete);
+      }
+
       // Add to parent should happen after the animation is added to the child
       if (newConfig.parent) {
         const parent = AnimationMeta.get(newConfig.parent);
@@ -4678,13 +4740,26 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
+        _this.onCompletesActions.forEach(function (action) {
+          action();
+        });
+        _this.onCompletesActions = [];
       }
     });
+    _this.onCompletesActions = [];
 
-    this.timeline.addLabel('beginning', 0);
-    this.configs = {};
-    this.parent = null;
+    _this.timeline.addLabel('beginning', 0);
+    _this.configs = {};
+    _this.parent = null;
   }
+
+  /**
+   *
+   * @param {callback} action
+   */
+  AnimationMeta.prototype.addOnComplete = function (action) {
+    this.onCompletesActions.push(action);
+  };
 
   AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
     const _this = this;
@@ -5120,9 +5195,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       const _this = this;
-      const schema = _this.schema;
       const parentNode = _this.parent;
-      // parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue || [];
+      const parentSchema = parentNode.schema;
 
       _this.renderingFlow.truncate();
       _this.renderingFlow.onTruncate(function () {
@@ -5132,7 +5206,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       let destroyDone;
       const waitForDestroy = new Promise(function (resolve) {
-        destroyDone = function () {
+        destroyDone = function $forWaitForDestroy() {
           waitForDestroy.resolved = true;
           resolve();
         };
@@ -5182,36 +5256,31 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           return hasBeenRemoved.indexOf(node) === -1;
         });
 
-        leaveProcess = createLeaveProcess(_this, hasBeenRemoved, config, function (next) {
+        leaveProcess = createLeaveProcess(_this, hasBeenRemoved, config, function () {
           changes = newChanges;
 
           destroyDone();
-          // next();
         });
         leaveProcess.title = config.propName;
-        // parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+
+        if (newChanges.type === 'reset' && newChanges.params.length === 0) {
+          config.trackMap = newTrackMap;
+        }
       } else if (changes.type === 'reset') {
-        leaveProcess = createLeaveProcess(_this, config.nodes, config, function (next) {
+        leaveProcess = createLeaveProcess(_this, config.nodes, config, function () {
           changes = Object.assign({}, changes);
           changes.type = 'push';
-          // _this.renderingFlow;
-// debugger
 
           destroyDone();
-          // next();
-          // debugger;
         });
         leaveProcess.title = config.propName;
-        // parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
       }
 
-      // debugger
-      // if (schema.renderConfig && schema.renderConfig.domManipulationOrder === 'cascade') {
-      parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
-      // } else {
-      //   parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
-      // }
-      // debugger;
+      if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+        parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
+      } else {
+        parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+      }
 
       if (parentNode.cache.mainChildForLeaveProcesses.length && !parentNode.cache.mainChildForLeaveProcesses.active) {
         parentNode.cache.mainChildForLeaveProcesses.active = true;
@@ -5250,10 +5319,17 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         parentNode.cache.mainChildrenForPromise = null;
         config.trackMap = newTrackMap;
-
         if (changes.type === 'reset' && changes.params.length === 0) {
           return;
         }
+
+        // parentNode.sequences.enter.onTruncate(function () {
+        //   parentNode;
+        //
+        //   console.log(parentNode.schema.tag);
+        //
+        //   debugger;
+        // });
 
         createPushProcess(_this, config, changes, config.scope);
         // runForProcess(_this, config, changes, config.scope);
@@ -5272,14 +5348,19 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const schema = node.schema;
       node.renderingFlow.next(function leaveProcess(next) {
         if (itemsToBeRemoved.length) {
-          if (schema.renderConfig && schema.renderConfig.domManipulationOrder === 'cascade') {
+          let domManipulationOrder = parentNode.schema.renderConfig.domManipulationOrder;
+          if (schema.renderConfig.domManipulationOrder) {
+            domManipulationOrder = schema.renderConfig.domManipulationOrder;
+          }
+
+          if (domManipulationOrder === 'cascade') {
             View.ViewNode.destroyNodes(node, itemsToBeRemoved, null, parentNode.sequences.leave);
           } else {
             View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse());
           }
 
           parentNode.sequences.leave.nextAction(function () {
-            parentNode.callLifecycleEvent('postLeave');
+            parentNode.callLifecycleEvent('postChildrenLeave');
             parentNode.callLifecycleEvent('postAnimations');
             onDone();
             next();
@@ -5301,7 +5382,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     let onEachAction = function (vn) {
       this.push(vn);
     };
-// debugger;
+    parentNode.sequences.enter.onTruncate(function () {
+      parentNode.sequences.enter.removeByRef(node);
+    });
+
     node.renderingFlow.next(function forPushProcess(next) {
       if (changes.type === 'push') {
         let length = config.nodes.length;
@@ -5354,11 +5438,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
-      // const listPlaceholder = node.placeholder;
-      // if (listPlaceholder.parentNode !== parentNode.node) {
-      // parentNode.contentRef = listPlaceholder.parentNode;
-      // }
-
       const gClone = Galaxy.clone;
       const vCreateNode = View.createNode;
       if (newItems instanceof Array) {
@@ -5369,19 +5448,23 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           itemDataScope['$forIndex'] = i;
           let cns = gClone(templateSchema);
 
-          const vn = vCreateNode(parentNode, itemDataScope, cns, placeholdersPositions[i] || defaultPosition);
+          const vn = vCreateNode(parentNode, itemDataScope, cns, placeholdersPositions[i] || defaultPosition, node);
           onEachAction.call(nodes, vn, positions[i]);
         }
       }
 
+      // remove the animation from the parent which are referring to node
+      // TODO: All actions related to the for nodes will be removed.
+      // But this action wont get removed because it does not have a proper reference
+
       parentNode.sequences.enter.nextAction(function () {
-        parentNode.callLifecycleEvent('postEnter');
+        console.log('postChildrenEnter', parentNode.schema.tag);
+        parentNode.callLifecycleEvent('postChildrenEnter');
         parentNode.callLifecycleEvent('postAnimations');
         next();
-      });
+      }, node);
     });
-
-  };
+  }
 })(Galaxy.View);
 
 
