@@ -62,10 +62,18 @@ Scope.data.navItems = [
       id: 'list-demo',
       url: 'modules/list-demo/index.js'
     }
+  },
+
+  {
+    title: '$if Demo',
+    link: 'if-demo',
+    module: {
+      id: 'if-demo',
+      url: 'modules/if-demo/index.js'
+    }
   }
 ];
 
-// Scope.data.activeModule = null;
 Scope.data.activeModule = null;
 
 Scope.data.todos = [
