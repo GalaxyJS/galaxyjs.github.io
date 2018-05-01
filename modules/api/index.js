@@ -22,7 +22,7 @@ view.init({
       tag: 'img',
       class: 'banner',
       src: 'assets/images/tools.jpg',
-      height: '600'
+      height: '410'
     },
     {
       tag: 'section',

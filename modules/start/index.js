@@ -10,8 +10,8 @@ view.init({
     {
       tag: 'img',
       class: 'banner',
-      src: 'modules/start/images/galaxy-1.jpeg',
-      height: '600'
+      src: 'modules/start/images/galaxy-2.jpeg',
+      height: '410'
     },
     {
       tag: 'section',

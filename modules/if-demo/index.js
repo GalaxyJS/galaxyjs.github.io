@@ -7,7 +7,7 @@ Scope.data.condition = true;
 const itemAnimations = {
   enter: {
     parent: 'card',
-    sequence: 'list-items',
+    sequence: 'if-items',
     from: {
       opacity: 0,
       x: 20
@@ -16,18 +16,18 @@ const itemAnimations = {
       opacity: 1,
       x: 0
     },
-    position: '-=.3',
-    duration: .5
+    position: '-=.2',
+    duration: .3
   },
   leave: {
     parent: 'card',
-    sequence: 'list-items',
+    sequence: 'if-items',
     to: {
-      x: 20,
+      x: 25,
       opacity: 0
     },
-    position: '-=.3',
-    duration: .5
+    position: '-=.18',
+    duration: .2
   }
 };
 
@@ -63,34 +63,47 @@ view.init({
         },
         {
           tag: 'p',
+          children: [
+            {
+              tag: 'text',
+              text: 'Condition is: '
+            },
+            {
+              tag: 'strong',
+              text: '<>data.condition'
+            }
+          ]
+        },
+        {
+          tag: 'p',
           text: ' Item 1',
           animations: itemAnimations,
-          $if: '<>data.condition',
+          $if: '<>data.condition'
         },
         {
           tag: 'p',
           text: ' Item 2',
           animations: itemAnimations,
-          $if: '<>data.condition',
+          $if: '<>data.condition'
 
         },
         {
           tag: 'p',
           text: ' Item 3',
           animations: itemAnimations,
-          $if: '<>data.condition',
+          $if: '<>data.condition'
         },
         {
           tag: 'p',
           text: ' Item 4',
           animations: itemAnimations,
-          $if: '<>data.condition',
+          $if: '<>data.condition'
         },
         {
           tag: 'p',
           text: ' Item 5',
           animations: itemAnimations,
-          $if: '<>data.condition',
+          $if: '<>data.condition'
         }
       ]
     }

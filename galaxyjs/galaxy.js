@@ -3232,8 +3232,8 @@ Galaxy.View = /** @class */(function (G) {
       } else {
         viewNode.callLifecycleEvent('postInit');
       }
+
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
-      // this make sure that the viewNode and its child elements are rendered
       requestAnimationFrame(function () {
         viewNode.sequences.enter.nextAction(function () {
           viewNode.callLifecycleEvent('rendered');
@@ -4087,8 +4087,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {string} id event id
    */
   ViewNode.prototype.callLifecycleEvent = function (id) {
-    if (this.schema.lifecycle && typeof this.schema.lifecycle[id] === 'function') {
-      this.schema.lifecycle[id].call(this, this.inputs, this.data, this.sequences);
+    const lifecycle = this.schema.lifecycle;
+    if (lifecycle && typeof lifecycle[id] === 'function') {
+      lifecycle[id].call(this, this.inputs, this.data, this.sequences);
     }
   };
 
@@ -4461,6 +4462,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Galaxy.View.ViewNode} viewNode
      * @param attr
      * @param animations
+     * @param oldConfig
      * @param scopeData
      */
     handler: function (viewNode, attr, animations, oldConfig, scopeData) {
@@ -4481,6 +4483,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             TweenLite.killTweensOf(viewNode.node);
           });
 
+          // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
           if (animations.config.enterWithParent) {
             const parent = viewNode.parent;
             if (!parent.rendered.resolved) {
@@ -4507,6 +4510,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             TweenLite.killTweensOf(viewNode.node);
           });
 
+          // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
           if (animations.config.leaveWithParent) {
             const parent = viewNode.parent;
             if (parent.transitory) {
@@ -5496,10 +5500,16 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         config.onDone.ignore = true;
       });
 
-      const waitStepDone = registerWaitStep(parentNode.cache);
       if (value) {
+        // Only apply $if logic on the elements that are rendered
+        if (!node.rendered.resolved) {
+          return;
+        }
+
+        const waitStepDone = registerWaitStep(parentNode.cache);
         waitStepDone();
       } else {
+        const waitStepDone = registerWaitStep(parentNode.cache);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
           parentNode.cache.mainChildIfLeaveProcesses.push(process);

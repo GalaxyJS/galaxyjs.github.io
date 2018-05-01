@@ -20,17 +20,18 @@ const itemAnimations = {
       opacity: 1,
       x: 0
     },
-    duration: .6
+    position: '-=.2',
+    duration: .5
   },
   leave: {
     parent: 'card',
     sequence: 'list-items',
     to: {
       x: 20,
-      backgroundColor: 'red'
+      opacity: 0
     },
     position: '-=.3',
-    duration: .6
+    duration: .5
   }
 };
 
