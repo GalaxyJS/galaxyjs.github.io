@@ -45,8 +45,8 @@ view.init({
       class: 'content',
       children: [
         {
-          tag: 'h2',
-          text: 'List Demo'
+          tag: 'h1',
+          text: 'List Rendering'
         },
         {
           tag: 'p',

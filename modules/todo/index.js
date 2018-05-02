@@ -15,6 +15,15 @@ const ToDoService = {
   }
 };
 
+function calculateDuration() {
+  let listAnimationDuration = 1 / (inputs.items.length || 1);
+  if (listAnimationDuration < .12) {
+    listAnimationDuration = .12;
+  }
+
+  return listAnimationDuration;
+}
+
 Scope.data.newItem = {
   title: '',
   done: false
@@ -113,14 +122,7 @@ view.init({
                   paddingBottom: 0
                 },
                 position: '-=.1',
-                duration: function () {
-                  let listAnimationDuration = 1 / (inputs.items.length || 1);
-                  if (listAnimationDuration < .12) {
-                    listAnimationDuration = .12;
-                  }
-
-                  return listAnimationDuration;
-                },
+                duration: calculateDuration,
                 chainToParent: true
               },
               leave: {
@@ -131,9 +133,9 @@ view.init({
                   paddingTop: 0,
                   paddingBottom: 0
                 },
-                position: '-=.05',
+                position: '-=.1',
                 chainToParent: true,
-                duration: .1
+                duration: calculateDuration,
               }
             },
             // id: '<>item.title',
