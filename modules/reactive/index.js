@@ -12,12 +12,12 @@ view.init({
     }
   },
   children: [
-    // {
-    //   tag: 'img',
-    //   class: 'banner',
-    //   src: 'modules/start/images/galaxy-1.jpeg',
-    //   height: '600'
-    // },
+    {
+      tag: 'img',
+      class: 'banner',
+      src: 'assets/images/watch.jpg',
+      height: '355'
+    },
     {
       tag: 'section',
       class: 'content',

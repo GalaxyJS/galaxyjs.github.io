@@ -55,7 +55,7 @@ view.init({
                     $if: [
                       'product.quantity',
                       function (q) {
-                        return !q;
+                        return !q || q < 1;
                       }
                     ]
                   }
@@ -80,8 +80,8 @@ view.init({
               tag: 'h3',
               text: [
                 'data.products',
-                function (p) {
-                  return 'Total: ' + p.reduce(function (sum, item) {
+                function (products) {
+                  return 'Total: ' + products.reduce(function (sum, item) {
                     return sum + item.quantity;
                   }, 0);
                 }

@@ -1,7 +1,7 @@
 /* globals Scope */
 
-var view = Scope.import('galaxy/view');
-var animations = Scope.import('services/animations.js');
+const view = Scope.import('galaxy/view');
+const animations = Scope.import('services/animations.js');
 
 view.init({
   class: 'card big',
@@ -10,8 +10,8 @@ view.init({
     {
       tag: 'img',
       class: 'banner',
-      src: 'modules/start/images/galaxy-1.jpeg',
-      height: '600'
+      src: 'assets/images/galaxy.jpeg',
+      height: '410'
     },
     {
       tag: 'section',

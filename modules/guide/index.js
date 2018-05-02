@@ -21,7 +21,7 @@ view.init({
       tag: 'img',
       class: 'banner',
       src: 'assets/images/guide.jpg',
-      height: '580'
+      height: '410'
     },
     {
       class: 'content',

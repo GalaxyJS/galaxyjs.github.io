@@ -7,7 +7,18 @@ const animations = {
       from: {
         transformOrigin: 'top center',
         scale: 1.1,
-        opacity: 0
+        opacity: 0,
+        position: 'absolute',
+        top: 0,
+        x: function (val, node) {
+          return node.offsetLeft;
+        }
+      },
+      to: {
+        top: 0,
+        scale: 1,
+        opacity: 1,
+        position: 'absolute'
       },
       duration: .3,
       position: '-=.15',
@@ -18,13 +29,15 @@ const animations = {
       sequence: 'card',
       fixedPosition: true,
       from: {
-        transformOrigin: 'top center',
-        position: 'absolute',
-        x: function (val, node) {
-          return node.offsetLeft;
-        }
+        transformOrigin: 'top center'
+        // position: 'absolute',
+        // x: function (val, node) {
+        //   return node.offsetLeft;
+        // }
       },
       to: {
+        // position: 'absolute',
+        display: 'none',
         scale: .9,
         opacity: 0
       },
@@ -52,7 +65,7 @@ const animations = {
       },
       position: '-=.4',
       duration: .5
-    },
+    }
     // '.done': {
     //   sequence: 'card',
     //   group: 'item-state',
@@ -100,7 +113,7 @@ const animations = {
         },
         position: '-=.2',
         duration: .3
-      },
+      }
       // leave: {
       //   parent: lParent || null,
       //   sequence: lSequence,
@@ -134,7 +147,7 @@ animations.mainNavItem = {
       transition: 'none',
       autoAlpha: 0,
       x: '-25%',
-      ease: Elastic.easeOut.config(1, .5),
+      ease: Elastic.easeOut.config(1, .5)
     },
     position: '-=.4',
     chainToParent: true,

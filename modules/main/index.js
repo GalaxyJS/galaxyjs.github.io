@@ -37,6 +37,25 @@ Scope.data.navItems = [
       url: 'modules/api/index.js'
     }
   },
+
+  {
+    title: 'Conditional Rendering',
+    link: 'conditional-rendering',
+    module: {
+      id: 'conditional-rendering',
+      url: 'modules/conditional-rendering/index.js'
+    }
+  },
+
+  {
+    title: 'List Rendering',
+    link: 'list-rendering',
+    module: {
+      id: 'list-rendering',
+      url: 'modules/list-rendering/index.js'
+    }
+  },
+
   {
     title: 'ToDo - Demo',
     link: 'todo-demo',
@@ -53,10 +72,9 @@ Scope.data.navItems = [
       id: 'vuejs-replica-demo',
       url: 'modules/vuejs-replica/index.js'
     }
-  }
+  },
 ];
 
-// Scope.data.activeModule = null;
 Scope.data.activeModule = null;
 
 Scope.data.todos = [

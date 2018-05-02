@@ -5,15 +5,6 @@
 /*@import url('https://fonts.googleapis.com/css?family=Rubik:300,400,500,700');*/
 @import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');
 /*@import url('https://fonts.googleapis.com/css?family=Ubuntu+Mono');*/
-@keyframes slidein {
-  from {
-    background-color: red;
-  }
-
-  to {
-    background-color: blue;
-  }
-}
 
 p {
   margin: 15px 0;
@@ -130,6 +121,7 @@ a {
   margin: 0 0 15px;
   line-height: 20px;
   border-left: 0 solid #455a64;
+  cursor: pointer;
   transition: all .2s ease-in-out;
 }
 
@@ -177,7 +169,7 @@ a {
   background-size: cover;
   width: 100%;
   margin: 0;
-  min-height: 400px;
+  min-height: 300px;
 }
 
 .card.info-pane {
@@ -497,7 +489,7 @@ input, select {
 }
 
 .content li {
-  transition: opacity .1s linear;
+  /*transition: opacity .1s linear;*/
 }
 
 .done {
