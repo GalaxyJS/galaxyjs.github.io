@@ -19,10 +19,6 @@ Scope.data.newItem = {
   title: '',
   done: false
 };
-let listAnimationDuration = 1 / (inputs.items.length || 1);
-if (listAnimationDuration < .12) {
-  listAnimationDuration = .12;
-}
 
 view.init({
   tag: 'div',
@@ -102,7 +98,11 @@ view.init({
           tag: 'ul',
           children: {
             tag: 'li',
-            $for: 'titem in inputs.items',
+            // $for: 'titem in inputs.items',
+            $for: {
+              data: '<>inputs.items.changes',
+              as: 'titem'
+            },
             animations: {
               enter: {
                 parent: 'card',
@@ -113,7 +113,14 @@ view.init({
                   paddingBottom: 0
                 },
                 position: '-=.1',
-                duration: listAnimationDuration,
+                duration: function () {
+                  let listAnimationDuration = 1 / (inputs.items.length || 1);
+                  if (listAnimationDuration < .12) {
+                    listAnimationDuration = .12;
+                  }
+
+                  return listAnimationDuration;
+                },
                 chainToParent: true
               },
               leave: {

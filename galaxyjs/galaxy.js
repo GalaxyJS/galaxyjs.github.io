@@ -3218,25 +3218,21 @@ Galaxy.View = /** @class */(function (G) {
         }
       }
 
+      viewNode.callLifecycleEvent('postInit');
       if (!viewNode.virtual) {
-        viewNode.callLifecycleEvent('postInit');
-
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
 
-        View.createNode(viewNode, scopeData, nodeSchema.children, null);
+        View.createNode(viewNode, scopeData, nodeSchema.children, null, refNode);
         viewNode.inserted.then(function () {
           viewNode.callLifecycleEvent('postChildrenInsert');
         });
-      } else {
-        viewNode.callLifecycleEvent('postInit');
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       requestAnimationFrame(function () {
         viewNode.sequences.enter.nextAction(function () {
-          viewNode.callLifecycleEvent('rendered');
           viewNode.hasBeenRendered();
         });
       });
@@ -4041,6 +4037,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       _this.hasBeenRendered = function () {
         _this.rendered.resolved = true;
         done();
+
+        _this.callLifecycleEvent('rendered');
       };
     });
     _this.rendered.resolved = false;
@@ -4629,6 +4627,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
     let tween = null;
 
+    let duration = config.duration;
+    if (duration instanceof Function) {
+      duration = config.duration.call(node);
+    }
+
     if (config.from && config.to) {
       tween = TweenLite.fromTo(node,
         config.duration || 0,
@@ -4648,11 +4651,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       tween = TweenLite.from(node,
-        config.duration || 0,
+        duration || 0,
         from || {});
     } else {
       tween = TweenLite.to(node,
-        config.duration || 0,
+        duration || 0,
         to || {});
     }
 
@@ -4780,9 +4783,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     to.onStart = onStart;
 
     let tween = null;
+    let duration = config.duration;
+    if (duration instanceof Function) {
+      duration = config.duration.call(node);
+    }
+
     if (config.from && config.to) {
       tween = TweenLite.fromTo(node,
-        config.duration || 0,
+        duration || 0,
         config.from || {},
         to);
     } else if (config.from) {
@@ -4791,11 +4799,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       from.onStartParams = [node['galaxyViewNode']];
       from.onStart = onStart;
       tween = TweenLite.from(node,
-        config.duration || 0,
+        duration || 0,
         from || {});
     } else {
       tween = TweenLite.to(node,
-        config.duration || 0,
+        duration || 0,
         to || {});
     }
 
@@ -5231,8 +5239,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           changes = newChanges;
           waitStepDone();
         });
-        leaveProcess.title = config.propName;
 
+        // Map should be updated asap if the newChanges.type is reset
         if (newChanges.type === 'reset' && newChanges.params.length === 0) {
           config.trackMap = newTrackMap;
         }
@@ -5242,13 +5250,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           changes.type = 'push';
           waitStepDone();
         });
-        leaveProcess.title = config.propName;
+      } else {
+        Promise.resolve().then(waitStepDone);
+        // waitStepDone();
       }
 
-      if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-        parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
-      } else {
-        parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+      // leave process will be empty if the type is not reset
+      if (leaveProcess) {
+        if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+          parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
+        } else {
+          parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+        }
       }
 
       activateLeaveProcess(parentNode.cache);
@@ -5297,6 +5310,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       // that belong to parentNode
       requestAnimationFrame(function () {
         parentCache.mainChildForLeaveProcesses.forEach(function (action) {
+          parentCache.mainChildForLeaveProcesses
           action();
         });
         parentCache.mainChildForLeaveProcesses = [];

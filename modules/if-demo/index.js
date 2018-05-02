@@ -57,7 +57,7 @@ view.init({
                 click: function () {
                   Scope.data.condition = !Scope.data.condition;
                 }
-              }
+              },
             }
           ]
         },
