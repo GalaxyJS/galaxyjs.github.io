@@ -206,6 +206,7 @@ a {
 
 ul {
   padding: 0;
+  overflow: hidden;
 }
 
 ul > li {
@@ -490,6 +491,11 @@ input, select {
 
 .content li {
   /*transition: opacity .1s linear;*/
+  /* max-height: 0; */
+  /* padding-top:  0; */
+  /* padding-bottom:  0; */
+  line-height:  18px;
+  vertical-align: super;
 }
 
 .done {

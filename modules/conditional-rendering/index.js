@@ -6,6 +6,10 @@ Scope.data.condition = true;
 Scope.data.conditionForMultiple = true;
 
 const itemAnimations = {
+  config: {
+    enterWithParent: true,
+    leaveWithParent: true
+  },
   enter: {
     parent: 'card',
     sequence: 'if-items',
@@ -67,7 +71,7 @@ view.init({
                 click: function () {
                   Scope.data.condition = !Scope.data.condition;
                 }
-              },
+              }
             }
           ]
         },
@@ -133,7 +137,7 @@ view.init({
                 click: function () {
                   Scope.data.conditionForMultiple = !Scope.data.conditionForMultiple;
                 }
-              },
+              }
             }
           ]
         },
