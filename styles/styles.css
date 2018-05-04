@@ -504,6 +504,7 @@ input, select {
 
 button {
   background-color: #bfbfbf;
+  /*background-color: transparent;*/
   border: 2px solid transparent;
   color: rgba(0, 0, 0, .87);
   cursor: pointer;
@@ -511,7 +512,7 @@ button {
   margin: 0 .6em;
   outline: none;
   padding: .6em 1em;
-  border-radius: 2px;
+  border-radius: 3px;
   transition-property: transform, border-color, background-color;
   transition: all 90ms linear;
   user-select: none;
@@ -528,6 +529,7 @@ button:last-of-type {
 
 button:hover, button:focus {
   border-color: #909090;
+  /*box-shadow: 0 0 5px rgba(0,0,0,.1), 0 5px 15px rgba(0,0,0,.1);*/
 }
 
 button:active {

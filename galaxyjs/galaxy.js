@@ -1887,7 +1887,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @param {Object} moduleMetaData
      * @param moduleConstructor
      * @param invokers
-     * @returns {Promise<Galaxy.GalaxyModule>}
+     * @returns {Promise<Galaxy.Module>}
      */
     compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
       const _this = this;
@@ -1935,9 +1935,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           });
         }
 
-        const scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
+        const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);
         // Create module from moduleMetaData
-        const module = new Galaxy.GalaxyModule(moduleMetaData, moduleConstructor, scope);
+        const module = new Galaxy.Module(moduleMetaData, moduleConstructor, scope);
         Galaxy.modules[module.systemId] = module;
 
         if (imports.length) {
@@ -1984,7 +1984,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
     /**
      *
-     * @param {Galaxy.GalaxyModule}  module
+     * @param {Galaxy.Module}  module
      * @return {Promise<any>}
      */
     executeCompiledModule: function (module) {
@@ -2079,17 +2079,17 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyModule = /** @class */ (function () {
+Galaxy.Module = /** @class */ (function () {
 
   /**
    *
    * @param {Object} module
    * @param {string} source
-   * @param {Galaxy.GalaxyScope} scope
+   * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxyModule(module, source, scope) {
+  function Module(module, source, scope) {
     this.id = module.id;
     this.systemId = module.systemId;
     this.source = source;
@@ -2101,7 +2101,7 @@ Galaxy.GalaxyModule = /** @class */ (function () {
     this.scope = scope;
   }
 
-  GalaxyModule.prototype = {
+  Module.prototype = {
     init: function () {
       this.scope.trigger('module.init');
     },
@@ -2119,7 +2119,7 @@ Galaxy.GalaxyModule = /** @class */ (function () {
     }
   };
 
-  return GalaxyModule;
+  return Module;
 }(Galaxy || {}));
 
 /* global Galaxy */
@@ -2209,7 +2209,7 @@ Galaxy.Observer = /** @class */ (function () {
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyScope = /** @class */ (function () {
+Galaxy.Scope = /** @class */ (function () {
   const defProp = Object.defineProperty;
 
   /**
@@ -2219,7 +2219,7 @@ Galaxy.GalaxyScope = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxyScope(module, element) {
+  function Scope(module, element) {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;
     this.element = element || null;
@@ -2239,7 +2239,7 @@ Galaxy.GalaxyScope = /** @class */ (function () {
     this.on('module.destroy', this.destroy.bind(this));
   }
 
-  GalaxyScope.prototype = {
+  Scope.prototype = {
     /**
      *
      * @param id ID string which is going to be used for importing
@@ -2334,13 +2334,13 @@ Galaxy.GalaxyScope = /** @class */ (function () {
     }
   };
 
-  return GalaxyScope;
+  return Scope;
 })();
 
 /* global Galaxy, Promise */
 'use strict';
 
-Galaxy.GalaxySequence = /** @class */ (function () {
+Galaxy.Sequence = /** @class */ (function () {
   const disabledProcess = function () {
   };
 
@@ -2349,7 +2349,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxySequence() {
+  function Sequence() {
     const _this = this;
     _this.truncateHandlers = [];
     _this.activeStateResolve = null;
@@ -2366,7 +2366,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     this.reset();
   }
 
-  GalaxySequence.prototype = {
+  Sequence.prototype = {
     reset: function () {
       const _this = this;
       _this.actions = [];
@@ -2484,7 +2484,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       }, ref);
     }
   };
-  return GalaxySequence;
+  return Sequence;
 })();
 
 /* global Galaxy */
@@ -2857,7 +2857,7 @@ Galaxy.View = /** @class */(function (G) {
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
     let value = scopeData;
 
-    if (!parentReactiveData && !(scopeData instanceof Galaxy.GalaxyScope)) {
+    if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
       if (scopeData.hasOwnProperty('__rd__')) {
         parentReactiveData = scopeData.__rd__;
       } else {
@@ -2939,9 +2939,9 @@ Galaxy.View = /** @class */(function (G) {
           });
         }
 
-        // The parentReactiveData would be empty when the developer is trying to bind to a direct property of GalaxyScope
-        if (!parentReactiveData && scopeData instanceof Galaxy.GalaxyScope) {
-          // if (scopeData instanceof Galaxy.GalaxyScope) {
+        // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
+        if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
+          // if (scopeData instanceof Galaxy.Scope) {
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
             'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
         }
@@ -2974,7 +2974,7 @@ Galaxy.View = /** @class */(function (G) {
     const subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
 
     let parentReactiveData;
-    if (!(data instanceof Galaxy.GalaxyScope)) {
+    if (!(data instanceof Galaxy.Scope)) {
       parentReactiveData = new Galaxy.View.ReactiveData('@', data);
     }
 
@@ -3243,7 +3243,7 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @param {Galaxy.GalaxyScope} scope
+   * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
    */
@@ -3984,8 +3984,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    *
    * @param {Galaxy.View.ViewNode} node
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @param {Galaxy.GalaxySequence} sequence
-   * @param {Galaxy.GalaxySequence} root
+   * @param {Galaxy.Sequence} sequence
+   * @param {Galaxy.Sequence} root
    * @memberOf Galaxy.View.ViewNode
    * @static
    */
@@ -4022,12 +4022,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.setters = {};
     _this.parent = null;
     _this.dependedObjects = [];
-    _this.renderingFlow = new Galaxy.GalaxySequence();
+    _this.renderingFlow = new Galaxy.Sequence();
     _this.sequences = {
-      enter: new Galaxy.GalaxySequence(),
-      leave: new Galaxy.GalaxySequence(),
-      ':destroy': new Galaxy.GalaxySequence(),
-      ':class': new Galaxy.GalaxySequence()
+      enter: new Galaxy.Sequence(),
+      leave: new Galaxy.Sequence(),
+      ':destroy': new Galaxy.Sequence(),
+      ':class': new Galaxy.Sequence()
     };
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
@@ -4118,14 +4118,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} sequence
+   * @param {Galaxy.Sequence} sequence
    */
   ViewNode.prototype.populateEnterSequence = function (sequence) {
   };
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} sequence
+   * @param {Galaxy.Sequence} sequence
    */
   ViewNode.prototype.populateLeaveSequence = function (sequence) {
 
@@ -4263,8 +4263,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} leaveSequence
-   * @param {Galaxy.GalaxySequence} root
+   * @param {Galaxy.Sequence} leaveSequence
+   * @param {Galaxy.Sequence} root
    */
   ViewNode.prototype.destroy = function (leaveSequence, root) {
     const _this = this;
@@ -4367,9 +4367,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} leaveSequence
-   * @param {Galaxy.GalaxySequence} root
-   * @return {Galaxy.GalaxySequence}
+   * @param {Galaxy.Sequence} leaveSequence
+   * @param {Galaxy.Sequence} root
+   * @return {Galaxy.Sequence}
    */
   ViewNode.prototype.clean = function (leaveSequence, root) {
     const _this = this;
@@ -4442,6 +4442,447 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   return ViewNode;
 
 })(Galaxy.View);
+
+/* global Galaxy, TweenLite, TimelineLite */
+'use strict';
+
+(function (G) {
+  if (!window.TweenLite || !window.TimelineLite) {
+    return console.warn('please load GSAP - GreenSock in order to activate animations');
+  }
+
+  G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
+    type: 'custom',
+    name: 'animations',
+    /**
+     *
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param attr
+     * @param animations
+     * @param oldConfig
+     * @param scopeData
+     */
+    handler: function (viewNode, attr, animations, oldConfig, scopeData) {
+      if (viewNode.virtual || !animations) {
+        return;
+      }
+
+      const enter = animations.enter;
+      if (enter) {
+        if (enter.sequence) {
+          AnimationMeta.get(enter.sequence).configs.enter = enter;
+        }
+
+        viewNode.populateEnterSequence = function (sequence) {
+          animations.config = animations.config || {};
+
+          sequence.onTruncate(function () {
+            TweenLite.killTweensOf(viewNode.node);
+          });
+
+          // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
+          if (animations.config.enterWithParent) {
+            const parent = viewNode.parent;
+            if (!parent.rendered.resolved) {
+              return;
+            }
+          }
+
+          sequence.next(function (done) {
+            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
+          });
+        };
+      }
+
+      const leave = animations.leave;
+      if (leave) {
+        if (leave.sequence) {
+          AnimationMeta.get(leave.sequence).configs.leave = leave;
+        }
+
+        viewNode.populateLeaveSequence = function (sequence) {
+          animations.config = animations.config || {};
+
+          sequence.onTruncate(function () {
+            TweenLite.killTweensOf(viewNode.node);
+          });
+
+          // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
+          if (animations.config.leaveWithParent) {
+            const parent = viewNode.parent;
+            if (parent.transitory) {
+              return;
+            }
+          }
+
+          // in the case which the viewNode is not visible, then ignore its animation
+          if (viewNode.node.offsetWidth === 0 ||
+            viewNode.node.offsetHeight === 0 ||
+            viewNode.node.style.opacity === '0' ||
+            viewNode.node.style.visibility === 'hidden') {
+            return;
+          }
+
+          let animationDone;
+          const waitForAnimation = new Promise(function (resolve) {
+            animationDone = resolve;
+          });
+
+          sequence.next(function (done) {
+            waitForAnimation.then(done);
+          });
+
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animations.config, animationDone);
+        };
+      }
+
+      viewNode.rendered.then(function () {
+        viewNode.observer.on('class', function (value, oldValue) {
+          value.forEach(function (item) {
+            if (item && oldValue.indexOf(item) === -1) {
+              let _config = animations['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+                  let classAnimationConfig = _config;
+                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+
+                  if (classAnimationConfig.sequence) {
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta =
+                        animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position ||
+                          '+=0');
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+
+          oldValue.forEach(function (item) {
+            if (item && value.indexOf(item) === -1) {
+              let _config = animations['.' + item];
+              if (_config) {
+                viewNode.sequences[':class'].next(function (done) {
+                  let classAnimationConfig = _config;
+                  classAnimationConfig.to = { className: '-=' + item || '' };
+
+                  if (classAnimationConfig.sequence) {
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+
+                    if (classAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                    }
+
+                    animationMeta.add(viewNode.node, classAnimationConfig, done);
+                  } else {
+                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
+                  }
+                });
+              }
+            }
+          });
+        });
+      });
+    }
+  };
+
+  AnimationMeta.ANIMATIONS = {};
+  AnimationMeta.TIMELINES = {};
+
+  /**
+   *
+   * @param {string} name
+   * @return {AnimationMeta}
+   */
+  AnimationMeta.get = function (name) {
+    if (!AnimationMeta.ANIMATIONS[name]) {
+      AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
+    }
+
+    return AnimationMeta.ANIMATIONS[name];
+  };
+
+  AnimationMeta.parseSequence = function (sequence) {
+    return sequence.split('/').filter(Boolean);
+  };
+
+  AnimationMeta.createTween = function (node, config, onComplete) {
+    let to = Object.assign({}, config.to || {});
+
+    if (to.onComplete) {
+      const userOnComplete = to.onComplete;
+      to.onComplete = function () {
+        userOnComplete();
+        onComplete();
+      };
+    } else {
+      to.onComplete = onComplete;
+    }
+    let tween = null;
+
+    let duration = config.duration;
+    if (duration instanceof Function) {
+      duration = config.duration.call(node);
+    }
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      let from = Object.assign({}, config.from || {});
+
+      if (from.onComplete) {
+        const userOnComplete = to.onComplete;
+        from.onComplete = function () {
+          userOnComplete();
+          onComplete();
+        };
+      } else {
+        from.onComplete = onComplete;
+      }
+
+      tween = TweenLite.from(node,
+        duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        duration || 0,
+        to || {});
+    }
+
+    return tween;
+  };
+
+  AnimationMeta.calculateDuration = function (duration, position) {
+    let po = position.replace('=', '');
+    return ((duration * 10) + (Number(po) * 10)) / 10;
+  };
+
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} node
+   * @param {Object|Function} step
+   * @return {*}
+   */
+  AnimationMeta.parseStep = function (node, step) {
+    if (step instanceof Function) {
+      return step(node);
+    }
+
+    return step;
+  };
+
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {'enter'|'leave'} type
+   * @param descriptions
+   * @param {callback} onComplete
+   */
+  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
+    const from = AnimationMeta.parseStep(viewNode, descriptions.from);
+    const to = AnimationMeta.parseStep(viewNode, descriptions.to);
+
+    if (type !== 'leave' && to) {
+      to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
+    }
+
+    const newConfig = Object.assign({}, descriptions);
+    newConfig.from = from;
+    newConfig.to = to;
+
+    if (newConfig.sequence) {
+      const animationMeta = AnimationMeta.get(newConfig.sequence);
+
+      if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
+        animationMeta.addOnComplete(onComplete);
+        animationMeta.add(viewNode.node, newConfig);
+      } else {
+        animationMeta.add(viewNode.node, newConfig, onComplete);
+      }
+
+      // Add to parent should happen after the animation is added to the child
+      if (newConfig.parent) {
+        const parent = AnimationMeta.get(newConfig.parent);
+        const animationMetaTypeConfig = animationMeta.configs[type] || {};
+        const parentTypeConfig = animationMeta.configs[type] || {};
+        parent.addChild(animationMeta, animationMetaTypeConfig, parentTypeConfig);
+      }
+    } else {
+      AnimationMeta.createTween(viewNode.node, newConfig, onComplete);
+    }
+  };
+
+  /**
+   *
+   * @param {string} name
+   * @class
+   */
+  function AnimationMeta(name) {
+    const _this = this;
+    _this.name = name;
+    this.timeline = new TimelineLite({
+      autoRemoveChildren: true,
+      smoothChildTiming: true,
+      onComplete: function () {
+        if (_this.parent) {
+          _this.parent.timeline.remove(_this.timeline);
+        }
+        _this.onCompletesActions.forEach(function (action) {
+          action();
+        });
+        _this.onCompletesActions = [];
+      }
+    });
+    _this.onCompletesActions = [];
+
+    _this.timeline.addLabel('beginning', 0);
+    _this.configs = {};
+    _this.parent = null;
+  }
+
+  /**
+   *
+   * @param {callback} action
+   */
+  AnimationMeta.prototype.addOnComplete = function (action) {
+    this.onCompletesActions.push(action);
+  };
+
+  AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
+    const _this = this;
+    child.parent = _this;
+
+    const children = this.timeline.getChildren(false);
+
+    if (children.indexOf(child.timeline) === -1) {
+      if (_this.timeline.getChildren(false, true, false).length === 0) {
+        _this.timeline.add(child.timeline, 0);
+      } else {
+        _this.timeline.add(child.timeline, childConf.chainToParent ? childConf.position : '+=0');
+      }
+    }
+  };
+
+  AnimationMeta.prototype.add = function (node, config, onComplete) {
+    const _this = this;
+    const to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+    to.onStartParams = [node['galaxyViewNode']];
+
+    let onStart = config.onStart;
+    to.onStart = onStart;
+
+    let tween = null;
+    let duration = config.duration;
+    if (duration instanceof Function) {
+      duration = config.duration.call(node);
+    }
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      let from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      from.onStartParams = [node['galaxyViewNode']];
+      from.onStart = onStart;
+      tween = TweenLite.from(node,
+        duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        duration || 0,
+        to || {});
+    }
+
+    tween.data = {
+      am: _this,
+      config: config
+    };
+
+    // First animation in the timeline should always start at zero
+    if (this.timeline.getChildren(false, true, false).length === 0) {
+      let progress = _this.timeline.progress();
+      if (config.parent) {
+        _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
+      } else {
+        _this.timeline.add(tween, config.position);
+      }
+
+      if (!progress) {
+        _this.timeline.play(0);
+      }
+    } else {
+      // if (config.parent) {
+      //   _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
+      // } else {
+      _this.timeline.add(tween, config.position);
+      // }
+    }
+  };
+
+})(Galaxy);
+
+/* global Galaxy */
+
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['on'] = {
+    type: 'custom',
+    name: 'on',
+    /**
+     *
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param attr
+     * @param events
+     */
+    handler: function (viewNode, attr, events) {
+      if (events !== null && typeof events === 'object') {
+        for (let name in events) {
+          if (events.hasOwnProperty(name)) {
+            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
+          }
+        }
+      }
+    }
+  };
+})(Galaxy);
+
+/* global Galaxy */
+
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['text'] = {
+    type: 'custom',
+    name: 'text',
+    /**
+     *
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {string} attr
+     * @param value
+     */
+    handler: function (viewNode, attr, value) {
+      const textNode = viewNode.node['<>text'];
+      const textValue = typeof value === 'undefined' || value === null ? '' : value;
+
+      if (textNode) {
+        textNode.textContent = textValue;
+      } else {
+        viewNode.node['<>text'] = document.createTextNode(textValue);
+        viewNode.node.insertBefore(viewNode.node['<>text'], viewNode.node.firstChild);
+      }
+    }
+  };
+})(Galaxy);
 
 /* global Galaxy */
 
@@ -5262,10 +5703,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       let currentScope = cache.scope;
 
       while (moduleScope) {
-        // In the case where module is a part of $for, cache.scope will be NOT an instance of GalaxyScope
+        // In the case where module is a part of $for, cache.scope will be NOT an instance of Scope
         // but its __parent__ is
-        if (!(currentScope instanceof Galaxy.GalaxyScope)) {
-          currentScope = new Galaxy.GalaxyScope({
+        if (!(currentScope instanceof Galaxy.Scope)) {
+          currentScope = new Galaxy.Scope({
             systemId: '$for-item',
             url: moduleMeta.url,
             parentScope: cache.scope.__parent__
@@ -5463,447 +5904,6 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     };
   }
 })();
-
-/* global Galaxy, TweenLite, TimelineLite */
-'use strict';
-
-(function (G) {
-  if (!window.TweenLite || !window.TimelineLite) {
-    return console.warn('please load GSAP - GreenSock in order to activate animations');
-  }
-
-  G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
-    type: 'custom',
-    name: 'animations',
-    /**
-     *
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param attr
-     * @param animations
-     * @param oldConfig
-     * @param scopeData
-     */
-    handler: function (viewNode, attr, animations, oldConfig, scopeData) {
-      if (viewNode.virtual || !animations) {
-        return;
-      }
-
-      const enter = animations.enter;
-      if (enter) {
-        if (enter.sequence) {
-          AnimationMeta.get(enter.sequence).configs.enter = enter;
-        }
-
-        viewNode.populateEnterSequence = function (sequence) {
-          animations.config = animations.config || {};
-
-          sequence.onTruncate(function () {
-            TweenLite.killTweensOf(viewNode.node);
-          });
-
-          // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
-          if (animations.config.enterWithParent) {
-            const parent = viewNode.parent;
-            if (!parent.rendered.resolved) {
-              return;
-            }
-          }
-
-          sequence.next(function (done) {
-            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
-          });
-        };
-      }
-
-      const leave = animations.leave;
-      if (leave) {
-        if (leave.sequence) {
-          AnimationMeta.get(leave.sequence).configs.leave = leave;
-        }
-
-        viewNode.populateLeaveSequence = function (sequence) {
-          animations.config = animations.config || {};
-
-          sequence.onTruncate(function () {
-            TweenLite.killTweensOf(viewNode.node);
-          });
-
-          // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
-          if (animations.config.leaveWithParent) {
-            const parent = viewNode.parent;
-            if (parent.transitory) {
-              return;
-            }
-          }
-
-          // in the case which the viewNode is not visible, then ignore its animation
-          if (viewNode.node.offsetWidth === 0 ||
-            viewNode.node.offsetHeight === 0 ||
-            viewNode.node.style.opacity === '0' ||
-            viewNode.node.style.visibility === 'hidden') {
-            return;
-          }
-
-          let animationDone;
-          const waitForAnimation = new Promise(function (resolve) {
-            animationDone = resolve;
-          });
-
-          sequence.next(function (done) {
-            waitForAnimation.then(done);
-          });
-
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animations.config, animationDone);
-        };
-      }
-
-      viewNode.rendered.then(function () {
-        viewNode.observer.on('class', function (value, oldValue) {
-          value.forEach(function (item) {
-            if (item && oldValue.indexOf(item) === -1) {
-              let _config = animations['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta =
-                        animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position ||
-                          '+=0');
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
-              }
-            }
-          });
-
-          oldValue.forEach(function (item) {
-            if (item && value.indexOf(item) === -1) {
-              let _config = animations['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = { className: '-=' + item || '' };
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
-              }
-            }
-          });
-        });
-      });
-    }
-  };
-
-  AnimationMeta.ANIMATIONS = {};
-  AnimationMeta.TIMELINES = {};
-
-  /**
-   *
-   * @param {string} name
-   * @return {AnimationMeta}
-   */
-  AnimationMeta.get = function (name) {
-    if (!AnimationMeta.ANIMATIONS[name]) {
-      AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
-    }
-
-    return AnimationMeta.ANIMATIONS[name];
-  };
-
-  AnimationMeta.parseSequence = function (sequence) {
-    return sequence.split('/').filter(Boolean);
-  };
-
-  AnimationMeta.createTween = function (node, config, onComplete) {
-    let to = Object.assign({}, config.to || {});
-
-    if (to.onComplete) {
-      const userOnComplete = to.onComplete;
-      to.onComplete = function () {
-        userOnComplete();
-        onComplete();
-      };
-    } else {
-      to.onComplete = onComplete;
-    }
-    let tween = null;
-
-    let duration = config.duration;
-    if (duration instanceof Function) {
-      duration = config.duration.call(node);
-    }
-
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      let from = Object.assign({}, config.from || {});
-
-      if (from.onComplete) {
-        const userOnComplete = to.onComplete;
-        from.onComplete = function () {
-          userOnComplete();
-          onComplete();
-        };
-      } else {
-        from.onComplete = onComplete;
-      }
-
-      tween = TweenLite.from(node,
-        duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(node,
-        duration || 0,
-        to || {});
-    }
-
-    return tween;
-  };
-
-  AnimationMeta.calculateDuration = function (duration, position) {
-    let po = position.replace('=', '');
-    return ((duration * 10) + (Number(po) * 10)) / 10;
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
-   * @param {Object|Function} step
-   * @return {*}
-   */
-  AnimationMeta.parseStep = function (node, step) {
-    if (step instanceof Function) {
-      return step(node);
-    }
-
-    return step;
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} viewNode
-   * @param {'enter'|'leave'} type
-   * @param descriptions
-   * @param {callback} onComplete
-   */
-  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
-    const from = AnimationMeta.parseStep(viewNode, descriptions.from);
-    const to = AnimationMeta.parseStep(viewNode, descriptions.to);
-
-    if (type !== 'leave' && to) {
-      to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
-    }
-
-    const newConfig = Object.assign({}, descriptions);
-    newConfig.from = from;
-    newConfig.to = to;
-
-    if (newConfig.sequence) {
-      const animationMeta = AnimationMeta.get(newConfig.sequence);
-
-      if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
-        animationMeta.addOnComplete(onComplete);
-        animationMeta.add(viewNode.node, newConfig);
-      } else {
-        animationMeta.add(viewNode.node, newConfig, onComplete);
-      }
-
-      // Add to parent should happen after the animation is added to the child
-      if (newConfig.parent) {
-        const parent = AnimationMeta.get(newConfig.parent);
-        const animationMetaTypeConfig = animationMeta.configs[type] || {};
-        const parentTypeConfig = animationMeta.configs[type] || {};
-        parent.addChild(animationMeta, animationMetaTypeConfig, parentTypeConfig);
-      }
-    } else {
-      AnimationMeta.createTween(viewNode.node, newConfig, onComplete);
-    }
-  };
-
-  /**
-   *
-   * @param {string} name
-   * @class
-   */
-  function AnimationMeta(name) {
-    const _this = this;
-    _this.name = name;
-    this.timeline = new TimelineLite({
-      autoRemoveChildren: true,
-      smoothChildTiming: true,
-      onComplete: function () {
-        if (_this.parent) {
-          _this.parent.timeline.remove(_this.timeline);
-        }
-        _this.onCompletesActions.forEach(function (action) {
-          action();
-        });
-        _this.onCompletesActions = [];
-      }
-    });
-    _this.onCompletesActions = [];
-
-    _this.timeline.addLabel('beginning', 0);
-    _this.configs = {};
-    _this.parent = null;
-  }
-
-  /**
-   *
-   * @param {callback} action
-   */
-  AnimationMeta.prototype.addOnComplete = function (action) {
-    this.onCompletesActions.push(action);
-  };
-
-  AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
-    const _this = this;
-    child.parent = _this;
-
-    const children = this.timeline.getChildren(false);
-
-    if (children.indexOf(child.timeline) === -1) {
-      if (_this.timeline.getChildren(false, true, false).length === 0) {
-        _this.timeline.add(child.timeline, 0);
-      } else {
-        _this.timeline.add(child.timeline, childConf.chainToParent ? childConf.position : '+=0');
-      }
-    }
-  };
-
-  AnimationMeta.prototype.add = function (node, config, onComplete) {
-    const _this = this;
-    const to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
-    to.onStartParams = [node['galaxyViewNode']];
-
-    let onStart = config.onStart;
-    to.onStart = onStart;
-
-    let tween = null;
-    let duration = config.duration;
-    if (duration instanceof Function) {
-      duration = config.duration.call(node);
-    }
-
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(node,
-        duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      let from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
-      from.onStartParams = [node['galaxyViewNode']];
-      from.onStart = onStart;
-      tween = TweenLite.from(node,
-        duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(node,
-        duration || 0,
-        to || {});
-    }
-
-    tween.data = {
-      am: _this,
-      config: config
-    };
-
-    // First animation in the timeline should always start at zero
-    if (this.timeline.getChildren(false, true, false).length === 0) {
-      let progress = _this.timeline.progress();
-      if (config.parent) {
-        _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      } else {
-        _this.timeline.add(tween, config.position);
-      }
-
-      if (!progress) {
-        _this.timeline.play(0);
-      }
-    } else {
-      // if (config.parent) {
-      //   _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      // } else {
-      _this.timeline.add(tween, config.position);
-      // }
-    }
-  };
-
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['on'] = {
-    type: 'custom',
-    name: 'on',
-    /**
-     *
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param attr
-     * @param events
-     */
-    handler: function (viewNode, attr, events) {
-      if (events !== null && typeof events === 'object') {
-        for (let name in events) {
-          if (events.hasOwnProperty(name)) {
-            viewNode.node.addEventListener(name, events[name].bind(viewNode), false);
-          }
-        }
-      }
-    }
-  };
-})(Galaxy);
-
-/* global Galaxy */
-
-(function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['text'] = {
-    type: 'custom',
-    name: 'text',
-    /**
-     *
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param {string} attr
-     * @param value
-     */
-    handler: function (viewNode, attr, value) {
-      const textNode = viewNode.node['<>text'];
-      const textValue = typeof value === 'undefined' || value === null ? '' : value;
-
-      if (textNode) {
-        textNode.textContent = textValue;
-      } else {
-        viewNode.node['<>text'] = document.createTextNode(textValue);
-        viewNode.node.insertBefore(viewNode.node['<>text'], viewNode.node.firstChild);
-      }
-    }
-  };
-})(Galaxy);
 
 /* global Galaxy */
 'use strict';
