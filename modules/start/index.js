@@ -49,18 +49,23 @@ view.init({
         },
         {
           tag: 'h3',
-          text: 'It\'s very, really, pretty, stupidity easy to learn while GalaxyJS offers:'
+          text: 'It\'s very, pretty easy to learn.'
         },
         {
           tag: 'ul',
           children: [
             {
               tag: 'li',
-              html: 'Maximum <strong>performance</strong>'
+              html: '<strong>Performant</strong>, it uses native setter/getter to achieve reactive UI'
             },
             {
               tag: 'li',
               html: '<strong>Flexible Structure</strong> in order to achieve most optimal solution for your app'
+            },
+            {
+              tag: 'li',
+              html: '<strong>Animations</strong> are built in utilizing the power of a crazy fast animation library called <a' +
+              ' href="https://greensock.com/gsap" target="_"blank"">GSAP</a>'
             },
             {
               tag: 'li',

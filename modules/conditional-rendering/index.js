@@ -54,7 +54,7 @@ view.init({
         },
         {
           tag: 'p',
-          text: 'With $if you can specify presence of the element inside dom based on a condition.'
+          html: 'With <strong>$if</strong> you can specify presence of the element inside dom based on a condition.'
         },
         {
           tag: 'p',
@@ -124,7 +124,7 @@ view.init({
         },
         {
           tag: 'p',
-          text: 'If multiple nodes which are direct children of the same parent and have $if condition,' +
+          html: 'If multiple nodes which are direct children of the same parent and have <strong>$if</strong> condition,' +
           ' then they follow default rendering order upon condition change.'
         },
         {
