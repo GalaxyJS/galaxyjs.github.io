@@ -93,19 +93,22 @@ view.init({
             ]
           }
         },
-        {
-          tag: 'h2',
-          text: 'ArrayChange'
-        },
-        {
-          tag: 'h3',
-          text: 'Galaxy.View.ArrayChange'
-        },
-        {
-          tag: 'p',
-
-        },
-
+        '<h2>ArrayChange</h2>' +
+        '<h3>Galaxy.View.ArrayChange</h3>' +
+        '<p>An ArrayChange object represents the changes that has been made to a reactive array, consider following:</p>' +
+        '<pre class="prettyprint lang-js">' +
+        'Scope.data.list = [\'Amsterdam\',\'Paris\']; \n' +
+        '\n' +
+        '// push will result in creation of a new ArrayChange object that will be used to update view\n' +
+        'Scope.data.list.push(\'Budapest\');\n' +
+        '// ["Amsterdam", "Paris", "Budapest"]' +
+        '</pre>' +
+        '<p>The ArrayChange instance would look like this:</p>' +
+        '<pre class="prettyprint lang-js">' +
+        'arrayChangeInstance.type === \'push\' // Refer to action that happened on the array\n' +
+        'arrayChangeInstance.params === [\'Budapest\'];  // Arguments that has been passed to the push method\n' +
+        'arrayChangeInstance.original;  // Reference to the original array' +
+        '</pre>'
       ]
     }
   ]
