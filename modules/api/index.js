@@ -34,26 +34,38 @@ view.init({
         },
         {
           tag: 'h2',
-          text: 'Galaxy.GalaxyScope'
+          text: 'Galaxy.Scope'
         },
         {
           tag: 'ul',
           children: [
             {
               tag: 'li',
-              html: '<strong>parentScope</strong> The id of this module'
-            },
-            {
-              tag: 'li',
               html: '<strong>systemId</strong> The id of this module'
             },
             {
               tag: 'li',
-              html: '<strong>element</strong> ...'
+              html: '<strong>parentScope</strong> Reference to the parent scope'
             },
             {
               tag: 'li',
-              html: '<strong>on(event, handler)</strong> ...'
+              html: '<strong>element</strong> Reference to the HTML element'
+            },
+            {
+              tag: 'li',
+              children: [
+                {
+                  tag: 'strong',
+                  text: 'on(event, handler)'
+                },
+                {
+                  tag: 'p',
+                  html: 'Register event listener on the different stage of module lifecycle. ' +
+                  'Stages are <pre class="prettyprint inline lang-js">\'module.init\'</pre>' +
+                  ', <pre class="prettyprint inline lang-js">\'module.start\'</pre> ' +
+                  'and <pre class="prettyprint inline lang-js">\'module.destroy\'</pre>'
+                }
+              ]
             },
             {
               tag: 'li',
@@ -63,11 +75,11 @@ view.init({
         },
         {
           tag: 'h2',
-          text: 'Galaxy.GalaxyModule'
+          text: 'Galaxy.Module'
         },
         {
           tag: 'h2',
-          text: 'Galaxy.GalaxySequence'
+          text: 'Galaxy.Sequence'
         },
         {
           tag: 'h2',

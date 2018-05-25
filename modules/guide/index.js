@@ -185,15 +185,9 @@ view.init({
           '// load module\n' +
           'Galaxy.load(module);'
         },
-        {
-          tag: 'h2',
-          text: 'List Rendering'
-        },
-        {
-          tag: 'p',
-          html: 'GalaxyJS provide $for directive for list rendering. $for reacts to <pre class="prettyprint inline' +
-          ' lang-js">array.change</pre> property which is provided automatically by GalaxyJS on array values that are bound to view.'
-        },
+        '<h2>List Rendering</h2>' +
+        '<p>GalaxyJS provide <strong>$for</strong> directive for list rendering. <strong>$for</strong> reacts to <code class="prettyprint' +
+        ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',

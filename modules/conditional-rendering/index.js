@@ -6,6 +6,10 @@ Scope.data.condition = true;
 Scope.data.conditionForMultiple = true;
 
 const itemAnimations = {
+  config: {
+    enterWithParent: true,
+    leaveWithParent: true
+  },
   enter: {
     parent: 'card',
     sequence: 'if-items',
@@ -50,7 +54,7 @@ view.init({
         },
         {
           tag: 'p',
-          text: 'With $if you can specify presence of the element inside dom based on a condition.'
+          html: 'With <strong>$if</strong> you can specify presence of the element inside dom based on a condition.'
         },
         {
           tag: 'p',
@@ -67,7 +71,7 @@ view.init({
                 click: function () {
                   Scope.data.condition = !Scope.data.condition;
                 }
-              },
+              }
             }
           ]
         },
@@ -120,7 +124,7 @@ view.init({
         },
         {
           tag: 'p',
-          text: 'If multiple nodes which are direct children of the same parent and have $if condition,' +
+          html: 'If multiple nodes which are direct children of the same parent and have <strong>$if</strong> condition,' +
           ' then they follow default rendering order upon condition change.'
         },
         {
@@ -133,7 +137,7 @@ view.init({
                 click: function () {
                   Scope.data.conditionForMultiple = !Scope.data.conditionForMultiple;
                 }
-              },
+              }
             }
           ]
         },

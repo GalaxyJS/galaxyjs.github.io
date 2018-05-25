@@ -14,24 +14,35 @@ const itemAnimations = {
     sequence: 'list-items',
     from: {
       opacity: 0,
-      x: 20
+      height: 0,
+      paddingTop: 0,
+      paddingBottom: 0
     },
     to: {
       opacity: 1,
-      x: 0
+      paddingTop: 5,
+      paddingBottom: 5,
+      height: function (val, node) {
+        node.style.height = 'auto';
+        const h = node.offsetHeight;
+        node.style.height = val + 'px';
+        return h + 10;
+      }
     },
     position: '-=.2',
-    duration: .5
+    duration: .4
   },
   leave: {
     parent: 'card',
     sequence: 'list-items',
     to: {
-      x: 20,
+      paddingTop: 0,
+      paddingBottom: 0,
+      height: 0,
       opacity: 0
     },
     position: '-=.3',
-    duration: .5
+    duration: .4
   }
 };
 
@@ -83,11 +94,7 @@ view.init({
               text: 'Empty',
               on: {
                 click: function () {
-                  Scope.data.list1 = [
-                    {
-                      title: '***** i-1'
-                    }
-                  ];
+                  Scope.data.list1 = [];
                   Scope.data.list2 = [];
                 }
               }

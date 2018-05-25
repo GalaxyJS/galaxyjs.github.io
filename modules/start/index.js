@@ -17,55 +17,25 @@ view.init({
       tag: 'section',
       class: 'content',
       children: [
-        {
-          tag: 'h1',
-          text: 'Welcome'
-        },
-        {
-          tag: 'h3',
-          text: 'GalaxyJS is framework that helps you to build a framework for your web application'
-        },
-        {
-          tag: 'p',
-          text: 'The difference between Vanilla JS and a Javascript framework is like the difference between a galaxy and a planet. Planets exist inside the galaxy.'
-        },
-        {
-          tag: 'p',
-          html: 'Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is life on that planet of course)</i>.'
-        },
-        {
-          tag: 'p',
-          html: 'With GalaxyJS you can create your own favorite application\'s ecosystem/<i>framework</i>, which suits your project the best.'
-        }
+        '<h1>Welcome</h1>' +
+        '<h3>GalaxyJS is framework that helps you to build a framework for your web application</h3>' +
+        '<p>The difference between Vanilla JS and a Javascript framework is like the difference between a galaxy and a planet. Planets exist inside the galaxy.</p>' +
+        '<p>Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is life on that planet of course)</i>.</p>' +
+        '<p>With GalaxyJS you can create your own favorite application\'s ecosystem/<i>framework</i>, which suits your project the best.</p>'
       ]
     },
     {
       tag: 'section',
       class: 'content',
       children: [
-        {
-          tag: 'h2',
-          text: 'Why GalaxyJS?'
-        },
-        {
-          tag: 'h3',
-          text: 'It\'s very, really, pretty, stupidity easy to learn while GalaxyJS offers:'
-        },
+        '<h2>Why GalaxyJs?</h2>',
         {
           tag: 'ul',
           children: [
-            {
-              tag: 'li',
-              html: 'Maximum <strong>performance</strong>'
-            },
-            {
-              tag: 'li',
-              html: '<strong>Flexible Structure</strong> in order to achieve most optimal solution for your app'
-            },
-            {
-              tag: 'li',
-              html: '<strong>Scalability</strong> and <strong>Extendability</strong>'
-            }
+            '<li><strong>Performant</strong>, it uses native setter/getter to achieve reactive UI</li>' +
+            '<li><strong>Flexible Structure</strong> in order to achieve most optimal solution for your app</li>' +
+            '<li><strong>Animations</strong> are built in utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_"blank"">GSAP</a></li>' +
+            '<li><strong>Scalability</strong> and <strong>Extendability</strong></li>'
           ]
         }
       ]
