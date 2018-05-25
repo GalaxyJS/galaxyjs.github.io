@@ -1787,7 +1787,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       _this.rootElement = bootModule.element;
 
-      bootModule.domain = this;
       bootModule.id = 'system';
 
       if (!bootModule.element) {
@@ -1887,7 +1886,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @param {Object} moduleMetaData
      * @param moduleConstructor
      * @param invokers
-     * @returns {Promise<Galaxy.GalaxyModule>}
+     * @returns {Promise<Galaxy.Module>}
      */
     compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
       const _this = this;
@@ -1935,9 +1934,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           });
         }
 
-        const scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
+        const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);
         // Create module from moduleMetaData
-        const module = new Galaxy.GalaxyModule(moduleMetaData, moduleConstructor, scope);
+        const module = new Galaxy.Module(moduleMetaData, moduleConstructor, scope);
         Galaxy.modules[module.systemId] = module;
 
         if (imports.length) {
@@ -1984,7 +1983,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
     /**
      *
-     * @param {Galaxy.GalaxyModule}  module
+     * @param {Galaxy.Module}  module
      * @return {Promise<any>}
      */
     executeCompiledModule: function (module) {
@@ -2079,29 +2078,28 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyModule = /** @class */ (function () {
+Galaxy.Module = /** @class */ (function () {
 
   /**
    *
    * @param {Object} module
    * @param {string} source
-   * @param {Galaxy.GalaxyScope} scope
+   * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxyModule(module, source, scope) {
+  function Module(module, source, scope) {
     this.id = module.id;
     this.systemId = module.systemId;
     this.source = source;
     this.url = module.url || null;
     this.importId = module.importId || module.url;
     this.addOns = module.addOns || {};
-    this.domain = module.domain;
     this.addOnProviders = [];
     this.scope = scope;
   }
 
-  GalaxyModule.prototype = {
+  Module.prototype = {
     init: function () {
       this.scope.trigger('module.init');
     },
@@ -2119,7 +2117,7 @@ Galaxy.GalaxyModule = /** @class */ (function () {
     }
   };
 
-  return GalaxyModule;
+  return Module;
 }(Galaxy || {}));
 
 /* global Galaxy */
@@ -2209,7 +2207,7 @@ Galaxy.Observer = /** @class */ (function () {
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyScope = /** @class */ (function () {
+Galaxy.Scope = /** @class */ (function () {
   const defProp = Object.defineProperty;
 
   /**
@@ -2219,7 +2217,7 @@ Galaxy.GalaxyScope = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxyScope(module, element) {
+  function Scope(module, element) {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;
     this.element = element || null;
@@ -2239,18 +2237,18 @@ Galaxy.GalaxyScope = /** @class */ (function () {
     this.on('module.destroy', this.destroy.bind(this));
   }
 
-  GalaxyScope.prototype = {
+  Scope.prototype = {
     /**
      *
-     * @param id ID string which is going to be used for importing
-     * @param instance The assigned object to this id
+     * @param {string} id ID string which is going to be used for importing
+     * @param {Object} instance The assigned object to this id
      */
     inject: function (id, instance) {
       this['__imports__'][id] = instance;
     },
     /**
      *
-     * @param libId Path or id of the addon you want to import
+     * @param {string} libId Path or id of the addon you want to import
      * @return {*}
      */
     import: function (libId) {
@@ -2266,19 +2264,18 @@ Galaxy.GalaxyScope = /** @class */ (function () {
     },
     /**
      *
-     * @param moduleMeta
-     * @param config
+     * @param {*} moduleMeta
+     * @param {*} config
      * @returns {*}
      */
     load: function (moduleMeta, config) {
-      let newModuleMetaData = Object.assign({}, moduleMeta, config || {});
+      const newModuleMetaData = Object.assign({}, moduleMeta, config || {});
 
       if (newModuleMetaData.url.indexOf('./') === 0) {
         newModuleMetaData.url = this.uri.path + moduleMeta.url.substr(2);
       }
 
       newModuleMetaData.parentScope = this;
-      newModuleMetaData.domain = newModuleMetaData.domain || Galaxy;
       return Galaxy.load(newModuleMetaData);
     },
     /**
@@ -2334,13 +2331,13 @@ Galaxy.GalaxyScope = /** @class */ (function () {
     }
   };
 
-  return GalaxyScope;
+  return Scope;
 })();
 
 /* global Galaxy, Promise */
 'use strict';
 
-Galaxy.GalaxySequence = /** @class */ (function () {
+Galaxy.Sequence = /** @class */ (function () {
   const disabledProcess = function () {
   };
 
@@ -2349,7 +2346,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxySequence() {
+  function Sequence() {
     const _this = this;
     _this.truncateHandlers = [];
     _this.activeStateResolve = null;
@@ -2366,7 +2363,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     this.reset();
   }
 
-  GalaxySequence.prototype = {
+  Sequence.prototype = {
     reset: function () {
       const _this = this;
       _this.actions = [];
@@ -2484,7 +2481,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       }, ref);
     }
   };
-  return GalaxySequence;
+  return Sequence;
 })();
 
 /* global Galaxy */
@@ -2857,7 +2854,7 @@ Galaxy.View = /** @class */(function (G) {
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
     let value = scopeData;
 
-    if (!parentReactiveData && !(scopeData instanceof Galaxy.GalaxyScope)) {
+    if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
       if (scopeData.hasOwnProperty('__rd__')) {
         parentReactiveData = scopeData.__rd__;
       } else {
@@ -2939,9 +2936,9 @@ Galaxy.View = /** @class */(function (G) {
           });
         }
 
-        // The parentReactiveData would be empty when the developer is trying to bind to a direct property of GalaxyScope
-        if (!parentReactiveData && scopeData instanceof Galaxy.GalaxyScope) {
-          // if (scopeData instanceof Galaxy.GalaxyScope) {
+        // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
+        if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
+          // if (scopeData instanceof Galaxy.Scope) {
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
             'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
         }
@@ -2974,7 +2971,7 @@ Galaxy.View = /** @class */(function (G) {
     const subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
 
     let parentReactiveData;
-    if (!(data instanceof Galaxy.GalaxyScope)) {
+    if (!(data instanceof Galaxy.Scope)) {
       parentReactiveData = new Galaxy.View.ReactiveData('@', data);
     }
 
@@ -3243,7 +3240,7 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @param {Galaxy.GalaxyScope} scope
+   * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
    */
@@ -3315,13 +3312,14 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     instance.original = this.original;
     instance.params = this.params.slice(0);
     instance.type = this.type;
-    instance.ts = new Date().getTime();
+    // instance.ts = new Date().getTime();
 
     return instance;
   };
 
   return ArrayChange;
 })();
+/* global Galaxy */
 
 Galaxy.View.ReactiveData = /** @class */ (function () {
   const ARRAY_PROTO = Array.prototype;
@@ -3582,7 +3580,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
             // For arrays we have to sync length manually
             // if we use notify here we will get
-            _this.sync('length');
+            _this.notifyDown('length');
             value.changes = changes;
 
             return result;
@@ -3984,8 +3982,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    *
    * @param {Galaxy.View.ViewNode} node
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @param {Galaxy.GalaxySequence} sequence
-   * @param {Galaxy.GalaxySequence} root
+   * @param {Galaxy.Sequence} sequence
+   * @param {Galaxy.Sequence} root
    * @memberOf Galaxy.View.ViewNode
    * @static
    */
@@ -4022,12 +4020,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.setters = {};
     _this.parent = null;
     _this.dependedObjects = [];
-    _this.renderingFlow = new Galaxy.GalaxySequence();
+    _this.renderingFlow = new Galaxy.Sequence();
     _this.sequences = {
-      enter: new Galaxy.GalaxySequence(),
-      leave: new Galaxy.GalaxySequence(),
-      ':destroy': new Galaxy.GalaxySequence(),
-      ':class': new Galaxy.GalaxySequence()
+      enter: new Galaxy.Sequence(),
+      leave: new Galaxy.Sequence(),
+      ':destroy': new Galaxy.Sequence(),
+      ':class': new Galaxy.Sequence()
     };
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
@@ -4118,14 +4116,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} sequence
+   * @param {Galaxy.Sequence} sequence
    */
   ViewNode.prototype.populateEnterSequence = function (sequence) {
   };
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} sequence
+   * @param {Galaxy.Sequence} sequence
    */
   ViewNode.prototype.populateLeaveSequence = function (sequence) {
 
@@ -4263,8 +4261,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} leaveSequence
-   * @param {Galaxy.GalaxySequence} root
+   * @param {Galaxy.Sequence} leaveSequence
+   * @param {Galaxy.Sequence} root
    */
   ViewNode.prototype.destroy = function (leaveSequence, root) {
     const _this = this;
@@ -4367,9 +4365,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} leaveSequence
-   * @param {Galaxy.GalaxySequence} root
-   * @return {Galaxy.GalaxySequence}
+   * @param {Galaxy.Sequence} leaveSequence
+   * @param {Galaxy.Sequence} root
+   * @return {Galaxy.Sequence}
    */
   ViewNode.prototype.clean = function (leaveSequence, root) {
     const _this = this;
@@ -4954,6 +4952,97 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   };
 })(Galaxy.View);
 
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
+  let parser = property.parser;
+  const setter = Galaxy.View.createDefaultSetter(viewNode, attrName, parser);
+
+  // function (value, oldValue) {
+  //   if (value instanceof Promise) {
+  //     const asyncCall = function (asyncValue) {
+  //       const newValue = parser ? parser(asyncValue) : asyncValue;
+  //       View.setAttr(node, attributeName, newValue, oldValue);
+  //     };
+  //     value.then(asyncCall).catch(asyncCall);
+  //   } else {
+  //     const newValue = parser ? parser(value) : value;
+  //     View.setAttr(node, attributeName, newValue, oldValue);
+  //   }
+  // };
+
+  if (expression) {
+    return function (none, oldValue) {
+      let expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.custom = function (viewNode, attrName, property, expression) {
+  const setter = Galaxy.View.createCustomSetter(viewNode, attrName, property);
+
+  // return function (value, oldValue, scopeData) {
+  //   if (value instanceof Promise) {
+  //     const asyncCall = function (asyncValue) {
+  //       property.handler(node, attributeName, asyncValue, oldValue, scopeData);
+  //     };
+  //     value.then(asyncCall).catch(asyncCall);
+  //   } else {
+  //     property.handler(node, attributeName, value, oldValue, scopeData);
+  //   }
+  // };
+
+  if (expression) {
+    return function (none, oldValue) {
+      const expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
+  const setter = Galaxy.View.createPropertySetter(viewNode, property);
+
+  if (expression) {
+    return function (none, oldValue) {
+      let expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+(function () {
+  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
+    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
+    const cache = viewNode.cache[attrName];
+    const reactiveFunction = createReactiveFunction(behavior, viewNode, cache, expression, scope);
+
+    // if (!reactiveFunction) {
+    //   console.error('Reactive handler not found for: ' + property.name);
+    // }
+
+    return reactiveFunction;
+  };
+
+  function createReactiveFunction(behavior, vn, data, expression, scope) {
+    return function (value, oldValue) {
+      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
+    };
+  }
+})();
 
 /* global Galaxy */
 
@@ -5703,10 +5792,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       let currentScope = cache.scope;
 
       while (moduleScope) {
-        // In the case where module is a part of $for, cache.scope will be NOT an instance of GalaxyScope
+        // In the case where module is a part of $for, cache.scope will be NOT an instance of Scope
         // but its __parent__ is
-        if (!(currentScope instanceof Galaxy.GalaxyScope)) {
-          currentScope = new Galaxy.GalaxyScope({
+        if (!(currentScope instanceof Galaxy.Scope)) {
+          currentScope = new Galaxy.Scope({
             systemId: '$for-item',
             url: moduleMeta.url,
             parentScope: cache.scope.__parent__
@@ -5813,97 +5902,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   }
 })(Galaxy.View);
 
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
-  let parser = property.parser;
-  const setter = Galaxy.View.createDefaultSetter(viewNode, attrName, parser);
-
-  // function (value, oldValue) {
-  //   if (value instanceof Promise) {
-  //     const asyncCall = function (asyncValue) {
-  //       const newValue = parser ? parser(asyncValue) : asyncValue;
-  //       View.setAttr(node, attributeName, newValue, oldValue);
-  //     };
-  //     value.then(asyncCall).catch(asyncCall);
-  //   } else {
-  //     const newValue = parser ? parser(value) : value;
-  //     View.setAttr(node, attributeName, newValue, oldValue);
-  //   }
-  // };
-
-  if (expression) {
-    return function (none, oldValue) {
-      let expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.custom = function (viewNode, attrName, property, expression) {
-  const setter = Galaxy.View.createCustomSetter(viewNode, attrName, property);
-
-  // return function (value, oldValue, scopeData) {
-  //   if (value instanceof Promise) {
-  //     const asyncCall = function (asyncValue) {
-  //       property.handler(node, attributeName, asyncValue, oldValue, scopeData);
-  //     };
-  //     value.then(asyncCall).catch(asyncCall);
-  //   } else {
-  //     property.handler(node, attributeName, value, oldValue, scopeData);
-  //   }
-  // };
-
-  if (expression) {
-    return function (none, oldValue) {
-      const expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
-  const setter = Galaxy.View.createPropertySetter(viewNode, property);
-
-  if (expression) {
-    return function (none, oldValue) {
-      let expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-(function () {
-  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
-    const cache = viewNode.cache[attrName];
-    const reactiveFunction = createReactiveFunction(behavior, viewNode, cache, expression, scope);
-
-    // if (!reactiveFunction) {
-    //   console.error('Reactive handler not found for: ' + property.name);
-    // }
-
-    return reactiveFunction;
-  };
-
-  function createReactiveFunction(behavior, vn, data, expression, scope) {
-    return function (value, oldValue) {
-      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
-    };
-  }
-})();
 
 /* global Galaxy */
 'use strict';
