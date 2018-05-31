@@ -3,6 +3,8 @@
 const view = Scope.import('galaxy/view');
 const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
+const navService = Scope.import('services/navigation.js');
+Scope.data.navService = navService;
 
 Scope.data.navItems = [
   {
@@ -72,7 +74,7 @@ Scope.data.navItems = [
       id: 'vuejs-replica-demo',
       url: 'modules/vuejs-replica/index.js'
     }
-  },
+  }
 ];
 
 Scope.data.activeModule = null;
@@ -113,7 +115,7 @@ router.init({
 router.notFound(function () {
   console.error('404, Not Found!');
 });
-
+console.log(Scope)
 requestAnimationFrame(function () {
   view.config.cleanContainer = true;
   view.init([
@@ -124,34 +126,96 @@ requestAnimationFrame(function () {
       animations: animations.mainNav,
       children: [
         {
-          tag: 'a',
-          $for: 'item in data.navItems',
-          inputs: {
-            in_item: '<>item'
-          },
-          animations: animations.mainNavItem,
-          // href: '<>item.link',
-          text: '<>item.title',
-          class: {
-            active: [
-              'item.module',
-              'data.activeModule',
-              function (mod, actMod) {
-                // debugger;
-                //   console.info(mod, actMod, mod === actMod);
-                return mod === actMod;
+          tag: 'div',
+          $for: 'nav in data.navItems',
+          children: [
+            {
+              tag: 'a',
+              inputs: {
+                nav: '<>nav'
+              },
+              animations: animations.mainNavItem,
+              text: '<>nav.title',
+              class: {
+                'nav-item': true,
+                active: [
+                  'nav.module',
+                  'data.activeModule',
+                  function (mod, actMod) {
+                    return mod === actMod;
+                  }
+                ]
+              },
+              on: {
+                click: function () {
+                  navService.setSubNavItems([]);
+                  router.navigate(this.inputs.nav.link);
+                }
               }
-            ]
-          },
-          on: {
-            click: function () {
-              // console.info(this);
-              router.navigate(this.inputs.in_item.link);
-              // page('/' + this.inputs.in_item.link);
-              // Scope.data.activeModule = this.inputs.in_item.module;
+            },
+            {
+              class: 'sub-nav-container',
+              $if: [
+                'nav.module',
+                'data.activeModule',
+                function (mod, actMod) {
+                  return mod.id === actMod.id;
+                }
+              ],
+              children: {
+                tag: 'a',
+                class: 'nav-item sub',
+                animations: {
+                  config: {
+                    // leaveWithParent: true
+                  },
+                  enter: {
+                    // parent: 'card',
+                    sequence: 'sub-navs',
+                    from: {
+                      paddingTop: 0,
+                      paddingBottom: 0,
+                      height: 0
+                    },
+                    position: '-=.05',
+                    duration: .1
+                  },
+                  // leave: {
+                  //   parent: 'card',
+                  //   sequence: 'sub-navs',
+                  //   to: {
+                  //     paddingTop: 0,
+                  //     paddingBottom: 0,
+                  //     height: 0
+                  //   },
+                  //   position: '-=.04',
+                  //   duration: .06
+                  // }
+
+                },
+                $for: {
+                  as: 'subNav',
+                  data: '<>data.navService.subNavItems.changes'
+                  // data: [
+                  //   'nav.module',
+                  //   'data.activeModule',
+                  //   'data.navService.subNavItems.changes',
+                  //   function (m, am, c) {
+                  //     if (m.id === am.id) {
+                  //       return c;
+                  //     }
+                  //
+                  //     return null;
+                  //   }
+                  // ]
+                },
+                text: '<>subNav.title'
+              }
             }
-          }
+
+          ]
         }
+
       ]
     },
     {

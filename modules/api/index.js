@@ -1,8 +1,29 @@
 /* global Scope */
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
-
 const router = Scope.import('galaxy/router');
+const navService = Scope.import('services/navigation.js');
+
+navService.setSubNavItems([
+  {
+    title: 'Galaxy.Scope'
+  },
+  {
+    title: 'Galaxy.Module'
+  },
+  {
+    title: 'Galaxy.Sequence'
+  },
+  {
+    title: 'Galaxy.Observer'
+  },
+  {
+    title: 'Galaxy.View'
+  },
+  {
+    title: 'Galaxy.View.ViewNode'
+  }
+]);
 
 router.init({
   '/': function () {
@@ -61,9 +82,9 @@ view.init({
                 {
                   tag: 'p',
                   html: 'Register event listener on the different stage of module lifecycle. ' +
-                  'Stages are <pre class="prettyprint inline lang-js">\'module.init\'</pre>' +
-                  ', <pre class="prettyprint inline lang-js">\'module.start\'</pre> ' +
-                  'and <pre class="prettyprint inline lang-js">\'module.destroy\'</pre>'
+                  'Stages are <code class="prettyprint lang-js">\'module.init\'</code>' +
+                  ', <code class="prettyprint lang-js">\'module.start\'</code> ' +
+                  'and <code class="prettyprint lang-js">\'module.destroy\'</code>'
                 }
               ]
             },
