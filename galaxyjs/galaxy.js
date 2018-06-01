@@ -4186,6 +4186,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
 
       _this.origin = true;
+      // _this.transitory = true;
 
       let animationDone;
       const waitForNodeAnimation = new Promise(function (resolve) {
@@ -4487,7 +4488,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           }
 
           sequence.next(function (done) {
-            // debugger;
+            // If the node is not in the DOM at this point, then skip its animations
+            if (viewNode.node.offsetParent === null) {
+              return done();
+            }
+
             AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
           });
         };
@@ -4537,53 +4542,35 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       viewNode.rendered.then(function () {
         viewNode.observer.on('class', function (value, oldValue) {
+          const classSequence = viewNode.sequences[':class'];
           value.forEach(function (item) {
             if (item && oldValue.indexOf(item) === -1) {
-              let _config = animations['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta =
-                        animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position ||
-                          '+=0');
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
+              const _config = animations['.' + item];
+              if (!_config) {
+                return;
               }
+
+              classSequence.next(function (done) {
+                const classAnimationConfig = Object.assign({}, _config);
+                classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
+              });
             }
           });
 
           oldValue.forEach(function (item) {
             if (item && value.indexOf(item) === -1) {
-              let _config = animations['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = { className: '-=' + item || '' };
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
+              const _config = animations['.' + item];
+              if (!_config) {
+                return;
               }
+
+              classSequence.next(function (done) {
+                const classAnimationConfig = Object.assign({}, _config);
+                classAnimationConfig.to = { className: '-=' + item || '' };
+                AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
+              });
+
             }
           });
         });
@@ -4682,7 +4669,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
-   * @param {'enter'|'leave'} type
+   * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param descriptions
    * @param {callback} onComplete
    */
@@ -4985,8 +4972,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return;
       }
 
-      const _this = this;
-      const node = _this.node;
+      /** @type Galaxy.View.ViewNode */
+      const viewNode = this;
+      const node = viewNode.node;
 
       if (typeof value === 'string') {
         return node.setAttribute('class', value);
@@ -4999,19 +4987,34 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       node.setAttribute('class', []);
 
       // when value is an object
-      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
+      const clone = GV.bindSubjectsToData(viewNode, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
 
-      observer.onAll(function (key, value, oldValue) {
-        applyClasses.call(_this, key, value, oldValue, clone);
-      });
+      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
+        const items = Object.getOwnPropertyDescriptors(clone);
+        const staticClasses = {};
+        for (let key in items) {
+          const item = items[key];
+          if (item.enumerable && !item.hasOwnProperty('get')) {
+            staticClasses[key] = clone[key];
+          }
+        }
 
-      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
-        _this.rendered.then(function () {
-          applyClasses.call(_this, '*', true, false, clone);
+        applyClasses.call(viewNode, '*', true, false, staticClasses);
+
+        viewNode.rendered.then(function () {
+          applyClasses.call(viewNode, '*', true, false, clone);
+
+          observer.onAll(function (key, value, oldValue) {
+            applyClasses.call(viewNode, key, value, oldValue, clone);
+          });
         });
       } else {
-        applyClasses.call(_this, '*', true, false, clone);
+        observer.onAll(function (key, value, oldValue) {
+          applyClasses.call(viewNode, key, value, oldValue, clone);
+        });
+
+        applyClasses.call(viewNode, '*', true, false, clone);
       }
     }
   };
@@ -5038,16 +5041,16 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     if (oldValue === value) {
       return;
     }
+    const _this = this;
+
     let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    let newClasses = getClasses(classes);
-    let _this = this;
+    const newClasses = getClasses(classes);
 
     _this.notifyObserver('class', newClasses, oldClasses);
-    // _this.sequences[':class'].start().finish(function () {
-    _this.node.setAttribute('class', newClasses.join(' '));
-    //   _this.sequences[':class'].reset();
-    // });
+    _this.sequences[':class'].nextAction(function () {
+      _this.node.setAttribute('class', newClasses.join(' '));
+    });
   }
 })(Galaxy.View);
 
@@ -5519,6 +5522,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         const waitStepDone = registerWaitStep(parentNode.cache);
         waitStepDone();
       } else {
+        if (!node.rendered.resolved) {
+          node.inDOM = false;
+          return;
+        }
+
         const waitStepDone = registerWaitStep(parentNode.cache);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
@@ -5532,7 +5540,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       const whenAllLeavesAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
         if (value) {
+
           runTrueProcess(node);
+        } else {
+
         }
       });
       config.onDone = whenAllLeavesAreDone;

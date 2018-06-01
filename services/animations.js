@@ -150,8 +150,13 @@ animations.mainNavItem = {
       ease: Elastic.easeOut.config(1, .5)
     },
     position: '-=.4',
-    chainToParent: true,
+    // chainToParent: true,
     duration: .5
+  },
+  '.active': {
+    sequence: 'active-nav-item',
+    position: '-=.2',
+    duration: .2
   }
 };
 
