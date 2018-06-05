@@ -27,31 +27,17 @@ view.init({
       class: 'content',
       tag: 'section',
       children: [
-        {
-          tag: 'h1',
-          text: 'Guide Page'
-        },
-        {
-          tag: 'h2',
-          text: 'Installation'
-        },
-        {
-          tag: 'p',
-          text: 'Simply copy & paste the following into your page\'s head'
-        },
+        '<h1>Guide Page</h1>' +
+        '<h2>Installation</h2>' +
+        '<p>Simply copy & paste the following into your page\'s head</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
-          text: '<script src="https://gitcdn.xyz/repo/GalaxyJS/galaxyjs.github.io/wip/galaxyjs/galaxy.js"></script>'
+          text: '<script src="https://gitcdn.xyz/repo/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy.js"></script>'
         },
-        {
-          tag: 'h2',
-          text: 'Recommended project file & folder structure'
-        },
-        {
-          tag: 'p',
-          text: 'You can have whatever directory structure you like as long as you know how to the load modules. The following structure is recommended and we are using this structure though out our guide.'
-        },
+        '<h2>Recommended project file & folder structure</h2>' +
+        '<p>You can have whatever directory structure you like as long as you know how to the load modules. The following structure is' +
+        ' recommended and we are using this structure though out our guide.</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',

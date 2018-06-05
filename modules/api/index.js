@@ -98,6 +98,9 @@ view.init({
           tag: 'h2',
           text: 'Galaxy.Module'
         },
+        '<p>Modules are the building blocks of the application and they can be variety of things like components, services, utilities and etc.</p>' +
+        '<p>Modules will provide you with a Galaxy.Scope instance which gives you the ability to import plugins and other type of' +
+        ' resources.</p>',
         {
           tag: 'h2',
           text: 'Galaxy.Sequence'
