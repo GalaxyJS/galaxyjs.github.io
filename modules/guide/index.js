@@ -54,14 +54,8 @@ view.init({
           '|-node_modules\n' +
           '|-package.json'
         },
-        {
-          tag: 'h2',
-          text: 'Bootstrap'
-        },
-        {
-          tag: 'p',
-          text: 'Add this code into the app/index.html'
-        },
+        '<h2>Bootstrap</h2>' +
+        '<p>Add this code into the app/index.html</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
@@ -98,14 +92,8 @@ view.init({
           '  </body>\n' +
           '</html>'
         },
-        {
-          tag: 'h2',
-          text: 'Main module'
-        },
-        {
-          tag: 'p',
-          text: 'Add this code into the app/modules/index.js'
-        },
+        '<h2>Main module</h2>' +
+        '<p>Add this code into the app/modules/index.js</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
@@ -141,15 +129,8 @@ view.init({
           tag: 'p',
           html: 'Then we initialize our view with a <strong>h1</strong> tag with the <strong>\'Hello World!\'</strong> as its text content'
         },
-        {
-          tag: 'h2',
-          text: 'The Progressive Way'
-        },
-        {
-          tag: 'p',
-          text: 'Sometimes you already have a page and you just want to add some reactive functionality to some elements.' +
-          'You can easily do this by transforming your target element into a Galaxy module:'
-        },
+        '<h2>The Progressive Way</h2>' +
+        '<p>Sometimes you already have a page and you just want to add some reactive functionality to some elements. You can easily do this by transforming your target element into a Galaxy module:</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
