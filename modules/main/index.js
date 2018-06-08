@@ -109,7 +109,7 @@ router.init({
     if (nav) {
       Scope.data.activeModule = nav.module;
     }
-    console.info(params);
+    // console.info(params);
   }
 });
 
@@ -117,7 +117,7 @@ router.notFound(function () {
   console.error('404, Not Found!');
 });
 
-console.log(Scope)
+// console.log(Scope)
 // requestAnimationFrame(function () {
 view.config.cleanContainer = true;
 view.init([
@@ -187,7 +187,7 @@ view.init([
               leave: {
                 to: {
                   borderLeftWidth: 0,
-                  height: 0,
+                  height: 0
                 },
                 duration: .2
               }

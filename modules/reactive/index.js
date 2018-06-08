@@ -41,6 +41,7 @@ view.init({
           ' also trigger view update. The methods that are being overridden are:',
           children: {
             tag: 'ul',
+            class: 'circle',
             children: [
               {
                 tag: 'li',

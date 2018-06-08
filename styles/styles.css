@@ -229,7 +229,7 @@ ul {
 }
 
 ul > li {
-    padding: 5px 0 5px 22px;
+    padding: 5px 0;
     overflow: hidden;
     position: relative;
     display: block;
@@ -248,17 +248,21 @@ input[type='checkbox'] {
     display: inline-block;
 }
 
-ul > li:before {
+ul.circle > li {
+    padding-left: 22px;
+}
+
+ul.circle > li:before {
     content: ' ';
     position: absolute;
-    width: 12px;
-    height: 12px;
-    line-height: 12px;
+    width: 14px;
+    height: 6px;
+    line-height: 10px;
     background-color: #009688;
-    margin: 8px 5px;
+    margin: 11px 2px;
     left: 0;
     top: 0;
-    border-radius: 50%;
+    border-radius: 3px;
 }
 
 ul.items-list > li {
@@ -433,22 +437,16 @@ section > section {
 
 .field {
     display: block;
-    font-size: 15px;
-    color: #5a5a5a;
     position: relative;
-    padding-top: 38px;
     font-weight: 500;
     margin-bottom: 15px;
 }
 
 .field > label {
     display: block;
-    font-weight: 500;
-    padding: 13px 0 0;
-    position: absolute;
-    top: 0;
-    left: 0;
-    transition: all .3s ease-in-out;
+    font-weight: 600;
+    color: #444;
+    padding: 5px 0 10px;
 }
 
 .field > span {
@@ -490,20 +488,15 @@ input, select {
 }
 
 .field[empty] > label {
-    top: 38px;
-    left: 10px;
+
 }
 
 .field[focus] > label {
-    /*color: #696fb4;*/
-    color: #009688;
-    top: 0;
-    left: 0;
+    color: #455a64;
 }
 
 .field[focus] > input, .field[focused] > select {
-    /*border-color: #696fb4;*/
-    border-color: #009688;
+    border-color: #607e8c;
 }
 
 .color-item {
@@ -515,10 +508,7 @@ input, select {
 }
 
 .content li {
-    /*transition: opacity .1s linear;*/
-    /* max-height: 0; */
-    /* padding-top:  0; */
-    /* padding-bottom:  0; */
+
     line-height: 18px;
     vertical-align: super;
 }
