@@ -1,4 +1,4 @@
-/* global Scope */
+/* global Scope, PR */
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const router = Scope.import('galaxy/router');
@@ -38,6 +38,11 @@ view.init({
   tag: 'div',
   class: 'card big',
   animations: animations.cardInOut,
+  lifecycle: {
+    postChildrenInsert: function () {
+      PR.prettyPrint();
+    }
+  },
   children: [
     {
       tag: 'img',
@@ -112,6 +117,18 @@ view.init({
         {
           tag: 'h2',
           text: 'Galaxy.View'
+        },
+        '<p>View provide functionality for creating UI elements.</p> ' +
+        '<p>It is available as a plugin and can be retrieved by ' +
+        '<code class="prettyprint lang-js">const view = Scope.import(\'galaxy/view\');</code></p>',
+        {
+          tag: 'ul',
+          children: [
+            '<strong>init(uiBlueprint)</strong>' +
+            '<p>init method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
+            ' following code will create a pharagraph tag with `Hello World!` text inside it.</p>' +
+            '<pre class="prettyprint lang-js">view.init({ tag: \'p\', text: \'Hello World!\' });</pre>'
+          ]
         },
         {
           tag: 'h2',
