@@ -2890,10 +2890,8 @@ Galaxy.View = /** @class */(function (G) {
         // debugger;
         value = View.propertyLookup(root.data, propertyKeyPath);
         // debugger;
-      } else {
-        if (value) {
-          value = View.propertyLookup(value, propertyKeyPath);
-        }
+      } else if (value) {
+        value = View.propertyLookup(value, propertyKeyPath);
       }
 
       initValue = value;
@@ -2908,6 +2906,9 @@ Galaxy.View = /** @class */(function (G) {
       } else if (childPropertyKeyPath) {
         reactiveData = new Galaxy.View.ReactiveData(propertyKeyPath, null, parentReactiveData);
       } else {
+        if (!parentReactiveData) {
+          debugger;
+        }
         parentReactiveData.addKeyToShadow(propertyKeyPath);
       }
 
@@ -3208,6 +3209,14 @@ Galaxy.View = /** @class */(function (G) {
         attributeValue = nodeSchema[attributeName];
 
         let bindings = View.getBindings(attributeValue);
+        const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
+          return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
+        }) : false;
+
+        if (intersect) {
+          continue;
+        }
+
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
         } else {
@@ -4011,7 +4020,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.refNode = refNode || _this.node;
     _this.schema = schema;
     _this.data = {};
-    _this.cache = {};
+    _this.cache = {
+      _skipPropertyNames: []
+    };
     _this.inputs = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
@@ -4361,7 +4372,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   /**
@@ -5140,6 +5151,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
           View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
+          node.cache._skipPropertyNames.push(config.matches.as);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
