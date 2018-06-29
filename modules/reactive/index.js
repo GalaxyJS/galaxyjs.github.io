@@ -160,12 +160,10 @@ view.init({
           tag: 'section',
           children: [
             '<p>By the pressing the following button, you will see an ArrayChange instance with type <strong>splice</strong> and' +
-            ' <code class="prettyprint lang-js">[2, 1]</code> as params.</p>' +
-            '',
+            ' <code class="prettyprint lang-js">[2, 1]</code> as params.</p>',
             {
               tag: 'button',
               text: 'Remove \'Budapest\' from the list',
-
               on: {
                 click: function () {
                   const index = Scope.data.list.indexOf('Budapest');
@@ -177,7 +175,6 @@ view.init({
             }
           ]
         }
-
       ]
     }
   ]

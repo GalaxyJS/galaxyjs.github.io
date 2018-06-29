@@ -2865,51 +2865,48 @@ Galaxy.View = /** @class */(function (G) {
     const propertyKeysPaths = bindings.propertyKeysPaths;
     const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, value, bindings);
 
-    let propertyKeyPath = null;
+    let propertyKey = null;
     let childPropertyKeyPath = null;
     let initValue = null;
     let propertyKeyPathItems = [];
 
     for (let i = 0, len = propertyKeysPaths.length; i < len; i++) {
-      propertyKeyPath = propertyKeysPaths[i];
+      propertyKey = propertyKeysPaths[i];
       childPropertyKeyPath = null;
 
-      propertyKeyPathItems = propertyKeyPath.split('.');
+      propertyKeyPathItems = propertyKey.split('.');
       if (propertyKeyPathItems.length > 1) {
-        propertyKeyPath = propertyKeyPathItems.shift();
+        propertyKey = propertyKeyPathItems.shift();
         childPropertyKeyPath = propertyKeyPathItems.join('.');
       }
       // if (propertyKeyPath === 'this') debugger;
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-      if (i === 0 && propertyKeyPath === 'this' && root instanceof Galaxy.View.ViewNode) {
+      if (i === 0 && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
         i = 1;
-        propertyKeyPath = propertyKeyPathItems.shift();
+        propertyKey = propertyKeyPathItems.shift();
         bindings.propertyKeysPaths = propertyKeyPathItems;
         childPropertyKeyPath = null;
         parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
         // debugger;
-        value = View.propertyLookup(root.data, propertyKeyPath);
+        value = View.propertyLookup(root.data, propertyKey);
         // debugger;
       } else if (value) {
-        value = View.propertyLookup(value, propertyKeyPath);
+        value = View.propertyLookup(value, propertyKey);
       }
 
       initValue = value;
       if (value !== null && typeof value === 'object') {
-        initValue = value[propertyKeyPath];
+        initValue = value[propertyKey];
       }
 
       let reactiveData;
 
       if (initValue instanceof Object) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKeyPath, initValue, parentReactiveData);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, parentReactiveData);
       } else if (childPropertyKeyPath) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKeyPath, null, parentReactiveData);
-      } else {
-        if (!parentReactiveData) {
-          debugger;
-        }
-        parentReactiveData.addKeyToShadow(propertyKeyPath);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, null, parentReactiveData);
+      } else if (parentReactiveData) {
+        parentReactiveData.addKeyToShadow(propertyKey);
       }
 
       if (childPropertyKeyPath === null) {
@@ -2924,13 +2921,7 @@ Galaxy.View = /** @class */(function (G) {
                 return expressionFn();
               }
 
-              return parentReactiveData.data[propertyKeyPath];
-              // this has a bug
-              // if (value === null || value === undefined) {
-              //   return value;
-              // }
-              //
-              // return value[propertyKeyPath];
+              return parentReactiveData.data[propertyKey];
             },
             enumerable: true,
             configurable: true
@@ -2939,12 +2930,16 @@ Galaxy.View = /** @class */(function (G) {
 
         // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
         if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
-          // if (scopeData instanceof Galaxy.Scope) {
+          // If the propertyKey is refering to some local value then there is no error
+          if (target instanceof Galaxy.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
+            return;
+          }
+
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
             'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
         }
 
-        parentReactiveData.addNode(target, targetKeyName, propertyKeyPath, expressionFn, scopeData);
+        parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn, scopeData);
       }
 
       if (childPropertyKeyPath !== null) {
@@ -3209,13 +3204,14 @@ Galaxy.View = /** @class */(function (G) {
         attributeValue = nodeSchema[attributeName];
 
         let bindings = View.getBindings(attributeValue);
-        const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
-          return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
-        }) : false;
-
-        if (intersect) {
-          continue;
-        }
+        // const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
+        //   return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
+        // }) : false;
+        //
+        // if (intersect) {
+        //   debugger
+        //   continue;
+        // }
 
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
@@ -4020,9 +4016,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.refNode = refNode || _this.node;
     _this.schema = schema;
     _this.data = {};
-    _this.cache = {
-      _skipPropertyNames: []
-    };
+    _this.cache = {};
+    _this.localPropertyNames = new Set();
     _this.inputs = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
@@ -4035,8 +4030,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.sequences = {
       enter: new Galaxy.Sequence(),
       leave: new Galaxy.Sequence(),
-      ':destroy': new Galaxy.Sequence(),
-      ':class': new Galaxy.Sequence()
+      destroy: new Galaxy.Sequence(),
+      classList: new Galaxy.Sequence()
     };
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
@@ -4553,7 +4548,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       const classAnimationsHandler = function () {
         viewNode.observer.on('class', function (classes, oldClasses) {
-          const classSequence = viewNode.sequences[':class'];
+          const classSequence = viewNode.sequences.classList;
           classes.forEach(function (item) {
             if (item && oldClasses.indexOf(item) === -1) {
               const _config = animations['.' + item];
@@ -5058,7 +5053,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     const newClasses = getClasses(classes);
 
     _this.notifyObserver('class', newClasses, oldClasses);
-    _this.sequences[':class'].nextAction(function () {
+    _this.sequences.classList.nextAction(function () {
       _this.node.setAttribute('class', newClasses.join(' '));
     });
   }
@@ -5137,8 +5132,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue || [];
-      parentNode.cache.mainChildForLeaveProcesses = parentNode.cache.mainChildForLeaveProcesses || [];
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5151,7 +5145,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
           View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
-          node.cache._skipPropertyNames.push(config.matches.as);
+          node.localPropertyNames.add(config.matches.as);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
@@ -5200,6 +5194,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       const parentNode = node.parent;
+      const parentCache = parentNode.cache;
       const parentSchema = parentNode.schema;
       let newTrackMap = [];
 
@@ -5211,7 +5206,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         });
       }
 
-      const waitStepDone = registerWaitStep(parentNode.cache);
+      const waitStepDone = registerWaitStep(parentCache.$for);
       let leaveProcess = null;
       if (config.trackBy instanceof Function) {
         newTrackMap = changes.params.map(function (item, i) {
@@ -5272,15 +5267,15 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       // leave process will be empty if the type is not reset
       if (leaveProcess) {
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-          parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
+          parentCache.$for.leaveProcessList.push(leaveProcess);
         } else {
-          parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+          parentCache.$for.leaveProcessList.unshift(leaveProcess);
         }
       }
 
-      activateLeaveProcess(parentNode.cache);
+      activateLeaveProcess(parentCache.$for);
 
-      const whenAllDestroysAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
+      const whenAllDestroysAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
         config.trackMap = newTrackMap;
         if (changes.type === 'reset' && changes.params.length === 0) {
           return;
@@ -5290,20 +5285,20 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
       config.onDone = whenAllDestroysAreDone;
 
-      parentNode.cache.mainChildrenForPromise =
-        parentNode.cache.mainChildrenForPromise || Promise.all(parentNode.cache.mainChildForQueue);
+      parentCache.$for.mainPromise =
+        parentCache.$for.mainPromise || Promise.all(parentCache.$for.queue);
       // When all the destroy processes of all the $for inside parentNode is done
       // This make sure that $for's which are children of the same parent act as one $for
-      parentNode.cache.mainChildrenForPromise.then(whenAllDestroysAreDone);
+      parentCache.$for.mainPromise.then(whenAllDestroysAreDone);
     }
   };
 
   /**
    *
-   * @param parentCache
+   * @param $forData
    * @returns {Function}
    */
-  function registerWaitStep(parentCache) {
+  function registerWaitStep($forData) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -5312,55 +5307,55 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       };
     });
 
-    parentCache.mainChildForQueue.push(waitForDestroy);
+    $forData.queue.push(waitForDestroy);
 
     return destroyDone;
   }
 
   function activateLeaveProcess(parentCache) {
-    if (parentCache.mainChildForLeaveProcesses.length && !parentCache.mainChildForLeaveProcesses.active) {
-      parentCache.mainChildForLeaveProcesses.active = true;
+    if (parentCache.leaveProcessList.length && !parentCache.leaveProcessList.active) {
+      parentCache.leaveProcessList.active = true;
       // We start the leaving process in the next frame so the app has enough time to register all the leave processes
       // that belong to parentNode
       Promise.resolve().then(function () {
-        parentCache.mainChildForLeaveProcesses.forEach(function (action) {
+        parentCache.leaveProcessList.forEach(function (action) {
           action();
         });
-        parentCache.mainChildForLeaveProcesses = [];
-        parentCache.mainChildForLeaveProcesses.active = false;
+        parentCache.leaveProcessList = [];
+        parentCache.leaveProcessList.active = false;
       });
     }
   }
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $forData
    * @param {Function} callback
    * @returns {Function}
    */
-  function createWhenAllDoneProcess(parentCache, callback) {
+  function createWhenAllDoneProcess($forData, callback) {
     const whenAllDestroysAreDone = function () {
       if (whenAllDestroysAreDone.ignore) {
         return;
       }
-      // Because the items inside mainChildForQueue will change on the fly we have manually check whether all the
+      // Because the items inside queue will change on the fly we have manually check whether all the
       // promises have resolved and if not we hav eto use Promise.all on the list again
-      const allNotResolved = parentCache.mainChildForQueue.some(function (promise) {
+      const allNotResolved = $forData.queue.some(function (promise) {
         return promise.resolved !== true;
       });
 
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
-        parentCache.mainChildForQueue = parentCache.mainChildForQueue.filter(function (p) {
+        $forData.queue = $forData.queue.filter(function (p) {
           return !p.resolved;
         });
 
-        parentCache.mainChildrenForPromise = Promise.all(parentCache.mainChildForQueue);
-        parentCache.mainChildrenForPromise.then(whenAllDestroysAreDone);
+        $forData.mainPromise = Promise.all($forData.queue);
+        $forData.mainPromise.then(whenAllDestroysAreDone);
         return;
       }
 
-      parentCache.mainChildrenForPromise = null;
+      $forData.mainPromise = null;
       callback();
     };
 
@@ -5506,13 +5501,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.mainChildIfQueue = parentNode.cache.mainChildIfQueue || [];
-      parentNode.cache.leaveByIfProcessList = parentNode.cache.leaveByIfProcessList || [];
+      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       const parentNode = node.parent;
+      const parentCache = parentNode.cache;
       const parentSchema = parentNode.schema;
 
       if (expression) {
@@ -5530,7 +5525,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           return;
         }
 
-        const waitStepDone = registerWaitStep(parentNode.cache);
+        const waitStepDone = registerWaitStep(parentCache.$if);
         waitStepDone();
       } else {
         if (!node.rendered.resolved) {
@@ -5538,38 +5533,35 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           return;
         }
 
-        const waitStepDone = registerWaitStep(parentNode.cache);
+        const waitStepDone = registerWaitStep(parentCache.$if);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-          parentNode.cache.leaveByIfProcessList.push(process);
+          parentCache.$if.leaveProcessList.push(process);
         } else {
-          parentNode.cache.leaveByIfProcessList.unshift(process);
+          parentCache.$if.leaveProcessList.unshift(process);
         }
       }
 
-      activateLeaveProcess(parentNode.cache);
+      activateLeaveProcess(parentCache.$if);
 
-      const whenAllLeavesAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
+      const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$if, function () {
         if (value) {
-
           runTrueProcess(node);
-        } else {
-
         }
       });
       config.onDone = whenAllLeavesAreDone;
 
-      parentNode.cache.ifOparetionsMainPromise = parentNode.cache.ifOparetionsMainPromise || Promise.all(parentNode.cache.mainChildIfQueue);
-      parentNode.cache.ifOparetionsMainPromise.then(whenAllLeavesAreDone);
+      parentCache.$if.mainPromise = parentCache.$if.mainPromise || Promise.all(parentNode.cache.$if.queue);
+      parentCache.$if.mainPromise.then(whenAllLeavesAreDone);
     }
   };
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $ifData
    * @returns {Function}
    */
-  function registerWaitStep(parentCache) {
+  function registerWaitStep($ifData) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -5578,55 +5570,55 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       };
     });
 
-    parentCache.mainChildIfQueue.push(waitForDestroy);
+    $ifData.queue.push(waitForDestroy);
 
     return destroyDone;
   }
 
-  function activateLeaveProcess(parentCache) {
-    if (parentCache.leaveByIfProcessList.length && !parentCache.leaveByIfProcessList.active) {
-      parentCache.leaveByIfProcessList.active = true;
+  function activateLeaveProcess($ifData) {
+    if ($ifData.leaveProcessList.length && !$ifData.leaveProcessList.active) {
+      $ifData.leaveProcessList.active = true;
       // We start the leaving process in the next frame so the app has enough time to register all the leave processes
       // that belong to parentNode
       Promise.resolve().then(function () {
-        parentCache.leaveByIfProcessList.forEach(function (action) {
+        $ifData.leaveProcessList.forEach(function (action) {
           action();
         });
-        parentCache.leaveByIfProcessList = [];
-        parentCache.leaveByIfProcessList.active = false;
+        $ifData.leaveProcessList = [];
+        $ifData.leaveProcessList.active = false;
       });
     }
   }
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $ifData
    * @param {Function} callback
    * @returns {Function}
    */
-  function createWhenAllDoneProcess(parentCache, callback) {
+  function createWhenAllDoneProcess($ifData, callback) {
     const whenAllLeavesAreDone = function () {
       if (whenAllLeavesAreDone.ignore) {
         return;
       }
-      // Because the items inside mainChildIfQueue will change on the fly we have manually check whether all the
+      // Because the items inside queue will change on the fly we have manually check whether all the
       // promises have resolved and if not we hav eto use Promise.all on the list again
-      const allNotResolved = parentCache.mainChildIfQueue.some(function (promise) {
+      const allNotResolved = $ifData.queue.some(function (promise) {
         return promise.resolved !== true;
       });
 
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
-        parentCache.mainChildIfQueue = parentCache.mainChildIfQueue.filter(function (p) {
+        $ifData.queue = $ifData.queue.filter(function (p) {
           return !p.resolved;
         });
 
-        parentCache.ifOparetionsMainPromise = Promise.all(parentCache.mainChildIfQueue);
-        parentCache.ifOparetionsMainPromise.then(whenAllLeavesAreDone);
+        $ifData.mainPromise = Promise.all($ifData.queue);
+        $ifData.mainPromise.then(whenAllLeavesAreDone);
         return;
       }
 
-      parentCache.ifOparetionsMainPromise = null;
+      $ifData.mainPromise = null;
       callback();
     };
 
@@ -5639,9 +5631,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    */
   function runTrueProcess(node) {
     node.renderingFlow.nextAction(function () {
-      // if (!node.inDOM && !node.node.parentNode) {
       node.setInDOM(true);
-      // }
     });
   }
 
@@ -5654,10 +5644,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   function createFalseProcess(node, onDone) {
     return function () {
       node.renderingFlow.nextAction(function () {
-        // if (node.inDOM && node.node.parentNode) {
         node.setInDOM(false);
-        // }
-
         onDone();
       });
     };

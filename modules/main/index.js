@@ -117,8 +117,6 @@ router.notFound(function () {
   console.error('404, Not Found!');
 });
 
-// console.log(Scope)
-// requestAnimationFrame(function () {
 view.config.cleanContainer = true;
 view.init([
   {
@@ -232,10 +230,8 @@ view.init([
               text: '<>subNav.title'
             }
           }
-
         ]
       }
-
     ]
   },
   {
@@ -256,5 +252,3 @@ view.init([
     ]
   }
 ]);
-
-// });
