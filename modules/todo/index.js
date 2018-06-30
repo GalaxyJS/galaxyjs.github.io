@@ -135,7 +135,7 @@ view.init({
                 },
                 position: '-=.1',
                 chainToParent: true,
-                duration: calculateDuration,
+                duration: calculateDuration
               }
             },
             // id: '<>item.title',
@@ -157,28 +157,22 @@ view.init({
           }
         },
         {
-          class: 'field',
-          children: [
-            {
-              tag: 'label',
-              text: 'ToDo item'
-            },
-            {
-              tag: 'input',
-              value: '<>data.newItem.title',
-              on: {
-                keyup: function (event) {
-                  if (event.keyCode === 13) {
-                    ToDoService.add(Scope.data.newItem);
-                    Scope.data.newItem = {
-                      title: '',
-                      done: false
-                    };
-                  }
-                }
-              }
+          module: {
+            url: './field.js'
+          },
+          inputs: {
+            data: '<>data.newItem'
+          },
+          on: {
+            confirm: function () {
+              ToDoService.add(Scope.data.newItem);
+              Scope.data.newItem = {
+                title: '',
+                done: false
+              };
+
             }
-          ]
+          }
         },
         {
           class: 'fa-end',

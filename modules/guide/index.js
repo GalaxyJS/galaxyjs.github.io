@@ -27,31 +27,17 @@ view.init({
       class: 'content',
       tag: 'section',
       children: [
-        {
-          tag: 'h1',
-          text: 'Guide Page'
-        },
-        {
-          tag: 'h2',
-          text: 'Installation'
-        },
-        {
-          tag: 'p',
-          text: 'Simply copy & paste the following into your page\'s head'
-        },
+        '<h1>Guide Page</h1>' +
+        '<h2>Installation</h2>' +
+        '<p>Simply copy & paste the following into your page\'s head</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
-          text: '<script src="https://gitcdn.xyz/repo/GalaxyJS/galaxyjs.github.io/wip/galaxyjs/galaxy.js"></script>'
+          text: '<script src="https://gitcdn.xyz/repo/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy.js"></script>'
         },
-        {
-          tag: 'h2',
-          text: 'Recommended project file & folder structure'
-        },
-        {
-          tag: 'p',
-          text: 'You can have whatever directory structure you like as long as you know how to the load modules. The following structure is recommended and we are using this structure though out our guide.'
-        },
+        '<h2>Recommended project file & folder structure</h2>' +
+        '<p>You can have whatever directory structure you like as long as you know how to the load modules. The following structure is' +
+        ' recommended and we are using this structure though out our guide.</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
@@ -68,14 +54,8 @@ view.init({
           '|-node_modules\n' +
           '|-package.json'
         },
-        {
-          tag: 'h2',
-          text: 'Bootstrap'
-        },
-        {
-          tag: 'p',
-          text: 'Add this code into the app/index.html'
-        },
+        '<h2>Bootstrap</h2>' +
+        '<p>Add this code into the app/index.html</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
@@ -112,14 +92,8 @@ view.init({
           '  </body>\n' +
           '</html>'
         },
-        {
-          tag: 'h2',
-          text: 'Main module'
-        },
-        {
-          tag: 'p',
-          text: 'Add this code into the app/modules/index.js'
-        },
+        '<h2>Main module</h2>' +
+        '<p>Add this code into the app/modules/index.js</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
@@ -155,15 +129,8 @@ view.init({
           tag: 'p',
           html: 'Then we initialize our view with a <strong>h1</strong> tag with the <strong>\'Hello World!\'</strong> as its text content'
         },
-        {
-          tag: 'h2',
-          text: 'The Progressive Way'
-        },
-        {
-          tag: 'p',
-          text: 'Sometimes you already have a page and you just want to add some reactive functionality to some elements.' +
-          'You can easily do this by transforming your target element into a Galaxy module:'
-        },
+        '<h2>The Progressive Way</h2>' +
+        '<p>Sometimes you already have a page and you just want to add some reactive functionality to some elements. You can easily do this by transforming your target element into a Galaxy module:</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
@@ -192,42 +159,42 @@ view.init({
           tag: 'pre',
           class: 'prettyprint lang-js',
           text: 'const module = {\n' +
-          '        // Addons that you need for your module\n' +
-          '        imports: [\'galaxy/view\'],\n' +
-          '        // The element which is going to be the module\n' +
-          '        element: document.querySelector(\'#target\'),\n' +
-          '        constructor: function (Scope) {\n' +
-          '           const view = Scope.import(\'galaxy/view\');\n' +
+          '      // Addons that you need for your module\n' +
+          '      imports: [\'galaxy/view\'],\n' +
+          '      // The element which is going to be the module\n' +
+          '      element: document.querySelector(\'#target\'),\n' +
+          '      constructor: function (Scope) {\n' +
+          '         const view = Scope.import(\'galaxy/view\');\n' +
           '\n' +
-          '           Scope.data.list = [\n' +
-          '             {\n' +
-          '                title: \'Item 1\'\n' +
-          '             },\n' +
-          '             {\n' +
-          '                title: \'Item 2\'\n' +
-          '             },\n' +
-          '             {\n' +
-          '                title: \'Item 3\'\n' +
-          '             },\n' +
-          '           ];\n' +
+          '         Scope.data.list = [\n' +
+          '           {\n' +
+          '              title: \'Item 1\'\n' +
+          '           },\n' +
+          '           {\n' +
+          '              title: \'Item 2\'\n' +
+          '           },\n' +
+          '           {\n' +
+          '              title: \'Item 3\'\n' +
+          '           },\n' +
+          '         ];\n' +
           '\n' +
-          '           view.config.cleanContainer = true;\n' +
-          '           view.init({\n' +
-          '             tag: \'ul\',\n' +
-          '             children: {\n' +
-          '               $for: {\n' +
-          '                  // Use the list.changes property to keep track of array changes\n' +
-          '                  // and update the view accordingly\n' +
-          '                  data: \'<>data.list.changes\',\n' +
-          '                  // An alias for each list item\n' +
-          '                  as: \'item\'\n' +
-          '               },\n' +
-          '               tag: \'li\',\n' +
-          '               text: \'<>item.title\'\n' +
-          '             }\n' +
-          '           });\n' +
-          '        }\n' +
-          '      };\n' +
+          '         view.config.cleanContainer = true;\n' +
+          '         view.init({\n' +
+          '           tag: \'ul\',\n' +
+          '           children: {\n' +
+          '             $for: {\n' +
+          '                // Use the list.changes property to keep track of array changes\n' +
+          '                // and update the view accordingly\n' +
+          '                data: \'<>data.list.changes\',\n' +
+          '                // An alias for each list item\n' +
+          '                as: \'item\'\n' +
+          '             },\n' +
+          '             tag: \'li\',\n' +
+          '             text: \'<>item.title\'\n' +
+          '           }\n' +
+          '         });\n' +
+          '      }\n' +
+          '    };\n' +
           '\n' +
           '// load module\n' +
           'Galaxy.load(module);'

@@ -30,13 +30,8 @@ const animations = {
       fixedPosition: true,
       from: {
         transformOrigin: 'top center'
-        // position: 'absolute',
-        // x: function (val, node) {
-        //   return node.offsetLeft;
-        // }
       },
       to: {
-        // position: 'absolute',
         display: 'none',
         scale: .9,
         opacity: 0
@@ -66,12 +61,6 @@ const animations = {
       position: '-=.4',
       duration: .5
     }
-    // '.done': {
-    //   sequence: 'card',
-    //   group: 'item-state',
-    //   position: '-=.15',
-    //   duration: .3
-    // }
   },
   createSlideInOut: function (sequence, parent, lSeq) {
     return {
@@ -79,7 +68,6 @@ const animations = {
         parent: parent || null,
         sequence: sequence,
         from: {
-          // ease: Power2.easeOut,
           x: 100,
           opacity: 0
         },
@@ -91,10 +79,8 @@ const animations = {
         duration: .3
       },
       leave: {
-        // parent: parent || null,
         sequence: lSeq,
         to: {
-          // ease: Power2.easeIn,
           x: 150,
           opacity: 0
         },
@@ -114,16 +100,6 @@ const animations = {
         position: '-=.2',
         duration: .3
       }
-      // leave: {
-      //   parent: lParent || null,
-      //   sequence: lSequence,
-      //   order: 2,
-      //   to: {
-      //     scale: 0
-      //   },
-      //   position: '-=.15',
-      //   duration: .2
-      // }
     };
   }
 };
@@ -138,7 +114,7 @@ animations.mainNav = {
     duration: .5
   }
 };
-// debugger;
+
 animations.mainNavItem = {
   enter: {
     parent: 'card',
@@ -150,8 +126,12 @@ animations.mainNavItem = {
       ease: Elastic.easeOut.config(1, .5)
     },
     position: '-=.4',
-    chainToParent: true,
     duration: .5
+  },
+  '.active': {
+    sequence: 'active-nav-item',
+    position: '-=.2',
+    duration: .2
   }
 };
 

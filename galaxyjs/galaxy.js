@@ -2865,50 +2865,48 @@ Galaxy.View = /** @class */(function (G) {
     const propertyKeysPaths = bindings.propertyKeysPaths;
     const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, value, bindings);
 
-    let propertyKeyPath = null;
+    let propertyKey = null;
     let childPropertyKeyPath = null;
     let initValue = null;
     let propertyKeyPathItems = [];
 
     for (let i = 0, len = propertyKeysPaths.length; i < len; i++) {
-      propertyKeyPath = propertyKeysPaths[i];
+      propertyKey = propertyKeysPaths[i];
       childPropertyKeyPath = null;
 
-      propertyKeyPathItems = propertyKeyPath.split('.');
+      propertyKeyPathItems = propertyKey.split('.');
       if (propertyKeyPathItems.length > 1) {
-        propertyKeyPath = propertyKeyPathItems.shift();
+        propertyKey = propertyKeyPathItems.shift();
         childPropertyKeyPath = propertyKeyPathItems.join('.');
       }
       // if (propertyKeyPath === 'this') debugger;
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-      if (i === 0 && propertyKeyPath === 'this' && root instanceof Galaxy.View.ViewNode) {
+      if (i === 0 && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
         i = 1;
-        propertyKeyPath = propertyKeyPathItems.shift();
+        propertyKey = propertyKeyPathItems.shift();
         bindings.propertyKeysPaths = propertyKeyPathItems;
         childPropertyKeyPath = null;
         parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
         // debugger;
-        value = View.propertyLookup(root.data, propertyKeyPath);
+        value = View.propertyLookup(root.data, propertyKey);
         // debugger;
-      } else {
-        if (value) {
-          value = View.propertyLookup(value, propertyKeyPath);
-        }
+      } else if (value) {
+        value = View.propertyLookup(value, propertyKey);
       }
 
       initValue = value;
       if (value !== null && typeof value === 'object') {
-        initValue = value[propertyKeyPath];
+        initValue = value[propertyKey];
       }
 
       let reactiveData;
 
       if (initValue instanceof Object) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKeyPath, initValue, parentReactiveData);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, parentReactiveData);
       } else if (childPropertyKeyPath) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKeyPath, null, parentReactiveData);
-      } else {
-        parentReactiveData.addKeyToShadow(propertyKeyPath);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, null, parentReactiveData);
+      } else if (parentReactiveData) {
+        parentReactiveData.addKeyToShadow(propertyKey);
       }
 
       if (childPropertyKeyPath === null) {
@@ -2923,13 +2921,7 @@ Galaxy.View = /** @class */(function (G) {
                 return expressionFn();
               }
 
-              return parentReactiveData.data[propertyKeyPath];
-              // this has a bug
-              // if (value === null || value === undefined) {
-              //   return value;
-              // }
-              //
-              // return value[propertyKeyPath];
+              return parentReactiveData.data[propertyKey];
             },
             enumerable: true,
             configurable: true
@@ -2938,12 +2930,16 @@ Galaxy.View = /** @class */(function (G) {
 
         // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
         if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
-          // if (scopeData instanceof Galaxy.Scope) {
+          // If the propertyKey is refering to some local value then there is no error
+          if (target instanceof Galaxy.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
+            return;
+          }
+
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
             'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
         }
 
-        parentReactiveData.addNode(target, targetKeyName, propertyKeyPath, expressionFn, scopeData);
+        parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn, scopeData);
       }
 
       if (childPropertyKeyPath !== null) {
@@ -3208,6 +3204,15 @@ Galaxy.View = /** @class */(function (G) {
         attributeValue = nodeSchema[attributeName];
 
         let bindings = View.getBindings(attributeValue);
+        // const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
+        //   return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
+        // }) : false;
+        //
+        // if (intersect) {
+        //   debugger
+        //   continue;
+        // }
+
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
         } else {
@@ -4012,6 +4017,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.schema = schema;
     _this.data = {};
     _this.cache = {};
+    _this.localPropertyNames = new Set();
     _this.inputs = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
@@ -4024,8 +4030,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.sequences = {
       enter: new Galaxy.Sequence(),
       leave: new Galaxy.Sequence(),
-      ':destroy': new Galaxy.Sequence(),
-      ':class': new Galaxy.Sequence()
+      destroy: new Galaxy.Sequence(),
+      classList: new Galaxy.Sequence()
     };
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
@@ -4186,6 +4192,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
 
       _this.origin = true;
+      // _this.transitory = true;
 
       let animationDone;
       const waitForNodeAnimation = new Promise(function (resolve) {
@@ -4360,7 +4367,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   /**
@@ -4487,6 +4494,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           }
 
           sequence.next(function (done) {
+            // If the node is not in the DOM at this point, then skip its animations
+            if (viewNode.node.offsetParent === null) {
+              return done();
+            }
+
             AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
           });
         };
@@ -4534,59 +4546,44 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         };
       }
 
-      viewNode.rendered.then(function () {
-        viewNode.observer.on('class', function (value, oldValue) {
-          value.forEach(function (item) {
-            if (item && oldValue.indexOf(item) === -1) {
-              let _config = animations['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta =
-                        animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position ||
-                          '+=0');
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
+      const classAnimationsHandler = function () {
+        viewNode.observer.on('class', function (classes, oldClasses) {
+          const classSequence = viewNode.sequences.classList;
+          classes.forEach(function (item) {
+            if (item && oldClasses.indexOf(item) === -1) {
+              const _config = animations['.' + item];
+              if (!_config) {
+                return;
               }
+
+              classSequence.next(function (done) {
+                const classAnimationConfig = Object.assign({}, _config);
+                classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
+              });
             }
           });
 
-          oldValue.forEach(function (item) {
-            if (item && value.indexOf(item) === -1) {
-              let _config = animations['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = { className: '-=' + item || '' };
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
+          oldClasses.forEach(function (item) {
+            if (item && classes.indexOf(item) === -1) {
+              const _config = animations['.' + item];
+              if (!_config) {
+                return;
               }
+
+              classSequence.next(function (done) {
+                // requestAnimationFrame(function () {
+                const classAnimationConfig = Object.assign({}, _config);
+                classAnimationConfig.to = { className: '-=' + item || '' };
+                AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
+                // });
+              });
             }
           });
         });
-      });
+      };
+
+      viewNode.rendered.then(classAnimationsHandler);
     }
   };
 
@@ -4681,7 +4678,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
-   * @param {'enter'|'leave'} type
+   * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param descriptions
    * @param {callback} onComplete
    */
@@ -4822,11 +4819,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.timeline.play(0);
       }
     } else {
-      // if (config.parent) {
-      //   _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      // } else {
       _this.timeline.add(tween, config.position);
-      // }
     }
   };
 
@@ -4955,97 +4948,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
 /* global Galaxy */
 
-Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
-  let parser = property.parser;
-  const setter = Galaxy.View.createDefaultSetter(viewNode, attrName, parser);
-
-  // function (value, oldValue) {
-  //   if (value instanceof Promise) {
-  //     const asyncCall = function (asyncValue) {
-  //       const newValue = parser ? parser(asyncValue) : asyncValue;
-  //       View.setAttr(node, attributeName, newValue, oldValue);
-  //     };
-  //     value.then(asyncCall).catch(asyncCall);
-  //   } else {
-  //     const newValue = parser ? parser(value) : value;
-  //     View.setAttr(node, attributeName, newValue, oldValue);
-  //   }
-  // };
-
-  if (expression) {
-    return function (none, oldValue) {
-      let expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.custom = function (viewNode, attrName, property, expression) {
-  const setter = Galaxy.View.createCustomSetter(viewNode, attrName, property);
-
-  // return function (value, oldValue, scopeData) {
-  //   if (value instanceof Promise) {
-  //     const asyncCall = function (asyncValue) {
-  //       property.handler(node, attributeName, asyncValue, oldValue, scopeData);
-  //     };
-  //     value.then(asyncCall).catch(asyncCall);
-  //   } else {
-  //     property.handler(node, attributeName, value, oldValue, scopeData);
-  //   }
-  // };
-
-  if (expression) {
-    return function (none, oldValue) {
-      const expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
-  const setter = Galaxy.View.createPropertySetter(viewNode, property);
-
-  if (expression) {
-    return function (none, oldValue) {
-      let expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-(function () {
-  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
-    const cache = viewNode.cache[attrName];
-    const reactiveFunction = createReactiveFunction(behavior, viewNode, cache, expression, scope);
-
-    // if (!reactiveFunction) {
-    //   console.error('Reactive handler not found for: ' + property.name);
-    // }
-
-    return reactiveFunction;
-  };
-
-  function createReactiveFunction(behavior, vn, data, expression, scope) {
-    return function (value, oldValue) {
-      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
-    };
-  }
-})();
-
-/* global Galaxy */
-
 (function (GV) {
   GV.NODE_SCHEMA_PROPERTY_MAP['class'] = {
     type: 'reactive',
@@ -5075,8 +4977,9 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         return;
       }
 
-      const _this = this;
-      const node = _this.node;
+      /** @type Galaxy.View.ViewNode */
+      const viewNode = this;
+      const node = viewNode.node;
 
       if (typeof value === 'string') {
         return node.setAttribute('class', value);
@@ -5089,19 +4992,34 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       node.setAttribute('class', []);
 
       // when value is an object
-      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
+      const clone = GV.bindSubjectsToData(viewNode, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
 
-      observer.onAll(function (key, value, oldValue) {
-        applyClasses.call(_this, key, value, oldValue, clone);
-      });
+      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
+        const items = Object.getOwnPropertyDescriptors(clone);
+        const staticClasses = {};
+        for (let key in items) {
+          const item = items[key];
+          if (item.enumerable && !item.hasOwnProperty('get')) {
+            staticClasses[key] = clone[key];
+          }
+        }
 
-      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
-        _this.rendered.then(function () {
-          applyClasses.call(_this, '*', true, false, clone);
+        applyClasses.call(viewNode, '*', true, false, staticClasses);
+
+        viewNode.rendered.then(function () {
+          applyClasses.call(viewNode, '*', true, false, clone);
+
+          observer.onAll(function (key, value, oldValue) {
+            applyClasses.call(viewNode, key, value, oldValue, clone);
+          });
         });
       } else {
-        applyClasses.call(_this, '*', true, false, clone);
+        observer.onAll(function (key, value, oldValue) {
+          applyClasses.call(viewNode, key, value, oldValue, clone);
+        });
+
+        applyClasses.call(viewNode, '*', true, false, clone);
       }
     }
   };
@@ -5128,16 +5046,16 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     if (oldValue === value) {
       return;
     }
+    const _this = this;
+
     let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    let newClasses = getClasses(classes);
-    let _this = this;
+    const newClasses = getClasses(classes);
 
     _this.notifyObserver('class', newClasses, oldClasses);
-    // _this.sequences[':class'].start().finish(function () {
-    _this.node.setAttribute('class', newClasses.join(' '));
-    //   _this.sequences[':class'].reset();
-    // });
+    _this.sequences.classList.nextAction(function () {
+      _this.node.setAttribute('class', newClasses.join(' '));
+    });
   }
 })(Galaxy.View);
 
@@ -5214,8 +5132,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue || [];
-      parentNode.cache.mainChildForLeaveProcesses = parentNode.cache.mainChildForLeaveProcesses || [];
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5228,6 +5145,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
           View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
+          node.localPropertyNames.add(config.matches.as);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
@@ -5276,15 +5194,19 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       const parentNode = node.parent;
+      const parentCache = parentNode.cache;
       const parentSchema = parentNode.schema;
       let newTrackMap = [];
 
-      node.renderingFlow.truncate();
-      node.renderingFlow.onTruncate(function () {
-        config.onDone.ignore = true;
-      });
+      // Truncate on reset or actions that does not change the array length
+      if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
+        node.renderingFlow.truncate();
+        node.renderingFlow.onTruncate(function () {
+          config.onDone.ignore = true;
+        });
+      }
 
-      const waitStepDone = registerWaitStep(parentNode.cache);
+      const waitStepDone = registerWaitStep(parentCache.$for);
       let leaveProcess = null;
       if (config.trackBy instanceof Function) {
         newTrackMap = changes.params.map(function (item, i) {
@@ -5340,21 +5262,20 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         });
       } else {
         Promise.resolve().then(waitStepDone);
-        // waitStepDone();
       }
 
       // leave process will be empty if the type is not reset
       if (leaveProcess) {
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-          parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
+          parentCache.$for.leaveProcessList.push(leaveProcess);
         } else {
-          parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+          parentCache.$for.leaveProcessList.unshift(leaveProcess);
         }
       }
 
-      activateLeaveProcess(parentNode.cache);
+      activateLeaveProcess(parentCache.$for);
 
-      const whenAllDestroysAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
+      const whenAllDestroysAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
         config.trackMap = newTrackMap;
         if (changes.type === 'reset' && changes.params.length === 0) {
           return;
@@ -5364,20 +5285,20 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       });
       config.onDone = whenAllDestroysAreDone;
 
-      parentNode.cache.mainChildrenForPromise =
-        parentNode.cache.mainChildrenForPromise || Promise.all(parentNode.cache.mainChildForQueue);
+      parentCache.$for.mainPromise =
+        parentCache.$for.mainPromise || Promise.all(parentCache.$for.queue);
       // When all the destroy processes of all the $for inside parentNode is done
       // This make sure that $for's which are children of the same parent act as one $for
-      parentNode.cache.mainChildrenForPromise.then(whenAllDestroysAreDone);
+      parentCache.$for.mainPromise.then(whenAllDestroysAreDone);
     }
   };
 
   /**
    *
-   * @param parentCache
+   * @param $forData
    * @returns {Function}
    */
-  function registerWaitStep(parentCache) {
+  function registerWaitStep($forData) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -5386,55 +5307,55 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       };
     });
 
-    parentCache.mainChildForQueue.push(waitForDestroy);
+    $forData.queue.push(waitForDestroy);
 
     return destroyDone;
   }
 
   function activateLeaveProcess(parentCache) {
-    if (parentCache.mainChildForLeaveProcesses.length && !parentCache.mainChildForLeaveProcesses.active) {
-      parentCache.mainChildForLeaveProcesses.active = true;
+    if (parentCache.leaveProcessList.length && !parentCache.leaveProcessList.active) {
+      parentCache.leaveProcessList.active = true;
       // We start the leaving process in the next frame so the app has enough time to register all the leave processes
       // that belong to parentNode
-      requestAnimationFrame(function () {
-        parentCache.mainChildForLeaveProcesses.forEach(function (action) {
+      Promise.resolve().then(function () {
+        parentCache.leaveProcessList.forEach(function (action) {
           action();
         });
-        parentCache.mainChildForLeaveProcesses = [];
-        parentCache.mainChildForLeaveProcesses.active = false;
+        parentCache.leaveProcessList = [];
+        parentCache.leaveProcessList.active = false;
       });
     }
   }
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $forData
    * @param {Function} callback
    * @returns {Function}
    */
-  function createWhenAllDoneProcess(parentCache, callback) {
+  function createWhenAllDoneProcess($forData, callback) {
     const whenAllDestroysAreDone = function () {
       if (whenAllDestroysAreDone.ignore) {
         return;
       }
-      // Because the items inside mainChildForQueue will change on the fly we have manually check whether all the
+      // Because the items inside queue will change on the fly we have manually check whether all the
       // promises have resolved and if not we hav eto use Promise.all on the list again
-      const allNotResolved = parentCache.mainChildForQueue.some(function (promise) {
+      const allNotResolved = $forData.queue.some(function (promise) {
         return promise.resolved !== true;
       });
 
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
-        parentCache.mainChildForQueue = parentCache.mainChildForQueue.filter(function (p) {
+        $forData.queue = $forData.queue.filter(function (p) {
           return !p.resolved;
         });
 
-        parentCache.mainChildrenForPromise = Promise.all(parentCache.mainChildForQueue);
-        parentCache.mainChildrenForPromise.then(whenAllDestroysAreDone);
+        $forData.mainPromise = Promise.all($forData.queue);
+        $forData.mainPromise.then(whenAllDestroysAreDone);
         return;
       }
 
-      parentCache.mainChildrenForPromise = null;
+      $forData.mainPromise = null;
       callback();
     };
 
@@ -5580,13 +5501,13 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.mainChildIfQueue = parentNode.cache.mainChildIfQueue || [];
-      parentNode.cache.mainChildIfLeaveProcesses = parentNode.cache.mainChildIfLeaveProcesses || [];
+      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       const parentNode = node.parent;
+      const parentCache = parentNode.cache;
       const parentSchema = parentNode.schema;
 
       if (expression) {
@@ -5604,38 +5525,43 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
           return;
         }
 
-        const waitStepDone = registerWaitStep(parentNode.cache);
+        const waitStepDone = registerWaitStep(parentCache.$if);
         waitStepDone();
       } else {
-        const waitStepDone = registerWaitStep(parentNode.cache);
+        if (!node.rendered.resolved) {
+          node.inDOM = false;
+          return;
+        }
+
+        const waitStepDone = registerWaitStep(parentCache.$if);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-          parentNode.cache.mainChildIfLeaveProcesses.push(process);
+          parentCache.$if.leaveProcessList.push(process);
         } else {
-          parentNode.cache.mainChildIfLeaveProcesses.unshift(process);
+          parentCache.$if.leaveProcessList.unshift(process);
         }
       }
 
-      activateLeaveProcess(parentNode.cache);
+      activateLeaveProcess(parentCache.$if);
 
-      const whenAllLeavesAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
+      const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$if, function () {
         if (value) {
           runTrueProcess(node);
         }
       });
       config.onDone = whenAllLeavesAreDone;
 
-      parentNode.cache.mainChildIfPromise = parentNode.cache.mainChildIfPromise || Promise.all(parentNode.cache.mainChildIfQueue);
-      parentNode.cache.mainChildIfPromise.then(whenAllLeavesAreDone);
+      parentCache.$if.mainPromise = parentCache.$if.mainPromise || Promise.all(parentNode.cache.$if.queue);
+      parentCache.$if.mainPromise.then(whenAllLeavesAreDone);
     }
   };
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $ifData
    * @returns {Function}
    */
-  function registerWaitStep(parentCache) {
+  function registerWaitStep($ifData) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -5644,55 +5570,55 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       };
     });
 
-    parentCache.mainChildIfQueue.push(waitForDestroy);
+    $ifData.queue.push(waitForDestroy);
 
     return destroyDone;
   }
 
-  function activateLeaveProcess(parentCache) {
-    if (parentCache.mainChildIfLeaveProcesses.length && !parentCache.mainChildIfLeaveProcesses.active) {
-      parentCache.mainChildIfLeaveProcesses.active = true;
+  function activateLeaveProcess($ifData) {
+    if ($ifData.leaveProcessList.length && !$ifData.leaveProcessList.active) {
+      $ifData.leaveProcessList.active = true;
       // We start the leaving process in the next frame so the app has enough time to register all the leave processes
       // that belong to parentNode
-      requestAnimationFrame(function () {
-        parentCache.mainChildIfLeaveProcesses.forEach(function (action) {
+      Promise.resolve().then(function () {
+        $ifData.leaveProcessList.forEach(function (action) {
           action();
         });
-        parentCache.mainChildIfLeaveProcesses = [];
-        parentCache.mainChildIfLeaveProcesses.active = false;
+        $ifData.leaveProcessList = [];
+        $ifData.leaveProcessList.active = false;
       });
     }
   }
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $ifData
    * @param {Function} callback
    * @returns {Function}
    */
-  function createWhenAllDoneProcess(parentCache, callback) {
+  function createWhenAllDoneProcess($ifData, callback) {
     const whenAllLeavesAreDone = function () {
       if (whenAllLeavesAreDone.ignore) {
         return;
       }
-      // Because the items inside mainChildIfQueue will change on the fly we have manually check whether all the
+      // Because the items inside queue will change on the fly we have manually check whether all the
       // promises have resolved and if not we hav eto use Promise.all on the list again
-      const allNotResolved = parentCache.mainChildIfQueue.some(function (promise) {
+      const allNotResolved = $ifData.queue.some(function (promise) {
         return promise.resolved !== true;
       });
 
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
-        parentCache.mainChildIfQueue = parentCache.mainChildIfQueue.filter(function (p) {
+        $ifData.queue = $ifData.queue.filter(function (p) {
           return !p.resolved;
         });
 
-        parentCache.mainChildIfPromise = Promise.all(parentCache.mainChildIfQueue);
-        parentCache.mainChildIfPromise.then(whenAllLeavesAreDone);
+        $ifData.mainPromise = Promise.all($ifData.queue);
+        $ifData.mainPromise.then(whenAllLeavesAreDone);
         return;
       }
 
-      parentCache.mainChildIfPromise = null;
+      $ifData.mainPromise = null;
       callback();
     };
 
@@ -5705,9 +5631,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
    */
   function runTrueProcess(node) {
     node.renderingFlow.nextAction(function () {
-      // if (!node.inDOM && !node.node.parentNode) {
       node.setInDOM(true);
-      // }
     });
   }
 
@@ -5720,10 +5644,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
   function createFalseProcess(node, onDone) {
     return function () {
       node.renderingFlow.nextAction(function () {
-        // if (node.inDOM && node.node.parentNode) {
         node.setInDOM(false);
-        // }
-
         onDone();
       });
     };
@@ -5902,6 +5823,97 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
   }
 })(Galaxy.View);
 
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
+  let parser = property.parser;
+  const setter = Galaxy.View.createDefaultSetter(viewNode, attrName, parser);
+
+  // function (value, oldValue) {
+  //   if (value instanceof Promise) {
+  //     const asyncCall = function (asyncValue) {
+  //       const newValue = parser ? parser(asyncValue) : asyncValue;
+  //       View.setAttr(node, attributeName, newValue, oldValue);
+  //     };
+  //     value.then(asyncCall).catch(asyncCall);
+  //   } else {
+  //     const newValue = parser ? parser(value) : value;
+  //     View.setAttr(node, attributeName, newValue, oldValue);
+  //   }
+  // };
+
+  if (expression) {
+    return function (none, oldValue) {
+      let expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.custom = function (viewNode, attrName, property, expression) {
+  const setter = Galaxy.View.createCustomSetter(viewNode, attrName, property);
+
+  // return function (value, oldValue, scopeData) {
+  //   if (value instanceof Promise) {
+  //     const asyncCall = function (asyncValue) {
+  //       property.handler(node, attributeName, asyncValue, oldValue, scopeData);
+  //     };
+  //     value.then(asyncCall).catch(asyncCall);
+  //   } else {
+  //     property.handler(node, attributeName, value, oldValue, scopeData);
+  //   }
+  // };
+
+  if (expression) {
+    return function (none, oldValue) {
+      const expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
+  const setter = Galaxy.View.createPropertySetter(viewNode, property);
+
+  if (expression) {
+    return function (none, oldValue) {
+      let expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+(function () {
+  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
+    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
+    const cache = viewNode.cache[attrName];
+    const reactiveFunction = createReactiveFunction(behavior, viewNode, cache, expression, scope);
+
+    // if (!reactiveFunction) {
+    //   console.error('Reactive handler not found for: ' + property.name);
+    // }
+
+    return reactiveFunction;
+  };
+
+  function createReactiveFunction(behavior, vn, data, expression, scope) {
+    return function (value, oldValue) {
+      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
+    };
+  }
+})();
 
 /* global Galaxy */
 'use strict';

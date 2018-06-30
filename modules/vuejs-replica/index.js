@@ -31,13 +31,6 @@ view.init({
                 data: '<>data.products.changes',
                 as: 'product'
               },
-              // text: [
-              //   'product.quantity',
-              //   'product.title',
-              //   function (q, t) {
-              //     return q + ' ' + t;
-              //   }
-              // ],
               children: [
                 {
                   tag: 'input',
