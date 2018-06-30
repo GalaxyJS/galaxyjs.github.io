@@ -1,9 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GalaxyJS - Welcome</title>
+  <title>GalaxyJS</title>
+  <meta name="description" content="A fancy Javascript framework">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="styles/images/favicon.ico">
+
+  <meta property="og:url" content="http://galaxyjs.github.io"/>
+  <meta property="og:title" content="GalaxyJS"/>
+  <meta property="og:description" content="A fancy Javascript framework"/>
+  <meta property="og:image" content="http://galaxyjs.github.io/styles/images/logo.png"/>
+
+  <script type="application/ld+json">
+    {
+      "name": "GalaxyJS",
+      "description": "A fancy Javascript framework",
+      "@type": "WebSite",
+      "url": "http://galaxyjs.github.io",
+      "@context": "http://schema.org"
+    };
+
+
+  </script>
 
   <!-- google prettyprint -->
   <script src="assets/prettify/prettify.js"></script>
@@ -17,8 +35,6 @@
 
       function run() {
         Galaxy.boot({
-          // url: 'modules/main/test2.js',
-          // url: 'modules/main/test.js',
           url: 'modules/main/index.js',
           element: document.getElementById('body')
         }).then(function (module) {
