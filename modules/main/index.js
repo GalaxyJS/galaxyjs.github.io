@@ -164,8 +164,8 @@ view.init([
             ],
             animations: {
               enter: {
-                parent: 'active-nav-item',
-                sequence: 'main-nav-items',
+                parent: 'main-nav-items',
+                sequence: 'a5',
                 from: {
                   borderLeftWidth: 15,
                   height: 0
@@ -198,7 +198,7 @@ view.init([
                   leaveWithParent: true
                 },
                 enter: {
-                  sequence: 'main-nav-items',
+                  sequence: 'a5',
                   from: {
                     opacity: 0,
                     y: -10
