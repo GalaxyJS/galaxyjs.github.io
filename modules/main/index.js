@@ -134,7 +134,7 @@ view.init([
             inputs: {
               nav: '<>nav'
             },
-            animations: animations.mainNavItem,
+            // animations: animations.mainNavItem,
             text: '<>nav.title',
             class: {
               'nav-item': true,

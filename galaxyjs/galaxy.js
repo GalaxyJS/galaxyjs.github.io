@@ -2852,19 +2852,10 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Object} bindings
    */
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
-    let value = scopeData;
-
-    if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
-      if (scopeData.hasOwnProperty('__rd__')) {
-        parentReactiveData = scopeData.__rd__;
-      } else {
-        parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, value);
-      }
-    }
-
     const propertyKeysPaths = bindings.propertyKeysPaths;
-    const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, value, bindings);
+    const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, scopeData, bindings);
 
+    let value = scopeData;
     let propertyKey = null;
     let childPropertyKeyPath = null;
     let initValue = null;
@@ -2879,7 +2870,20 @@ Galaxy.View = /** @class */(function (G) {
         propertyKey = propertyKeyPathItems.shift();
         childPropertyKeyPath = propertyKeyPathItems.join('.');
       }
-      // if (propertyKeyPath === 'this') debugger;
+      if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
+        if (scopeData.hasOwnProperty('__rd__')) {
+          parentReactiveData = scopeData.__rd__;
+        } else {
+          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData);
+        }
+      }
+      // When the node belongs to a nested $for, the scopeData would refer to the for item data
+      // But developer should still be able to access root scopeData
+      if (i === 0 && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
+        propertyKey === 'data') {
+        parentReactiveData = null;
+      }
+
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
       if (i === 0 && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
         i = 1;
@@ -3651,40 +3655,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           key = map.keys[i];
           _this.syncNode(node, key, value);
         });
-        // const keyGroups = map.keys.unique();
-        // keyGroups.forEach(function (mainKey) {
-        //   let key;
-        //   let updateDir = ReactiveData.UPDATE_DIRECTION_TOP_DOWN;
-        //   if (Galaxy.View.REACTIVE_BEHAVIORS.hasOwnProperty(mainKey)) {
-        //     const action = Galaxy.View.REACTIVE_BEHAVIORS[mainKey].getUpdateDirection;
-        //     if (action) {
-        //       updateDir = action.call(null, value);
-        //     }
-        //   }
-        //
-        //   // debugger;
-        //
-        //   if (updateDir === ReactiveData.UPDATE_DIRECTION_TOP_DOWN) {
-        //     map.nodes.forEach(function (node, i) {
-        //       key = map.keys[i];
-        //       if (key !== mainKey) {
-        //         return;
-        //       }
-        //       _this.syncNode(node, key, value);
-        //     });
-        //   } else if (updateDir === ReactiveData.UPDATE_DIRECTION_BOTTOM_UP) {
-        //     for (let i = 0, len = map.nodes.length; i < len; i++) {
-        //       key = map.keys[i];
-        //       if (key !== mainKey) {
-        //         continue;
-        //       }
-        //       _this.syncNode(map.nodes[i], key, value);
-        //     }
-        //   } else {
-        //     console.error('Update direction is invalid', updateDir);
-        //     throw new Error('Please specify a valid update direction');
-        //   }
-        // });
       }
     },
     /**
@@ -5467,6 +5437,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
           itemDataScope = View.createMirror(nodeScopeData);
+          itemDataScope['__rootScopeData__'] = config.scope;
           itemDataScope[pn] = c[i];
           itemDataScope['$forIndex'] = i;
           let cns = gClone(templateSchema);
@@ -5693,7 +5664,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
-          _this.renderingFlow.truncate();
+          // if node is not in the dom , then renderingFlow should happen
+          if (_this.inDOM) {
+            _this.renderingFlow.truncate();
+          }
           _this.clean();
 
           moduleLoaderGenerator(_this, data, moduleMeta)(function () {});
@@ -6224,6 +6198,16 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       return this;
     },
 
+    navigateFromHere: function navigate(path) {
+      path = path.replace(new RegExp('^' + this._hash), '');
+      if (path[0] !== '/') {
+        path = '/' + path;
+      }
+      const to = (this.root + path).replace('/' + this._hash, '');
+
+      return this.navigate(to);
+    },
+
     on: function on() {
       const _this = this;
       let _len = arguments.length;
@@ -6287,6 +6271,11 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       }
 
       m = match(onlyURL, this._routes);
+
+      if (window.location.hash.indexOf(this.root.replace(/^\/*/, '')) !== 0) {
+        debugger;
+        // return false;
+      }
 
       if (m) {
         this._callLeave();
@@ -6451,9 +6440,10 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     return {
       create: function () {
         if (module.systemId === 'system') {
-          return new SimpleRouter(window.location.pathname, true, '#!');
+          return new SimpleRouter(window.location.hash, true, '#!');
         } else {
-          const router = new SimpleRouter(window.location.pathname + '#!/' + module.id, true, '#!');
+          debugger;
+          const router = new SimpleRouter(window.location.hash + '/' + module.id, true, '#!');
 
           scope.on('module.destroy', function () {
             router.destroy();
@@ -6467,6 +6457,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
   });
 
 })(Galaxy);
+
 /* global Galaxy */
 'use strict';
 
