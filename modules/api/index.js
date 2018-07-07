@@ -33,7 +33,7 @@ router.init({
     console.log('API Router', params);
   }
 });
-console.info(router)
+
 view.init({
   tag: 'div',
   class: 'card big',

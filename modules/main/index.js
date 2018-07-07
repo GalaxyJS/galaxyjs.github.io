@@ -78,7 +78,7 @@ Scope.data.navItems = [
   }
 ];
 
-Scope.data.activeModule = null;
+Scope.data.activeModule = Scope.data.navItems[3].module;
 
 Scope.data.todos = [
   {
@@ -99,6 +99,7 @@ Scope.data.moduleInputs = {
 
 router.init({
   '/': function () {
+    debugger;
     router.navigate('start');
   },
   '/:moduleId*': function (params) {
