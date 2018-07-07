@@ -27,9 +27,11 @@ navService.setSubNavItems([
 
 router.init({
   '/': function () {
+    debugger;
     console.log('API Router');
   },
   '/:subId': function (params) {
+    debugger;
     console.log('API Router', params);
   }
 });

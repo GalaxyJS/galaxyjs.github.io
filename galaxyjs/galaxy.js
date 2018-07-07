@@ -4419,77 +4419,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
 })(Galaxy.View);
 
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
-    type: 'prop',
-    name: 'checked',
-    /**
-     *
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param {Galaxy.View.ReactiveData} scopeReactiveData
-     * @param prop
-     * @param {Function} expression
-     */
-    util: function (viewNode, scopeReactiveData, prop, expression) {
-      if (expression && viewNode.schema.tag === 'input') {
-        throw new Error('input.checked property does not support binding expressions ' +
-          'because it must be able to change its data.\n' +
-          'It uses its bound value as its `model` and expressions can not be used as model.\n');
-      }
-
-      const bindings = GV.getBindings(viewNode.schema.checked);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      viewNode.node.addEventListener('change', function () {
-        scopeReactiveData.data[id] = viewNode.node.checked;
-      });
-    }
-  };
-})(Galaxy.View);
-
-
-/* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
-    type: 'none'
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
-    type: 'prop',
-    name: 'value',
-    /**
-     *
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param {Galaxy.View.ReactiveData} scopeReactiveData
-     * @param prop
-     * @param {Function} expression
-     */
-    util: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
-      if (expression) {
-        throw new Error('input.value property does not support binding expressions ' +
-          'because it must be able to change its data.\n' +
-          'It uses its bound value as its `model` and expressions can not be used as model.\n');
-      }
-
-      const bindings = GV.getBindings(viewNode.schema.value);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      const nativeNode = viewNode.node;
-      if(nativeNode.type === 'number') {
-        nativeNode.addEventListener('input', function () {
-          scopeReactiveData.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
-        });
-      } else {
-        nativeNode.addEventListener('keyup', function () {
-          scopeReactiveData.data[id] = nativeNode.value;
-        });
-      }
-    }
-  };
-})(Galaxy.View);
-
-
 /* global Galaxy, TweenLite, TimelineLite */
 'use strict';
 
@@ -4916,6 +4845,77 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
   };
 })(Galaxy);
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
+    type: 'prop',
+    name: 'checked',
+    /**
+     *
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {Galaxy.View.ReactiveData} scopeReactiveData
+     * @param prop
+     * @param {Function} expression
+     */
+    util: function (viewNode, scopeReactiveData, prop, expression) {
+      if (expression && viewNode.schema.tag === 'input') {
+        throw new Error('input.checked property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
+      }
+
+      const bindings = GV.getBindings(viewNode.schema.checked);
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      viewNode.node.addEventListener('change', function () {
+        scopeReactiveData.data[id] = viewNode.node.checked;
+      });
+    }
+  };
+})(Galaxy.View);
+
+
+/* global Galaxy */
+
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
+    type: 'none'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
+    type: 'prop',
+    name: 'value',
+    /**
+     *
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {Galaxy.View.ReactiveData} scopeReactiveData
+     * @param prop
+     * @param {Function} expression
+     */
+    util: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+      if (expression) {
+        throw new Error('input.value property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
+      }
+
+      const bindings = GV.getBindings(viewNode.schema.value);
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      const nativeNode = viewNode.node;
+      if(nativeNode.type === 'number') {
+        nativeNode.addEventListener('input', function () {
+          scopeReactiveData.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
+        });
+      } else {
+        nativeNode.addEventListener('keyup', function () {
+          scopeReactiveData.data[id] = nativeNode.value;
+        });
+      }
+    }
+  };
+})(Galaxy.View);
+
 
 /* global Galaxy */
 
@@ -5960,7 +5960,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
 (function (G) {
   'use strict';
 
-  SimpleRouter.PARAMETER_REGEXP = /([:*])(\w+)/g;
+  SimpleRouter.PARAMETER_REGEXP = new RegExp(/[:*](\w+)/g);
   SimpleRouter.WILDCARD_REGEXP = /\*/g;
   SimpleRouter.REPLACE_VARIABLE_REGEXP = '([^\/]+)';
   SimpleRouter.REPLACE_WILDCARD = '(?:.*)';
@@ -5970,17 +5970,17 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
   function SimpleRouter(module) {
     console.info(module);
     this.module = module;
-    this.root = module.id === 'system' ? '#' : module.systemId.replace('system/', '#/');
+    this.root = module.id === 'system' ? '#' : module.systemId.replace('system/', '#');
     this.oldURL = null;
+    this.oldResolveId = null;
     this.routes = null;
-
-    this.detect();
   }
 
   SimpleRouter.prototype = {
     init: function (routes) {
       this.routes = routes;
       window.addEventListener('hashchange', this.detect.bind(this));
+      this.detect();
     },
     navigate: function (path) {
       window.location.hash = path;
@@ -5988,13 +5988,74 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     notFound: function () {
 
     },
+    callMatchRoute: function (hash) {
+      const _this = this;
+      const path = hash.replace(/^\#/, '/');
+      const routesPath = Object.keys(_this.routes);
+
+      // Hard match
+      if (routesPath.indexOf(path) !== -1) {
+        return _this.routes[path].call(null);
+      }
+
+      const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
+
+      for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
+        const dynamicRoute = dynamicRoutes[i];
+        const match = dynamicRoute.paramFinderExpression.exec(path);
+
+        if (!match) {
+          continue;
+        }
+
+        const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
+        const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
+
+        if (_this.oldResolveId !== resolveId) {
+          _this.oldResolveId = resolveId;
+          debugger
+          return _this.routes[dynamicRoute.id].call(null, params);
+        }
+      }
+    },
+
+    extractDynamicRoutes: function (routesPath) {
+      return routesPath.map(function (route) {
+        const params = [];
+        let match = SimpleRouter.PARAMETER_REGEXP.exec(route);
+        while (match) {
+          params.push(match[1]);
+          match = SimpleRouter.PARAMETER_REGEXP.exec(route);
+        }
+
+        if (params.length) {
+          return {
+            id: route,
+            paramNames: params,
+            paramFinderExpression: new RegExp(route.replace(SimpleRouter.PARAMETER_REGEXP, SimpleRouter.REPLACE_VARIABLE_REGEXP), 'g')
+          };
+        }
+
+        return null;
+      }).filter(Boolean);
+    },
+
+    createParamValueMap: function (names, values) {
+      const params = {};
+      names.forEach(function (name, i) {
+        params[name] = values[i];
+      });
+
+      return params;
+    },
+
     detect: function () {
-      const hash = window.location.hash;
-      debugger;
+      const hash = window.location.hash || '#';
+debugger;
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
-          console.info(this);
+          this.callMatchRoute(hash);
         }
 
       }

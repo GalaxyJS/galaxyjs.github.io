@@ -78,7 +78,8 @@ Scope.data.navItems = [
   }
 ];
 
-Scope.data.activeModule = Scope.data.navItems[3].module;
+// Scope.data.activeModule = Scope.data.navItems[3].module;
+Scope.data.activeModule = null;
 
 Scope.data.todos = [
   {
@@ -99,10 +100,10 @@ Scope.data.moduleInputs = {
 
 router.init({
   '/': function () {
-    debugger;
     router.navigate('start');
   },
-  '/:moduleId*': function (params) {
+
+  '/:moduleId': function (params) {
     const nav = Scope.data.navItems.filter(function (item) {
       return item.module.id === params.moduleId;
     })[0];
@@ -110,7 +111,6 @@ router.init({
     if (nav) {
       Scope.data.activeModule = nav.module;
     }
-    // console.info(params);
   }
 });
 
