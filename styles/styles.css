@@ -167,10 +167,10 @@ a {
 }
 
 .card.big {
-  width: 100%;
+  width: calc(100% - 30px);
   max-width: 840px;
   border-radius: 12px;
-  margin-bottom: 45px;
+  margin: 30px auto 45px;
 }
 
 .card.big > .card.big {

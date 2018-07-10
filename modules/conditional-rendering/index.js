@@ -44,9 +44,6 @@ view.init({
     {
       tag: 'section',
       class: 'content',
-      renderConfig: {
-        domManipulationOrder: 'alternate'
-      },
       children: [
         {
           tag: 'h1',
@@ -185,7 +182,16 @@ view.init({
           text: 'Item 5',
           animations: itemAnimations,
           $if: '<>data.conditionForMultiple'
-        }
+        },
+        '<h2>Rendering Strategy</h2>' +
+        '<p>The way <strong>$if</strong> handles DOM manipulation is important to be understood. ' +
+        'When condition is false, then the element will be detached from DOM and upon on true ' +
+        'the same element will be reattached to the DOM</p>' +
+        '<p>Also keep in mind that <strong>$if</strong> rendering process only sees direct children rendering process ' +
+        'e.g. leave or enter.' +
+        'This means the animation on a element with a <strong>$if</strong> will not response properly to ' +
+        'indirect children animations of that element</p>'
+
       ]
     }
   ]
