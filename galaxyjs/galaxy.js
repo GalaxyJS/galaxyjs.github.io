@@ -3007,31 +3007,6 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @param {Galaxy.View.ViewNode} node
-   * @param property
-   * @returns {Function}
-   */
-  View.createPropertySetter = function (node, property) {
-    if (!property.name) {
-      throw new Error('createPropertySetter: property.name is mandatory in order to create property setter');
-    }
-
-    return function (value, oldValue) {
-      if (value instanceof Promise) {
-        const asyncCall = function (asyncValue) {
-          node.node[property.name] = asyncValue;
-          node.notifyObserver(property.name, asyncValue, oldValue);
-        };
-        value.then(asyncCall).catch(asyncCall);
-      } else {
-        node.node[property.name] = value;
-        node.notifyObserver(property.name, value, oldValue);
-      }
-    };
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
    * @param {string} attributeName
    * @param property
    * @returns {Function}
@@ -3930,7 +3905,7 @@ Galaxy.View = /** @class */(function (G) {
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -4004,7 +3979,7 @@ Galaxy.View = /** @class */(function (G) {
         });
       }
 
-      const waitStepDone = registerWaitStep(parentCache.$for);
+      const waitStepDone = registerWaitStep(parentCache.$for, node);
       let leaveProcess = null;
       if (config.trackBy instanceof Function) {
         newTrackMap = changes.params.map(function (item, i) {
@@ -4053,7 +4028,13 @@ Galaxy.View = /** @class */(function (G) {
           config.trackMap = newTrackMap;
         }
       } else if (changes.type === 'reset') {
-        leaveProcess = createLeaveProcess(node, config.nodes, config, function () {
+        const nodes = config.nodes.slice(0);
+        config.nodes = [];
+        console.log(node);
+        node.parent.node;
+        debugger;
+
+        leaveProcess = createLeaveProcess(node, nodes, config, function () {
           changes = Object.assign({}, changes);
           changes.type = 'push';
           waitStepDone();
@@ -4096,7 +4077,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param $forData
    * @returns {Function}
    */
-  function registerWaitStep($forData) {
+  function registerWaitStep($forData, n) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -4104,9 +4085,8 @@ Galaxy.View = /** @class */(function (G) {
         resolve();
       };
     });
-
+    waitForDestroy.n = n;
     $forData.queue.push(waitForDestroy);
-
     return destroyDone;
   }
 
@@ -4300,7 +4280,7 @@ Galaxy.View = /** @class */(function (G) {
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$if = parentNode.cache.$if || {leaveProcessList: [], queue: [], mainPromise: null};
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
@@ -4325,7 +4305,9 @@ Galaxy.View = /** @class */(function (G) {
         }
 
         const waitStepDone = registerWaitStep(parentCache.$if);
-        waitStepDone();
+        node.renderingFlow.nextAction(function () {
+          waitStepDone();
+        });
       } else {
         if (!node.rendered.resolved) {
           node.inDOM = false;
@@ -5901,6 +5883,10 @@ Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expr
 /* global Galaxy */
 
 Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
+  if (!property.name) {
+    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter', property);
+  }
+
   const valueFn = property.value || function (vn, an, v, ov) {
     vn.node[an] = v;
   };

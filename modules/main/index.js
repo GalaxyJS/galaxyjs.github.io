@@ -135,7 +135,7 @@ view.init([
             inputs: {
               nav: '<>nav'
             },
-            // animations: animations.mainNavItem,
+            animations: animations.mainNavItem,
             text: '<>nav.title',
             class: {
               'nav-item': true,
@@ -166,7 +166,7 @@ view.init([
             animations: {
               enter: {
                 parent: 'main-nav-items',
-                sequence: 'a5',
+                sequence: 'sub-nav-con',
                 from: {
                   borderLeftWidth: 15,
                   height: 0
@@ -176,19 +176,19 @@ view.init([
                     node.style.height = 'auto';
                     const height = node.offsetHeight;
                     node.style.height = 0;
-
+// debugger;
                     return height;
                   }
                 },
                 position: '-=.4',
-                duration: .2
+                duration: 1.2
               },
               leave: {
                 to: {
                   borderLeftWidth: 0,
                   height: 0
                 },
-                duration: .2
+                duration: 1.2
               }
             },
             children: {
@@ -199,7 +199,8 @@ view.init([
                   leaveWithParent: true
                 },
                 enter: {
-                  sequence: 'a5',
+                  parent: 'sub-nav-con',
+                  sequence: 'sub-nav-items',
                   from: {
                     opacity: 0,
                     y: -10
@@ -208,9 +209,9 @@ view.init([
                   duration: .2
                 },
                 leave: {
-                  sequence: 'aaaa',
-                  to: {},
-                  duration: .1
+                  sequence: 'test',
+                  to: {opacity: 0},
+                  duration: 1
                 }
               },
               $for: {

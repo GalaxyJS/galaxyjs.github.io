@@ -129,7 +129,7 @@ animations.mainNavItem = {
     duration: .5
   },
   '.active': {
-    sequence: 'active-nav-item',
+    sequence: 'main-nav-items',
     position: '-=.2',
     duration: .2
   }
