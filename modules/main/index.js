@@ -176,19 +176,20 @@ view.init([
                     node.style.height = 'auto';
                     const height = node.offsetHeight;
                     node.style.height = 0;
-// debugger;
+
                     return height;
                   }
                 },
-                position: '-=.4',
-                duration: 1.2
+                chainToParent: true,
+                position: '-=.1',
+                duration: .3
               },
               leave: {
                 to: {
                   borderLeftWidth: 0,
                   height: 0
                 },
-                duration: 1.2
+                duration: .2
               }
             },
             children: {
@@ -209,9 +210,8 @@ view.init([
                   duration: .2
                 },
                 leave: {
-                  sequence: 'test',
-                  to: {opacity: 0},
-                  duration: 1
+                  to: {},
+                  duration: .2
                 }
               },
               $for: {
