@@ -2863,15 +2863,14 @@ Galaxy.View = /** @class */(function (G) {
     let childPropertyKeyPath = null;
     let initValue = null;
     let propertyKeyPathItems = [];
-
     for (let i = 0, len = propertyKeysPaths.length; i < len; i++) {
       propertyKey = propertyKeysPaths[i];
       childPropertyKeyPath = null;
 
       propertyKeyPathItems = propertyKey.split('.');
       if (propertyKeyPathItems.length > 1) {
-        propertyKey = propertyKeyPathItems.shift();
-        childPropertyKeyPath = propertyKeyPathItems.join('.');
+        propertyKey = propertyKeyPathItems[0];
+        childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
       if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
         if (scopeData.hasOwnProperty('__rd__')) {
@@ -2882,21 +2881,18 @@ Galaxy.View = /** @class */(function (G) {
       }
       // When the node belongs to a nested $for, the scopeData would refer to the for item data
       // But developer should still be able to access root scopeData
-      if (i === 0 && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
+      if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
         propertyKey === 'data') {
         parentReactiveData = null;
       }
 
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-      if (i === 0 && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
-        i = 1;
-        propertyKey = propertyKeyPathItems.shift();
-        bindings.propertyKeysPaths = propertyKeyPathItems;
+      if (propertyKeyPathItems[0] === 'this' && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
+        propertyKey = propertyKeyPathItems[1];
+        bindings.propertyKeysPaths = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
         parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
-        // debugger;
         value = View.propertyLookup(root.data, propertyKey);
-        // debugger;
       } else if (value) {
         value = View.propertyLookup(value, propertyKey);
       }
@@ -2943,7 +2939,8 @@ Galaxy.View = /** @class */(function (G) {
           }
 
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
-            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
+            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\nProperty name: `' +
+            propertyKey + '`\n');
         }
 
         parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn, scopeData);
@@ -2957,6 +2954,7 @@ Galaxy.View = /** @class */(function (G) {
         }, root);
       }
     }
+
   };
 
   /**
@@ -4481,16 +4479,33 @@ Galaxy.View = /** @class */(function (G) {
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
-          // if node is not in the dom , then renderingFlow should happen
-          if (_this.inDOM) {
-            _this.renderingFlow.truncate();
-          }
-          _this.clean();
+          Promise.resolve().then(function () {
+            // Only truncate renderingFlow if the node is in the DOM
+            if (_this.inDOM) {
+              _this.renderingFlow.truncate();
+            }
 
-          moduleLoaderGenerator(_this, data, moduleMeta)(function () {});
+            _this.renderingFlow.nextAction(function () {
+              const nodes = _this.getChildNodes();
+              _this.clean(_this.sequences.leave);
+              _this.sequences.leave.nextAction(function () {
+                _this.flush(nodes);
+              });
+
+              moduleLoaderGenerator(_this, data, moduleMeta)(function () {});
+            });
+          });
         });
       } else if (!moduleMeta) {
-        _this.clean();
+        Promise.resolve().then(function () {
+          _this.renderingFlow.nextAction(function () {
+            const nodes = _this.getChildNodes();
+            _this.clean(_this.sequences.leave);
+            _this.sequences.leave.nextAction(function () {
+              _this.flush(nodes);
+            });
+          });
+        });
       }
 
       data.moduleMeta = moduleMeta;
@@ -4794,6 +4809,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       shadow: {},
       data: {},
       notify: function () { },
+      notifyDown: function () {},
       sync: function () { },
       makeReactiveObject: function () { },
       addKeyToShadow: function () { }
@@ -4868,6 +4884,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         for (let key in this.shadow) {
           // Cascade changes down to all children reactive data
           if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
+
             this.shadow[key].setData(data);
           } else {
             // changes should only propagate downward
@@ -4961,10 +4978,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       } else {
         this.shadow[key] = null;
       }
-
+      // if (key === 'changes') {
+      //   debugger;
+      // }
       // Update the ui for this key
       // This is for when the makeReactive method has been called by setData
       this.sync(key);
+      // this.parent.notify(this.keyInParent, this.parent.refs);
     },
     /**
      *
@@ -5615,7 +5635,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
 
       _this.origin = true;
-      // _this.transitory = true;
+      _this.transitory = true;
 
       let animationDone;
       const waitForNodeAnimation = new Promise(function (resolve) {
@@ -5693,9 +5713,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.Sequence} leaveSequence
-   * @param {Galaxy.Sequence} root
+   * @param {Galaxy.Sequence} rootSequence
    */
-  ViewNode.prototype.destroy = function (leaveSequence, root) {
+  ViewNode.prototype.destroy = function (leaveSequence, rootSequence) {
     const _this = this;
     _this.transitory = true;
     // The node is the original node that is being removed
@@ -5723,11 +5743,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }, _this);
 
         // Add children leave sequence to this node(parent node) leave sequence
-        _this.clean(_this.sequences.leave, root);
+        _this.clean(_this.sequences.leave, rootSequence);
         _this.populateLeaveSequence(_this.sequences.leave);
         _this.sequences.leave.nextAction(function () {
           if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
-            root.nextAction(function () {
+            rootSequence.nextAction(function () {
               _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
             });
           } else {
@@ -5747,7 +5767,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.sequences.enter.truncate();
         _this.callLifecycleEvent('preDestroy');
 
-        _this.clean(_this.sequences.leave, root);
+        _this.clean(_this.sequences.leave, rootSequence);
         _this.populateLeaveSequence(_this.sequences.leave);
 
         let animationDone;
@@ -5758,6 +5778,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         leaveSequence.next(function (next) {
           waitForNodeAnimation.then(function () {
             _this.hasBeenDestroyed();
+
             next();
           });
         });
@@ -5767,7 +5788,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           _this.callLifecycleEvent('postDestroy');
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           animationDone();
-          _this.node.style.cssText = '';
         });
       }
     }
@@ -5796,6 +5816,27 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
+  ViewNode.prototype.getChildNodes = function () {
+    const nodes = [];
+    const cn = Array.prototype.slice.call(this.node.childNodes, 0);
+    for (let i = cn.length - 1; i >= 0; i--) {
+      const node = cn[i]['galaxyViewNode'];
+
+      if (node !== undefined) {
+        nodes.push(node);
+      }
+    }
+
+    return nodes;
+  };
+
+  ViewNode.prototype.flush = function (nodes) {
+    const items = nodes || this.getChildNodes();
+    items.forEach(function (vn) {
+      vn.node.parentNode && removeChild(vn.node.parentNode, vn.node);
+    });
+  };
+
   /**
    *
    * @param {Galaxy.Sequence} leaveSequence
@@ -5804,17 +5845,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    */
   ViewNode.prototype.clean = function (leaveSequence, root) {
     const _this = this;
-    const toBeRemoved = [];
-    let node;
-
-    const cn = Array.prototype.slice.call(_this.node.childNodes, 0);
-    for (let i = cn.length - 1; i >= 0; i--) {
-      node = cn[i]['galaxyViewNode'];
-
-      if (node !== undefined) {
-        toBeRemoved.push(node);
-      }
-    }
+    const toBeRemoved = _this.getChildNodes();
 
     if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
       toBeRemoved.reverse().forEach(function (node) {
@@ -5824,15 +5855,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
       });
     }
+
     // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
     // children should also get destroyed as child
     if (leaveSequence) {
       ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence, root);
+
       return _this.renderingFlow;
     }
 
     _this.renderingFlow.next(function (next) {
       if (!toBeRemoved.length) {
+        _this.transitory = false;
         next();
         return _this.renderingFlow;
       }
