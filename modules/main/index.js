@@ -92,10 +92,15 @@ Scope.data.todos = [
   }
 ];
 
+Scope.data.fn = 'jh';
+
 Scope.data.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
-  items: '<>data.todos'
+  items: '<>data.todos',
+  subMenus: {
+    items: []
+  }
 };
 
 router.init({
@@ -109,6 +114,8 @@ router.init({
     })[0];
 
     if (nav) {
+      // navService.setSubNavItems([]);
+      Scope.data.moduleInputs.subMenus.items = [];
       Scope.data.activeModule = nav.module;
     }
   }
@@ -149,7 +156,6 @@ view.init([
             },
             on: {
               click: function () {
-                navService.setSubNavItems([]);
                 router.navigate(this.inputs.nav.link);
               }
             }
@@ -180,7 +186,7 @@ view.init([
                     return height;
                   }
                 },
-                chainToParent: true,
+                // chainToParent: true,
                 position: '-=.1',
                 duration: .3
               },
@@ -189,7 +195,7 @@ view.init([
                   borderLeftWidth: 0,
                   height: 0
                 },
-                duration: .2
+                duration: 1.2
               }
             },
             children: {
@@ -219,7 +225,7 @@ view.init([
                 data: [
                   'nav.module',
                   'data.activeModule',
-                  'data.navService.subNavItems.changes',
+                  'data.moduleInputs.subMenus.items.changes',
                   function (m, am, c) {
                     if (m === am) {
                       return c;
