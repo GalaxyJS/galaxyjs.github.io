@@ -3075,7 +3075,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -3096,7 +3096,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
@@ -3374,38 +3374,44 @@ Galaxy.View = /** @class */(function (G) {
 
       const classAnimationsHandler = function () {
         viewNode.observer.on('class', function (classes, oldClasses) {
+          oldClasses = oldClasses || [];
           const classSequence = viewNode.sequences.classList;
-          classes.forEach(function (item) {
-            if (item && oldClasses.indexOf(item) === -1) {
-              const _config = animations['.' + item];
-              if (!_config) {
-                return;
+          try {
+            classes.forEach(function (item) {
+              if (item && oldClasses.indexOf(item) === -1) {
+                const _config = animations['.' + item];
+                if (!_config) {
+                  return;
+                }
+
+                classSequence.next(function (done) {
+                  const classAnimationConfig = Object.assign({}, _config);
+                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                  AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
+                });
               }
+            });
 
-              classSequence.next(function (done) {
-                const classAnimationConfig = Object.assign({}, _config);
-                classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
-                AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
-              });
-            }
-          });
+            oldClasses.forEach(function (item) {
+              if (item && classes.indexOf(item) === -1) {
+                const _config = animations['.' + item];
+                if (!_config) {
+                  return;
+                }
 
-          oldClasses.forEach(function (item) {
-            if (item && classes.indexOf(item) === -1) {
-              const _config = animations['.' + item];
-              if (!_config) {
-                return;
+                classSequence.next(function (done) {
+                  // requestAnimationFrame(function () {
+                  const classAnimationConfig = Object.assign({}, _config);
+                  classAnimationConfig.to = { className: '-=' + item || '' };
+                  AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
+                  // });
+                });
               }
-
-              classSequence.next(function (done) {
-                // requestAnimationFrame(function () {
-                const classAnimationConfig = Object.assign({}, _config);
-                classAnimationConfig.to = { className: '-=' + item || '' };
-                AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
-                // });
-              });
-            }
-          });
+            });
+          }
+          catch (exception) {
+            console.warn(exception);
+          }
         });
       };
 
@@ -3535,6 +3541,7 @@ Galaxy.View = /** @class */(function (G) {
         const parent = AnimationMeta.get(newConfig.parent);
         const animationMetaTypeConfig = animationMeta.configs[type] || {};
         const parentTypeConfig = animationMeta.configs[type] || {};
+
         parent.addChild(animationMeta, animationMetaTypeConfig, parentTypeConfig);
       }
     } else {
@@ -4746,7 +4753,7 @@ Galaxy.View = /** @class */(function (G) {
       const bindings = GV.getBindings(viewNode.schema.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
-      if(nativeNode.type === 'number') {
+      if (nativeNode.type === 'number') {
         nativeNode.addEventListener('input', function () {
           scopeReactiveData.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
         });
@@ -4755,6 +4762,9 @@ Galaxy.View = /** @class */(function (G) {
           scopeReactiveData.data[id] = nativeNode.value;
         });
       }
+    },
+    value: function (viewNode, propertyName, value, oldValue) {
+      viewNode.node[propertyName] = value === undefined ? '' : value;
     }
   };
 })(Galaxy.View);
@@ -4766,6 +4776,8 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
   function ArrayChange() {
     this.init = null;
     this.original = null;
+    this.snapshot = [];
+    this.returnValue = null;
     this.params = [];
     this.type = 'reset';
   }
@@ -4774,6 +4786,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     const instance = new Galaxy.View.ArrayChange();
     instance.init = this.init;
     instance.original = this.original;
+    instance.snapshot = this.snapshot.slice(0);
     instance.params = this.params.slice(0);
     instance.type = this.type;
     // instance.ts = new Date().getTime();
@@ -4783,6 +4796,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
 
   return ArrayChange;
 })();
+
 /* global Galaxy */
 
 Galaxy.View.ReactiveData = /** @class */ (function () {
@@ -4800,7 +4814,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
   const defProp = Object.defineProperty;
   const scopeBuilder = function () {
     return {
-      id: '{}',
+      id: '{Scope}',
       shadow: {},
       data: {},
       notify: function () { },
@@ -4830,7 +4844,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     this.parent = parent;
     this.refs = [];
     this.shadow = {};
-    this.oldValue = undefined;
+    this.oldValue = {};
 
     if (this.data && this.data.hasOwnProperty('__rd__')) {
       this.refs = this.data.__rd__.refs;
@@ -4937,6 +4951,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     makeReactiveObject: function (data, key, shadow) {
       const _this = this;
       let value = data[key];
+      _this.oldValue[key] = value;
 
       defProp(data, key, {
         get: function () {
@@ -4953,7 +4968,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             return;
           }
 
-          _this.oldValue = value;
+          _this.oldValue[key] = value;
           value = val;
           // This means that the property suppose to be an object and there probably active binds to it
           if (_this.shadow[key]) {
@@ -5001,6 +5016,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
       const initialChanges = new Galaxy.View.ArrayChange();
       initialChanges.original = value;
+      initialChanges.snapshot = value.slice(0);
       initialChanges.type = 'reset';
       initialChanges.params = value;
       initialChanges.params.forEach(function (item) {
@@ -5026,13 +5042,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
               args[i] = arguments[i];
             }
 
-            const result = originalMethod.apply(this, args);
+            const returnValue = originalMethod.apply(this, args);
             const changes = new Galaxy.View.ArrayChange();
             changes.original = value;
-
+            changes.snapshot = value.slice(0);
             changes.type = method;
             changes.params = args;
-            changes.result = result;
+            changes.returnValue = returnValue;
             changes.init = initialChanges;
 
             _this.oldValue = value.changes;
@@ -5052,7 +5068,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             _this.notifyDown('length');
             value.changes = changes;
 
-            return result;
+            return returnValue;
           },
           writable: false,
           configurable: true
@@ -5101,19 +5117,19 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     },
     /**
      *
-     * @param {string} key
+     * @param {string} propertyKey
      */
-    sync: function (key) {
+    sync: function (propertyKey) {
       const _this = this;
 
-      const map = this.nodesMap[key];
-      const value = this.data[key];
+      const map = this.nodesMap[propertyKey];
+      const oldValue = _this.oldValue[propertyKey];
+      const value = this.data[propertyKey];
 
       if (map) {
-        let key;
         map.nodes.forEach(function (node, i) {
-          key = map.keys[i];
-          _this.syncNode(node, key, value);
+          const key = map.keys[i];
+          _this.syncNode(node, key, value, oldValue);
         });
       }
     },
@@ -5134,18 +5150,19 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      * @param {string} key
      * @param value
      */
-    syncNode: function (node, key, value) {
+    syncNode: function (node, key, value, oldValue) {
+      // Pass a copy of the ArrayChange to every bound
       if (value instanceof Galaxy.View.ArrayChange) {
         value = value.getInstance();
       }
 
       if (node instanceof Galaxy.View.ViewNode) {
-        node.setters[key](value, this.oldValue);
+        node.setters[key](value, oldValue);
       } else {
         node[key] = value;
       }
 
-      Galaxy.Observer.notify(node, key, value, this.oldValue);
+      Galaxy.Observer.notify(node, key, value, oldValue);
     },
     /**
      *
@@ -6122,6 +6139,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       // Hard match
       if (routesPath.indexOf(path) !== -1) {
         // debugger;
+        _this.oldResolveId = path;
         return _this.routes[path].call(null);
       }
 
