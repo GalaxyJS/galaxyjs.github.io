@@ -23,7 +23,7 @@ const animations = {
       duration: .3,
       position: '-=.15',
 
-      chainToParent: true
+      // chainToParent: true
     },
     leave: {
       sequence: 'card',
@@ -117,7 +117,8 @@ animations.mainNav = {
 
 animations.mainNavItem = {
   enter: {
-    parent: 'card',
+    // parent: 'card',
+    // durationInParent: 'auto',
     sequence: 'main-nav-items',
     from: {
       transition: 'none',
@@ -126,7 +127,7 @@ animations.mainNavItem = {
       ease: Elastic.easeOut.config(1, .5)
     },
     position: '-=.4',
-    duration: .5
+    duration: 1.5
   },
   '.active': {
     sequence: 'main-nav-items',

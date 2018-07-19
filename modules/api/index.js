@@ -5,7 +5,7 @@ const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
 const inputs = Scope.import('galaxy/inputs');
 
-inputs.subMenus.items =[
+const items =[
   {
     title: 'Galaxy.Scope'
   },
@@ -25,7 +25,7 @@ inputs.subMenus.items =[
     title: 'Galaxy.View.ViewNode'
   }
 ];
-
+navService.setSubNavItems(items);
 // inputs.handlers.subNavs = ['asdasd'];
 router.init({
   '/': function () {

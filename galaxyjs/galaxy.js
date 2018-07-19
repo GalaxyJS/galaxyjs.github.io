@@ -3418,6 +3418,16 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
+  /**
+   *
+   * @typedef {Object} AnimationConfig
+   * @property {string|number} [positionInParent]
+   * @property {string|number} [position]
+   * @property {number} [duration]
+   * @property {object} [from]
+   * @property {object} [to]
+   */
+
   AnimationMeta.ANIMATIONS = {};
   AnimationMeta.TIMELINES = {};
 
@@ -3541,7 +3551,7 @@ Galaxy.View = /** @class */(function (G) {
         const animationMetaTypeConfig = animationMeta.configs[type] || {};
         const parentTypeConfig = animationMeta.configs[type] || {};
 
-        parent.addChild(animationMeta, animationMetaTypeConfig, parentTypeConfig);
+        parent.addChild(animationMeta, animationMetaTypeConfig, type);
       }
     } else {
       AnimationMeta.createTween(viewNode.node, newConfig, onComplete);
@@ -3566,6 +3576,7 @@ Galaxy.View = /** @class */(function (G) {
         _this.onCompletesActions.forEach(function (action) {
           action();
         });
+        _this.children = [];
         _this.onCompletesActions = [];
       }
     });
@@ -3574,6 +3585,7 @@ Galaxy.View = /** @class */(function (G) {
     _this.timeline.addLabel('beginning', 0);
     _this.configs = {};
     _this.parent = null;
+    _this.children = [];
   }
 
   /**
@@ -3584,17 +3596,34 @@ Galaxy.View = /** @class */(function (G) {
     this.onCompletesActions.push(action);
   };
 
-  AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
+  /**
+   *
+   * @param {AnimationMeta} child
+   * @param {AnimationConfig} childConf
+   * @param parentConf
+   */
+  AnimationMeta.prototype.addChild = function (child, childConf, type) {
     const _this = this;
     child.parent = _this;
 
-    const children = this.timeline.getChildren(false);
+    // const children = this.timeline.getChildren(false);
+    const children = this.children;
+    const index = children.indexOf(child.timeline);
+    // const positionInParent = childConf.positionInParent || (type === 'leave' ? 'auto' : '+=0');
 
-    if (children.indexOf(child.timeline) === -1) {
-      if (_this.timeline.getChildren(false, true, false).length === 0) {
-        _this.timeline.add(child.timeline, 0);
+    if (index === -1) {
+      if (childConf.chainToParent) {
+        children.push(child.timeline);
+        _this.timeline.add(child.timeline);
       } else {
-        _this.timeline.add(child.timeline, childConf.chainToParent ? childConf.position : '+=0');
+        // debugger;
+        child.timeline.pause();
+        children.push(child.timeline);
+        _this.timeline.add(function () {
+          child.timeline.resume();
+          children.splice(index, 1);
+        });
+        _this.timeline.resume();
       }
     }
   };
@@ -3639,7 +3668,7 @@ Galaxy.View = /** @class */(function (G) {
     };
 
     // First animation in the timeline should always start at zero
-    if (this.timeline.getChildren(false, true, false).length === 0) {
+    if (_this.timeline.getChildren(false, true, false).length === 0) {
       let progress = _this.timeline.progress();
       if (config.parent) {
         _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
@@ -3980,7 +4009,7 @@ Galaxy.View = /** @class */(function (G) {
 
       const waitStepDone = registerWaitStep(parentCache.$for, parent);
       let leaveProcess = null;
-      if (config.trackBy instanceof Function) {
+      if (config.trackBy instanceof Function && changes.type === 'reset') {
         newTrackMap = changes.params.map(function (item, i) {
           return config.trackBy.call(node, item, i);
         });
@@ -4037,7 +4066,6 @@ Galaxy.View = /** @class */(function (G) {
       } else {
         Promise.resolve().then(waitStepDone);
       }
-
       // leave process will be empty if the type is not reset
       if (leaveProcess) {
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
@@ -4892,7 +4920,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       }
     },
     setData: function (data) {
-      this.removeMyRef(data);
+      this.removeMyRef();
 
       if (!(data instanceof Object)) {
         this.data = {};
@@ -4996,13 +5024,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       } else {
         this.shadow[key] = null;
       }
-      // if (key === 'changes') {
-      //   debugger;
-      // }
+
       // Update the ui for this key
       // This is for when the makeReactive method has been called by setData
       this.sync(key);
-      // this.parent.notify(this.keyInParent, this.parent.refs);
     },
     /**
      *
@@ -5067,8 +5092,16 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
                   new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
                 }
               });
-            } else if (method === 'pop' || method === 'splice' || method === 'shift') {
-              //
+            } else if (method === 'pop' || method === 'shift') {
+              if (returnValue !== null && typeof returnValue === 'object' && returnValue.hasOwnProperty('__rd__')) {
+                returnValue.__rd__.removeMyRef();
+              }
+            } else if (method === 'splice') {
+              changes.params.slice(2).forEach(function (item) {
+                if (item !== null && typeof item === 'object') {
+                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                }
+              });
             }
 
             // For arrays we have to sync length manually

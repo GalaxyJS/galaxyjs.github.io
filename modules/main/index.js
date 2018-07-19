@@ -162,41 +162,41 @@ view.init([
           },
           {
             class: 'sub-nav-container',
-            $if: [
-              'nav.module',
-              'data.activeModule',
-              function (mod, actMod) {
-                return mod === actMod;
-              }
-            ],
+            // $if: [
+            //   'nav.module',
+            //   'data.activeModule',
+            //   function (mod, actMod) {
+            //     return mod === actMod;
+            //   }
+            // ],
             animations: {
-              enter: {
-                parent: 'main-nav-items',
-                sequence: 'sub-nav-con',
-                from: {
-                  borderLeftWidth: 15,
-                  height: 0
-                },
-                to: {
-                  height: function (v, node) {
-                    node.style.height = 'auto';
-                    const height = node.offsetHeight;
-                    node.style.height = 0;
-
-                    return height;
-                  }
-                },
-                // chainToParent: true,
-                position: '-=.1',
-                duration: .3
-              },
-              leave: {
-                to: {
-                  borderLeftWidth: 0,
-                  height: 0
-                },
-                duration: 1.2
-              }
+              // enter: {
+              //   // parent: 'main-nav-items',
+              //   // chainToParent: true,
+              //   sequence: 'main-nav-items',
+              //   from: {
+              //     borderLeftWidth: 15,
+              //     height: 0
+              //   },
+              //   to: {
+              //     height: function (v, node) {
+              //       node.style.height = 'auto';
+              //       const height = node.offsetHeight;
+              //       node.style.height = 0;
+              //
+              //       return height;
+              //     }
+              //   },
+              //   position: '-=.1',
+              //   duration: 11.3
+              // },
+              // leave: {
+              //   to: {
+              //     borderLeftWidth: 0,
+              //     height: 0
+              //   },
+              //   duration: 1.2
+              // }
             },
             children: {
               tag: 'a',
@@ -206,10 +206,12 @@ view.init([
                   leaveWithParent: true
                 },
                 enter: {
-                  parent: 'sub-nav-con',
+                  parent: 'main-nav-items',
+                  // chainToParent: true,
                   sequence: 'sub-nav-items',
                   from: {
-                    opacity: 0,
+
+                    opacity:0,
                     y: -10
                   },
                   position: '-=.15',
@@ -225,7 +227,7 @@ view.init([
                 data: [
                   'nav.module',
                   'data.activeModule',
-                  'data.moduleInputs.subMenus.items.changes',
+                  'data.navService.subNavItems.changes',
                   function (m, am, c) {
                     if (m === am) {
                       return c;
