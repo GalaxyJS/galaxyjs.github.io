@@ -127,7 +127,7 @@ animations.mainNavItem = {
       ease: Elastic.easeOut.config(1, .5)
     },
     position: '-=.4',
-    duration: 1.5
+    duration: .8
   },
   '.active': {
     sequence: 'main-nav-items',

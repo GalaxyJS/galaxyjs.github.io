@@ -103,6 +103,28 @@ Scope.data.moduleInputs = {
   }
 };
 
+const items = [
+  {
+    title: 'Galaxy.Scope'
+  },
+  {
+    title: 'Galaxy.Module'
+  },
+  {
+    title: 'Galaxy.Sequence'
+  },
+  {
+    title: 'Galaxy.Observer'
+  },
+  {
+    title: 'Galaxy.View'
+  },
+  {
+    title: 'Galaxy.View.ViewNode'
+  }
+];
+navService.setSubNavItems(items);
+
 router.init({
   '/': function () {
     router.navigate('start');
@@ -115,7 +137,7 @@ router.init({
 
     if (nav) {
       // navService.setSubNavItems([]);
-      Scope.data.moduleInputs.subMenus.items = [];
+      // Scope.data.moduleInputs.subMenus.items = [];
       Scope.data.activeModule = nav.module;
     }
   }
@@ -136,13 +158,16 @@ view.init([
       {
         tag: 'div',
         $for: 'nav in data.navItems',
+
+        animations: animations.mainNavItem,
+        class: 'ahah',
         children: [
           {
             tag: 'a',
             inputs: {
               nav: '<>nav'
             },
-            animations: animations.mainNavItem,
+
             text: '<>nav.title',
             class: {
               'nav-item': true,
@@ -160,86 +185,87 @@ view.init([
               }
             }
           },
+          // {
+          //   class: 'sub-nav-container',
+          //   // $if: [
+          //   //   'nav.module',
+          //   //   'data.activeModule',
+          //   //   function (mod, actMod) {
+          //   //     return mod === actMod;
+          //   //   }
+          //   // ],
+          //   animations: {
+          //     // enter: {
+          //     //   // parent: 'main-nav-items',
+          //     //   // chainToParent: true,
+          //     //   sequence: 'main-nav-items',
+          //     //   from: {
+          //     //     borderLeftWidth: 15,
+          //     //     height: 0
+          //     //   },
+          //     //   to: {
+          //     //     height: function (v, node) {
+          //     //       node.style.height = 'auto';
+          //     //       const height = node.offsetHeight;
+          //     //       node.style.height = 0;
+          //     //
+          //     //       return height;
+          //     //     }
+          //     //   },
+          //     //   position: '-=.1',
+          //     //   duration: 11.3
+          //     // },
+          //     // leave: {
+          //     //   to: {
+          //     //     borderLeftWidth: 0,
+          //     //     height: 0
+          //     //   },
+          //     //   duration: 1.2
+          //     // }
+          //   },
+          //   children: {
           {
-            class: 'sub-nav-container',
-            // $if: [
-            //   'nav.module',
-            //   'data.activeModule',
-            //   function (mod, actMod) {
-            //     return mod === actMod;
-            //   }
-            // ],
+            tag: 'a',
+            class: 'nav-item sub',
             animations: {
-              // enter: {
-              //   // parent: 'main-nav-items',
-              //   // chainToParent: true,
-              //   sequence: 'main-nav-items',
-              //   from: {
-              //     borderLeftWidth: 15,
-              //     height: 0
-              //   },
-              //   to: {
-              //     height: function (v, node) {
-              //       node.style.height = 'auto';
-              //       const height = node.offsetHeight;
-              //       node.style.height = 0;
-              //
-              //       return height;
-              //     }
-              //   },
-              //   position: '-=.1',
-              //   duration: 11.3
-              // },
-              // leave: {
-              //   to: {
-              //     borderLeftWidth: 0,
-              //     height: 0
-              //   },
-              //   duration: 1.2
-              // }
+              config: {
+                leaveWithParent: true
+              },
+              enter: {
+                parent: 'main-nav-items',
+                chainToParent: true,
+                sequence: 'sub-nav-items',
+                from: {
+
+                  opacity: 0,
+                  y: -10
+                },
+                position: '-=.15',
+                duration: .5
+              },
+              leave: {
+                to: {},
+                duration: .2
+              }
             },
-            children: {
-              tag: 'a',
-              class: 'nav-item sub',
-              animations: {
-                config: {
-                  leaveWithParent: true
-                },
-                enter: {
-                  parent: 'main-nav-items',
-                  // chainToParent: true,
-                  sequence: 'sub-nav-items',
-                  from: {
-
-                    opacity:0,
-                    y: -10
-                  },
-                  position: '-=.15',
-                  duration: .2
-                },
-                leave: {
-                  to: {},
-                  duration: .2
-                }
-              },
-              $for: {
-                as: 'subNav',
-                data: [
-                  'nav.module',
-                  'data.activeModule',
-                  'data.navService.subNavItems.changes',
-                  function (m, am, c) {
-                    if (m === am) {
-                      return c;
-                    }
-
-                    return null;
+            $for: {
+              as: 'subNav',
+              data: [
+                'nav.module',
+                'data.activeModule',
+                'data.navService.subNavItems.changes',
+                function (m, am, c) {
+                  if (m === am) {
+                    return c;
                   }
-                ]
-              },
-              text: '<>subNav.title'
-            }
+
+                  return null;
+                }
+              ]
+            },
+            text: '<>subNav.title'
           }
+          // }
         ]
       }
     ]

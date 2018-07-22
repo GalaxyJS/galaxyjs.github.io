@@ -5,27 +5,27 @@ const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
 const inputs = Scope.import('galaxy/inputs');
 
-const items =[
-  {
-    title: 'Galaxy.Scope'
-  },
-  {
-    title: 'Galaxy.Module'
-  },
-  {
-    title: 'Galaxy.Sequence'
-  },
-  {
-    title: 'Galaxy.Observer'
-  },
-  {
-    title: 'Galaxy.View'
-  },
-  {
-    title: 'Galaxy.View.ViewNode'
-  }
-];
-navService.setSubNavItems(items);
+// const items =[
+//   {
+//     title: 'Galaxy.Scope'
+//   },
+//   {
+//     title: 'Galaxy.Module'
+//   },
+//   {
+//     title: 'Galaxy.Sequence'
+//   },
+//   {
+//     title: 'Galaxy.Observer'
+//   },
+//   {
+//     title: 'Galaxy.View'
+//   },
+//   {
+//     title: 'Galaxy.View.ViewNode'
+//   }
+// ];
+// navService.setSubNavItems(items);
 // inputs.handlers.subNavs = ['asdasd'];
 router.init({
   '/': function () {
