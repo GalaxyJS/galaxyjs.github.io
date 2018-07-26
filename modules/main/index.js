@@ -123,7 +123,7 @@ const items = [
     title: 'Galaxy.View.ViewNode'
   }
 ];
-navService.setSubNavItems(items);
+// navService.setSubNavItems(items);
 
 router.init({
   '/': function () {
@@ -136,7 +136,7 @@ router.init({
     })[0];
 
     if (nav) {
-      // navService.setSubNavItems([]);
+      navService.setSubNavItems([]);
       // Scope.data.moduleInputs.subMenus.items = [];
       Scope.data.activeModule = nav.module;
     }
@@ -185,87 +185,100 @@ view.init([
               }
             }
           },
-          // {
-          //   class: 'sub-nav-container',
-          //   // $if: [
-          //   //   'nav.module',
-          //   //   'data.activeModule',
-          //   //   function (mod, actMod) {
-          //   //     return mod === actMod;
-          //   //   }
-          //   // ],
-          //   animations: {
-          //     // enter: {
-          //     //   // parent: 'main-nav-items',
-          //     //   // chainToParent: true,
-          //     //   sequence: 'main-nav-items',
-          //     //   from: {
-          //     //     borderLeftWidth: 15,
-          //     //     height: 0
-          //     //   },
-          //     //   to: {
-          //     //     height: function (v, node) {
-          //     //       node.style.height = 'auto';
-          //     //       const height = node.offsetHeight;
-          //     //       node.style.height = 0;
-          //     //
-          //     //       return height;
-          //     //     }
-          //     //   },
-          //     //   position: '-=.1',
-          //     //   duration: 11.3
-          //     // },
-          //     // leave: {
-          //     //   to: {
-          //     //     borderLeftWidth: 0,
-          //     //     height: 0
-          //     //   },
-          //     //   duration: 1.2
-          //     // }
-          //   },
-          //   children: {
           {
-            tag: 'a',
-            class: 'nav-item sub',
+            class: 'sub-nav-container',
+            // $if: [
+            //   'nav.module',
+            //   'data.activeModule',
+            //   function (mod, actMod) {
+            //     return mod === actMod;
+            //   }
+            // ],
             animations: {
-              config: {
-                leaveWithParent: true
-              },
-              enter: {
-                parent: 'main-nav-items',
-                chainToParent: true,
-                sequence: 'sub-nav-items',
-                from: {
+              // enter: {
+              //   // parent: 'main-nav-items',
+              //   // chainToParent: true,
+              //   sequence: 'main-nav-items',
+              //   from: {
+              //     borderLeftWidth: 15,
+              //     height: 0
+              //   },
+              //   to: {
+              //     height: function (v, node) {
+              //       node.style.height = 'auto';
+              //       const height = node.offsetHeight;
+              //       node.style.height = 0;
+              //
+              //       return height;
+              //     }
+              //   },
+              //   position: '-=.1',
+              //   duration: 11.3
+              // },
+              // leave: {
+              //   to: {
+              //     borderLeftWidth: 0,
+              //     height: 0
+              //   },
+              //   duration: 1.2
+              // }
+            },
 
-                  opacity: 0,
-                  y: -10
-                },
-                position: '-=.15',
-                duration: .5
+            lifecycle: {
+              postEnter: function () {
+                console.log('postEnter');
               },
-              leave: {
-                to: {},
-                duration: .2
+              post$forEnter: function (items) {
+                console.log('post$forEnter', items);
               }
             },
-            $for: {
-              as: 'subNav',
-              data: [
-                'nav.module',
-                'data.activeModule',
-                'data.navService.subNavItems.changes',
-                function (m, am, c) {
-                  if (m === am) {
-                    return c;
-                  }
 
-                  return null;
+            children: {
+              // {
+              tag: 'a',
+              class: 'nav-item sub',
+              animations: {
+                config: {
+                  leaveWithParent: true
+                },
+                enter: {
+                  parent: 'main-nav-items',
+                  sequence: 'sub-nav-items',
+
+                  // sequence: 'main-nav-items',
+
+                  chainToParent: true,
+
+                  from: {
+                    opacity: 0,
+                    y: -10
+                  },
+                  position: '-=.4',
+                  duration: .5
+                },
+                leave: {
+                  to: {},
+                  duration: .2
                 }
-              ]
-            },
-            text: '<>subNav.title'
+              },
+              $for: {
+                as: 'subNav',
+                data: [
+                  'nav.module',
+                  'data.activeModule',
+                  'data.navService.subNavItems.changes',
+                  function (m, am, c) {
+                    if (m === am) {
+                      return c;
+                    }
+
+                    return null;
+                  }
+                ]
+              },
+              text: '<>subNav.title'
+            }
           }
-          // }
         ]
       }
     ]
