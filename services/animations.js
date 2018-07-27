@@ -126,14 +126,10 @@ animations.mainNavItem = {
       x: '-25%',
       ease: Elastic.easeOut.config(1, .5)
     },
-    position: '-=.1',
+    position: '-=.5',
     duration: .7
   },
-  '.active': {
-    sequence: 'main-nav-items',
-    position: '-=.2',
-    duration: .2
-  }
+
 };
 
 Scope.exports = animations;

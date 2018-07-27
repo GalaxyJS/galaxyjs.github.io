@@ -113,8 +113,11 @@ view.init({
               as: 'titem'
             },
             animations: {
+              config: {
+                leaveWithParent: true
+              },
               enter: {
-                parent: 'card',
+                startAfter: 'card',
                 sequence: 'todo-items',
                 from: {
                   height: 0,
@@ -126,7 +129,7 @@ view.init({
                 chainToParent: true
               },
               leave: {
-                parent: 'card',
+                // parent: 'card',
                 sequence: 'todo-items',
                 to: {
                   height: 0,

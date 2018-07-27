@@ -163,6 +163,19 @@ view.init([
         class: 'ahah',
         children: [
           {
+            animations: {
+              '.active': {
+                from: {
+                  ease: 'none'
+                },
+                // parent: 'main-nav-items',
+                sequence: 'aaaasd',
+                // positionInParent: '-=.5',
+                position: '-=.2',
+                duration: .2
+              }
+            },
+
             tag: 'a',
             inputs: {
               nav: '<>nav'
@@ -187,41 +200,42 @@ view.init([
           },
           {
             class: 'sub-nav-container',
-            // $if: [
-            //   'nav.module',
-            //   'data.activeModule',
-            //   function (mod, actMod) {
-            //     return mod === actMod;
-            //   }
-            // ],
+            $if: [
+              'nav.module',
+              'data.activeModule',
+              'data.navService.subNavItems.length',
+              function (mod, actMod, length) {
+                return mod === actMod && length;
+              }
+            ],
             animations: {
-              // enter: {
-              //   // parent: 'main-nav-items',
-              //   // chainToParent: true,
-              //   sequence: 'main-nav-items',
-              //   from: {
-              //     borderLeftWidth: 15,
-              //     height: 0
-              //   },
-              //   to: {
-              //     height: function (v, node) {
-              //       node.style.height = 'auto';
-              //       const height = node.offsetHeight;
-              //       node.style.height = 0;
-              //
-              //       return height;
-              //     }
-              //   },
-              //   position: '-=.1',
-              //   duration: 11.3
-              // },
-              // leave: {
-              //   to: {
-              //     borderLeftWidth: 0,
-              //     height: 0
-              //   },
-              //   duration: 1.2
-              // }
+              enter: {
+                parent: 'main-nav-items',
+                // chainToParent: true,
+                sequence: 'sub-nav-container',
+                // positionInParent: '+=.2',
+                from: {
+                  borderLeftWidth: 15,
+                  height: 0
+                },
+                to: {
+                  height: function (v, node) {
+                    node.style.height = 'auto';
+                    const height = node.offsetHeight;
+                    node.style.height = 0;
+
+                    return height;
+                  }
+                },
+                duration: .3
+              },
+              leave: {
+                to: {
+                  borderLeftWidth: 0,
+                  height: 0
+                },
+                duration: .2
+              }
             },
 
             lifecycle: {
@@ -242,24 +256,34 @@ view.init([
                   leaveWithParent: true
                 },
                 enter: {
+                  positionInParent: '-=.1',
                   parent: 'main-nav-items',
+                  // parent: 'main-nav-items',
                   sequence: 'sub-nav-items',
+                  // startAfter: 'main-nav-items',
 
                   // sequence: 'main-nav-items',
-
-                  chainToParent: true,
 
                   from: {
                     opacity: 0,
                     y: -10
                   },
-                  position: '-=.4',
-                  duration: .5
+                  position: '-=.3',
+                  duration: .4
                 },
-                leave: {
-                  to: {},
-                  duration: .2
-                }
+                leave: {}
+                // leave: {
+                //   sequence: 'leaving',
+                //   to: {
+                //     // opacity: 0,
+                //     height: 0,
+                //     paddingTop: 0,
+                //     paddingBottom: 0
+                //     // display: 'none'
+                //   },
+                //   position: '-=.15',
+                //   duration: .2
+                // }
               },
               $for: {
                 as: 'subNav',
