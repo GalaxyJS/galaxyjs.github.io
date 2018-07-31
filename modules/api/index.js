@@ -27,7 +27,7 @@ const items = [
 ];
 // setTimeout(function () {
   navService.setSubNavItems(items);
-// }, 1000)
+// }, 500);
 
 // inputs.handlers.subNavs = ['asdasd'];
 router.init({
@@ -94,9 +94,9 @@ view.init({
                 {
                   tag: 'p',
                   html: 'Register event listener on the different stage of module lifecycle. ' +
-                  'Stages are <code class="prettyprint lang-js">\'module.init\'</code>' +
-                  ', <code class="prettyprint lang-js">\'module.start\'</code> ' +
-                  'and <code class="prettyprint lang-js">\'module.destroy\'</code>'
+                    'Stages are <code class="prettyprint lang-js">\'module.init\'</code>' +
+                    ', <code class="prettyprint lang-js">\'module.start\'</code> ' +
+                    'and <code class="prettyprint lang-js">\'module.destroy\'</code>'
                 }
               ]
             },

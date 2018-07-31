@@ -165,12 +165,7 @@ view.init([
           {
             animations: {
               '.active': {
-                from: {
-                  ease: 'none'
-                },
-                // parent: 'main-nav-items',
-                sequence: 'aaaasd',
-                // positionInParent: '-=.5',
+                sequence: 'active-nav',
                 position: '-=.2',
                 duration: .2
               }
@@ -212,6 +207,7 @@ view.init([
               enter: {
                 parent: 'main-nav-items',
                 // chainToParent: true,
+                positionInParent: '-=.2',
                 sequence: 'sub-nav-container',
                 // positionInParent: '+=.2',
                 from: {
@@ -227,11 +223,11 @@ view.init([
                     return height;
                   }
                 },
-                duration: .3
+                duration: .2,
               },
               leave: {
                 to: {
-                  borderLeftWidth: 0,
+                  // borderLeftWidth: 0,
                   height: 0
                 },
                 duration: .2
@@ -258,11 +254,9 @@ view.init([
                 enter: {
                   positionInParent: '-=.1',
                   parent: 'main-nav-items',
-                  // parent: 'main-nav-items',
+
                   sequence: 'sub-nav-items',
                   // startAfter: 'main-nav-items',
-
-                  // sequence: 'main-nav-items',
 
                   from: {
                     opacity: 0,
