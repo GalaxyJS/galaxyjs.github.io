@@ -4,6 +4,8 @@ const animations = {
   cardInOut: {
     enter: {
       sequence: 'card',
+      startAfter: 'main-nav-items',
+
       from: {
         transformOrigin: 'top center',
         scale: 1.1,
@@ -106,7 +108,7 @@ const animations = {
 
 animations.mainNav = {
   enter: {
-    sequence: 'card',
+    sequence: 'side-bar',
     from: {
       ease: 'Power3.easeOut',
       x: '-100%'
@@ -117,20 +119,33 @@ animations.mainNav = {
 
 animations.mainNavItem = {
   enter: {
-    // parent: 'card',
-    // durationInParent: 'auto',
+    parent: 'side-bar',
+    positionInParent: '-=.3',
     sequence: 'main-nav-items',
     from: {
       transition: 'none',
       autoAlpha: 0,
       x: '-25%',
-      ease: Elastic.easeOut.config(1, .5),
+      ease: Elastic.easeOut.config(1, .4),
       clearProps: 'all'
     },
     position: '-=.5',
-    duration: .7
+    duration: .6
   }
+};
 
+animations.navSubItem = {
+  // positionInParent: '+=1',
+  parent: 'main-nav-items',
+  // sequence:'sub-nav-container',
+  sequence: 'sub-nav-items',
+
+  from: {
+    opacity: 0,
+    y: -10
+  },
+  position: '-=.3',
+  duration: .4
 };
 
 Scope.exports = animations;

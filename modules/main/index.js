@@ -207,7 +207,7 @@ view.init([
               enter: {
                 parent: 'main-nav-items',
                 // chainToParent: true,
-                positionInParent: '-=.2',
+                positionInParent: '-=.5',
                 sequence: 'sub-nav-container',
                 // positionInParent: '+=.2',
                 from: {
@@ -223,7 +223,7 @@ view.init([
                     return height;
                   }
                 },
-                duration: .2,
+                duration: .3,
               },
               leave: {
                 to: {
@@ -251,33 +251,8 @@ view.init([
                 config: {
                   leaveWithParent: true
                 },
-                enter: {
-                  positionInParent: '-=.1',
-                  parent: 'main-nav-items',
-
-                  sequence: 'sub-nav-items',
-                  // startAfter: 'main-nav-items',
-
-                  from: {
-                    opacity: 0,
-                    y: -10
-                  },
-                  position: '-=.3',
-                  duration: .4
-                },
+                enter: animations.navSubItem,
                 leave: {}
-                // leave: {
-                //   sequence: 'leaving',
-                //   to: {
-                //     // opacity: 0,
-                //     height: 0,
-                //     paddingTop: 0,
-                //     paddingBottom: 0
-                //     // display: 'none'
-                //   },
-                //   position: '-=.15',
-                //   duration: .2
-                // }
               },
               $for: {
                 as: 'subNav',

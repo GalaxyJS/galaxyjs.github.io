@@ -3586,18 +3586,18 @@ Galaxy.View = /** @class */(function (G) {
     return sequence.timeline;
   };
 
-  AnimationMeta.refresh = function (timeline) {
-    const parentChildren = timeline.getChildren(false, true, true);
-    timeline.clear();
-    parentChildren.forEach(function (item) {
-      if (item.data) {
-        const conf = item.data.config;
-        timeline.add(item, conf.position);
-      } else {
-        timeline.add(item);
-      }
-    });
-  };
+  // AnimationMeta.refresh = function (timeline) {
+  //   const parentChildren = timeline.getChildren(false, true, true);
+  //   timeline.clear();
+  //   parentChildren.forEach(function (item) {
+  //     if (item.data) {
+  //       const conf = item.data.config;
+  //       timeline.add(item, conf.position);
+  //     } else {
+  //       timeline.add(item);
+  //     }
+  //   });
+  // };
 
   /**
    *
@@ -3710,6 +3710,8 @@ Galaxy.View = /** @class */(function (G) {
     if (_this.children.indexOf(parentNodeTimeline) === -1) {
       _this.children.push(parentNodeTimeline);
       let posInParent = childConf.positionInParent || '+=0';
+
+// debugger;
       // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
       if (parentNodeTimeline.timeline === null && children.length === 0) {
         parentNodeTimeline.pause();
@@ -3720,8 +3722,9 @@ Galaxy.View = /** @class */(function (G) {
           posInParent = null;
         }
       }
-
+      // parentNodeTimeline._startTime = 3;
       parentNodeTimeline.add(function () {
+        // debugger;
         _this.timeline.resume();
       }, posInParent);
     }
@@ -3780,10 +3783,7 @@ Galaxy.View = /** @class */(function (G) {
     viewNode.cache.animations = viewNode.cache.animations || {
       timeline: new TimelineLite({
         autoRemoveChildren: true,
-        smoothChildTiming: true,
-        onComplete: function () {
-          // viewNode.cache.animations.timeline.kill();
-        }
+        smoothChildTiming: true
       })
     };
 
@@ -3802,10 +3802,10 @@ Galaxy.View = /** @class */(function (G) {
       const currentProgress = sameSequenceParentTimeline.progress();
       // if the currentProgress is 0 or bigger than the nodeTimeline start time
       // then we can intercept the parentNodeTimeline
+      // debugger;
       if (nodeTimeline.startTime() < currentProgress || currentProgress === 0) {
-        sameSequenceParentTimeline.add(nodeTimeline, config.position || '+=0');
-        AnimationMeta.refresh(_this.timeline);
-        return _this.timeline.play(0);
+        _this.timeline.add(nodeTimeline, config.position || '+=0');
+        return;
       }
     }
 
