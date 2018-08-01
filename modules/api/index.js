@@ -5,6 +5,7 @@ const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
 const inputs = Scope.import('galaxy/inputs');
 
+
 const items = [
   {
     title: 'Galaxy.Scope'
