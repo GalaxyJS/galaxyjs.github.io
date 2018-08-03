@@ -2361,7 +2361,7 @@ Galaxy.Sequence = /** @class */ (function () {
     _this.actions = [];
     _this.resolver = Promise.resolve();
 
-    this.reset();
+    _this.reset();
   }
 
   Sequence.prototype = {
@@ -2371,10 +2371,11 @@ Galaxy.Sequence = /** @class */ (function () {
       _this.isFinished = false;
       _this.processing = false;
 
-      this.activeState = new Promise(function (resolve) {
+      _this.activeState = new Promise(function (resolve) {
         _this.activeStateResolve = function () {
           _this.isFinished = true;
           _this.processing = false;
+          // _this.truncateHandlers = [];
           resolve();
         };
       });
@@ -2602,7 +2603,7 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.setAttr = function setAttr(viewNode, name, value, oldValue) {
+  View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
     if (value) {
       viewNode.node.setAttribute(name, value);
@@ -2611,7 +2612,7 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.setProp = function setProp(viewNode, name, value) {
+  View.setProp = function setProp(viewNode, value, oldValue, name) {
     viewNode.node[name] = value;
   };
 
@@ -3058,11 +3059,11 @@ Galaxy.View = /** @class */(function (G) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
-          View.setAttr(node, attributeName, asyncValue, oldValue);
+          View.setAttr(node, asyncValue, oldValue, attributeName);
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        View.setAttr(node, attributeName, value, oldValue);
+        View.setAttr(node, value, oldValue, attributeName);
       }
     };
   };
@@ -4142,9 +4143,9 @@ Galaxy.View = /** @class */(function (G) {
       const parentSchema = parent.schema;
       let newTrackMap = null;
 
-      if (changes.ts === config.oldChanges.ts && changes.type === config.oldChanges.type) {
-        return;
-      }
+      // if (changes.ts === config.oldChanges.ts && changes.type === config.oldChanges.type) {
+      //   return;
+      // }
 
       config.oldChanges = changes;
       parent.inserted.then(function () {
@@ -4957,6 +4958,24 @@ Galaxy.View = /** @class */(function (G) {
 /* global Galaxy */
 
 Galaxy.View.ArrayChange = /** @class */ (function () {
+  // let lastTS = new Date().getTime();
+  // let counter = 0;
+  //
+  // function getTS() {
+  //   const currentTS = new Date().getTime();
+  //
+  //   if (currentTS === lastTS) {
+  //     counter++;
+  //
+  //     return currentTS + '-' + counter;
+  //   }
+  //
+  //   counter = 0;
+  //   lastTS = currentTS;
+  //
+  //   return currentTS + '-' + counter;
+  // }
+
   function ArrayChange() {
     this.init = null;
     this.original = null;
@@ -4964,7 +4983,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     this.returnValue = null;
     this.params = [];
     this.type = 'reset';
-    this.ts = new Date().getTime();
+    // this.ts = getTS();
 
     Object.preventExtensions(this);
   }
@@ -4976,7 +4995,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     instance.snapshot = this.snapshot.slice(0);
     instance.params = this.params.slice(0);
     instance.type = this.type;
-    instance.ts = new Date().getTime();
+    // instance.ts = getTS();
 
     return instance;
   };
@@ -6021,9 +6040,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           animationDone();
         });
 
-        _this.parent.sequences.leave.nextAction(function () {
-          _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
-        });
+        // TODO: make this is not needed and remove it
+        // _this.parent.sequences.leave.nextAction(function () {
+        // _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
+        // });
       }
     }
 

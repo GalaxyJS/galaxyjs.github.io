@@ -94,7 +94,7 @@ view.init({
               text: 'Empty',
               on: {
                 click: function () {
-                  console.log(Scope.data.list1.pop());
+                  Scope.data.list1.pop();
                   // Scope.data.list2 = [];
                 }
               }
