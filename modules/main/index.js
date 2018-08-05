@@ -33,15 +33,6 @@ Scope.data.navItems = [
     }
   },
   {
-    title: 'API',
-    link: 'api',
-    module: {
-      id: 'api',
-      url: 'modules/api/index.js'
-    }
-  },
-
-  {
     title: 'Conditional Rendering',
     link: 'conditional-rendering',
     module: {
@@ -56,6 +47,15 @@ Scope.data.navItems = [
     module: {
       id: 'list-rendering',
       url: 'modules/list-rendering/index.js'
+    }
+  },
+
+  {
+    title: 'API',
+    link: 'api',
+    module: {
+      id: 'api',
+      url: 'modules/api/index.js'
     }
   },
 

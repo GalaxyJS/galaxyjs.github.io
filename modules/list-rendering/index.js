@@ -59,6 +59,7 @@ view.init({
           tag: 'h1',
           text: 'List Rendering'
         },
+        '<p>We can use the <strong>$for</strong> property to render a list of items based on an array</p>',
         {
           tag: 'p',
           children: [
@@ -67,25 +68,31 @@ view.init({
               text: 'Populate',
               on: {
                 click: function () {
-                  Scope.data.list1 = [
-                    {
-                      title: '***** i-1'
-                    },
-                    {
-                      title: '***** i-2'
-                    }
-                  ];
-                  Scope.data.list2 = [
-                    {
-                      title: 'L2 i-1'
-                    },
-                    {
-                      title: 'L2 i-2'
-                    },
-                    {
-                      title: 'L2 i-3'
-                    }
-                  ];
+                  // Scope.data.list1 = [
+                  //   {
+                  //     title: '***** i-1'
+                  //   },
+                  //   {
+                  //     title: '***** i-2'
+                  //   }
+                  // ];
+                  // Scope.data.list2 = [
+                  //   {
+                  //     title: 'L2 i-1'
+                  //   },
+                  //   {
+                  //     title: 'L2 i-2'
+                  //   },
+                  //   {
+                  //     title: 'L2 i-3'
+                  //   }
+                  // ];
+
+                  for (let i = 0; i < 150; i++) {
+                    Scope.data.list2.push({
+                      title: i
+                    });
+                  }
                 }
               }
             },
@@ -94,8 +101,9 @@ view.init({
               text: 'Empty',
               on: {
                 click: function () {
-                  Scope.data.list1.pop();
-                  // Scope.data.list2 = [];
+                  // debugger;
+                  // Scope.data.list1.pop();
+                  Scope.data.list2 = [];
                 }
               }
             }
@@ -122,13 +130,13 @@ view.init({
 
             {
               tag: 'li',
-              animations: itemAnimations,
+              // animations: itemAnimations,
               // renderConfig: {
               //   domManipulationOrder: 'cascade'
               // },
               class: 'flex-row',
               $for: {
-                data: '<>data.list2.changes',
+                data: [{title:'test'}],
                 as: 'list2Item',
                 trackBy: trackBy
               },
