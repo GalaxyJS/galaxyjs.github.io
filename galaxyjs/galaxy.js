@@ -2397,7 +2397,7 @@ Galaxy.Sequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
-        position: position,
+        // position: position,
         data: {
           ref: ref
         },
@@ -2412,20 +2412,20 @@ Galaxy.Sequence = /** @class */ (function () {
         }
       };
 
-      if (position) {
-        const subActions = _this.actions.filter(function (act) {
-          return act.position === position;
-        });
-
-        if (subActions.length) {
-          const lastItem = subActions[subActions.length - 1];
-          this.actions.splice(_this.actions.indexOf(lastItem) + 1, 0, act);
-        } else {
-          _this.actions.push(act);
-        }
-      } else {
-        _this.actions.push(act);
-      }
+      // if (position) {
+      //   const subActions = _this.actions.filter(function (act) {
+      //     return act.position === position;
+      //   });
+      //
+      //   if (subActions.length) {
+      //     const lastItem = subActions[subActions.length - 1];
+      //     this.actions.splice(_this.actions.indexOf(lastItem) + 1, 0, act);
+      //   } else {
+      //     _this.actions.push(act);
+      //   }
+      // } else {
+      _this.actions.push(act);
+      // }
 
       if (!_this.processing) {
         _this.processing = true;
@@ -3324,8 +3324,12 @@ Galaxy.View = /** @class */(function (G) {
         viewNode.populateEnterSequence = function (sequence) {
           value.config = value.config || {};
 
-          sequence.onTruncate(function () {
+          sequence.onTruncate(function animationEnter() {
+            const cssText = viewNode.node.style.cssText;
             TweenLite.killTweensOf(viewNode.node);
+            requestAnimationFrame(function () {
+              viewNode.node.style.cssText = cssText;
+            });
           });
 
           // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
@@ -4076,7 +4080,7 @@ Galaxy.View = /** @class */(function (G) {
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -4330,9 +4334,8 @@ Galaxy.View = /** @class */(function (G) {
   function createLeaveProcess(node, itemsToBeRemoved, config, onDone) {
     return function () {
       const parent = node.parent;
-      // const schema = node.schema;
+      const schema = node.schema;
 
-      // node.renderingFlow.next(function leaveProcess(next) {
       // if parent leave sequence interrupted, then make sure these items will be removed from DOM
       parent.sequences.leave.onTruncate(function hjere() {
         itemsToBeRemoved.forEach(function (vn) {
@@ -4342,28 +4345,24 @@ Galaxy.View = /** @class */(function (G) {
       });
 
       if (itemsToBeRemoved.length) {
-        // let domManipulationOrder = parent.schema.renderConfig.domManipulationOrder;
-        // if (schema.renderConfig.domManipulationOrder) {
-        //   domManipulationOrder = schema.renderConfig.domManipulationOrder;
-        // }
+        let domManipulationOrder = parent.schema.renderConfig.domManipulationOrder;
+        if (schema.renderConfig.domManipulationOrder) {
+          domManipulationOrder = schema.renderConfig.domManipulationOrder;
+        }
 
-        // if (domManipulationOrder === 'cascade') {
-        //   View.ViewNode.destroyNodes(node, itemsToBeRemoved, null, parent.sequences.leave);
-        // } else {
-        //   // debugger;
-        View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parent.sequences.leave, parent.sequences.leave);
-        // }
+        if (domManipulationOrder === 'cascade') {
+          View.ViewNode.destroyNodes(node, itemsToBeRemoved, parent.sequences.leave, parent.sequences.leave);
+        } else {
+          View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parent.sequences.leave, parent.sequences.leave);
+        }
 
         parent.sequences.leave.nextAction(function () {
           parent.callLifecycleEvent('postForLeave');
           onDone();
-          // next();
         });
       } else {
         onDone();
-        // next();
       }
-      // });
     };
   }
 
@@ -4376,7 +4375,7 @@ Galaxy.View = /** @class */(function (G) {
     let onEachAction = function (vn) {
       this.push(vn);
     };
-    parentNode.sequences.enter.onTruncate(function () {
+    parentNode.sequences.enter.onTruncate(function $forPushProcess() {
       parentNode.sequences.enter.removeByRef(node);
     });
 
