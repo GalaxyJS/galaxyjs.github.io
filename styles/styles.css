@@ -113,6 +113,12 @@ a {
   overflow-x: hidden;
 }
 
+.main-nav > h1 {
+  margin: 0 0 20px;
+  padding: 0 15px;
+  color: #455a64;
+}
+
 .nav-item {
   display: block;
   padding: 15px 20px;

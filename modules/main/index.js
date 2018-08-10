@@ -156,6 +156,10 @@ view.init([
     animations: animations.mainNav,
     children: [
       {
+        tag: 'h1',
+        text: 'GalaxyJS'
+      },
+      {
         tag: 'div',
         $for: 'nav in data.navItems',
 
@@ -223,7 +227,7 @@ view.init([
                     return height;
                   }
                 },
-                duration: .3,
+                duration: .3
               },
               leave: {
                 to: {
