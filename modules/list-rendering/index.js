@@ -48,6 +48,18 @@ const itemAnimations = {
   }
 };
 
+const button = {
+  tag: 'button',
+  text: 'Empty',
+  on: {
+    click: function () {
+      Scope.data.list = [];
+    }
+  }
+};
+
+console.log(button);
+
 view.init({
   tag: 'div',
   class: 'card big',
@@ -97,15 +109,7 @@ view.init({
                 }
               }
             },
-            {
-              tag: 'button',
-              text: 'Empty',
-              on: {
-                click: function () {
-                  Scope.data.list = [];
-                }
-              }
-            }
+            button
           ]
         },
         {

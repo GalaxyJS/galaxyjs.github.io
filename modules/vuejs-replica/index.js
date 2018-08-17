@@ -6,8 +6,6 @@ const data = Scope.import('./data.js');
 
 Scope.data.products = data;
 
-console.info(Scope);
-
 view.init({
   tag: 'div',
   class: 'card',

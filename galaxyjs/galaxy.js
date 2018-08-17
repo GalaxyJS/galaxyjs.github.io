@@ -2156,14 +2156,15 @@ Galaxy.Observer = /** @class */ (function () {
       });
     }
 
-    this.context.__observers__.push(this);
+    this.context['__observers__'].push(this);
   }
 
   Observer.prototype = {
     remove: function () {
-      let index = this.context.__observers__.indexOf(this);
+      const observers = this.context.__observers__;
+      const index = observers.indexOf(this);
       if (index !== -1) {
-        this.context.__observers__.splice(index, 1);
+        observers.splice(index, 1);
       }
     },
     /**
@@ -3342,7 +3343,8 @@ Galaxy.View = /** @class */(function (G) {
 
           sequence.next(function (done) {
             // If the node is not in the DOM at this point, then skip its animations
-            if (viewNode.node.offsetParent === null) {
+            // if (viewNode.node.offsetParent === null) {
+            if (document.body.contains(viewNode.node) === null) {
               return done();
             }
 
@@ -3423,11 +3425,9 @@ Galaxy.View = /** @class */(function (G) {
                 }
 
                 classSequence.next(function (done) {
-                  // requestAnimationFrame(function () {
                   const classAnimationConfig = Object.assign({}, _config);
                   classAnimationConfig.to = { className: '-=' + item || '' };
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, value.config, done);
-                  // });
                 });
               }
             });
@@ -5856,8 +5856,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
-        // if (_this.schema.class === 'ahah') debugger;
-        // if (_this.parent.schema.class === 'ahah') debugger;
         _this.hasBeenInserted();
       }, null, 'inserted');
 
