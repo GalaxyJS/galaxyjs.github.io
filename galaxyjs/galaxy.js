@@ -2045,6 +2045,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           console.error(error.message + ': ' + module.url);
           console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function')
           console.error(error);
+          reject();
           throw new Error(error);
         }
       });
@@ -4226,7 +4227,7 @@ Galaxy.View = /** @class */(function (G) {
         }
         // leave process will be empty if the type is not reset
         if (leaveProcess) {
-          if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+          if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
             parentCache.$for.leaveProcessList.push(leaveProcess);
           } else {
             parentCache.$for.leaveProcessList.unshift(leaveProcess);
@@ -4345,12 +4346,12 @@ Galaxy.View = /** @class */(function (G) {
       });
 
       if (itemsToBeRemoved.length) {
-        let domManipulationOrder = parent.schema.renderConfig.domManipulationOrder;
-        if (schema.renderConfig.domManipulationOrder) {
-          domManipulationOrder = schema.renderConfig.domManipulationOrder;
+        let alternateDOMFlow = parent.schema.renderConfig.alternateDOMFlow;
+        if (schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
+          alternateDOMFlow = schema.renderConfig.alternateDOMFlow;
         }
 
-        if (domManipulationOrder === 'cascade') {
+        if (alternateDOMFlow === false) {
           View.ViewNode.destroyNodes(node, itemsToBeRemoved, parent.sequences.leave, parent.sequences.leave);
         } else {
           View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parent.sequences.leave, parent.sequences.leave);
@@ -4523,7 +4524,7 @@ Galaxy.View = /** @class */(function (G) {
 
         const waitStepDone = registerWaitStep(parentCache.$if);
         const process = createFalseProcess(node, waitStepDone);
-        if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+        if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
           parentCache.$if.leaveProcessList.push(process);
         } else {
           parentCache.$if.leaveProcessList.unshift(process);
@@ -5634,8 +5635,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @typedef {Object} RenderConfig
-   * @property {string} [domManipulationOrder] - Indicates the order which the dom should be render.
-   * @property {boolean} [alternateDOMFlow] - By default true. Entering is top down and leaving is bottom up.
+   * @property {boolean} [alternateDOMFlow] - By default is undefined which is considered to be true. Entering is top down and leaving is
+   * bottom up.
    * @property {boolean} [applyClassListAfterRender] - Indicates whether classlist applies after the render.
    */
 
@@ -5644,8 +5645,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @type {RenderConfig}
    */
   ViewNode.GLOBAL_RENDER_CONFIG = {
-    // domManipulationOrder: 'alternate',
-    alternateDOMFlow: true,
     applyClassListAfterRender: false
   };
 
@@ -6003,7 +6002,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.clean(_this.sequences.leave, rootSequence);
         _this.populateLeaveSequence(_this.sequences.leave);
         _this.sequences.leave.nextAction(function () {
-          if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
+          if (_this.schema.renderConfig && _this.schema.renderConfig.alternateDOMFlow === false) {
             rootSequence.nextAction(function () {
               _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
             });
@@ -6110,11 +6109,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     const _this = this;
     const toBeRemoved = _this.getChildNodes();
 
-    if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
+    if (_this.schema.renderConfig && _this.schema.renderConfig.alternateDOMFlow === false) {
       toBeRemoved.reverse().forEach(function (node) {
-        // Inherit parent domManipulationOrder if no explicit domManipulationOrder is specified
-        if (!node.schema.renderConfig.hasOwnProperty('domManipulationOrder')) {
-          node.schema.renderConfig.domManipulationOrder = 'cascade';
+        // Inherit parent alternateDOMFlow if no explicit alternateDOMFlow is specified
+        if (!node.schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
+          node.schema.renderConfig.alternateDOMFlow = false;
         }
       });
     }

@@ -58,7 +58,7 @@ const button = {
   }
 };
 
-console.log(button);
+console.log(this);
 
 view.init({
   tag: 'div',
