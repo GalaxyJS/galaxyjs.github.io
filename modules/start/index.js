@@ -11,7 +11,8 @@ view.init({
       tag: 'img',
       class: 'banner',
       src: 'assets/images/galaxy.jpeg',
-      height: '410'
+      height: '410',
+      alt: 'Galaxy'
     },
     {
       tag: 'section',

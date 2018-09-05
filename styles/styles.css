@@ -102,7 +102,7 @@ a {
   position: absolute;
   width: 270px;
   height: 100%;
-  color: #777;
+  color: #555;
   top: 0;
   left: 0;
   overflow: auto;
@@ -126,7 +126,7 @@ a {
   text-decoration: none;
   margin: 0;
   line-height: 20px;
-  border-left: 0 solid #455a64;
+  border-left: 0 solid #36444a;
   cursor: pointer;
   transition: background-color .2s ease-in-out;
   overflow: hidden;
