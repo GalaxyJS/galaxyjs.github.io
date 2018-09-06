@@ -38,6 +38,27 @@ view.init({
             '<li><strong>Animations</strong> are built in utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_"blank"">GSAP</a></li>' +
             '<li><strong>Scalability</strong> and <strong>Extendability</strong></li>'
           ]
+        },
+
+        {
+          tag: 'p',
+          class: 'ta-center',
+          children: {
+            tag: 'a',
+            class: 'icon-link',
+            href: 'https://github.com/GalaxyJS/galaxy',
+            target: '_blank',
+            children: [
+              {
+                tag: 'i',
+                class: 'fab fa-github'
+              },
+              {
+                tag: 'span',
+                text: 'GITHUB'
+              }
+            ]
+          }
         }
       ]
     }
