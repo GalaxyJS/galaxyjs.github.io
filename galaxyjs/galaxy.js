@@ -2006,7 +2006,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const moduleSource = typeof module.source === 'function' ?
             module.source :
             new Function('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
-          // TODO: Find out what should the 'this' refer to
           moduleSource.call(module.scope, module.scope);
 
           Reflect.deleteProperty(module, 'source');
@@ -3713,7 +3712,6 @@ Galaxy.View = /** @class */(function (G) {
       _this.children.push(parentNodeTimeline);
       let posInParent = childConf.positionInParent || '+=0';
 
-// debugger;
       // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
       if (parentNodeTimeline.timeline === null && children.length === 0) {
         parentNodeTimeline.pause();
@@ -3726,7 +3724,6 @@ Galaxy.View = /** @class */(function (G) {
       }
       // parentNodeTimeline._startTime = 3;
       parentNodeTimeline.add(function () {
-        // debugger;
         _this.timeline.resume();
       }, posInParent);
     }
@@ -3743,7 +3740,9 @@ Galaxy.View = /** @class */(function (G) {
    */
   AnimationMeta.prototype.addAtEnd = function (viewNode, type, child, childConf) {
     const _this = this;
+    child.timeline.pause();
     _this.timeline.add(child.timeline);
+    child.timeline.resume();
   };
 
   AnimationMeta.prototype.add = function (viewNode, config, onComplete) {
@@ -4736,7 +4735,7 @@ Galaxy.View = /** @class */(function (G) {
         moduleScope = moduleScope.parentScope;
       }
 
-      window.requestAnimationFrame(function () {
+      Promise.resolve().then(function () {
         viewNode.renderingFlow.truncate();
         currentScope.load(moduleMeta, {
           element: viewNode
@@ -5177,7 +5176,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       const _this = this;
       let value = data[key];
 
-
       defProp(data, key, {
         get: function () {
           return value;
@@ -5300,7 +5298,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             // if we use notify here we will get
             _this.notifyDown('length');
             value.changes = changes;
-
 
             return returnValue;
           },
@@ -5558,6 +5555,11 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             this.makeReactiveObject(this.data, key, true);
           }
           this.shadow[key].setData(this.data[key]);
+        }
+        // This will make sure that UI is updated properly
+        // for properties that has been removed from data
+        else {
+          this.sync(key);
         }
       }
     },
@@ -6386,6 +6388,8 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       }
 
       const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
+      let parentRoute;
+      let matchCount = 0;
       for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
         const dynamicRoute = dynamicRoutes[i];
         const match = dynamicRoute.paramFinderExpression.exec(path);
@@ -6394,14 +6398,28 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
           continue;
         }
 
+        matchCount++;
+
+        if (parentRoute) {
+          const match = parentRoute.paramFinderExpression.exec(path);
+          if (!match) {
+            continue;
+          }
+        }
+
         const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
         // Create a unique id for the combination of the route and its parameters
         const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
-
         if (_this.oldResolveId[dynamicRoute.id] !== resolveId) {
+          _this.oldResolveId = {};
           _this.oldResolveId[dynamicRoute.id] = resolveId;
           _this.routes[dynamicRoute.id].call(null, params);
+          parentRoute = dynamicRoute;
         }
+      }
+
+      if (matchCount === 0) {
+        console.warn('No associated route has been found');
       }
     },
 

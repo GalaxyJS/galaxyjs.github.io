@@ -138,7 +138,10 @@ router.init({
     if (nav) {
       navService.setSubNavItems([]);
       // Scope.data.moduleInputs.subMenus.items = [];
-      Scope.data.activeModule = nav.module;
+      // setTimeout(function () {
+        Scope.data.activeModule = nav.module;
+      // }, 300);
+
     }
   }
 });
