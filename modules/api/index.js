@@ -3,8 +3,10 @@ const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
+const inputs = Scope.import('galaxy/inputs');
 
-navService.setSubNavItems([
+
+const items = [
   {
     title: 'Galaxy.Scope'
   },
@@ -23,13 +25,19 @@ navService.setSubNavItems([
   {
     title: 'Galaxy.View.ViewNode'
   }
-]);
+];
+// setTimeout(function () {
+  navService.setSubNavItems(items);
+// }, 500);
 
+// inputs.handlers.subNavs = ['asdasd'];
 router.init({
   '/': function () {
-    console.log('API Router');
+    // debugger;
+    console.log('API Router Root');
   },
   '/:subId': function (params) {
+    // debugger;
     console.log('API Router', params);
   }
 });
@@ -87,9 +95,9 @@ view.init({
                 {
                   tag: 'p',
                   html: 'Register event listener on the different stage of module lifecycle. ' +
-                  'Stages are <code class="prettyprint lang-js">\'module.init\'</code>' +
-                  ', <code class="prettyprint lang-js">\'module.start\'</code> ' +
-                  'and <code class="prettyprint lang-js">\'module.destroy\'</code>'
+                    'Stages are <code class="prettyprint lang-js">\'module.init\'</code>' +
+                    ', <code class="prettyprint lang-js">\'module.start\'</code> ' +
+                    'and <code class="prettyprint lang-js">\'module.destroy\'</code>'
                 }
               ]
             },

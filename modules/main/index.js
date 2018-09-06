@@ -33,15 +33,6 @@ Scope.data.navItems = [
     }
   },
   {
-    title: 'API',
-    link: 'api',
-    module: {
-      id: 'api',
-      url: 'modules/api/index.js'
-    }
-  },
-
-  {
     title: 'Conditional Rendering',
     link: 'conditional-rendering',
     module: {
@@ -56,6 +47,15 @@ Scope.data.navItems = [
     module: {
       id: 'list-rendering',
       url: 'modules/list-rendering/index.js'
+    }
+  },
+
+  {
+    title: 'API',
+    link: 'api',
+    module: {
+      id: 'api',
+      url: 'modules/api/index.js'
     }
   },
 
@@ -78,6 +78,7 @@ Scope.data.navItems = [
   }
 ];
 
+// Scope.data.activeModule = Scope.data.navItems[3].module;
 Scope.data.activeModule = null;
 
 Scope.data.todos = [
@@ -91,25 +92,54 @@ Scope.data.todos = [
   }
 ];
 
+Scope.data.fn = 'jh';
+
 Scope.data.moduleInputs = {
   text: 'asdasd',
   content: 'This is the default content',
-  items: '<>data.todos'
+  items: '<>data.todos',
+  subMenus: {
+    items: []
+  }
 };
+
+const items = [
+  {
+    title: 'Galaxy.Scope'
+  },
+  {
+    title: 'Galaxy.Module'
+  },
+  {
+    title: 'Galaxy.Sequence'
+  },
+  {
+    title: 'Galaxy.Observer'
+  },
+  {
+    title: 'Galaxy.View'
+  },
+  {
+    title: 'Galaxy.View.ViewNode'
+  }
+];
+// navService.setSubNavItems(items);
 
 router.init({
   '/': function () {
     router.navigate('start');
   },
-  '/:moduleId*': function (params) {
+
+  '/:moduleId': function (params) {
     const nav = Scope.data.navItems.filter(function (item) {
       return item.module.id === params.moduleId;
     })[0];
 
     if (nav) {
+      navService.setSubNavItems([]);
+      // Scope.data.moduleInputs.subMenus.items = [];
       Scope.data.activeModule = nav.module;
     }
-    // console.info(params);
   }
 });
 
@@ -126,15 +156,30 @@ view.init([
     animations: animations.mainNav,
     children: [
       {
+        tag: 'h1',
+        text: 'GalaxyJS'
+      },
+      {
         tag: 'div',
         $for: 'nav in data.navItems',
+
+        animations: animations.mainNavItem,
+        class: 'ahah',
         children: [
           {
+            animations: {
+              '.active': {
+                sequence: 'active-nav',
+                position: '-=.2',
+                duration: .2
+              }
+            },
+
             tag: 'a',
             inputs: {
               nav: '<>nav'
             },
-            animations: animations.mainNavItem,
+
             text: '<>nav.title',
             class: {
               'nav-item': true,
@@ -148,7 +193,6 @@ view.init([
             },
             on: {
               click: function () {
-                navService.setSubNavItems([]);
                 router.navigate(this.inputs.nav.link);
               }
             }
@@ -158,14 +202,18 @@ view.init([
             $if: [
               'nav.module',
               'data.activeModule',
-              function (mod, actMod) {
-                return mod === actMod;
+              'data.navService.subNavItems.length',
+              function (mod, actMod, length) {
+                return mod === actMod && length;
               }
             ],
             animations: {
               enter: {
-                parent: 'active-nav-item',
-                sequence: 'main-nav-items',
+                parent: 'main-nav-items',
+                // chainToParent: true,
+                positionInParent: '-=.5',
+                sequence: 'sub-nav-container',
+                // positionInParent: '+=.2',
                 from: {
                   borderLeftWidth: 15,
                   height: 0
@@ -179,38 +227,36 @@ view.init([
                     return height;
                   }
                 },
-                position: '-=.4',
-                duration: .2
+                duration: .3
               },
               leave: {
                 to: {
-                  borderLeftWidth: 0,
+                  // borderLeftWidth: 0,
                   height: 0
                 },
                 duration: .2
               }
             },
+
+            lifecycle: {
+              postEnter: function () {
+                console.log('postEnter');
+              },
+              post$forEnter: function (items) {
+                console.log('post$forEnter', items);
+              }
+            },
+
             children: {
+              // {
               tag: 'a',
               class: 'nav-item sub',
               animations: {
                 config: {
                   leaveWithParent: true
                 },
-                enter: {
-                  sequence: 'main-nav-items',
-                  from: {
-                    opacity: 0,
-                    y: -10
-                  },
-                  position: '-=.15',
-                  duration: .2
-                },
-                leave: {
-                  sequence: 'aaaa',
-                  to: {},
-                  duration: .1
-                }
+                enter: animations.navSubItem,
+                leave: {}
               },
               $for: {
                 as: 'subNav',

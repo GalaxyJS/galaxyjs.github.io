@@ -3,7 +3,7 @@
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
-Scope.data.list = ['Amsterdam', 'Paris']
+Scope.data.list = ['Amsterdam', 'Paris'];
 
 view.init({
   class: 'card big',

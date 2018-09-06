@@ -48,12 +48,16 @@ html, body {
   font-family: 'Nunito', sans-serif;
   font-size: 16px;
   line-height: 18px;
-  background-color: #fafbfc;
   position: relative;
   height: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0;
+}
+
+body {
+  background: rgb(255,255,255);
+  background: linear-gradient(185deg, rgba(255,255,255,1) 0%, rgba(250,251,252,1) 70%);
 }
 
 html {
@@ -102,7 +106,7 @@ a {
   position: absolute;
   width: 270px;
   height: 100%;
-  color: #777;
+  color: #555;
   top: 0;
   left: 0;
   overflow: auto;
@@ -113,6 +117,12 @@ a {
   overflow-x: hidden;
 }
 
+.main-nav > h1 {
+  margin: 0 0 20px;
+  padding: 0 15px;
+  color: #455a64;
+}
+
 .nav-item {
   display: block;
   padding: 15px 20px;
@@ -120,7 +130,7 @@ a {
   text-decoration: none;
   margin: 0;
   line-height: 20px;
-  border-left: 0 solid #455a64;
+  border-left: 0 solid #36444a;
   cursor: pointer;
   transition: background-color .2s ease-in-out;
   overflow: hidden;
@@ -167,10 +177,10 @@ a {
 }
 
 .card.big {
-  width: 100%;
+  width: calc(100% - 30px);
   max-width: 840px;
   border-radius: 12px;
-  margin-bottom: 45px;
+  margin: 30px auto 45px;
 }
 
 .card.big > .card.big {
@@ -585,7 +595,38 @@ button:disabled:hover {
 
 .flex-item-al {
   align-self: inherit;
-  /* justify-self: flex-end; */
+}
+
+.icon-link {
+  background-color: #e0e0e0;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: none;
+  vertical-align: middle;
+  padding: 5px 10px 5px 5px;
+  line-height: 22px;
+  color: #333;
+  transition: color .1s linear;
+}
+
+.icon-link:hover {
+  color: #009688;
+}
+
+.icon-link > * {
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.icon-link > i {
+  font-size: 30px;
+  margin-right: 5px;
+}
+
+.ta-center {
+  text-align: center;
 }
 
 .loader {
