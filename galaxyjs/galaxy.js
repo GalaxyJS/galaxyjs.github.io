@@ -3740,9 +3740,14 @@ Galaxy.View = /** @class */(function (G) {
    */
   AnimationMeta.prototype.addAtEnd = function (viewNode, type, child, childConf) {
     const _this = this;
-    child.timeline.pause();
-    _this.timeline.add(child.timeline);
-    child.timeline.resume();
+
+    if (_this.timeline.progress() !== undefined) {
+      child.timeline.pause();
+    }
+
+    _this.timeline.add(function () {
+      child.timeline.resume();
+    });
   };
 
   AnimationMeta.prototype.add = function (viewNode, config, onComplete) {
