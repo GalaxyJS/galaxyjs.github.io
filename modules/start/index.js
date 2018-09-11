@@ -43,22 +43,31 @@ view.init({
         {
           tag: 'p',
           class: 'ta-center',
-          children: {
-            tag: 'a',
-            class: 'icon-link',
-            href: 'https://github.com/GalaxyJS/galaxy',
-            target: '_blank',
-            children: [
-              {
-                tag: 'i',
-                class: 'fab fa-github'
-              },
-              {
-                tag: 'span',
-                text: 'GITHUB'
-              }
-            ]
-          }
+          children: [
+            {
+              tag: 'a',
+              class: 'icon link',
+              href: 'https://github.com/GalaxyJS/galaxy',
+              target: '_blank',
+              children: [
+                {
+                  tag: 'i',
+                  class: 'fab fa-github'
+                },
+                {
+                  tag: 'span',
+                  text: 'GITHUB'
+                }
+              ]
+            },
+            {
+              tag: 'a',
+              class: 'icon gitter',
+              href: 'https://gitter.im/GalaxyJS/galaxy?utm_source=share-link&utm_medium=link&utm_campaign=share-link',
+              target: '_blank',
+              children: {tag: 'img', src: 'https://badges.gitter.im/GalaxyJS/galaxy.svg'}
+            }
+          ]
         }
       ]
     }

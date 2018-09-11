@@ -78,7 +78,7 @@ view.init({
           tag: 'h1',
           text: 'List Rendering'
         },
-        '<p>We can use the <strong>$for</strong> property to render a list of items based on an array</p>',
+        '<p>We can use the <strong>$for</strong> property to render a list of items based on an array.</p>',
         '<p><strong>$for</strong> uses the <code class="prettyprint lang-js">changes</code> property of the bound array to render the' +
         ' content.</p>',
         '<p><code class="prettyprint lang-js">changes</code> is reactive property that is being added to the arrays that by GalaxyJS' +
@@ -124,6 +124,7 @@ view.init({
                 data: '<>data.list.changes',
                 as: 'item'
               },
+              test: '<>this.stuff',
               text: '<>item'
             }
 

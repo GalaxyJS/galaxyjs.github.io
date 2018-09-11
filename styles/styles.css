@@ -22,8 +22,8 @@ h1 {
 }
 
 h2 {
-  margin-top: 30px;
-  margin-bottom: 15px;
+  /* margin-top: 30px; */
+  /* margin-bottom: 15px; */
 }
 
 h2 > a {
@@ -46,8 +46,8 @@ h2 > a:hover {
 
 html, body {
   font-family: 'Nunito', sans-serif;
-  font-size: 16px;
-  line-height: 18px;
+  font-size: 15px;
+  line-height: 22px;
   position: relative;
   height: 100%;
   max-width: 100%;
@@ -187,14 +187,6 @@ a {
   color: #fff;
 }
 
-.card .banner {
-  display: block;
-  background-size: cover;
-  width: 100%;
-  margin: 0;
-  /* min-height: 300px; */
-}
-
 .card.info-pane {
   background-color: #fff;
   position: absolute;
@@ -208,6 +200,23 @@ a {
   overflow-x: hidden;
   overflow-y: auto;
   box-shadow: 0 0 9px rgba(0, 0, 0, 0.04), -11px 0 23px rgba(0, 0, 0, .1);
+}
+
+.card .banner {
+  display: block;
+  background-size: cover;
+  width: 100%;
+  margin: 0;
+}
+
+.card h2 {
+  font-size: 1.2em;
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+.card h2 + p {
+  margin-top: 0;
 }
 
 .info-pane > .card.big {
@@ -535,12 +544,6 @@ input, select {
   margin: 0 5px 5px 0;
 }
 
-.content li {
-
-  line-height: 18px;
-  vertical-align: super;
-}
-
 .done {
   opacity: .3;
 }
@@ -620,8 +623,24 @@ button:disabled:hover {
   align-self: inherit;
 }
 
-.icon-link {
+a.icon {
+  margin: 10px;
+  display: inline-block;
+  vertical-align: middle;
+  padding: 0;
+  color: #333;
+  transition: background-color .1s linear;
+}
+
+a.icon:hover {
   background-color: #e0e0e0;
+}
+
+a.icon > img {
+  display: block;
+}
+
+a.icon.link {
   border-radius: 20px;
   display: inline-block;
   font-size: 1.1em;
@@ -630,22 +649,22 @@ button:disabled:hover {
   vertical-align: middle;
   padding: 5px 10px 5px 5px;
   line-height: 22px;
-  color: #333;
-  transition: color .1s linear;
 }
 
-.icon-link:hover {
-  color: #009688;
-}
-
-.icon-link > * {
+a.icon.link > * {
   vertical-align: middle;
   display: inline-block;
 }
 
-.icon-link > i {
+a.icon.link > i {
   font-size: 30px;
   margin-right: 5px;
+}
+
+a.icon.gitter {
+  line-height: 20px;
+  padding: 4px;
+  border-radius: 6px;
 }
 
 .ta-center {

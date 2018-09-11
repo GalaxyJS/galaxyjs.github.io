@@ -31,7 +31,7 @@ view.init({
         {
           tag: 'p',
           text: 'GalaxyJS automatically transform data that are bound to UI into reactive data so any changes to that data at the later' +
-          ' point will be reflected in the view'
+          ' point will be reflected in the view.'
         },
         {
           tag: 'p',
@@ -98,7 +98,7 @@ view.init({
         },
         '<h2>ArrayChange</h2>' +
         '<h3>Galaxy.View.ArrayChange</h3>' +
-        '<p>An ArrayChange object represents the changes that has been made to a reactive array, consider following:</p>' +
+        '<p>An ArrayChange object represents the changes that has been made to an reactive array, consider following:</p>' +
         '<pre class="prettyprint lang-js">' +
         'Scope.data.list = [\'Amsterdam\',\'Paris\']; \n' +
         '\n' +
