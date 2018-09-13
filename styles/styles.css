@@ -22,8 +22,8 @@ h1 {
 }
 
 h2 {
-  margin-top: 30px;
-  margin-bottom: 15px;
+  /* margin-top: 30px; */
+  /* margin-bottom: 15px; */
 }
 
 h2 > a {
@@ -46,8 +46,8 @@ h2 > a:hover {
 
 html, body {
   font-family: 'Nunito', sans-serif;
-  font-size: 16px;
-  line-height: 18px;
+  font-size: 15px;
+  line-height: 22px;
   position: relative;
   height: 100%;
   max-width: 100%;
@@ -56,8 +56,8 @@ html, body {
 }
 
 body {
-  background: rgb(255,255,255);
-  background: linear-gradient(185deg, rgba(255,255,255,1) 0%, rgba(250,251,252,1) 70%);
+  background: rgb(255, 255, 255);
+  background: linear-gradient(185deg, rgba(255, 255, 255, 1) 0%, rgba(250, 251, 252, 1) 70%);
 }
 
 html {
@@ -104,23 +104,17 @@ a {
 
 .main-nav {
   position: absolute;
-  width: 270px;
-  height: 100%;
-  color: #555;
-  top: 0;
-  left: 0;
-  overflow: auto;
-  padding: 25px 0;
-  font-weight: normal;
   background-color: #fff;
+  border: none;
   box-shadow: 0 0 30px rgba(80, 80, 80, .1);
-  overflow-x: hidden;
-}
-
-.main-nav > h1 {
-  margin: 0 0 20px;
-  padding: 0 15px;
   color: #455a64;
+  font-weight: normal;
+  left: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  top: 0;
+  white-space: nowrap;
+  z-index: 100;
 }
 
 .nav-item {
@@ -193,14 +187,6 @@ a {
   color: #fff;
 }
 
-.card .banner {
-  display: block;
-  background-size: cover;
-  width: 100%;
-  margin: 0;
-  min-height: 300px;
-}
-
 .card.info-pane {
   background-color: #fff;
   position: absolute;
@@ -214,6 +200,23 @@ a {
   overflow-x: hidden;
   overflow-y: auto;
   box-shadow: 0 0 9px rgba(0, 0, 0, 0.04), -11px 0 23px rgba(0, 0, 0, .1);
+}
+
+.card .banner {
+  display: block;
+  background-size: cover;
+  width: 100%;
+  margin: 0;
+}
+
+.card h2 {
+  font-size: 1.2em;
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+.card h2 + p {
+  margin-top: 0;
 }
 
 .info-pane > .card.big {
@@ -302,14 +305,26 @@ ul.items-list > li:hover {
   }
 
   .main-nav {
+    box-shadow: 0 5px 25px rgba(40, 40, 40, .2);
     height: 60px;
     width: 100%;
+    padding: 10px 0;
+    outline: none;
+  }
+
+  .main-nav:focus {
+    height: 60%;
+
+  }
+
+  .main-nav > h1 {
+    text-align: center;
+    margin: 5px 0 20px;
+    padding: 0 15px;
+  }
+
+  .nav-item {
     padding: 10px 15px;
-    border: none;
-    border-bottom: 1px solid rgba(0, 0, 0, .1);
-    overflow: hidden;
-    overflow-x: auto;
-    white-space: nowrap;
   }
 
   .main-nav > a {
@@ -337,7 +352,11 @@ ul.items-list > li:hover {
 
   .main-nav {
     width: 220px;
-    padding: 10px;
+    height: 100%;
+  }
+
+  .main-nav > h1 {
+    padding: 0 12px;
   }
 
   .main-nav > a {
@@ -347,6 +366,19 @@ ul.items-list > li:hover {
   .card.big {
     width: auto;
     margin: 10px;
+  }
+}
+
+@media only screen and (min-device-width: 1025px) {
+  .main-nav {
+    width: 270px;
+    padding: 25px 0;
+    height: 100%;
+  }
+
+  .main-nav > h1 {
+    margin: 0 0 20px;
+    padding: 0 15px;
   }
 }
 
@@ -512,12 +544,6 @@ input, select {
   margin: 0 5px 5px 0;
 }
 
-.content li {
-
-  line-height: 18px;
-  vertical-align: super;
-}
-
 .done {
   opacity: .3;
 }
@@ -597,8 +623,24 @@ button:disabled:hover {
   align-self: inherit;
 }
 
-.icon-link {
+a.icon {
+  margin: 10px;
+  display: inline-block;
+  vertical-align: middle;
+  padding: 0;
+  color: #333;
+  transition: background-color .1s linear;
+}
+
+a.icon:hover {
   background-color: #e0e0e0;
+}
+
+a.icon > img {
+  display: block;
+}
+
+a.icon.link {
   border-radius: 20px;
   display: inline-block;
   font-size: 1.1em;
@@ -607,22 +649,22 @@ button:disabled:hover {
   vertical-align: middle;
   padding: 5px 10px 5px 5px;
   line-height: 22px;
-  color: #333;
-  transition: color .1s linear;
 }
 
-.icon-link:hover {
-  color: #009688;
-}
-
-.icon-link > * {
+a.icon.link > * {
   vertical-align: middle;
   display: inline-block;
 }
 
-.icon-link > i {
+a.icon.link > i {
   font-size: 30px;
   margin-right: 5px;
+}
+
+a.icon.gitter {
+  line-height: 20px;
+  padding: 4px;
+  border-radius: 6px;
 }
 
 .ta-center {

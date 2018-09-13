@@ -139,7 +139,7 @@ router.init({
       navService.setSubNavItems([]);
       // Scope.data.moduleInputs.subMenus.items = [];
       // setTimeout(function () {
-        Scope.data.activeModule = nav.module;
+      Scope.data.activeModule = nav.module;
       // }, 300);
 
     }
@@ -167,7 +167,6 @@ view.init([
         $for: 'nav in data.navItems',
 
         animations: animations.mainNavItem,
-        class: 'ahah',
         children: [
           {
             animations: {
@@ -213,10 +212,8 @@ view.init([
             animations: {
               enter: {
                 parent: 'main-nav-items',
-                // chainToParent: true,
                 positionInParent: '-=.5',
                 sequence: 'sub-nav-container',
-                // positionInParent: '+=.2',
                 from: {
                   borderLeftWidth: 15,
                   height: 0
@@ -234,24 +231,13 @@ view.init([
               },
               leave: {
                 to: {
-                  // borderLeftWidth: 0,
                   height: 0
                 },
                 duration: .2
               }
             },
 
-            lifecycle: {
-              postEnter: function () {
-                console.log('postEnter');
-              },
-              post$forEnter: function (items) {
-                console.log('post$forEnter', items);
-              }
-            },
-
             children: {
-              // {
               tag: 'a',
               class: 'nav-item sub',
               animations: {

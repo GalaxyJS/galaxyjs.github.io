@@ -108,12 +108,12 @@ view.init({
             '})'
         },
         {
-          tag: 'h3',
+          tag: 'p',
           text: 'TADAAA! you have created your first app with GalaxyJS!'
         },
         {
-          tag: 'p',
-          html: '<strong>Now, lets see what is going on here!</strong>'
+          tag: 'h2',
+          html: 'Now, lets see what is going on here!'
         },
         {
           tag: 'p',
@@ -126,10 +126,11 @@ view.init({
             ' cleaning the parent. In this case, this code will remove the \'Loading...\' from the body. This is also useful when you want' +
             ' to start with a clean element.'
         },
-        {
-          tag: 'p',
-          html: 'Then we initialize our view with a <strong>h1</strong> tag with the <strong>\'Hello World!\'</strong> as its text content'
-        },
+        'Then we initialize our view with a <strong>h1</strong> tag and <strong>\'Hello World!\'</strong> as its text content.' +
+        '<pre class="prettyprint inline lang-js">view.init({\n' +
+        '  tag: \'h1\',\n' +
+        '  text: \'Hello World!\'\n' +
+        '});</pre>',
         '<h2>The Progressive Way</h2>' +
         '<p>Sometimes you already have a page and you just want to add some reactive functionality to some elements. You can easily do this by transforming your target element into a Galaxy module:</p>',
         {
