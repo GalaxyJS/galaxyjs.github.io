@@ -4483,8 +4483,13 @@ Galaxy.View = /** @class */(function (G) {
     // remove the animation from the parent which are referring to node
     // TODO: All actions related to the for nodes will be removed.
     // But this action wont get removed because it does not have a proper reference
-
     parentNode.sequences.enter.nextAction(function () {
+      const postChildrenInsertEvent = new CustomEvent('post$forEnter', {
+        detail: {
+          $forItems: newItems
+        }
+      });
+      parentNode.broadcast(postChildrenInsertEvent);
       parentNode.callLifecycleEvent('post$forEnter', newItems);
       // next();
     }, node);
@@ -4822,19 +4827,35 @@ Galaxy.View = /** @class */(function (G) {
           'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
 
-      const bindings = GV.getBindings(viewNode.schema.selected);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
-      const nativeNode = viewNode.node;
-      nativeNode.addEventListener('change', function () {
-        scopeReactiveData.data[id] = nativeNode.options[nativeNode.selectedIndex].value;
-      });
+      // Don't do anything if the node is an option tag
+      if (viewNode.schema.tag === 'select') {
+        const bindings = GV.getBindings(viewNode.schema.selected);
+        const id = bindings.propertyKeysPaths[0].split('.').pop();
+        const nativeNode = viewNode.node;
+
+        nativeNode.addEventListener('change', function () {
+          scopeReactiveData.data[id] = nativeNode.options[nativeNode.selectedIndex].value;
+        });
+
+        nativeNode.addEventListener('post$forEnter', function () {
+          if (scopeReactiveData.data[id] && !nativeNode.value) {
+            nativeNode.value = scopeReactiveData.data[id];
+          }
+        });
+      }
     },
     value: function (viewNode, value) {
       const nativeNode = viewNode.node;
 
       viewNode.rendered.then(function () {
         if (nativeNode.value !== value) {
-          nativeNode.value = value;
+          if (viewNode.schema.tag === 'select') {
+            nativeNode.value = value;
+          } else if (value) {
+            nativeNode.setAttribute('selected');
+          } else {
+            nativeNode.removeAttribute('selected');
+          }
         }
       });
     }
@@ -4980,7 +5001,9 @@ Galaxy.View = /** @class */(function (G) {
       }
     },
     value: function (viewNode, value, oldValue, attr) {
-      viewNode.node[attr] = value === undefined ? '' : value;
+      // input field parse the value which has been passed to it into a string
+      // that why we need to parse undefined and null into an empty string
+      viewNode.node[attr] = value === undefined || value === null ? '' : value;
     }
   };
 })(Galaxy.View);
