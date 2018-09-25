@@ -1,5 +1,6 @@
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
+const css = Scope.import('./style.css');
 
 Scope.data.list = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
 
