@@ -4727,7 +4727,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
                 classSequence.next(function (done) {
                   const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, value.config, done);
                 });
               }
@@ -4742,7 +4742,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
                 classSequence.next(function (done) {
                   const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = { className: '-=' + item || '' };
+                  classAnimationConfig.to = {className: '-=' + item || ''};
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, value.config, done);
                 });
               }
@@ -4995,7 +4995,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         });
         _this.children = [];
         _this.onCompletesActions = [];
-        // _this.timeline.kill();
       }
     });
     _this.onCompletesActions = [];
@@ -5025,8 +5024,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     const _this = this;
     const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
     const children = parentNodeTimeline.getChildren(false);
-
     _this.timeline.pause();
+    let passed = false;
     if (_this.children.indexOf(parentNodeTimeline) === -1) {
       _this.children.push(parentNodeTimeline);
       let posInParent = childConf.positionInParent || '+=0';
@@ -5041,11 +5040,21 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           posInParent = null;
         }
       }
-      // parentNodeTimeline._startTime = 3;
+
       parentNodeTimeline.add(function () {
+        passed = true;
         _this.timeline.resume();
       }, posInParent);
     }
+    viewNode.destroyed.then(function () {
+      // TODO: Test this code to ultimate to make sure it has no bug
+      // TODO: smashing populate in list rendering was causing the list not to re render and this fixed it
+      if (!passed && _this.timeline.paused()) {
+        _this.timeline.play(0);
+        _this.timeline.clear();
+      }
+    });
+
 
     // AnimationMeta.refresh(parentNodeTimeline);
     parentNodeTimeline.resume();
@@ -5412,7 +5421,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5645,6 +5654,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return promise.resolved !== true;
       });
 
+      const stat = $forData.queue.map(function (item, i) {
+        return i + ' ' + item.resolved;
+      });
+
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
         $forData.queue = $forData.queue.filter(function (p) {
@@ -5656,6 +5669,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return;
       }
 
+      $forData.queue = [];
       $forData.mainPromise = null;
       callback();
     };
@@ -5778,6 +5792,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     const vCreateNode = View.createNode;
     if (newItems instanceof Array) {
       const c = newItems.slice(0);
+
       for (let i = 0, len = newItems.length; i < len; i++) {
         itemDataScope = View.createMirror(nodeScopeData);
         itemDataScope['__rootScopeData__'] = config.scope;
