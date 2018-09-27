@@ -2534,6 +2534,65 @@ Galaxy.Sequence = /** @class */ (function () {
 /* global Galaxy */
 'use strict';
 
+Galaxy.Stream = /** @class */ (function () {
+  function Stream(source) {
+    this.handlers = [];
+    this.singleCallHandlers = [];
+    this.source = source;
+    this.subStreams = {};
+  }
+
+  Stream.prototype = {
+    pour: function (data, path) {
+      this.handlers.forEach(function (handler) {
+        handler.call(null, data);
+      });
+
+      this.singleCallHandlers = this.singleCallHandlers.filter(function (handler) {
+        handler.call(null, data);
+        return false;
+      });
+
+      if (path) {
+        const pathParts = path.split(' ');
+        const currentType = pathParts.shift();
+        this.filter(currentType).pour(data, pathParts.join(' '));
+      } else {
+        for (const subGroup in this.subStreams) {
+          if (this.subStreams.hasOwnProperty(subGroup)) {
+            const stream = this.subStreams[subGroup];
+            stream.pour(data);
+          }
+        }
+      }
+    },
+
+    filter: function (type) {
+      const stream = this.subStreams[type] || new Stream(this);
+      this.subStreams[type] = stream;
+
+      return stream;
+    },
+
+    subscribe: function (handler) {
+      if (this.handlers.indexOf(handler) === -1) {
+        this.handlers.push(handler);
+      }
+    },
+
+    subscribeOnce: function (handler) {
+      if (this.singleCallHandlers.indexOf(handler) === -1) {
+        this.singleCallHandlers.push(handler);
+      }
+    }
+  };
+
+  return Stream;
+})();
+
+/* global Galaxy */
+'use strict';
+
 Galaxy.GalaxyURI = /** @class */ (function () {
   /**
    *
@@ -4174,6 +4233,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.inserted = new Promise(function (done) {
       _this.hasBeenInserted = function () {
         _this.inserted.resolved = true;
+        _this.stream.pour('inserted', 'dom');
         done();
       };
     });
@@ -4182,10 +4242,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.destroyed = new Promise(function (done) {
       _this.hasBeenDestroyed = function () {
         _this.destroyed.resolved = true;
+        _this.stream.pour('destroyed', 'dom');
         done();
       };
     });
     _this.destroyed.resolved = false;
+
+    _this.stream = new Galaxy.Stream();
 
     /**
      *
@@ -4271,7 +4334,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {boolean} flag
    */
   ViewNode.prototype.setInDOM = function (flag) {
-    let _this = this;
+    const _this = this;
     _this.inDOM = flag;
     const enterSequence = _this.sequences.enter;
     const leaveSequence = _this.sequences.leave;
@@ -4359,6 +4422,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.transitory = false;
         _this.node.style.cssText = '';
         _this.callLifecycleEvent('postAnimations');
+        _this.stream.pour('removed','dom');
         animationDone();
       });
     }
@@ -4458,6 +4522,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           animationDone();
           _this.node.style.cssText = '';
           _this.origin = false;
+          _this.stream.pour('removed', 'dom');
         }, _this);
       }
     } else if (mainLeaveSequence) {
@@ -4517,7 +4582,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   ViewNode.prototype.getChildNodes = function () {
@@ -4727,7 +4792,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
                 classSequence.next(function (done) {
                   const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, value.config, done);
                 });
               }
@@ -4742,7 +4807,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
                 classSequence.next(function (done) {
                   const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = {className: '-=' + item || ''};
+                  classAnimationConfig.to = { className: '-=' + item || '' };
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, value.config, done);
                 });
               }
@@ -5017,7 +5082,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    * @param {Galaxy.View.ViewNode} viewNode
    * @param {'leave'|'enter'} type
-   * @param {AnimationMeta} child
    * @param {AnimationConfig} childConf
    */
   AnimationMeta.prototype.addChild = function (viewNode, type, childConf) {
@@ -5025,13 +5089,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
     const children = parentNodeTimeline.getChildren(false);
     _this.timeline.pause();
-    let passed = false;
+
     if (_this.children.indexOf(parentNodeTimeline) === -1) {
-      _this.children.push(parentNodeTimeline);
+      const i = _this.children.push(parentNodeTimeline);
       let posInParent = childConf.positionInParent || '+=0';
 
       // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
-      if (parentNodeTimeline.timeline === null && children.length === 0) {
+      if (parentNodeTimeline.timeline === null || children.length === 0) {
         parentNodeTimeline.pause();
         parentNodeTimeline._startTime = 0;
         parentNodeTimeline.play(0);
@@ -5040,23 +5104,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           posInParent = null;
         }
       }
-
       parentNodeTimeline.add(function () {
-        passed = true;
+        _this.children.splice(i - 1, 1);
         _this.timeline.resume();
       }, posInParent);
+
     }
-    viewNode.destroyed.then(function () {
-      // TODO: Test this code to ultimate to make sure it has no bug
-      // TODO: smashing populate in list rendering was causing the list not to re render and this fixed it
-      if (!passed && _this.timeline.paused()) {
-        _this.timeline.play(0);
-        _this.timeline.clear();
-      }
-    });
 
-
-    // AnimationMeta.refresh(parentNodeTimeline);
     parentNodeTimeline.resume();
   };
 
@@ -5421,7 +5475,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5654,10 +5708,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return promise.resolved !== true;
       });
 
-      const stat = $forData.queue.map(function (item, i) {
-        return i + ' ' + item.resolved;
-      });
-
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
         $forData.queue = $forData.queue.filter(function (p) {
@@ -5805,9 +5855,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
     }
 
-    // remove the animation from the parent which are referring to node
-    // TODO: All actions related to the for nodes will be removed.
-    // But this action wont get removed because it does not have a proper reference
     parentNode.sequences.enter.nextAction(function () {
       const postChildrenInsertEvent = new CustomEvent('post$forEnter', {
         detail: {
@@ -5816,9 +5863,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
       parentNode.broadcast(postChildrenInsertEvent);
       parentNode.callLifecycleEvent('post$forEnter', newItems);
-      // next();
+      // parentNode.stream.filter('dom').filter('childList').next('post$forEnter');
+      parentNode.stream.pour('post$forEnter', 'dom childList');
     }, node);
-    // });
   }
 })(Galaxy.View);
 
@@ -5958,6 +6005,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return;
       }
 
+      $ifData.queue = [];
       $ifData.mainPromise = null;
       callback();
     };
@@ -6166,6 +6214,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           if (scopeReactiveData.data[id] && !nativeNode.value) {
             nativeNode.value = scopeReactiveData.data[id];
           }
+        });
+
+        nativeNode.stream.filter('dom').filter('childList').subscribe(function() {
+
         });
       }
     },
