@@ -2,12 +2,27 @@
 Scope.import('galaxy/inputs');
 
 const view = Scope.import('galaxy/view');
-const router = Scope.import('galaxy/router');
+// const router = Scope.import('galaxy/router');
+const navService = Scope.import('services/navigation.js');
 const animations = Scope.import('services/animations.js');
+const effects = Scope.import('services/effects.js');
 
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
+
+const items = [
+  {
+    title: 'Installation'
+  },
+  {
+    title: 'Bootstrap'
+  },
+  {
+    title: 'The Progressive Way'
+  }
+];
+navService.setSubNavItems(items);
 
 view.init({
   class: 'card big',
@@ -22,13 +37,14 @@ view.init({
       tag: 'img',
       class: 'banner',
       src: 'assets/images/guide.jpg',
-      height: '410'
+      height: '410',
+      blurCaption: effects.getBlurCaption()
     },
+    '<h1>Guide Page</h1>',
     {
       class: 'content',
       tag: 'section',
       children: [
-        '<h1>Guide Page</h1>' +
         '<h2>Installation</h2>' +
         '<p>Simply copy & paste the following into your page\'s head</p>',
         {
