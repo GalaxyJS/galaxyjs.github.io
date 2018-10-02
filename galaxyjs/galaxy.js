@@ -1860,9 +1860,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         let contentFetcher = Galaxy.moduleContents[url];
         if (!contentFetcher || module.fresh) {
           contentFetcher = Galaxy.moduleContents[url] = fetch(url).then(function (response) {
-            if (response.status !== 200) {
-              reject(response);
-              return '';
+            if (!response.ok) {
+              console.error(response.statusText, url);
+              return reject(response.statusText);
             }
 
             const contentType = response.headers.get('content-type');
@@ -1901,7 +1901,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       const promise = new Promise(function (resolve, reject) {
         const doneImporting = function (module, imports) {
-          imports.splice(imports.indexOf(module.importId || module.url) - 1, 1);
+          imports.splice(imports.indexOf(/*module.importId || */module.url) - 1, 1);
 
           if (imports.length === 0) {
             // This will load the original initializer
@@ -1939,13 +1939,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
             // Module is not loaded
             else {
-              // const importId = item.url;
               if (item.url.indexOf('./') === 0) {
                 item.url = scope.uri.path + item.url.substr(2);
               }
 
               Galaxy.load({
-                importId: item.url,
                 name: item.name,
                 url: item.url,
                 fresh: item.fresh,
@@ -1974,7 +1972,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     executeCompiledModule: function (module) {
       const promise = new Promise(function (resolve, reject) {
         try {
-          for (const item in module.addOns) {
+          for (let item in module.addOns) {
             module.scope.inject(item, module.addOns[item]);
           }
 
@@ -2001,7 +1999,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
           Reflect.deleteProperty(module, 'addOnProviders');
 
-          const mId = module.importId;
+          const mId = module.url;
           if (!importedLibraries[mId]) {
             importedLibraries[mId] = {
               name: mId,
@@ -2283,6 +2281,11 @@ Galaxy.Scope = /** @class */ (function () {
      * @return {*}
      */
     import: function (libId) {
+      // if the id starts with `./` then we will replace it with the current scope path.
+      if (libId.indexOf('./') === 0) {
+        libId = libId.replace('./', this.uri.path);
+      }
+
       return this['__imports__'][libId];
     },
     /**
@@ -2558,7 +2561,7 @@ Galaxy.Stream = /** @class */ (function () {
         const currentType = pathParts.shift();
         this.filter(currentType).pour(data, pathParts.join(' '));
       } else {
-        for (const subGroup in this.subStreams) {
+        for (let subGroup in this.subStreams) {
           if (this.subStreams.hasOwnProperty(subGroup)) {
             const stream = this.subStreams[subGroup];
             stream.pour(data);
@@ -2616,11 +2619,67 @@ Galaxy.GalaxyURI = /** @class */ (function () {
 (function () {
   Galaxy.Module.Content.registerParser('text/css', parser);
 
+  const hosts = {};
+
+  function getHostId(id) {
+    if (hosts.hasOwnProperty(id)) {
+      return hosts[id];
+    }
+    const index = Object.keys(hosts).length;
+    const ids = {
+      host: 'gjs-host-' + index,
+      content: 'gjs-content-' + index,
+    };
+
+    hosts[id] = ids;
+
+    return ids;
+  }
+
+  function rulesForCssText(styleContent) {
+    const doc = document.implementation.createHTMLDocument(''),
+      styleElement = document.createElement('style');
+
+    styleElement.textContent = styleContent;
+    // the style will only be parsed once it is added to a document
+    doc.body.appendChild(styleElement);
+
+    return styleElement;
+  }
+
   function parser(content) {
-    console.info('css parser has been skipped');
     return {
       imports: [],
-      source: ''
+      source: function (Scope) {
+        const ids = getHostId(Scope.systemId);
+        const cssRules = rulesForCssText(content);
+        const hostSuffix = '[' + ids.host + ']';
+        const contentSuffix = '[' + ids.content + ']';
+        const parsedCSSRules = [];
+        const host = /(\:host)/g;
+        const selector = /([^\s+>~,]+)/g;
+        const selectorReplacer = function (item) {
+          if (item === ':host') {
+            return item;
+          }
+
+          return item + contentSuffix;
+        };
+
+        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
+          let selectorText = css.selectorText.replace(selector, selectorReplacer);
+
+          css.selectorText = selectorText.replace(host, hostSuffix);
+          parsedCSSRules.push(css.cssText);
+        });
+        const parsedCSSText = parsedCSSRules.join('\n');
+
+        Scope.exports = {
+          tag: 'style',
+          id: Scope.systemId,
+          text: parsedCSSText
+        };
+      }
     };
   }
 })();
@@ -2668,7 +2727,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
       let query = path.match(/([\S]+)/gm);
       let url = query[query.length - 1];
       if (unique.indexOf(url) !== -1) {
-        return 'Scope.__imports__[\'' + url + '\']';
+        return 'Scope.import(\'' + url + '\')';
       }
 
       unique.push(url);
@@ -2677,7 +2736,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
         fresh: query.indexOf('new') !== -1
       });
 
-      return 'Scope.__imports__[\'' + url + '\']';
+      return 'Scope.import(\'' + url + '\')';
     });
 
     return {
@@ -3214,25 +3273,6 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @param {Galaxy.View.ViewNode} node
-   * @param {string} attributeName
-   * @returns {Function}
-   */
-  View.createDefaultSetter = function (node, attributeName) {
-    return function (value, oldValue) {
-      if (value instanceof Promise) {
-        const asyncCall = function (asyncValue) {
-          View.setAttr(node, asyncValue, oldValue, attributeName);
-        };
-        value.then(asyncCall).catch(asyncCall);
-      } else {
-        View.setAttr(node, value, oldValue, attributeName);
-      }
-    };
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
    * @param {string} key
    * @param scopeData
    */
@@ -3257,7 +3297,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -3278,11 +3318,12 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
-        View.createDefaultSetter(viewNode, attributeName)(value, null);
+        View.PROPERTY_SETTERS['attr'](viewNode, attributeName, property)(value, null);
+        // View.createDefaultSetter(viewNode, attributeName)(value, null);
         break;
 
       case 'prop':
@@ -3312,89 +3353,82 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} parent
-   * @param {Object} scopeData
-   * @param {Object} nodeSchema
-   * @param position
-   */
-  View.createNode = function (parent, scopeData, nodeSchema, position, refNode) {
-    let i = 0, len = 0;
-
-    if (typeof nodeSchema === 'string') {
-      const content = document.createElement('div');
-      content.innerHTML = nodeSchema;
-      const nodes = Array.prototype.slice.call(content.childNodes);
-      nodes.forEach(function (node) {
-        parent.node.appendChild(node);
-      });
-
-      return nodes;
-    }
-
-    if (nodeSchema instanceof Array) {
-      for (i = 0, len = nodeSchema.length; i < len; i++) {
-        View.createNode(parent, scopeData, nodeSchema[i], null, refNode);
-      }
-    } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
-      let attributeValue, attributeName;
-      const keys = Object.keys(nodeSchema);
-      const needInitKeys = [];
-
-      const viewNode = new View.ViewNode(nodeSchema, null, refNode);
-      parent.registerChild(viewNode, position);
-
-      // Behaviors installation stage
-      for (i = 0, len = keys.length; i < len; i++) {
-        attributeName = keys[i];
-        const behavior = View.REACTIVE_BEHAVIORS[attributeName];
-        if (behavior) {
-          const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
-          if (needValueAssign !== false) {
-            needInitKeys.push(attributeName);
-          }
-        } else {
-          needInitKeys.push(attributeName);
-        }
-      }
-
-      // Value assignment stage
-      for (i = 0, len = needInitKeys.length; i < len; i++) {
-        attributeName = needInitKeys[i];
-        attributeValue = nodeSchema[attributeName];
-
-        const bindings = View.getBindings(attributeValue);
-        if (bindings.propertyKeysPaths) {
-          View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
-        } else {
-          View.setPropertyForNode(viewNode, attributeName, attributeValue);
-        }
-      }
-
-      viewNode.callLifecycleEvent('postInit');
-      if (!viewNode.virtual) {
-        if (viewNode.inDOM) {
-          viewNode.setInDOM(true);
-        }
-
-        View.createNode(viewNode, scopeData, nodeSchema.children, null, refNode);
-
-        viewNode.inserted.then(function () {
-          viewNode.callLifecycleEvent('postChildrenInsert');
-        });
-      }
-
-      // viewNode.onReady promise will be resolved after all the dom manipulations are done
-      requestAnimationFrame(function () {
-        viewNode.sequences.enter.nextAction(function () {
-          viewNode.hasBeenRendered();
-        });
-      });
-
-      return viewNode;
-    }
-  };
+  // View.createNode = function (parent, scopeData, nodeSchema, position, refNode) {
+  //   let i = 0, len = 0;
+  //
+  //   if (typeof nodeSchema === 'string') {
+  //     const content = document.createElement('div');
+  //     content.innerHTML = nodeSchema;
+  //     const nodes = Array.prototype.slice.call(content.childNodes);
+  //     nodes.forEach(function (node) {
+  //       parent.node.appendChild(node);
+  //     });
+  //
+  //     return nodes;
+  //   }
+  //
+  //   if (nodeSchema instanceof Array) {
+  //     for (i = 0, len = nodeSchema.length; i < len; i++) {
+  //       View.createNode(parent, scopeData, nodeSchema[i], null, refNode);
+  //     }
+  //   } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
+  //     let attributeValue, attributeName;
+  //     const keys = Object.keys(nodeSchema);
+  //     const needInitKeys = [];
+  //
+  //     const viewNode = new View.ViewNode(nodeSchema, null, refNode);
+  //     parent.registerChild(viewNode, position);
+  //
+  //     // Behaviors installation stage
+  //     for (i = 0, len = keys.length; i < len; i++) {
+  //       attributeName = keys[i];
+  //       const behavior = View.REACTIVE_BEHAVIORS[attributeName];
+  //       if (behavior) {
+  //         const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
+  //         if (needValueAssign !== false) {
+  //           needInitKeys.push(attributeName);
+  //         }
+  //       } else {
+  //         needInitKeys.push(attributeName);
+  //       }
+  //     }
+  //
+  //     // Value assignment stage
+  //     for (i = 0, len = needInitKeys.length; i < len; i++) {
+  //       attributeName = needInitKeys[i];
+  //       attributeValue = nodeSchema[attributeName];
+  //
+  //       const bindings = View.getBindings(attributeValue);
+  //       if (bindings.propertyKeysPaths) {
+  //         View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
+  //       } else {
+  //         View.setPropertyForNode(viewNode, attributeName, attributeValue);
+  //       }
+  //     }
+  //
+  //     viewNode.callLifecycleEvent('postInit');
+  //     if (!viewNode.virtual) {
+  //       if (viewNode.inDOM) {
+  //         viewNode.setInDOM(true);
+  //       }
+  //
+  //       View.createNode(viewNode, scopeData, nodeSchema.children, null, refNode);
+  //
+  //       viewNode.inserted.then(function () {
+  //         viewNode.callLifecycleEvent('postChildrenInsert');
+  //       });
+  //     }
+  //
+  //     // viewNode.onReady promise will be resolved after all the dom manipulations are done
+  //     requestAnimationFrame(function () {
+  //       viewNode.sequences.enter.nextAction(function () {
+  //         viewNode.hasBeenRendered();
+  //       });
+  //     });
+  //
+  //     return viewNode;
+  //   }
+  // };
 
   /**
    *
@@ -3410,12 +3444,12 @@ Galaxy.View = /** @class */(function (G) {
       cleanContainer: false
     };
 
-    if (scope.element instanceof View.ViewNode) {
+    if (scope.element instanceof Galaxy.View.ViewNode) {
       _this.container = scope.element;
     } else {
-      _this.container = new View.ViewNode({
+      _this.container = new Galaxy.View.ViewNode({
         tag: scope.element.tagName
-      }, scope.element);
+      }, scope.element, _this);
 
       _this.container.sequences.enter.nextAction(function () {
         _this.container.hasBeenRendered();
@@ -3437,17 +3471,101 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       _this.container.renderingFlow.next(function (next) {
-        View.createNode(_this.container, _this.scope, schema, null);
+        _this.createNode(schema, _this.container, _this.scope, null);
         _this.container.sequences.enter.nextAction(function () {
           next();
         }, null, 'container-enter');
       });
     },
+    style: function (styleSchema) {
+      // this.createNode(Object.assign({}, styleSchema));
+    },
     broadcast: function (event) {
       this.container.broadcast(event);
     },
-    createNode: function (schema, parent, position) {
-      return View.createNode(parent || this.container, this.scope, schema, position);
+    /**
+     *
+     * @param {Object} nodeSchema
+     * @param {Galaxy.View.ViewNode} parent
+     * @param {Object} scopeData
+     * @param {Node|Element|null} position
+     * @param {Node|Element|null} refNode
+     */
+    createNode: function (nodeSchema, parent, scopeData, position, refNode) {
+      const _this = this;
+      let i = 0, len = 0;
+      if (typeof nodeSchema === 'string') {
+        const content = document.createElement('div');
+        content.innerHTML = nodeSchema;
+        const nodes = Array.prototype.slice.call(content.childNodes);
+        nodes.forEach(function (node) {
+          parent.node.appendChild(node);
+        });
+
+        return nodes;
+      }
+
+      if (nodeSchema instanceof Array) {
+        for (i = 0, len = nodeSchema.length; i < len; i++) {
+          _this.createNode(nodeSchema[i], parent, scopeData, null, refNode);
+        }
+      } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
+        let attributeValue, attributeName;
+        const keys = Object.keys(nodeSchema);
+        const needInitKeys = [];
+
+        const viewNode = new Galaxy.View.ViewNode(nodeSchema, null, refNode, _this);
+        parent.registerChild(viewNode, position);
+
+        // Behaviors installation stage
+        for (i = 0, len = keys.length; i < len; i++) {
+          attributeName = keys[i];
+          const behavior = View.REACTIVE_BEHAVIORS[attributeName];
+          if (behavior) {
+            const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
+            if (needValueAssign !== false) {
+              needInitKeys.push(attributeName);
+            }
+          } else {
+            needInitKeys.push(attributeName);
+          }
+        }
+
+        // Value assignment stage
+        for (i = 0, len = needInitKeys.length; i < len; i++) {
+          attributeName = needInitKeys[i];
+          attributeValue = nodeSchema[attributeName];
+
+          const bindings = View.getBindings(attributeValue);
+          if (bindings.propertyKeysPaths) {
+            View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
+          } else {
+            View.setPropertyForNode(viewNode, attributeName, attributeValue);
+          }
+        }
+
+        viewNode.callLifecycleEvent('postInit');
+        if (!viewNode.virtual) {
+          if (viewNode.inDOM) {
+            viewNode.setInDOM(true);
+          }
+
+          _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
+
+          viewNode.inserted.then(function () {
+            viewNode.callLifecycleEvent('postChildrenInsert');
+          });
+        }
+
+        // viewNode.onReady promise will be resolved after all the dom manipulations are done
+        requestAnimationFrame(function () {
+          viewNode.sequences.enter.nextAction(function () {
+            viewNode.hasBeenRendered();
+          });
+        });
+
+        return viewNode;
+      }
     }
   };
 
@@ -4180,12 +4298,15 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param schema
-   * @param {Node|Element} node
+   * @param {Node|Element|null} node
+   * @param {Node|Element|null} refNode
+   * @param {Galaxy.View} view
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(schema, node, refNode) {
+  function ViewNode(schema, node, refNode, view) {
     const _this = this;
+    _this.view = view;
     /** @type {Node|Element|*} */
     _this.node = node || createElem(schema.tag || 'div');
     _this.refNode = refNode || _this.node;
@@ -4422,7 +4543,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.transitory = false;
         _this.node.style.cssText = '';
         _this.callLifecycleEvent('postAnimations');
-        _this.stream.pour('removed','dom');
+        _this.stream.pour('removed', 'dom');
         animationDone();
       });
     }
@@ -4582,7 +4703,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+    this.dependedObjects.push({reactiveData: reactiveData, item: item});
   };
 
   ViewNode.prototype.getChildNodes = function () {
@@ -5327,12 +5448,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return node.setAttribute('class', value);
       } else if (value instanceof Array) {
         return node.setAttribute('class', value.join(' '));
-      } else if (value === null) {
+      } else if (value === null || value === undefined) {
         return node.removeAttribute('class');
       }
 
       node.setAttribute('class', []);
-
       // when value is an object
       const clone = GV.bindSubjectsToData(viewNode, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
@@ -5475,7 +5595,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5839,7 +5959,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     Reflect.deleteProperty(templateSchema, '$for');
 
     const gClone = Galaxy.clone;
-    const vCreateNode = View.createNode;
+    const view = node.view;
     if (newItems instanceof Array) {
       const c = newItems.slice(0);
 
@@ -5850,7 +5970,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         itemDataScope['$forIndex'] = i;
         let cns = gClone(templateSchema);
 
-        const vn = vCreateNode(parentNode, itemDataScope, cns, placeholdersPositions[i] || defaultPosition, node);
+        const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
         onEachAction.call(nodes, vn, positions[i]);
       }
     }
@@ -6396,6 +6516,10 @@ Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expr
         valueFn(viewNode, asyncValue, oldValue, attrName);
       };
       value.then(asyncCall).catch(asyncCall);
+    } else if (value instanceof Function) {
+      const result = value.call(viewNode);
+      valueFn(viewNode, result, value.oldResult, attrName);
+      value.oldResult = value;
     } else {
       valueFn(viewNode, value, oldValue, attrName);
     }

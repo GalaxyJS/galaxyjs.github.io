@@ -1,10 +1,9 @@
 /* global Scope, PR */
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
+const effects = Scope.import('services/effects.js');
 const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
-const inputs = Scope.import('galaxy/inputs');
-
 
 const items = [
   {
@@ -26,11 +25,8 @@ const items = [
     title: 'Galaxy.View.ViewNode'
   }
 ];
-// setTimeout(function () {
-  navService.setSubNavItems(items);
-// }, 500);
+navService.setSubNavItems(items);
 
-// inputs.handlers.subNavs = ['asdasd'];
 router.init({
   '/': function () {
     // debugger;
@@ -56,16 +52,18 @@ view.init({
       tag: 'img',
       class: 'banner',
       src: 'assets/images/tools.jpg',
-      height: '410'
+      height: '410',
+      blurCaption: effects.getBlurCaption()
+    },
+    {
+      tag: 'h1',
+      text: 'API'
     },
     {
       tag: 'section',
       class: 'content',
       children: [
-        {
-          tag: 'h1',
-          text: 'API'
-        },
+
         {
           tag: 'h2',
           text: 'Galaxy.Scope'

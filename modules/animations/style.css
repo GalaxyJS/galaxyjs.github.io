@@ -1,0 +1,27 @@
+:host {
+  display: block;
+}
+
+:host {
+  display: block;
+}
+
+p {
+
+}
+
+:host > p a, nav > ul > li {
+
+}
+
+:host ~ p {
+
+}
+
+:host, p {
+
+}
+
+:host p {
+
+}
