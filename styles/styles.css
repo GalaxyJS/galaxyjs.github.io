@@ -733,22 +733,26 @@ a.icon.gitter {
   text-align: center;
 }
 
-.card.flex {
+.flex {
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: end;
   align-items: center;
   flex-wrap: wrap;
 }
 
+.box-container {
+  margin: 0 -8px;
+}
+
 .box {
   display: inline-block;
-  width: 100px;
-  height: 100px;
-  line-height: 100px;
-  background-color: #607e8c;
-  border-radius: 5px;
-  margin: 10px;
+  width: 85px;
+  height: 85px;
+  line-height: 85px;
+  background-color: #d05e77;
+  border-radius: 0 10px 10px;
+  margin: 8px;
   color: #fff;
   font-size: 60px;
   text-align: center;
