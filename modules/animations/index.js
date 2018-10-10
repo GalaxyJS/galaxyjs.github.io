@@ -15,84 +15,85 @@ Scope.data.dialog = {
 
 const dialogBlueprint = {
   tag: 'div',
-  class: 'dialog hide'
+  class: 'dialog hide',
+  on_click: 'test'
 };
 
 view.init([
-  dialogBlueprint,
-  {
-    tag: 'div',
-    class: {
-      'dialog-animation': true,
-      show: [
-        'data.dialog.originNode',
-        'data.dialog.targetNode',
-        function (origin, target) {
-          // target.originNode = origin;
-          // target.target
-          // console.log(origin, target);
-          this.data.origin = origin;
-          this.data.target = target;
-          return (origin && target);
-        }
-      ]
-    },
-
-    animations: {
-      '+=show': {
-        from: function () {
-          const node = this.data.origin;
-          const nodeStyle = window.getComputedStyle(node);
-          // const offParent = node.offsetParent;
-          const dimensions = node.getBoundingClientRect();
-          // const parentDimension = offParent.getBoundingClientRect();
-          console.log(node.style);
-          return {
-            width: dimensions.width,
-            height: dimensions.height,
-            left: dimensions.left,
-            top: dimensions.top,
-            position: 'fixed',
-            zIndex: 100,
-            backgroundColor: nodeStyle.backgroundColor || '#fff'
-          };
-        },
-        to: function () {
-          const _this = this;
-          const node = this.data.target;
-          const nodeStyle = window.getComputedStyle(node);
-          // const offParent = node.offsetParent;
-          const dimensions = node.getBoundingClientRect();
-          // const parentDimension = offParent ? offParent.getBoundingClientRect() : {left: 0, top: 0};
-          // console.log(dimensions, node);
-          return {
-            ease: 'Power2.easeInOut',
-            width: dimensions.width,
-            height: dimensions.height,
-            left: dimensions.left,
-            top: dimensions.top,
-            boxShadow: nodeStyle.boxShadow,
-            // backgroundColor: nodeStyle.backgroundColor || '#fff',
-            clearProps: '',
-            onComplete: function () {
-              requestAnimationFrame(function () {
-                Scope.data.dialog.targetNode = null;
-              });
-            },
-          };
-        },
-
-        duration: .5
-      },
-      '-=show': {
-        to: {
-          opacity: 0,
-          display: 'none'
-        },
-        duration: .5
-      }
-    }
-  },
+  // dialogBlueprint,
+  // {
+  //   tag: 'div',
+  //   class: {
+  //     'dialog-animation': true,
+  //     show: [
+  //       'data.dialog.originNode',
+  //       'data.dialog.targetNode',
+  //       function (origin, target) {
+  //         // target.originNode = origin;
+  //         // target.target
+  //         // console.log(origin, target);
+  //         this.data.origin = origin;
+  //         this.data.target = target;
+  //         return (origin && target);
+  //       }
+  //     ]
+  //   },
+  //
+  //   animations: {
+  //     '+=show': {
+  //       from: function () {
+  //         const node = this.data.origin;
+  //         const nodeStyle = window.getComputedStyle(node);
+  //         // const offParent = node.offsetParent;
+  //         const dimensions = node.getBoundingClientRect();
+  //         // const parentDimension = offParent.getBoundingClientRect();
+  //         console.log(node.style);
+  //         return {
+  //           width: dimensions.width,
+  //           height: dimensions.height,
+  //           left: dimensions.left,
+  //           top: dimensions.top,
+  //           position: 'fixed',
+  //           zIndex: 100,
+  //           backgroundColor: nodeStyle.backgroundColor || '#fff'
+  //         };
+  //       },
+  //       to: function () {
+  //         const _this = this;
+  //         const node = this.data.target;
+  //         const nodeStyle = window.getComputedStyle(node);
+  //         // const offParent = node.offsetParent;
+  //         const dimensions = node.getBoundingClientRect();
+  //         // const parentDimension = offParent ? offParent.getBoundingClientRect() : {left: 0, top: 0};
+  //         // console.log(dimensions, node);
+  //         return {
+  //           ease: 'Power2.easeInOut',
+  //           width: dimensions.width,
+  //           height: dimensions.height,
+  //           left: dimensions.left,
+  //           top: dimensions.top,
+  //           boxShadow: nodeStyle.boxShadow,
+  //           // backgroundColor: nodeStyle.backgroundColor || '#fff',
+  //           clearProps: '',
+  //           onComplete: function () {
+  //             requestAnimationFrame(function () {
+  //               Scope.data.dialog.targetNode = null;
+  //             });
+  //           },
+  //         };
+  //       },
+  //
+  //       duration: .5
+  //     },
+  //     '-=show': {
+  //       to: {
+  //         opacity: 0,
+  //         display: 'none'
+  //       },
+  //       duration: .5
+  //     }
+  //   }
+  // },
   {
     class: 'card big',
     animations: {
@@ -169,7 +170,7 @@ view.init([
               on: {
                 click: function () {
                   Scope.data.dialog.originNode = this.node;
-                  Scope.data.dialog.targetNode = dialogBlueprint.__node__;
+                  Scope.data.dialog.targetNode = dialogBlueprint.node;
                 }
               }
             }
