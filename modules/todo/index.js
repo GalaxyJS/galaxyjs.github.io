@@ -39,7 +39,7 @@ view.init({
       class: 'content',
       children: [
         {
-          tag: 'h2',
+          tag: 'h1',
           text: [
             'inputs.items.length',
             function (len) {

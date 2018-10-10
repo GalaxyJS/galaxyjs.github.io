@@ -8,7 +8,91 @@ const originalDataList = [
 ];
 Scope.data.boxes = originalDataList.slice(0);
 
+Scope.data.dialog = {
+  originNode: null,
+  targetNode: null,
+};
+
+const dialogBlueprint = {
+  tag: 'div',
+  class: 'dialog hide'
+};
+
 view.init([
+  dialogBlueprint,
+  {
+    tag: 'div',
+    class: {
+      'dialog-animation': true,
+      show: [
+        'data.dialog.originNode',
+        'data.dialog.targetNode',
+        function (origin, target) {
+          // target.originNode = origin;
+          // target.target
+          // console.log(origin, target);
+          this.data.origin = origin;
+          this.data.target = target;
+          return (origin && target);
+        }
+      ]
+    },
+
+    animations: {
+      '+=show': {
+        from: function () {
+          const node = this.data.origin;
+          const nodeStyle = window.getComputedStyle(node);
+          // const offParent = node.offsetParent;
+          const dimensions = node.getBoundingClientRect();
+          // const parentDimension = offParent.getBoundingClientRect();
+          console.log(node.style);
+          return {
+            width: dimensions.width,
+            height: dimensions.height,
+            left: dimensions.left,
+            top: dimensions.top,
+            position: 'fixed',
+            zIndex: 100,
+            backgroundColor: nodeStyle.backgroundColor || '#fff'
+          };
+        },
+        to: function () {
+          const _this = this;
+          const node = this.data.target;
+          const nodeStyle = window.getComputedStyle(node);
+          // const offParent = node.offsetParent;
+          const dimensions = node.getBoundingClientRect();
+          // const parentDimension = offParent ? offParent.getBoundingClientRect() : {left: 0, top: 0};
+          // console.log(dimensions, node);
+          return {
+            ease: 'Power2.easeInOut',
+            width: dimensions.width,
+            height: dimensions.height,
+            left: dimensions.left,
+            top: dimensions.top,
+            boxShadow: nodeStyle.boxShadow,
+            // backgroundColor: nodeStyle.backgroundColor || '#fff',
+            clearProps: '',
+            onComplete: function () {
+              requestAnimationFrame(function () {
+                Scope.data.dialog.targetNode = null;
+              });
+            },
+          };
+        },
+
+        duration: .5
+      },
+      '-=show': {
+        to: {
+          opacity: 0,
+          display: 'none'
+        },
+        duration: .5
+      }
+    }
+  },
   {
     class: 'card big',
     animations: {
@@ -70,7 +154,6 @@ view.init([
                   startAfter: 'card',
 
                   from: {
-                    opacity: 0,
                     scale: 0
                   },
                   duration: .35,
@@ -82,7 +165,13 @@ view.init([
                 data: '<>data.boxes.changes',
                 as: 'item'
               },
-              text: '<>item'
+              text: '<>item',
+              on: {
+                click: function () {
+                  Scope.data.dialog.originNode = this.node;
+                  Scope.data.dialog.targetNode = dialogBlueprint.__node__;
+                }
+              }
             }
           },
           '<p>This is the code that results in the above animation.</p>' +
@@ -92,7 +181,7 @@ view.init([
           '  animations: {\n' +
           '    enter: {\n' +
           '      sequence: \'boxes\',\n' +
-          '      // \'startAfter\' will force this animation sequence to start after `sequence-name` is finished \n'+
+          '      // \'startAfter\' will force this animation sequence to start after `sequence-name` is finished \n' +
           '      // startAfter: \'sequence-name\',\n ' +
           '      from: {\n' +
           '        opacity: 0,\n' +
@@ -107,6 +196,27 @@ view.init([
           '    as: \'item\'\n' +
           '  },\n' +
           '  text: \'<>item\'\n' +
+          '}' +
+          '</pre>',
+          '<pre class="prettyprint lang-js">' +
+          '{\n' +
+          '  animations: {\n' +
+          '    enter: {\n' +
+          '      sequence: string,\n' +
+          '\n' +
+          '      startAfter: string,\n' +
+          '      positionInParent: string // \'+=.3\' or \'-=.8\',\n' +
+          '\n' +
+          '      duration: string, // \'+=.3\' or \'-=.8\',\n' +
+          '      position: string // \'+=.3\' or \'-=.8\',\n' +
+          '      from: {\n' +
+          '        cssPropertyName: {string|number|function},\n' +
+          '      },\n' +
+          '      to: {\n' +
+          '        cssPropertyName: {string|number|function},\n' +
+          '      }\n' +
+          '    }\n' +
+          '  }\n' +
           '}' +
           '</pre>'
         ]

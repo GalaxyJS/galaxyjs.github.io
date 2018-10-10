@@ -760,6 +760,21 @@ a.icon.gitter {
   font-weight: bold;
 }
 
+.dialog {
+  background-color: #fff;
+  box-shadow: 0 -2px 7px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(80, 80, 80, .1);
+  position: fixed;
+  width: 500px;
+  height: 300px;
+  top: calc(50% - 150px);
+  left: calc(50% - 250px);
+  z-index: 10;
+}
+
+.dialog-animation {
+  background-color: #000;
+}
+
 .loader {
   width: 100px;
   height: 100px;
