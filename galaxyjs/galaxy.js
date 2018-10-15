@@ -3564,7 +3564,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ReactiveData(id, data, p, ts) {
+  function ReactiveData(id, data, p) {
     const parent = p || scopeBuilder();
     this.data = data;
     this.id = parent.id + '.' + id;
@@ -3877,6 +3877,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       const oldValue = _this.oldValue[propertyKey];
       const value = this.data[propertyKey];
 
+      // notify the observers on the data
+      Galaxy.Observer.notify(_this.data, propertyKey, value, oldValue);
+
       if (map) {
         map.nodes.forEach(function (node, i) {
           const key = map.keys[i];
@@ -4180,7 +4183,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
     } else if (schemas instanceof Object) {
       __node__.value = null;
-      defProp(schemas, '__node__', __node__);
+      defProp(schemas, 'node', __node__);
       ViewNode.cleanReferenceNode(schemas.children);
     }
   };
@@ -4287,7 +4290,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     this.schema.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, schema.renderConfig || {});
 
     __node__.value = this.node;
-    defProp(this.schema, '__node__', __node__);
+    defProp(this.schema, 'node', __node__);
 
     referenceToThis.value = this;
     defProp(this.node, 'galaxyViewNode', referenceToThis);
@@ -4602,7 +4605,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       _this.properties = [];
       _this.dependedObjects = [];
       _this.inDOM = false;
-      _this.schema.__node__ = undefined;
+      _this.schema.node = undefined;
       _this.inputs = {};
     },
 
@@ -4809,19 +4812,32 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       const classAnimationsHandler = function () {
-        viewNode.observer.on('class', function (classes, oldClasses) {
+        viewNode.observer.on('classList', function (classes, oldClasses) {
           oldClasses = oldClasses || [];
 
           const classSequence = viewNode.sequences.classList;
           try {
             classes.forEach(function (item) {
               if (item && oldClasses.indexOf(item) === -1) {
+                if (item.indexOf('@') === 0) {
+                  const classEvent = value[item];
+                  if (classEvent) {
+                    classSequence.nextAction(function () {
+                      viewNode.node.classList.remove(item);
+                      AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config);
+                    });
+                  }
+
+                  return;
+                }
+
                 const _config = value['+=' + item] || value['.' + item];
                 if (!_config) {
                   return;
                 }
 
-                classSequence.next(function (done) {
+                classSequence.nextAction(function (done) {
+                  viewNode.node.classList.remove(item);
                   AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config, done);
                 });
               }
@@ -4834,7 +4850,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
                   return;
                 }
 
-                classSequence.next(function (done) {
+                classSequence.nextAction(function (done) {
+                  viewNode.node.classList.add(item);
                   AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config, done);
                 });
               }
@@ -4887,7 +4904,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const userOnComplete = to.onComplete;
       to.onComplete = function () {
         userOnComplete();
-        onComplete();
+        if (onComplete) {
+          onComplete();
+        }
       };
     } else {
       to.onComplete = onComplete;
@@ -4899,7 +4918,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       duration = config.duration.call(node);
     }
 
-    if (config.from && config.to) {
+    if (config.from && to) {
       tween = TweenLite.fromTo(node,
         config.duration || 0,
         config.from || {},
@@ -5009,10 +5028,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
     let to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
-    if (type !== 'leave' && to) {
+    const classModification = type.indexOf('+=') === 0 || type.indexOf('-=') === 0;
+
+    if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
-    } else if (type.indexOf('+=') === 0 || type.indexOf('-=') === 0) {
-      to = Object.assign(to || {}, {className: type});
+    } else if (classModification) {
+      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+    } else if (type.indexOf('@') === 0) {
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
 
     const newConfig = Object.assign({}, descriptions);
@@ -5267,34 +5290,52 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
       nativeNode.addEventListener('change', function () {
-        if (/\[\]$/.test(nativeNode.name)) {
+        if (/\[\]$/.test(nativeNode.name) && nativeNode.type !== 'radio') {
           const data = scopeReactiveData.data[id];
+          // if the node does not have value attribute, then we take its default value into the account
+          // The default value for checkbox is 'on' but we translate that to true
+          const value = nativeNode.hasAttribute('value') ? nativeNode.value : true;
           if (data instanceof Array) {
-            if (data.indexOf(nativeNode.value) === -1) {
-              data.push(nativeNode.value);
+            if (data.indexOf(value) === -1) {
+              data.push(value);
             } else {
-              data.splice(data.indexOf(nativeNode.value), 1);
+              data.splice(data.indexOf(value), 1);
             }
           } else {
-            scopeReactiveData.data[id] = [nativeNode.value];
+            scopeReactiveData.data[id] = [value];
           }
-        } else {
+        }
+        // if node has a value, then its value will be assigned according to its checked state
+        else if (nativeNode.hasAttribute('value')) {
+          scopeReactiveData.data[id] = nativeNode.checked ? nativeNode.value : null;
+        }
+        // if node has no value, then checked state would be its value
+        else {
           scopeReactiveData.data[id] = nativeNode.checked;
         }
       });
     },
     value: function (viewNode, value) {
       const nativeNode = viewNode.node;
+      viewNode.renderingFlow.nextAction(function () {
+        if (/\[\]$/.test(nativeNode.name)) {
+          if (nativeNode.type === 'radio') {
+            console.error('Inputs with type `radio` can not provide array as a value.');
+            return console.warn('Read about radio input at: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/radio');
+          }
 
-      if (/\[\]$/.test(nativeNode.name)) {
-        if (value instanceof Array) {
-          nativeNode.checked = value.indexOf(nativeNode.value) !== -1;
+          const nodeValue = nativeNode.hasAttribute('value') ? nativeNode.value : true;
+          if (value instanceof Array) {
+            nativeNode.checked = value.indexOf(nodeValue) !== -1;
+          } else {
+            nativeNode.checked = value === nodeValue;
+          }
+        } else if (nativeNode.hasAttribute('value')) {
+          nativeNode.checked = value === nativeNode.value;
         } else {
-          nativeNode.checked = false;
+          nativeNode.checked = value;
         }
-      } else {
-        nativeNode.checked = value;
-      }
+      });
     }
   };
 })(Galaxy.View);
@@ -5332,27 +5373,31 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       /** @type Galaxy.View.ViewNode */
-      const viewNode = this;
-      const node = viewNode.node;
+      const _this = this;
+      const node = _this.node;
 
       if (expression) {
         value = expression();
       }
 
+      const oldClassList = _this.node.className.split(' ');
       if (typeof value === 'string') {
+        _this.notifyObserver('classList', value.split(' '), oldClassList);
         return node.setAttribute('class', value);
       } else if (value instanceof Array) {
+        _this.notifyObserver('classList', value, oldClassList);
         return node.setAttribute('class', value.join(' '));
       } else if (value === null || value === undefined) {
+        _this.notifyObserver('classList', [], oldClassList);
         return node.removeAttribute('class');
       }
 
       node.setAttribute('class', []);
       // when value is an object
-      const clone = GV.bindSubjectsToData(viewNode, value, data.scope, true);
+      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
 
-      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
+      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);
         const staticClasses = {};
         for (let key in items) {
@@ -5362,21 +5407,21 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           }
         }
 
-        applyClasses.call(viewNode, '*', true, false, staticClasses);
+        applyClasses.call(_this, '*', true, false, staticClasses);
 
-        viewNode.rendered.then(function () {
-          applyClasses.call(viewNode, '*', true, false, clone);
+        _this.rendered.then(function () {
+          applyClasses.call(_this, '*', true, false, clone);
 
           observer.onAll(function (key, value, oldValue) {
-            applyClasses.call(viewNode, key, value, oldValue, clone);
+            applyClasses.call(_this, key, value, oldValue, clone);
           });
         });
       } else {
         observer.onAll(function (key, value, oldValue) {
-          applyClasses.call(viewNode, key, value, oldValue, clone);
+          applyClasses.call(_this, key, value, oldValue, clone);
         });
 
-        applyClasses.call(viewNode, '*', true, false, clone);
+        applyClasses.call(_this, '*', true, false, clone);
       }
     }
   };
@@ -5412,6 +5457,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.notifyObserver('class', newClasses, oldClasses);
     _this.sequences.classList.nextAction(function () {
       _this.node.setAttribute('class', newClasses.join(' '));
+      _this.notifyObserver('classList', newClasses, oldClasses);
     });
   }
 })(Galaxy.View);
@@ -5491,7 +5537,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5502,9 +5548,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       } else if (config.matches) {
         const bindings = View.getBindings(config.matches.data);
         config.watch = bindings.propertyKeysPaths;
+        node.localPropertyNames.add(config.matches.as);
+        if (config.matches.indexAs) {
+          node.localPropertyNames.add(config.matches.indexAs);
+        }
+
         if (bindings.propertyKeysPaths) {
           View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
-          node.localPropertyNames.add(config.matches.as);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
@@ -5514,7 +5564,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             }
           });
         } else if (config.matches.data instanceof Array) {
-          const setter = node.setters['$for'] = View.createSetter(node, '$for', config.matches.data, null);
+          const setter = node.setters['$for'] = View.createSetter(node, '$for', config.matches.data, null, config.scope);
           const value = new Galaxy.View.ArrayChange();
           value.params = config.matches.data;
           setter(value);
@@ -6315,6 +6365,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       const _this = this;
       const node = _this.node;
+
+      if (expression) {
+        value = expression();
+      }
 
       if (typeof value === 'string') {
         return node.setAttribute('style', value);

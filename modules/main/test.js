@@ -1,42 +1,51 @@
 const view = Scope.import('galaxy/view');
+Scope.data.selected = 'two';
+Scope.data.opts = [true];
+Scope.data.active = true;
 
-Scope.data.list = [
-  {
-    id: '1'
-  },
-  {
-    id: '2'
-  },
-  {
-    id: '3'
-  }
-];
-
+console.log(Scope.data);
 view.config.cleanContainer = true;
-view.init({
+const form = {
+  tag: 'form',
   children: [
     {
-      $for: {
-        data: '<>data.list',
-        as: 'item',
-        trackBy: function (item, index) {
-          return item ? item.id : index;
-        }
-      },
-      text: '<>item.id'
+      tag: 'input',
+      type: 'radio',
+      name: 'test',
+      value: 'one',
+      checked: '<>data.selected'
+    },
+    {
+      tag: 'input',
+      type: 'radio',
+      name: 'test',
+      value: 'two',
+      checked: '<>data.selected'
+    },
+    {
+      tag: 'input',
+      type: 'radio',
+      name: 'test',
+      value: 'three',
+      checked: '<>data.selected'
+    },
+    {
+      tag: 'input',
+      type: 'checkbox',
+      name: 'opts[]',
+      value: 'some',
+      checked: '<>data.opts'
+    },
+    {
+      tag: 'input',
+      type: 'checkbox',
+      name: 'opts[]',
+      checked: '<>data.opts'
     }
   ]
-});
+};
+view.init(form);
 
-setTimeout(function () {
-  debugger;
-  Scope.data.list = [
-    {
-      id: '4'
-    },
-    {
-      id: '1'
-    },
-  ];
-  debugger;
-}, 1000);
+view.renderingFlow.nextAction(function () {
+
+});
