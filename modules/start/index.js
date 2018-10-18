@@ -51,6 +51,7 @@ view.init({
               class: 'icon link',
               href: 'https://github.com/GalaxyJS/galaxy',
               target: '_blank',
+              rel: 'noopener',
               children: [
                 {
                   tag: 'i',
@@ -67,7 +68,8 @@ view.init({
               class: 'icon gitter',
               href: 'https://gitter.im/GalaxyJS/galaxy?utm_source=share-link&utm_medium=link&utm_campaign=share-link',
               target: '_blank',
-              children: {tag: 'img', src: 'https://badges.gitter.im/GalaxyJS/galaxy.svg'}
+              rel: 'noopener',
+              children: { tag: 'img', src: 'https://badges.gitter.im/GalaxyJS/galaxy.svg', alt: 'gitter badge icon' }
             }
           ]
         }

@@ -1820,7 +1820,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
       return str.join('&');
     },
-
     /**
      *
      * @param module
@@ -2608,9 +2607,10 @@ Galaxy.GalaxyURI = /** @class */ (function () {
     let myRegexp = /([^\t\n]+)\//g;
     let match = myRegexp.exec(urlParser.pathname);
 
-    this.paresdURL = urlParser.href;
+    this.parsedURL = urlParser.href;
     this.path = match ? match[0] : '/';
     this.base = window.location.pathname;
+    this.protocol = urlParser.protocol;
   }
 
   return GalaxyURI;
@@ -3187,7 +3187,7 @@ Galaxy.View = /** @class */(function (G) {
           }
 
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
-            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\nProperty name: `' +
+            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.parsedURL + '\nProperty name: `' +
             propertyKey + '`\n');
         }
 
@@ -6211,8 +6211,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           });
         }
 
-        if (tempURI.parsedURL === currentScope.uri.paresdURL) {
-          return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.paresdURL + ' tries to load itself.');
+        if (tempURI.parsedURL === currentScope.uri.parsedURL) {
+          return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.parsedURL + ' tries to load itself.');
         }
 
         moduleScope = moduleScope.parentScope;
