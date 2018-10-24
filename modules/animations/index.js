@@ -108,6 +108,16 @@ view.init([
           opacity: 0
         },
         duration: .5
+      },
+      leave: {
+        sequence: 'card',
+        parent: 'children',
+
+        to: {
+          y: 150,
+          opacity: 0
+        },
+        duration: .5
       }
     },
     lifecycle: {
@@ -159,6 +169,13 @@ view.init([
                   },
                   duration: .35,
                   position: '-=.25'
+                },
+                leave: {
+                  to: {
+                    scale: 0
+                  },
+                  duration: .35,
+                  // position: '-=.25'
                 }
               },
               class: 'box',

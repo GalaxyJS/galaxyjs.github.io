@@ -236,7 +236,7 @@ view.init([
             ],
             animations: {
               enter: {
-                parent: 'main-nav-items',
+                parent: true,
                 positionInParent: '-=.5',
                 sequence: 'sub-nav-container',
                 from: {
