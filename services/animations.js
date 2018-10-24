@@ -24,12 +24,9 @@ const animations = {
       },
       duration: .3,
       position: '-=.15'
-
-      // chainToParent: true
     },
     leave: {
       sequence: 'card',
-      fixedPosition: true,
       from: {
         transformOrigin: 'top center'
       },
@@ -38,6 +35,7 @@ const animations = {
         scale: .9,
         opacity: 0
       },
+      positionInParent: '-=.5',
       duration: .3
     }
   },
