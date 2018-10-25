@@ -2385,6 +2385,7 @@ Galaxy.Sequence = /** @class */ (function () {
     _this.activeStateResolve = null;
     _this.isFinished = false;
     _this.processing = false;
+    _this.truncating = false;
     /** activeState is a promise that will resolve when all the sequence activities has been resolved
      *
      * @type {Promise}
@@ -2481,14 +2482,34 @@ Galaxy.Sequence = /** @class */ (function () {
     },
 
     onTruncate: function (act) {
-      if (this.truncateHandlers.indexOf(act) === -1) {
-        this.truncateHandlers.push(act);
+      const _this = this;
+      if (_this.truncateHandlers.indexOf(act) === -1) {
+        _this.truncateHandlers.push(act);
+      }
+
+      return function removeOnTruncate() {
+        if (_this.truncating) {
+          return;
+        }
+
+        const index = _this.truncateHandlers.indexOf(act);
+        if (index !== -1) {
+          _this.truncateHandlers.splice(index, 1);
+        }
+      };
+    },
+
+    removeOnTruncate: function (act) {
+      const index = this.truncateHandlers.indexOf(act);
+      if (index !== -1) {
+        this.truncateHandlers.splice(index, 1);
       }
     },
 
     truncate: function () {
       const _this = this;
 
+      _this.truncating = true;
       _this.actions.forEach(function (item) {
         item.process = disabledProcess;
       });
@@ -2502,6 +2523,7 @@ Galaxy.Sequence = /** @class */ (function () {
       _this.truncateHandlers = [];
       _this.isFinished = true;
       _this.processing = false;
+      _this.truncating = false;
       _this.actions = [];
 
       return _this;
@@ -3534,7 +3556,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
       const instance = new Galaxy.View.ArrayChange();
       instance.init = this.init;
       instance.original = this.original;
-      instance.snapshot = this.snapshot.slice(0);
+      // instance.snapshot = this.snapshot.slice(0);
       instance.params = this.params.slice(0);
       instance.type = this.type;
       // instance.ts = getTS();
@@ -3549,8 +3571,6 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
 /* global Galaxy */
 
 Galaxy.View.ReactiveData = /** @class */ (function () {
-  ReactiveData.UPDATE_DIRECTION_TOP_DOWN = 1;
-  ReactiveData.UPDATE_DIRECTION_BOTTOM_UP = 2;
   const ARRAY_PROTO = Array.prototype;
   const ARRAY_MUTATOR_METHODS = [
     'push',
@@ -3563,12 +3583,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
   ];
   const objKeys = Object.keys;
   const defProp = Object.defineProperty;
-
-  function scopeBuilder() {
+  const scopeBuilder = function () {
     return {
       id: '{Scope}',
       shadow: {},
-      oldValue: {},
       data: {},
       notify: function () { },
       notifyDown: function () {},
@@ -3576,73 +3594,22 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       makeReactiveObject: function () { },
       addKeyToShadow: function () { }
     };
-  }
+  };
 
-  function getKeys(obj) {
+  const getKeys = function (obj) {
     if (obj instanceof Array) {
       const keys = ['length'];
       if (obj.hasOwnProperty('changes')) {
         keys.push('changes');
       }
-
       return keys;
     } else {
       return Object.keys(obj);
     }
-  }
+  };
 
-  function makeReactiveObject(host, data, key, value, shadow) {
-    const property = Object.getOwnPropertyDescriptor(data, key);
-    if (property && property.configurable === false) {
-      return;
-    }
-
-    // cater for pre-defined getter/setters
-    const getter = property && property.get;
-
-    defProp(data, key, {
-      get: function () {
-        return getter ? getter.call(data) : value;
-      },
-      set: function (val) {
-        if (value === val) {
-          // If value is array, then sync should be called so nodes that are listening to array itself get updated
-          if (val instanceof Array) {
-            host.sync(key);
-          } else if (val instanceof Object) {
-            host.notifyDown(key);
-          }
-          return;
-        }
-
-        host.oldValue[key] = value;
-        value = val;
-
-        // This means that the property suppose to be an object and there probably active binds to it
-        if (host.shadow[key]) {
-          host.makeKeyEnum(key);
-          // setData provide downward data flow
-          host.shadow[key].setData(val);
-        }
-
-        host.notify(key);
-      },
-      enumerable: !shadow,
-      configurable: true
-    });
-
-    if (host.shadow[key]) {
-      host.shadow[key].setData(value);
-    } else {
-      host.shadow[key] = null;
-    }
-
-    // Update the ui for this key
-    // This is for when the makeReactive method has been called by setData
-    host.sync(key);
-
-    host.oldValue[key] = value;
-  }
+  ReactiveData.UPDATE_DIRECTION_TOP_DOWN = 1;
+  ReactiveData.UPDATE_DIRECTION_BOTTOM_UP = 2;
 
   /**
    * @param {string} id
@@ -3681,7 +3648,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           return this.parent.shadow[id];
         }
         this.data = {};
-        makeReactiveObject(this.parent, this.parent.data, id, this.parent.data[id], true);
+        this.parent.makeReactiveObject(this.parent.data, id, true);
       }
 
       if (!Object.isExtensible(this.data)) {
@@ -3726,6 +3693,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           } else {
             // changes should only propagate downward
             this.notifyDown(key);
+            // Reflect.deleteProperty(this.shadow, key);
           }
         }
 
@@ -3762,20 +3730,15 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     walk: function (data) {
       const _this = this;
 
-      if (data instanceof Node) {
-        return;
-      }
+      if(data instanceof Node) return;
 
       if (data instanceof Array) {
         _this.makeReactiveArray(data);
       } else if (data instanceof Object) {
         for (let key in data) {
-          makeReactiveObject(_this, data, key, data[key]);
+          _this.makeReactiveObject(data, key);
         }
       }
-    },
-    value: function (key) {
-      return this.data[key];
     },
     /**
      *
@@ -3783,7 +3746,53 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      * @param {string} key
      * @param shadow
      */
+    makeReactiveObject: function (data, key, shadow) {
+      const _this = this;
+      let value = data[key];
 
+      defProp(data, key, {
+        get: function () {
+          return value;
+        },
+        set: function (val) {
+          if (value === val) {
+            // If value is array, then sync should be called so nodes that are listening to array itself get updated
+            if (val instanceof Array) {
+              _this.sync(key);
+            } else if (val instanceof Object) {
+              _this.notifyDown(key);
+            }
+            return;
+          }
+
+          _this.oldValue[key] = value;
+          value = val;
+
+          // This means that the property suppose to be an object and there probably active binds to it
+          if (_this.shadow[key]) {
+            _this.makeKeyEnum(key);
+            // setData provide downward data flow
+            _this.shadow[key].setData(val);
+          }
+
+          _this.notify(key);
+        },
+        enumerable: !shadow,
+        configurable: true
+      });
+
+      if (this.shadow[key]) {
+        this.shadow[key].setData(value);
+      } else {
+        this.shadow[key] = null;
+      }
+
+      // Update the ui for this key
+      // This is for when the makeReactive method has been called by setData
+      this.sync(key);
+
+      _this.oldValue[key] = value;
+    },
     /**
      *
      * @param value
@@ -3817,7 +3826,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       initialChanges.init = initialChanges;
       value.changes = initialChanges;
       // _this.oldValue['changes'] = Object.assign({}, initialChanges);
-      makeReactiveObject(_this, value, 'changes', initialChanges);
+      _this.makeReactiveObject(value, 'changes');
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
@@ -3998,7 +4007,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           // TODO: Should be tested as much as possible to make sure it works with no bug
           delete this.data.__rd__;
           if (this.data instanceof Array) {
-            // delete this.data.live;
+            delete this.data.live;
             delete this.data.changes;
           }
         }
@@ -4109,7 +4118,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       }
 
       if (!this.data.hasOwnProperty(key)) {
-        makeReactiveObject(this, this.data, key, this.data[key], false);
+        this.makeReactiveObject(this.data, key, false);
       }
     },
     /**
@@ -4120,14 +4129,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         // Only reactive properties should be added to data
         if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
           if (!this.data.hasOwnProperty(key)) {
-            makeReactiveObject(this, this.data, key, this.data[key], true);
+            this.makeReactiveObject(this.data, key, true);
           }
           this.shadow[key].setData(this.data[key]);
         }
         // This will make sure that UI is updated properly
-        // for properties that has been removed from data.
-        // A simple 'else' is not enough because for new array assignment, 'length' and 'changes' are already there
-        // and they are being synced by makeReactiveArray method so there is no need to re-sync them here again
+        // for properties that has been removed from data
         else if (keys.indexOf(key) === -1) {
           this.sync(key);
         }
@@ -5591,7 +5598,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5783,12 +5790,15 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
+        removeOnTruncateHandler();
+        // parent.sequences.leave.removeOnTruncate(onTruncateHandler);
         waitForDestroy.resolved = true;
         resolve();
       };
     });
 
-    parent.sequences.leave.onTruncate(function () {
+    // Wait step won't be resolve if the parent leave sequence get truncated. that's why we need to resolve it if that happens
+    const removeOnTruncateHandler = parent.sequences.leave.onTruncate(function passWaitStep() {
       if (!waitForDestroy.resolved) {
         destroyDone();
       }
@@ -5854,15 +5864,15 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const parent = node.parent;
       const schema = node.schema;
 
-      // if parent leave sequence interrupted, then make sure these items will be removed from DOM
-      parent.sequences.leave.onTruncate(function hjere() {
-        itemsToBeRemoved.forEach(function (vn) {
-          vn.sequences.leave.truncate();
-          vn.detach();
-        });
-      });
-
       if (itemsToBeRemoved.length) {
+        // if parent leave sequence interrupted, then make sure these items will be removed from DOM
+        parent.sequences.leave.onTruncate(function $forLeaveSequenceInterruptionResolver() {
+          itemsToBeRemoved.forEach(function (vn) {
+            vn.sequences.leave.truncate();
+            vn.detach();
+          });
+        });
+
         let alternateDOMFlow = parent.schema.renderConfig.alternateDOMFlow;
         if (schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
           alternateDOMFlow = schema.renderConfig.alternateDOMFlow;
@@ -6342,9 +6352,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         const id = bindings.propertyKeysPaths[0].split('.').pop();
         const nativeNode = viewNode.node;
 
-        nativeNode.addEventListener('change', function () {
-          scopeReactiveData.data[id] = nativeNode.options[nativeNode.selectedIndex].value;
-        });
+        // nativeNode.addEventListener('change', function () {
+        //   debugger;
+        //   id;
+        //   scopeReactiveData;
+        //   // scopeReactiveData.data[id] = nativeNode.options[nativeNode.selectedIndex].value;
+        // });
 
         // nativeNode.addEventListener('post$forEnter', function () {
         //   if (scopeReactiveData.data[id] && !nativeNode.value) {
@@ -6354,7 +6367,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {
           if (scopeReactiveData.data[id] && !nativeNode.value) {
-            nativeNode.value = scopeReactiveData.data[id];
+            // nativeNode.value = scopeReactiveData.data[id];
           }
         });
 
@@ -6511,28 +6524,30 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const bindings = Galaxy.View.getBindings(viewNode.schema.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
-      if (nativeNode.type === 'number') {
-        nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData.data, id));
-      } else {
-        nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData.data, id));
-      }
+      // if (nativeNode.type === 'number') {
+      //   nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
+      // } else {
+      //   nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData, id));
+      // }
     },
     value: function (viewNode, value, oldValue, attr) {
       // input field parse the value which has been passed to it into a string
       // that why we need to parse undefined and null into an empty string
-      viewNode.node[attr] = value === undefined || value === null ? '' : value;
+      if (document.activeElement !== viewNode.node || !viewNode.node.value) {
+        viewNode.node.value = value === undefined || value === null ? '' : value;
+      }
     }
   };
 
   function createNumberHandler(_node, _data, _id) {
     return function () {
-      _data[_id] = _node.value ? Number(_node.value) : null;
+      _data.data[_id] = _node.value ? Number(_node.value) : null;
     };
   }
 
   function createHandler(_node, _data, _id) {
     return function () {
-      _data[_id] = _node.value;
+      _data.data[_id] = _node.value;
     };
   }
 })(Galaxy);
