@@ -2,6 +2,7 @@ const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
 Scope.data.list = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+Scope.data.list2 = ['1', '2', '3', '4'];
 
 function trackBy(item) {
   return item.title;
@@ -54,6 +55,7 @@ const button = {
   on: {
     click: function () {
       Scope.data.list = [];
+      Scope.data.list2 = [];
     }
   }
 };
@@ -104,6 +106,7 @@ view.init({
               on: {
                 click: function () {
                   Scope.data.list = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+                  Scope.data.list2 = ['1', '2', '3', '4'];
                 }
               }
             },
@@ -124,19 +127,18 @@ view.init({
               },
               test: '<>this.stuff',
               text: '<>item'
-            }
+            },
 
-            // {
-            //   tag: 'li',
-            //   animations: itemAnimations,
-            //   class: 'flex-row',
-            //   $for: {
-            //     data: '<>data.list2.changes',
-            //     as: 'list2Item',
-            //     trackBy: trackBy
-            //   },
-            //   text: '<>list2Item.title'
-            // }
+            {
+              tag: 'li',
+              animations: itemAnimations,
+              class: 'flex-row',
+              $for: {
+                data: '<>data.list2.changes',
+                as: 'item2'
+              },
+              text: '<>item2'
+            }
 
           ]
         }
