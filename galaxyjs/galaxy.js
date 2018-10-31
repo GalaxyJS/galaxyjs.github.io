@@ -2377,6 +2377,43 @@ Galaxy.Sequence = /** @class */ (function () {
   /**
    *
    * @constructor
+   * @memberOf Galaxy.Sequence
+   */
+  function Process() {
+    const _this = this;
+    let _resolve;
+    const p = new Promise(function (resolve) {
+      _resolve = resolve;
+    });
+    _this.then = p.then;
+
+    _this.cancel = function () {
+      _this._canceled = true;
+    };
+
+    _this.proceed = function () {
+      if (_this._canceled) {
+        return;
+      }
+
+      _resolve();
+    };
+
+    _this.then = p.then.bind(p);
+  }
+
+  Process.prototype = {
+    _canceled: false,
+    cancel: null,
+    proceed: null,
+    then: null
+  };
+
+  Sequence.Process = Process;
+
+  /**
+   *
+   * @constructor
    * @memberOf Galaxy
    */
   function Sequence() {
@@ -5567,21 +5604,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   };
 
   View.REACTIVE_BEHAVIORS['$for'] = {
-    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    prepare: function (matches, scope) {
+    regex: null,
+    prepare: function (options, scope) {
       this.virtualize();
 
       return {
-        as: matches.as || matches[1],
-        indexAs: matches.indexAs,
-        trackMap: [],
-        positions: [],
         nodes: [],
+        options: options,
+        oldChanges: {},
+        positions: [],
+        trackMap: [],
         scope: scope,
-        matches: matches,
-        trackBy: matches.trackBy,
-        onDone: function () { },
-        oldChanges: {}
+        trackBy: options.trackBy
       };
     },
 
@@ -5606,18 +5640,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
        */
       parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
 
-      if (config.matches instanceof Array) {
+      if (config.options instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
           isExpression: false,
           modifiers: null,
-          propertyKeysPaths: [config.matches[2] + '.changes']
+          propertyKeysPaths: [config.options[2] + '.changes']
         }, this);
-      } else if (config.matches) {
-        const bindings = View.getBindings(config.matches.data);
+      } else if (config.options) {
+        const bindings = View.getBindings(config.options.data);
         config.watch = bindings.propertyKeysPaths;
-        node.localPropertyNames.add(config.matches.as);
-        if (config.matches.indexAs) {
-          node.localPropertyNames.add(config.matches.indexAs);
+        node.localPropertyNames.add(config.options.as);
+        if (config.options.indexAs) {
+          node.localPropertyNames.add(config.options.indexAs);
         }
 
         if (bindings.propertyKeysPaths) {
@@ -5630,10 +5664,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
               console.error('Could not find: ' + path + '\n', error);
             }
           });
-        } else if (config.matches.data instanceof Array) {
-          const setter = node.setters['$for'] = View.createSetter(node, '$for', config.matches.data, null, config.scope);
+        } else if (config.options.data instanceof Array) {
+          const setter = node.setters['$for'] = View.createSetter(node, '$for', config.options.data, null, config.scope);
           const value = new Galaxy.View.ArrayChange();
-          value.params = config.matches.data;
+          value.params = config.options.data;
           setter(value);
         }
       }
@@ -5664,7 +5698,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
-        return console.warn('$for data is not a type of ArrayChange\nPassed type is ' + typeof changes, config.matches);
+        return console.warn('$for data is not a type of ArrayChange\nPassed type is ' + typeof changes, config.options);
       }
 
       if (!changes || typeof changes === 'string') {
@@ -5689,7 +5723,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
           node.renderingFlow.truncate();
           node.renderingFlow.onTruncate(function () {
-            whenAllLeavesAreDone.ignore = true;
+            whenAllLeavesAreDone.cancel();
           });
         }
 
@@ -5764,7 +5798,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         activateLeaveProcess(parentCache.$for);
 
-        const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
+        const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$for);
+        whenAllLeavesAreDone.then(function () {
           if (newTrackMap) {
             config.trackMap = newTrackMap;
           }
@@ -5775,11 +5810,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
           createPushProcess(node, config, changes, config.scope);
         });
-
-        parentCache.$for.mainPromise = parentCache.$for.mainPromise || Promise.all(parentCache.$for.queue);
-        // When all the destroy processes of all the $for inside parentNode is done
-        // This make sure that $for's which are children of the same parent act as one $for
-        parentCache.$for.mainPromise.then(whenAllLeavesAreDone);
       }
     }
   };
@@ -5833,15 +5863,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {RenderJobManager} jobManager
-   * @param {Function} callback
-   * @returns {Function}
+   * @returns {Galaxy.Sequence.Process}
    */
-  function createWhenAllDoneProcess(jobManager, callback) {
+  function createWhenAllDoneProcess(jobManager) {
     const whenAllDone = function () {
-      if (whenAllDone.ignore) {
-        return;
-      }
-      // Because the items inside queue will change on the fly we have manually check whether all the
+      // Because the items inside queue will change on the fly we have to manually check whether all the
       // promises have resolved and if not we hav eto use Promise.all on the list again
       const allNotResolved = jobManager.queue.some(function (promise) {
         return promise.resolved !== true;
@@ -5860,10 +5886,17 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       jobManager.queue = [];
       jobManager.mainPromise = null;
-      callback();
     };
 
-    return whenAllDone;
+    const process = new Galaxy.Sequence.Process();
+    process.then(whenAllDone);
+
+    jobManager.mainPromise = jobManager.mainPromise || Promise.all(jobManager.queue);
+    // When all the destroy processes of all the $for inside parentNode is done
+    // This make sure that $for's which are children of the same parent act as one $for
+    jobManager.mainPromise.then(process.proceed);
+
+    return process;
   }
 
   /**
@@ -5979,8 +6012,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
 
     let itemDataScope = nodeScopeData;
-    const as = config.as;
-    const indexAs = config.indexAs;
+    const as = config.options.as;
+    const indexAs = config.options.indexAs;
     const nodes = config.nodes;
     const templateSchema = node.cloneSchema();
     Reflect.deleteProperty(templateSchema, '$for');

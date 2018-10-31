@@ -180,7 +180,10 @@ view.init([
       },
       {
         tag: 'div',
-        $for: 'nav in data.navItems',
+        $for: {
+          data: '<>data.navItems.changes',
+          as: 'nav'
+        },
 
         animations: animations.mainNavItem,
         children: [
@@ -220,8 +223,8 @@ view.init([
               },
               {
                 tag: 'span',
-                text: '<>nav.title',
-              },
+                text: '<>nav.title'
+              }
             ]
           },
           {
