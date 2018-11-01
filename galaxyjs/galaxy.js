@@ -3373,7 +3373,7 @@ Galaxy.View = /** @class */(function () {
      *
      * @type {Galaxy.View.SchemaProperty}
      */
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -3400,7 +3400,7 @@ Galaxy.View = /** @class */(function () {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -3442,7 +3442,7 @@ Galaxy.View = /** @class */(function () {
     if (scope.element instanceof Galaxy.View.ViewNode) {
       _this.container = scope.element;
     } else {
-      _this.container = new Galaxy.View.ViewNode({
+      _this.container = new Galaxy.View.ViewNode(null, {
         tag: scope.element.tagName
       }, scope.element, _this);
 
@@ -3509,7 +3509,7 @@ Galaxy.View = /** @class */(function () {
         const keys = Object.keys(nodeSchema);
         const needInitKeys = [];
 
-        const viewNode = new Galaxy.View.ViewNode(nodeSchema, null, refNode, _this);
+        const viewNode = new Galaxy.View.ViewNode(parent, nodeSchema, null, refNode, _this);
         parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
@@ -4198,7 +4198,17 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     return commentNode.cloneNode(t);
   }
 
-  function createElem(t) {
+  /**
+   *
+   * @param t
+   * @param {Galaxy.View.ViewNode} p
+   * @returns {any}
+   */
+  function createElem(t, p) {
+    if (t === 'svg' || (p && p.schema.tag === 'svg')) {
+      return document.createElementNS('http://www.w3.org/2000/svg', t);
+    }
+
     return t === 'comment' ? document.createComment('ViewNode') : document.createElement(t);
   }
 
@@ -4294,17 +4304,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param schema
+   * @param {Galaxy.View.ViewNode} parent
    * @param {Node|Element|null} node
    * @param {Node|Element|null} refNode
    * @param {Galaxy.View} view
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(schema, node, refNode, view) {
+  function ViewNode(parent, schema, node, refNode, view) {
     const _this = this;
     _this.view = view;
     /** @type {Node|Element|*} */
-    _this.node = node || createElem(schema.tag || 'div');
+    _this.node = node || createElem(schema.tag || 'div', parent);
     _this.refNode = refNode || _this.node;
     _this.schema = schema;
     _this.data = {};
@@ -4316,7 +4327,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
     /** @type {galaxy.View.ViewNode} */
-    _this.parent = null;
+    _this.parent = parent;
     _this.dependedObjects = [];
     _this.renderingFlow = new Galaxy.Sequence();
     _this.sequences = {
@@ -4552,7 +4563,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      */
     registerChild: function (childNode, position) {
       const _this = this;
-      childNode.parent = _this;
+      // childNode.parent = _this;
 
       if (_this.contentRef) {
         _this.contentRef.insertBefore(childNode.placeholder, position);
@@ -5471,7 +5482,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         value = expression();
       }
 
-      const oldClassList = _this.node.className.split(' ');
+      const oldClassList = _this.node.className.classList;
       if (typeof value === 'string') {
         _this.notifyObserver('classList', value.split(' '), oldClassList);
         return node.setAttribute('class', value);
@@ -5487,6 +5498,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       // when value is an object
       const clone = Galaxy.View.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
+
 
       if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);
@@ -6067,6 +6079,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   Galaxy.View.REACTIVE_BEHAVIORS['$if'] = {
     prepare: function () {
       return {
+        leaveProcessList: [],
+        queue: [],
+        mainPromise: null,
         onDone: function () { }
       };
     },
@@ -6312,7 +6327,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         if (!(currentScope instanceof Galaxy.Scope)) {
           currentScope = new Galaxy.Scope({
             systemId: '$for-item',
-            url: moduleMeta.url,
+            url: cache.scope.__parent__.uri.parsedURL,
             parentScope: cache.scope.__parent__
           });
         }
