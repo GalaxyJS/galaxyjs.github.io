@@ -5419,7 +5419,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     },
     value: function (viewNode, value) {
       const nativeNode = viewNode.node;
-      viewNode.renderingFlow.nextAction(function () {
+      viewNode.rendered.then(function () {
         if (/\[\]$/.test(nativeNode.name)) {
           if (nativeNode.type === 'radio') {
             console.error('Inputs with type `radio` can not provide array as a value.');
@@ -6748,11 +6748,19 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
   // SimpleRouter.MATCH_REGEXP_FLAGS = '';
 
   function SimpleRouter(module) {
+    const _this = this;
     this.module = module;
     this.root = module.id === 'system' ? '#' : module.systemId.replace('system/', '#/');
-    this.oldURL = null;
+    this.oldURL = '';
     this.oldResolveId = {};
     this.routes = null;
+
+    Object.defineProperty(this, 'urlParts', {
+      get: function () {
+        return _this.oldURL.split('/').slice(1);
+      },
+      enumerable: true
+    });
   }
 
   SimpleRouter.prototype = {
@@ -6892,6 +6900,10 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
           this.callMatchRoute(hash);
         }
       }
+    },
+
+    getURLParts: function () {
+      return this.oldURL.split('/').slice(1);
     },
 
     destroy: function () {
