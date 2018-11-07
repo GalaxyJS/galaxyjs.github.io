@@ -710,7 +710,15 @@ button:disabled:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
 
+.flex-row.start {
+  align-items: flex-start;
+}
+
+.flex-row.grid > * {
+  flex: 1 0 auto;
+  max-width: 50%;
 }
 
 .flex-row > * {
