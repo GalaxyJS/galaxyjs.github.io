@@ -2,6 +2,7 @@
 
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
+const effects = Scope.import('services/effects.js');
 
 view.init({
   class: 'card big',
@@ -12,13 +13,14 @@ view.init({
       class: 'banner',
       src: 'assets/images/galaxy.jpeg',
       height: '410',
-      alt: 'Galaxy'
+      alt: 'Galaxy',
+      blurCaption: effects.getBlurCaption()
     },
+    '<h1>Welcome</h1>',
     {
       tag: 'section',
       class: 'content',
       children: [
-        '<h1>Welcome</h1>' +
         '<h3>GalaxyJS is framework that helps you to build a fancy web application</h3>' +
         '<p>The difference between Vanilla JS and a Javascript framework is like the difference between a galaxy and a planet. Planets exist inside the galaxy.</p>' +
         '<p>Each planet has its own atmosphere, its environment, its local rules and its ecosystem <i>(if there is life on that planet of course)</i>.</p>' +
@@ -49,6 +51,7 @@ view.init({
               class: 'icon link',
               href: 'https://github.com/GalaxyJS/galaxy',
               target: '_blank',
+              rel: 'noopener',
               children: [
                 {
                   tag: 'i',
@@ -65,7 +68,8 @@ view.init({
               class: 'icon gitter',
               href: 'https://gitter.im/GalaxyJS/galaxy?utm_source=share-link&utm_medium=link&utm_campaign=share-link',
               target: '_blank',
-              children: {tag: 'img', src: 'https://badges.gitter.im/GalaxyJS/galaxy.svg'}
+              rel: 'noopener',
+              children: { tag: 'img', src: 'https://badges.gitter.im/GalaxyJS/galaxy.svg', alt: 'gitter badge icon' }
             }
           ]
         }

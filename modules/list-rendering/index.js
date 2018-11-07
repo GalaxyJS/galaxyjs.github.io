@@ -1,7 +1,8 @@
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
-Scope.data.list = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+Scope.data.capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+Scope.data.countries = ['Netherlands', 'France', 'Hungary', 'Germany', '...', '...'];
 
 function trackBy(item) {
   return item.title;
@@ -53,12 +54,11 @@ const button = {
   text: 'Empty',
   on: {
     click: function () {
-      Scope.data.list = [];
+      Scope.data.countries = [];
+      Scope.data.capitals = [];
     }
   }
 };
-
-console.log(this);
 
 view.init({
   tag: 'div',
@@ -86,7 +86,7 @@ view.init({
         '<h2>Example</h2>',
         '<pre class="prettyprint lang-js">' +
         'const view = Scope.import(\'galaxy/view\');\n' +
-        'Scope.data.list = [\'Amsterdam\', \'Paris\', \'Budapest\', \'Berlin\', \'Prague\', \'Vienna\'];\n' +
+        'Scope.data.capitals= [\'Amsterdam\', \'Paris\', \'Budapest\', \'Berlin\', \'Prague\', \'Vienna\'];\n' +
         '\n' +
         'view.init({\n' +
         '  tag: \'p\'\n' +
@@ -105,7 +105,8 @@ view.init({
               text: 'Populate',
               on: {
                 click: function () {
-                  Scope.data.list = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+                  Scope.data.capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+                  Scope.data.countries = ['Netherlands', 'France', 'Hungary', 'Germany', '...', '...'];
                 }
               }
             },
@@ -113,33 +114,45 @@ view.init({
           ]
         },
         {
-          tag: 'ul',
-
+          class: 'flex-row start grid',
           children: [
             {
-              tag: 'li',
-              animations: itemAnimations,
-              class: 'flex-row',
-              $for: {
-                data: '<>data.list.changes',
-                as: 'item'
-              },
-              test: '<>this.stuff',
-              text: '<>item'
+              tag: 'ul',
+
+              children: [
+                '<h3>Capitals</h3>',
+                {
+                  tag: 'li',
+                  animations: itemAnimations,
+                  class: 'flex-row',
+                  $for: {
+                    data: '<>data.capitals.changes',
+                    as: 'item'
+                  },
+                  test: '<>this.stuff',
+                  text: '<>item'
+                }
+
+              ]
+            },
+            {
+              tag: 'ul',
+
+              children: [
+                '<h3>Countries</h3>',
+                {
+                  tag: 'li',
+                  animations: itemAnimations,
+                  class: 'flex-row',
+                  $for: {
+                    data: '<>data.countries.changes',
+                    as: 'item2'
+                  },
+                  text: '<>item2'
+                }
+
+              ]
             }
-
-            // {
-            //   tag: 'li',
-            //   animations: itemAnimations,
-            //   class: 'flex-row',
-            //   $for: {
-            //     data: '<>data.list2.changes',
-            //     as: 'list2Item',
-            //     trackBy: trackBy
-            //   },
-            //   text: '<>list2Item.title'
-            // }
-
           ]
         }
       ]

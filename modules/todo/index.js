@@ -39,7 +39,7 @@ view.init({
       class: 'content',
       children: [
         {
-          tag: 'h2',
+          tag: 'h1',
           text: [
             'inputs.items.length',
             function (len) {
@@ -113,11 +113,10 @@ view.init({
               as: 'titem'
             },
             animations: {
-              config: {
-                leaveWithParent: true
-              },
+              config: {},
               enter: {
-                startAfter: 'card',
+                // startAfter: 'card',
+                parent: true,
                 sequence: 'todo-items',
                 from: {
                   height: 0,
@@ -129,16 +128,14 @@ view.init({
                 chainToParent: true
               },
               leave: {
-                // parent: 'card',
-                sequence: 'todo-items',
+                sequence: 'card',
                 to: {
                   height: 0,
                   paddingTop: 0,
                   paddingBottom: 0
                 },
                 position: '-=.1',
-                chainToParent: true,
-                duration: calculateDuration
+                duration: .5
               }
             },
             // id: '<>item.title',

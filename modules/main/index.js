@@ -11,6 +11,7 @@ Scope.data.navItems = [
   {
     title: 'Start',
     link: 'start',
+    icon: 'fas fa-play',
     module: {
       id: 'start',
       url: 'modules/start/index.js'
@@ -19,6 +20,7 @@ Scope.data.navItems = [
   {
     title: 'Guide',
     link: 'guide',
+    icon: 'fas fa-map',
     module: {
       id: 'guide',
       url: 'modules/guide/index.js'
@@ -27,6 +29,7 @@ Scope.data.navItems = [
   {
     title: 'Reactive',
     link: 'reactive',
+    icon: 'fas fa-exchange-alt',
     module: {
       id: 'reactive',
       url: 'modules/reactive/index.js'
@@ -35,6 +38,7 @@ Scope.data.navItems = [
   {
     title: 'Conditional Rendering',
     link: 'conditional-rendering',
+    icon: 'fas fa-exclamation-triangle',
     module: {
       id: 'conditional-rendering',
       url: 'modules/conditional-rendering/index.js'
@@ -44,6 +48,7 @@ Scope.data.navItems = [
   {
     title: 'List Rendering',
     link: 'list-rendering',
+    icon: 'fas fa-list-ul',
     module: {
       id: 'list-rendering',
       url: 'modules/list-rendering/index.js'
@@ -51,8 +56,19 @@ Scope.data.navItems = [
   },
 
   {
+    title: 'Animations',
+    link: 'animations',
+    icon: 'fas fa-spinner',
+    module: {
+      id: 'animations',
+      url: 'modules/animations/index.js'
+    }
+  },
+
+  {
     title: 'API',
     link: 'api',
+    icon: 'fas fa-code',
     module: {
       id: 'api',
       url: 'modules/api/index.js'
@@ -164,7 +180,10 @@ view.init([
       },
       {
         tag: 'div',
-        $for: 'nav in data.navItems',
+        $for: {
+          data: '<>data.navItems.changes',
+          as: 'nav'
+        },
 
         animations: animations.mainNavItem,
         children: [
@@ -182,7 +201,6 @@ view.init([
               nav: '<>nav'
             },
 
-            text: '<>nav.title',
             class: {
               'nav-item': true,
               active: [
@@ -197,7 +215,17 @@ view.init([
               click: function () {
                 router.navigate(this.inputs.nav.link);
               }
-            }
+            },
+            children: [
+              {
+                tag: 'i',
+                class: '<>nav.icon'
+              },
+              {
+                tag: 'span',
+                text: '<>nav.title'
+              }
+            ]
           },
           {
             class: 'sub-nav-container',
@@ -211,7 +239,7 @@ view.init([
             ],
             animations: {
               enter: {
-                parent: 'main-nav-items',
+                parent: true,
                 positionInParent: '-=.5',
                 sequence: 'sub-nav-container',
                 from: {

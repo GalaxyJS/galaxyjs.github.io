@@ -24,12 +24,9 @@ const animations = {
       },
       duration: .3,
       position: '-=.15'
-
-      // chainToParent: true
     },
     leave: {
       sequence: 'card',
-      fixedPosition: true,
       from: {
         transformOrigin: 'top center'
       },
@@ -38,6 +35,7 @@ const animations = {
         scale: .9,
         opacity: 0
       },
+      positionInParent: '-=.5',
       duration: .3
     }
   },
@@ -135,9 +133,8 @@ animations.mainNavItem = {
 };
 
 animations.navSubItem = {
-  // positionInParent: '+=1',
-  parent: 'main-nav-items',
-  // sequence:'sub-nav-container',
+  // positionInParent: '+=.2',
+  parent: true,
   sequence: 'sub-nav-items',
 
   from: {
@@ -145,7 +142,7 @@ animations.navSubItem = {
     y: -10
   },
   position: '-=.3',
-  duration: .4
+  duration: .35
 };
 
 Scope.exports = animations;

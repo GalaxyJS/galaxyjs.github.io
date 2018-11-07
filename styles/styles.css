@@ -1,11 +1,57 @@
+@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');
+
+/* http://meyerweb.com/eric/tools/css/reset/
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
 /*
     Created on : Nov 10, 2016, 8:04:25 PM
     Author     : Eeliya
 */
-/*@import url('https://fonts.googleapis.com/css?family=Rubik:300,400,500,700');*/
-@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');
-/*@import url('https://fonts.googleapis.com/css?family=Ubuntu+Mono');*/
-
 p {
   margin: 15px 0;
 }
@@ -104,10 +150,10 @@ a {
 
 .main-nav {
   position: absolute;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, .2);
   border: none;
-  box-shadow: 0 0 30px rgba(80, 80, 80, .1);
-  color: #455a64;
+  box-shadow: 0 0 28px rgba(100, 103, 105, .1);
+  color: #8f8f8f;
   font-weight: normal;
   left: 0;
   overflow-y: auto;
@@ -117,26 +163,44 @@ a {
   z-index: 100;
 }
 
+.main-nav > h1 {
+  color: rgba(0, 0, 0, .25);
+}
+
 .nav-item {
   display: block;
-  padding: 15px 20px;
+  /* padding: 15px 20px 15px 40px; */
   color: inherit;
   text-decoration: none;
   margin: 0;
   line-height: 20px;
-  border-left: 0 solid #36444a;
+  border-left: 0 solid #17a7e0;
   cursor: pointer;
   transition: background-color .2s ease-in-out;
   overflow: hidden;
+  font-weight: bold;
+  font-size: .9em;
+}
+
+.nav-item > i {
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+}
+
+.nav-item > span {
+  margin-left: 5px;
+  display: inline-block;
 }
 
 .sub-nav-container {
-  border-left: 15px solid #455a64;
+  border-left: 15px solid #17a7e0;
   overflow: hidden;
+  color: #666;
 }
 
 .nav-item.sub {
-  padding: 10px 20px;
+  padding: 10px 20px 10px 30px;
   border-left: 0 solid #c3cfd5;
   font-size: .88em;
 }
@@ -145,10 +209,10 @@ a {
 }
 
 .nav-item.active, .nav-item.active:hover {
-  color: #455a64;
+  color: #16a7e0;
   cursor: default;
   font-weight: bold;
-  border-left: 15px solid #455a64;
+  border-left: 15px solid #16a7e0;
 }
 
 .nav-item:hover {
@@ -164,17 +228,10 @@ a {
   overflow: hidden;
   background-color: #fff;
   border-radius: 6px;
-  margin: 25px auto;
   padding: 0;
   text-align: justify;
-  box-shadow: 0 0 9px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(0, 0, 0, .1);
-}
-
-.card.big {
-  width: calc(100% - 30px);
-  max-width: 840px;
-  border-radius: 12px;
-  margin: 30px auto 45px;
+  box-shadow: 0 -2px 7px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(80, 80, 80, .1);
+  position: relative;
 }
 
 .card.big > .card.big {
@@ -207,6 +264,16 @@ a {
   background-size: cover;
   width: 100%;
   margin: 0;
+  height: auto;
+}
+
+.card .banner + h1 {
+  position: relative;
+  margin-top: -90px;
+  line-height: 20px;
+  padding: 35px 25px;
+  color: #fff;
+  text-shadow: 0 0 15px rgba(0, 0, 0, .4);
 }
 
 .card h2 {
@@ -297,6 +364,14 @@ ul.items-list > li:hover {
     font-size: 14px;
   }
 
+  .nav-item {
+
+  }
+
+  .nav-item.active {
+
+  }
+
   .main-content {
     top: 60px;
     left: 0;
@@ -333,9 +408,13 @@ ul.items-list > li:hover {
     padding: 10px 15px;
   }
 
+  .card {
+    margin: 0;
+    border-radius: 0;
+  }
+
   .card.big {
     width: auto;
-    margin: 15px;
   }
 }
 
@@ -343,6 +422,14 @@ ul.items-list > li:hover {
   html, body {
     font-size: 15px;
     line-height: 16px;
+  }
+
+  .nav-item {
+    padding: 12px 20px 12px 30px;
+  }
+
+  .nav-item.active {
+    padding: 12px 20px 12px 15px;
   }
 
   .main-content {
@@ -363,9 +450,12 @@ ul.items-list > li:hover {
     padding: 8px 12px;
   }
 
+  .card {
+    margin: 10px;
+  }
+
   .card.big {
     width: auto;
-    margin: 10px;
   }
 }
 
@@ -376,9 +466,27 @@ ul.items-list > li:hover {
     height: 100%;
   }
 
+  .nav-item {
+    padding: 15px 20px 15px 40px;
+  }
+
+  .nav-item.active {
+    padding: 15px 20px 15px 25px;
+  }
+
   .main-nav > h1 {
     margin: 0 0 20px;
-    padding: 0 15px;
+    padding: 0 15px 0 20px;
+  }
+
+  .card {
+    margin: 20px auto 45px;
+  }
+
+  .card.big {
+    width: calc(100% - 30px);
+    max-width: 840px;
+    border-radius: 12px;
   }
 }
 
@@ -602,7 +710,15 @@ button:disabled:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
 
+.flex-row.start {
+  align-items: flex-start;
+}
+
+.flex-row.grid > * {
+  flex: 1 0 auto;
+  max-width: 50%;
 }
 
 .flex-row > * {
@@ -669,6 +785,48 @@ a.icon.gitter {
 
 .ta-center {
   text-align: center;
+}
+
+.flex {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.box-container {
+  margin: 0 -8px;
+}
+
+.box {
+  display: inline-block;
+  width: 85px;
+  height: 85px;
+  line-height: 85px;
+  background-color: #d05e77;
+  border-radius: 0 10px 10px;
+  margin: 8px;
+  color: #fff;
+  font-size: 60px;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.dialog {
+  background-color: #fff;
+  box-shadow: 0 -2px 7px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(80, 80, 80, .1);
+  position: fixed;
+  width: 500px;
+  height: 300px;
+  top: calc(50% - 150px);
+  left: calc(50% - 250px);
+  z-index: 10;
+}
+
+.dialog-animation {
+  background-color: #000;
 }
 
 .loader {
