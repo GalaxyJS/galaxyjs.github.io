@@ -6109,22 +6109,17 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         config.onDone.ignore = true;
       });
 
-      if (value) {
-        // Only apply $if logic on the elements that are rendered
-        if (!node.rendered.resolved) {
-          return;
-        }
+      // Only apply $if logic on the elements that are rendered
+      if (!node.rendered.resolved) {
+        return;
+      }
 
+      if (value) {
         const waitStepDone = registerWaitStep(parentCache.$if);
         node.renderingFlow.nextAction(function () {
           waitStepDone();
         });
       } else {
-        if (!node.rendered.resolved) {
-          node.inDOM = false;
-          return;
-        }
-
         const waitStepDone = registerWaitStep(parentCache.$if);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
@@ -6789,23 +6784,31 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
   SimpleRouter.prototype = {
     init: function (routes) {
       this.routesMap = routes;
-
-      const routePaths = Object.keys(routes);
-      for (let i = 0, len = routePaths.length; i < len; i++) {
-        if (routePaths[i].indexOf('/') !== 0) {
-          throw new Error('The route `' + routePaths[i] + '` is not valid because it does not begin with `/`.\n' +
-            'Please change it to `/' + routePaths[i] + '` and make sure that all of your routes start with `/`.\n');
-        }
-
-        this.routes.push({
-          path: routePaths[i],
-          act: routes[routePaths[i]]
-        });
-      }
+      this.routes = this.parseRoutes(routes);
 
       this.listener = this.detect.bind(this);
       window.addEventListener('hashchange', this.listener);
       this.detect();
+    },
+
+    parseRoutes: function (routesMap) {
+      const routes = [];
+
+      const routePaths = Object.keys(routesMap);
+
+      for (let i = 0, len = routePaths.length; i < len; i++) {
+        if (routePaths[i].indexOf('/') !== 0 && routePaths[i].indexOf('_') !== 0) {
+          throw new Error('The route `' + routePaths[i] + '` is not valid because it does not begin with `/`.\n' +
+            'Please change it to `/' + routePaths[i] + '` and make sure that all of your routes start with `/`.\n');
+        }
+
+        routes.push({
+          path: routePaths[i],
+          act: routesMap[routePaths[i]]
+        });
+      }
+
+      return routes;
     },
 
     navigate: function (path) {
@@ -6814,7 +6817,6 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
         path = '/' + path;
       }
 
-      this.dirty = true;
       window.location.hash = path;
     },
 
@@ -6839,7 +6841,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
 
       let normalizedHash = hash;
       if (hash.indexOf('#/') !== 0) {
-        if (hash.indexOf('/') === 0) {
+        if (hash.indexOf('/') !== 0) {
           normalizedHash = '/' + hash;
         } else if (hash.indexOf('#') === 0) {
           normalizedHash = hash.split('#').join('#/');
@@ -6849,26 +6851,24 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       return normalizedHash.replace(_this.root, '') || '/';
     },
 
-    callMatchRoute: function (routes, hash) {
+    callMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
       const path = _this.normalizeHash(hash);
       const routesPath = routes.map(function (item) {
         return item.path;
       });
-      debugger;
 
       // Hard match
       const routeIndex = routesPath.indexOf(path);
       if (routeIndex !== -1) {
         // delete all old resolved ids
         _this.oldResolveId = {};
-        return routes[routeIndex].call(null);
+        return routes[routeIndex].act.call(null, parentParams);
       }
 
       const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
-      let depth = 0;
-      let parentRoute;
       let matchCount = 0;
+
       for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
         const dynamicRoute = dynamicRoutes[i];
         const match = dynamicRoute.paramFinderExpression.exec(path);
@@ -6879,33 +6879,22 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
 
         matchCount++;
 
-        if (parentRoute) {
-          const match = parentRoute.paramFinderExpression.exec(path);
-
-          if (!match || depth >= path.split('/').length) {
-            continue;
-          }
-        }
-
-        if (_this.dirty) {
-          Object.keys(_this.routes);
-
-          this.dirty = false;
-          this.callMatchRoute(routes, window.location.hash);
-          break;
-        }
-
         const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
         // Create a unique id for the combination of the route and its parameters
         const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
         if (_this.oldResolveId[dynamicRoute.id] !== resolveId) {
           _this.oldResolveId = {};
           _this.oldResolveId[dynamicRoute.id] = resolveId;
-          // _this.callRoute(routes[dynamicRoute.id], params);
 
-          _this.routesMap[dynamicRoute.id].call(null, params);
-          parentRoute = dynamicRoute;
-          depth = dynamicRoute.id.split('/').length;
+          const routeIndex = routesPath.indexOf(dynamicRoute.id);
+          const parts = hash.split('/').slice(2);
+
+          _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
+
+          // _this.routesMap[dynamicRoute.id].call(routeScope, params);
+          // parentRoute = dynamicRoute;
+          // depth = dynamicRoute.id.split('/').length;
+          break;
         }
       }
 
@@ -6914,10 +6903,19 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       }
     },
 
-    callRoute: function (route, params) {
-      if (route instanceof Object) {
-      } else {
-        route.call(null, params);
+    callRoute: function (route, hash, params, parentParams) {
+      if (route.act instanceof Function) {
+        route.act.call(null, params, parentParams);
+      }
+      else if (route.act instanceof Object) {
+        const routes = this.parseRoutes(route.act);
+        if (route.act._canActivate instanceof Function) {
+          if (!route.act._canActivate.call(null, params, parentParams)) {
+            return;
+          }
+        }
+
+        this.callMatchRoute(routes, hash, params);
       }
     },
 
