@@ -3968,6 +3968,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       if (map) {
         map.nodes.forEach(function (node, i) {
           const key = map.keys[i];
+
           _this.syncNode(node, key, value, oldValue);
         });
       }
@@ -4098,9 +4099,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
         let initValue = this.data[dataKey];
         // We need initValue for cases where ui is bound to a property of an null object
-        if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {
-          initValue = {};
-        }
+        // TODO: This line seem obsolete
+        // if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {
+        //   initValue = {};
+        // }
 
         // if initValue is a change object, then we have to use its init for nodes that are newly being added
         // if the dataKey is length then ignore this line and use initValue which represent the length of array
@@ -4573,6 +4575,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
     },
 
+    createNode: function (schema, localScope) {
+      this.view.createNode(schema, this, localScope);
+    },
+
     /**
      * @param {Galaxy.View.ReactiveData} reactiveData
      * @param {string} propertyName
@@ -4999,7 +5005,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     let from = AnimationMeta.parseStep(viewNode, config.from);
     let to = AnimationMeta.parseStep(viewNode, config.to);
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
-
 
     if (to) {
       to = Object.assign({}, to);
@@ -6110,9 +6115,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
 
       // Only apply $if logic on the elements that are rendered
-      if (!node.rendered.resolved) {
-        return;
-      }
+      // if (!node.rendered.resolved) {
+      //   if (!value) {
+      //
+      //   }
+      //   return;
+      // }
 
       if (value) {
         const waitStepDone = registerWaitStep(parentCache.$if);
@@ -6630,14 +6638,16 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       if (nativeNode.type === 'number') {
         nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
       } else {
-        nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData, id));
+        nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));
       }
     },
     value: function (viewNode, value, oldValue, attr) {
       // input field parse the value which has been passed to it into a string
-      // that why we need to parse undefined and null into an empty string
-      if (document.activeElement !== viewNode.node || !viewNode.node.value) {
+      // that's why we need to parse undefined and null into an empty string
+      // if (document.activeElement !== viewNode.node || !viewNode.node.value) {
+      if (value !== viewNode.node.value || !viewNode.node.value) {
         viewNode.node.value = value === undefined || value === null ? '' : value;
+        // viewNode.node.dispatchEvent(new KeyboardEvent('keyup'));
       }
     }
   };
@@ -6648,9 +6658,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     };
   }
 
-  function createHandler(_node, _rd, _id) {
-    return function () {
-      _rd.data[_id] = _node.value;
+  function createHandler(_rd, _id) {
+    return function (event) {
+      _rd.data[_id] = event.target.value;
     };
   }
 })(Galaxy);
@@ -6863,7 +6873,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       if (routeIndex !== -1) {
         // delete all old resolved ids
         _this.oldResolveId = {};
-        return routes[routeIndex].act.call(null, parentParams);
+        return routes[routeIndex].act.call(null, {}, parentParams);
       }
 
       const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
@@ -6957,7 +6967,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
-          this.callMatchRoute(this.routes, hash);
+          this.callMatchRoute(this.routes, hash, {});
         }
       }
     },
