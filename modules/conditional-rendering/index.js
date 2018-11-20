@@ -4,11 +4,42 @@ const view = Scope.import('galaxy/view');
 
 Scope.data.condition = true;
 Scope.data.conditionForMultiple = true;
+Scope.data.conditionForList = true;
 
 const itemAnimations = {
   config: {
     enterWithParent: true,
     leaveWithParent: true
+  },
+  enter: {
+    parent: 'card',
+    sequence: 'if-items',
+    from: {
+      opacity: 0,
+      x: 20
+    },
+    to: {
+      opacity: 1,
+      x: 0
+    },
+    position: '-=.2',
+    duration: .3
+  },
+  leave: {
+    parent: 'card',
+    sequence: 'if-items',
+    to: {
+      x: 25,
+      opacity: 0
+    },
+    position: '-=.18',
+    duration: .2
+  }
+};
+
+const listItemAnimations = {
+  config: {
+    enterWithParent: true
   },
   enter: {
     parent: 'card',
@@ -56,7 +87,7 @@ view.init({
         {
           tag: 'p',
           text: 'Keep in mind that when the condition is false the element will be detach from DOM, ' +
-          'but not destroyed and upon condition true it will be reattached to DOM.'
+            'but not destroyed and upon condition true it will be reattached to DOM.'
         },
         {
           tag: 'p',
@@ -122,7 +153,7 @@ view.init({
         {
           tag: 'p',
           html: 'If multiple nodes which are direct children of the same parent and have <strong>$if</strong> condition,' +
-          ' then they follow default rendering order upon condition change.'
+            ' then they follow default rendering order upon condition change.'
         },
         {
           tag: 'p',
@@ -183,6 +214,59 @@ view.init({
           animations: itemAnimations,
           $if: '<>data.conditionForMultiple'
         },
+
+        '<h2>Condition on a list</h2>',
+        {
+          tag: 'p',
+          children: [
+            {
+              tag: 'button',
+              text: 'Toggle',
+              on: {
+                click: function () {
+                  Scope.data.conditionForList = !Scope.data.conditionForList;
+                }
+              }
+            }
+          ]
+        },
+        {
+          tag: 'p',
+          children: [
+            {
+              tag: 'text',
+              text: 'Condition is: '
+            },
+            {
+              tag: 'strong',
+              text: '<>data.conditionForList'
+            }
+          ]
+        },
+        // {
+        //   $if: '<>data.conditionForList',
+        //   animations: {
+        //     leave: {
+        //       sequence: 'if-items',
+        //       to: {
+        //         opacity: 0
+        //       },
+        //       duration: 3
+        //     }
+        //   },
+        //   children: [
+        //     {
+        //       tag: 'p',
+        //       animations: listItemAnimations,
+        //
+        //       $for: {
+        //         data: ['first', 'Second', 'third'],
+        //         as: 'item'
+        //       },
+        //       text: '<>item'
+        //     }
+        //   ]
+        // },
         '<h2>Rendering Strategy</h2>' +
         '<p>The way <strong>$if</strong> handles DOM manipulation is important to be understood. ' +
         'When condition is false, then the element will be detached from DOM and upon on true ' +

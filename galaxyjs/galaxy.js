@@ -5618,6 +5618,35 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 /* global Galaxy */
 
 (function (Galaxy) {
+  const PROPERTY_NAME = 'disabled';
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP[PROPERTY_NAME] = {
+    type: 'attr',
+    name: PROPERTY_NAME,
+    value: function (viewNode, value, oldValue, attr) {
+      viewNode.rendered.then(function () {
+        if (viewNode.schema.tag.toLowerCase() === 'form') {
+          const children = viewNode.node.querySelectorAll('input, textarea, select, button');
+          if (value) {
+            Array.prototype.forEach.call(children, function (input) {
+              input.setAttribute('disabled', '');
+            });
+          } else {
+            Array.prototype.forEach.call(children, function (input) {
+              input.removeAttribute('disabled');
+            });
+          }
+        }
+      });
+
+      Galaxy.View.setAttr(viewNode, value, oldValue, attr);
+    }
+  };
+})(Galaxy);
+
+
+/* global Galaxy */
+
+(function (Galaxy) {
   const View = Galaxy.View;
   View.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
     type: 'reactive',
@@ -6096,7 +6125,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.$if = parentNode.cache.$if || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
@@ -6109,18 +6138,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         value = expression();
       }
 
+      // Only apply $if logic on the elements that are rendered
+      if (!node.rendered.resolved) {
+        if (!value) {
+          node.inDOM = false;
+        }
+        return;
+      }
+
       node.renderingFlow.truncate();
       node.renderingFlow.onTruncate(function () {
         config.onDone.ignore = true;
       });
-
-      // Only apply $if logic on the elements that are rendered
-      // if (!node.rendered.resolved) {
-      //   if (!value) {
-      //
-      //   }
-      //   return;
-      // }
 
       if (value) {
         const waitStepDone = registerWaitStep(parentCache.$if);
@@ -6641,7 +6670,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));
       }
     },
-    value: function (viewNode, value, oldValue, attr) {
+    value: function (viewNode, value) {
       // input field parse the value which has been passed to it into a string
       // that's why we need to parse undefined and null into an empty string
       // if (document.activeElement !== viewNode.node || !viewNode.node.value) {
