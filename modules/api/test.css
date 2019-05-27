@@ -1,0 +1,7 @@
+:host {
+  font-weight: bold;
+}
+
+:host > .test {
+  color: red;
+}

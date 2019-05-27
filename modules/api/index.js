@@ -1,9 +1,11 @@
 /* global Scope, PR */
+const test = Scope.import('./test.css');
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const effects = Scope.import('services/effects.js');
 const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
+console.log(test);
 
 const items = [
   {
@@ -48,6 +50,7 @@ view.init({
     }
   },
   children: [
+    test,
     {
       tag: 'img',
       class: 'banner',
@@ -57,7 +60,8 @@ view.init({
     },
     {
       tag: 'h1',
-      text: 'API'
+      text: 'API',
+      class: 'test'
     },
     {
       tag: 'section',
