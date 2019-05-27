@@ -2823,7 +2823,8 @@ Galaxy.View = /** @class */(function () {
 
   //------------------------------
 
-  View.EMPTY_CALL = function () {};
+  View.EMPTY_CALL = function () {
+  };
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
   View.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
@@ -2953,7 +2954,7 @@ Galaxy.View = /** @class */(function () {
   View.getBindings = function (value) {
     let propertyKeysPaths = null;
     let isExpression = false;
-    const type = typeof(value);
+    const type = typeof (value);
     let modifiers = null;
     let handler = null;
 
@@ -2966,8 +2967,7 @@ Galaxy.View = /** @class */(function () {
         modifiers = null;
         propertyKeysPaths = null;
       }
-    }
-    else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
+    } else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
       propertyKeysPaths = value.slice(0);
       handler = propertyKeysPaths.pop();
       isExpression = true;
@@ -3164,8 +3164,7 @@ Galaxy.View = /** @class */(function () {
     try {
       bindings.expressionFn = Galaxy.View.createExpressionFunction(target, bindings.handler, dependencies, scope);
       return bindings.expressionFn;
-    }
-    catch (exception) {
+    } catch (exception) {
       throw console.error(exception.message + '\n', dependencies);
     }
   };
@@ -3353,7 +3352,7 @@ Galaxy.View = /** @class */(function () {
    */
   View.installReactiveBehavior = function (behavior, node, key, scopeData) {
     const bindTo = node.schema[key];
-    const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
+    const matches = behavior.regex ? (typeof (bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
     const data = behavior.prepare.call(node, matches, scopeData);
     if (data !== undefined) {
       node.cache[key] = data;
@@ -3384,7 +3383,8 @@ Galaxy.View = /** @class */(function () {
 
     // if viewNode is virtual, then the expression should be ignored
     if (property.type !== 'reactive' && viewNode.virtual) {
-      return function () { };
+      return function () {
+      };
     }
 
     // This is the lowest level where the developer can modify the property setter behavior
@@ -3507,7 +3507,7 @@ Galaxy.View = /** @class */(function () {
         for (i = 0, len = nodeSchema.length; i < len; i++) {
           _this.createNode(nodeSchema[i], parent, scopeData, null, refNode);
         }
-      } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
+      } else if (nodeSchema !== null && typeof (nodeSchema) === 'object') {
         let attributeValue, attributeName;
         const keys = Object.keys(nodeSchema);
         const needInitKeys = [];
@@ -3551,6 +3551,7 @@ Galaxy.View = /** @class */(function () {
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
 
           viewNode.inserted.then(function () {
+            console.log(viewNode.index)
             viewNode.callLifecycleEvent('postChildrenInsert');
           });
         }
@@ -4736,11 +4737,20 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       return nodes;
     },
 
+    get index() {
+      if (this.parent) {
+        return this.parent.index + ':' + (Array.prototype.indexOf.call(this.parent.node.childNodes, this.anchor) || 0);
+      }
+
+      return 0;
+    },
+
     flush: function (nodes) {
       const items = nodes || this.getChildNodes();
       items.forEach(function (vn) {
         vn.node.parentNode && removeChild(vn.node.parentNode, vn.node);
       });
+      
     },
 
     /**
@@ -4799,6 +4809,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       return this.placeholder;
     },
 
+    get anchor() {
+      if (this.inDOM) {
+        return this.node;
+      }
+
+      return this.placeholder;
+    },
+
     /**
      *
      * @param {string} name
@@ -4813,6 +4831,85 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   return ViewNode;
 
 })(Galaxy.View);
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
+  const valueFn = property.value || Galaxy.View.setAttr;
+  const setter = function (value, oldValue) {
+    if (value instanceof Promise) {
+      const asyncCall = function (asyncValue) {
+        valueFn(viewNode, asyncValue, oldValue, attrName);
+      };
+      value.then(asyncCall).catch(asyncCall);
+    } else if (value instanceof Function) {
+      const result = value.call(viewNode);
+      valueFn(viewNode, result, value.oldResult, attrName);
+      value.oldResult = value;
+    } else {
+      valueFn(viewNode, value, oldValue, attrName);
+    }
+  };
+
+  if (expression) {
+    return function (none, oldValue) {
+      const expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
+  if (!property.name) {
+    console.error(property);
+    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
+  }
+
+  const valueFn = property.value || Galaxy.View.setProp;
+
+  const setter = function (value, oldValue) {
+    if (value instanceof Promise) {
+      const asyncCall = function (asyncValue) {
+        valueFn(viewNode, asyncValue, oldValue, property.name);
+        viewNode.notifyObserver(property.name, value, oldValue);
+      };
+      value.then(asyncCall).catch(asyncCall);
+    } else {
+      valueFn(viewNode, value, oldValue, property.name);
+      viewNode.notifyObserver(property.name, value, oldValue);
+    }
+  };
+
+  if (expression) {
+    return function (none, oldValue) {
+      const expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+(function () {
+  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
+    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
+    const cache = viewNode.cache[attrName];
+    const reactiveFunction = createReactiveFunction(behavior, viewNode, cache, expression, scope);
+
+    return reactiveFunction;
+  };
+
+  function createReactiveFunction(behavior, vn, data, expression, scope) {
+    return function (value, oldValue) {
+      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
+    };
+  }
+})();
 
 /* global Galaxy, TweenLite, TimelineLite */
 'use strict';
@@ -6696,85 +6793,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   }
 })(Galaxy);
 
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
-  const valueFn = property.value || Galaxy.View.setAttr;
-  const setter = function (value, oldValue) {
-    if (value instanceof Promise) {
-      const asyncCall = function (asyncValue) {
-        valueFn(viewNode, asyncValue, oldValue, attrName);
-      };
-      value.then(asyncCall).catch(asyncCall);
-    } else if (value instanceof Function) {
-      const result = value.call(viewNode);
-      valueFn(viewNode, result, value.oldResult, attrName);
-      value.oldResult = value;
-    } else {
-      valueFn(viewNode, value, oldValue, attrName);
-    }
-  };
-
-  if (expression) {
-    return function (none, oldValue) {
-      const expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
-  if (!property.name) {
-    console.error(property);
-    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
-  }
-
-  const valueFn = property.value || Galaxy.View.setProp;
-
-  const setter = function (value, oldValue) {
-    if (value instanceof Promise) {
-      const asyncCall = function (asyncValue) {
-        valueFn(viewNode, asyncValue, oldValue, property.name);
-        viewNode.notifyObserver(property.name, value, oldValue);
-      };
-      value.then(asyncCall).catch(asyncCall);
-    } else {
-      valueFn(viewNode, value, oldValue, property.name);
-      viewNode.notifyObserver(property.name, value, oldValue);
-    }
-  };
-
-  if (expression) {
-    return function (none, oldValue) {
-      const expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-(function () {
-  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
-    const cache = viewNode.cache[attrName];
-    const reactiveFunction = createReactiveFunction(behavior, viewNode, cache, expression, scope);
-
-    return reactiveFunction;
-  };
-
-  function createReactiveFunction(behavior, vn, data, expression, scope) {
-    return function (value, oldValue) {
-      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
-    };
-  }
-})();
 
 /* global Galaxy */
 'use strict';
