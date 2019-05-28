@@ -4,7 +4,7 @@ const animations = {
   cardInOut: {
     enter: {
       sequence: 'card',
-      startAfter: 'main-nav-items',
+      appendTo: 'main-nav-items',
 
       from: {
         transformOrigin: 'top center',
@@ -41,8 +41,8 @@ const animations = {
   },
   itemInOut: {
     enter: {
-      parent: 'card',
       sequence: 'item',
+      addTo: 'card',
       from: {
         x: 100,
         opacity: 0
@@ -51,8 +51,8 @@ const animations = {
       duration: .5
     },
     leave: {
-      parent: 'card',
       sequence: 'item',
+      addTo: 'card',
       order: 5,
       to: {
         x: 100,
@@ -117,9 +117,10 @@ animations.mainNav = {
 
 animations.mainNavItem = {
   enter: {
-    parent: 'side-bar',
-    positionInParent: '-=.3',
     sequence: 'main-nav-items',
+    appendTo: 'side-bar',
+    positionInParent: '-=.3',
+
     from: {
       transition: 'none',
       autoAlpha: 0,
@@ -133,16 +134,16 @@ animations.mainNavItem = {
 };
 
 animations.navSubItem = {
-  // positionInParent: '+=.2',
-  parent: true,
   sequence: 'sub-nav-items',
+  attachTo: 'main-nav-items',
+  positionInParent: '+=.2',
 
   from: {
     opacity: 0,
     y: -10
   },
   position: '-=.3',
-  duration: .35
+  duration: 1.35
 };
 
 Scope.exports = animations;

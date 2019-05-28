@@ -239,9 +239,10 @@ view.init([
             ],
             animations: {
               enter: {
-                parent: true,
-                positionInParent: '-=.5',
                 sequence: 'sub-nav-container',
+                addTo: 'main-nav-items',
+                // positionInParent: '-=.5',
+
                 from: {
                   borderLeftWidth: 15,
                   height: 0
@@ -255,7 +256,7 @@ view.init([
                     return height;
                   }
                 },
-                duration: .3
+                duration: 1.3
               },
               leave: {
                 to: {
