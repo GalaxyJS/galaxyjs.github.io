@@ -2725,7 +2725,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
         const hostSuffix = '[' + ids.host + ']';
         const contentSuffix = '[' + ids.content + ']';
         const parsedCSSRules = [];
-        const host = /(\:host)/g;
+        const host = /(:host)/g;
         const selector = /([^\s+>~,]+)/g;
         const selectorReplacer = function (item) {
           if (item === ':host') {
@@ -2746,7 +2746,15 @@ Galaxy.GalaxyURI = /** @class */ (function () {
         Scope.exports = {
           tag: 'style',
           id: Scope.systemId,
-          text: parsedCSSText
+          text: parsedCSSText,
+          _apply() {
+            this.parent.node.setAttribute(ids.host, '');
+            const children = this.parent.schema.children || [];
+            children.forEach((child) => {
+              child[ids.content] = '';
+            });
+            console.log(children)
+          }
         };
       }
     };
@@ -2905,7 +2913,7 @@ Galaxy.View = /** @class */(function () {
 
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
-    if (value) {
+    if (value !== null && value !== undefined) {
       viewNode.node.setAttribute(name, value);
     } else {
       viewNode.node.removeAttribute(name);
@@ -3176,6 +3184,7 @@ Galaxy.View = /** @class */(function () {
    * @param {Galaxy.View.ReactiveData} parentReactiveData
    * @param {Galaxy.View.ReactiveData} scopeData
    * @param {Object} bindings
+   * @param {Galaxy.View.ViewNode | undefined} root
    */
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
     const propertyKeysPaths = bindings.propertyKeysPaths;
@@ -3551,7 +3560,7 @@ Galaxy.View = /** @class */(function () {
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
 
           viewNode.inserted.then(function () {
-            console.log(viewNode.index)
+            // console.log(viewNode.index)
             viewNode.callLifecycleEvent('postChildrenInsert');
           });
         }
@@ -3829,10 +3838,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     },
     /**
      *
-     * @param value
+     * @param arr
      * @returns {*}
      */
-    makeReactiveArray: function (value) {
+    makeReactiveArray: function (arr) {
       /**
        *
        * @type {Galaxy.View.ReactiveData}
@@ -3840,16 +3849,16 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
        */
       const _this = this;
 
-      if (value.hasOwnProperty('changes')) {
-        return value.changes;
+      if (arr.hasOwnProperty('changes')) {
+        return arr.changes;
       }
       // _this.makeReactiveObject(value, 'changes', true);
 
       const initialChanges = new Galaxy.View.ArrayChange();
-      initialChanges.original = value;
-      initialChanges.snapshot = value.slice(0);
+      initialChanges.original = arr;
+      initialChanges.snapshot = arr.slice(0);
       initialChanges.type = 'reset';
-      initialChanges.params = value;
+      initialChanges.params = arr;
       initialChanges.params.forEach(function (item) {
         if (item !== null && typeof item === 'object') {
           new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
@@ -3858,14 +3867,14 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
       _this.sync('length');
       initialChanges.init = initialChanges;
-      value.changes = initialChanges;
+      arr.changes = initialChanges;
       // _this.oldValue['changes'] = Object.assign({}, initialChanges);
-      _this.makeReactiveObject(value, 'changes');
+      _this.makeReactiveObject(arr, 'changes');
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
         const originalMethod = ARRAY_PROTO[method];
-        defProp(value, method, {
+        defProp(arr, method, {
           value: function () {
             let i = arguments.length;
             const args = new Array(i);
@@ -3875,8 +3884,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
             const returnValue = originalMethod.apply(this, args);
             const changes = new Galaxy.View.ArrayChange();
-            changes.original = value;
-            changes.snapshot = value.slice(0);
+            changes.original = arr;
+            changes.snapshot = arr.slice(0);
             changes.type = method;
             changes.params = args;
             changes.returnValue = returnValue;
@@ -3905,7 +3914,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             // For arrays we have to sync length manually
             // if we use notify here we will get
             _this.notifyDown('length');
-            value.changes = changes;
+            arr.changes = changes;
 
             return returnValue;
           },
@@ -5748,7 +5757,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
        *
        * @type {RenderJobManager}
        */
-      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {steps: [], queue: [], mainPromise: null};
 
       if (config.options instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5802,7 +5811,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         if (!(changes instanceof Galaxy.View.ArrayChange)) {
-          console.warn(changes);
           throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         }
       }
@@ -5836,7 +5844,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             whenAllLeavesAreDone.cancel();
           });
         }
-        if(parent.schema.class === 'sub-nav-container') debugger;
+        if (parent.schema.class === 'sub-nav-container') debugger;
 
         const waitStepDone = registerWaitStep(parentCache.$for, parent.sequences.leave);
         let leaveStep = null;

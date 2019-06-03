@@ -93,6 +93,7 @@ Scope.data.navItems = [
     }
   }
 ];
+console.log(Scope.data);
 
 // Scope.data.activeModule = Scope.data.navItems[3].module;
 Scope.data.activeModule = null;
@@ -118,6 +119,13 @@ Scope.data.moduleInputs = {
     items: []
   }
 };
+
+isActiveModule.watch = ['nav.module', 'data.activeModule'];
+
+function isActiveModule(mod, actMod) {
+  return mod === actMod;
+}
+
 
 const items = [
   {
@@ -203,13 +211,7 @@ view.init([
 
             class: {
               'nav-item': true,
-              active: [
-                'nav.module',
-                'data.activeModule',
-                function (mod, actMod) {
-                  return mod === actMod;
-                }
-              ]
+              active: isActiveModule
             },
             on: {
               click: function () {
@@ -307,6 +309,20 @@ view.init([
         tag: 'main',
         module: '<>data.activeModule',
         inputs: Scope.data.moduleInputs,
+        lifecycle: {
+          beforeCreate() {
+          },
+          created() {
+          },
+          beforeMount() {
+          },
+          mounted() {
+          },
+          beforeDestroy() {
+          },
+          destroyed() {
+          }
+        },
         on: {
           test: function (event) {
             console.info(event);

@@ -33,6 +33,11 @@ view.init({
   tag: 'div',
   class: 'card',
   animations: animations.cardInOut,
+  _created: function () {
+  },
+  _inserted: function() {
+
+  },
   children: [
     {
       tag: 'section',
@@ -109,7 +114,7 @@ view.init({
             tag: 'li',
             // $for: 'titem in inputs.items',
             $for: {
-              data: '<>inputs.items.changes',
+              data: '<>inputs.items',
               as: 'titem'
             },
             animations: {
