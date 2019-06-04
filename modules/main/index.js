@@ -45,53 +45,53 @@ Scope.data.navItems = [
     }
   },
 
-  {
-    title: 'List Rendering',
-    link: 'list-rendering',
-    icon: 'fas fa-list-ul',
-    module: {
-      id: 'list-rendering',
-      url: 'modules/list-rendering/index.js'
-    }
-  },
-
-  {
-    title: 'Animations',
-    link: 'animations',
-    icon: 'fas fa-spinner',
-    module: {
-      id: 'animations',
-      url: 'modules/animations/index.js'
-    }
-  },
-
-  {
-    title: 'API',
-    link: 'api',
-    icon: 'fas fa-code',
-    module: {
-      id: 'api',
-      url: 'modules/api/index.js'
-    }
-  },
-
-  {
-    title: 'ToDo - Demo',
-    link: 'todo-demo',
-    module: {
-      id: 'todo-demo',
-      url: 'modules/todo/index.js'
-    }
-  },
-
-  {
-    title: 'VueJS Replica - Demo',
-    link: 'vuejs-replica-demo',
-    module: {
-      id: 'vuejs-replica-demo',
-      url: 'modules/vuejs-replica/index.js'
-    }
-  }
+  // {
+  //   title: 'List Rendering',
+  //   link: 'list-rendering',
+  //   icon: 'fas fa-list-ul',
+  //   module: {
+  //     id: 'list-rendering',
+  //     url: 'modules/list-rendering/index.js'
+  //   }
+  // },
+  //
+  // {
+  //   title: 'Animations',
+  //   link: 'animations',
+  //   icon: 'fas fa-spinner',
+  //   module: {
+  //     id: 'animations',
+  //     url: 'modules/animations/index.js'
+  //   }
+  // },
+  //
+  // {
+  //   title: 'API',
+  //   link: 'api',
+  //   icon: 'fas fa-code',
+  //   module: {
+  //     id: 'api',
+  //     url: 'modules/api/index.js'
+  //   }
+  // },
+  //
+  // {
+  //   title: 'ToDo - Demo',
+  //   link: 'todo-demo',
+  //   module: {
+  //     id: 'todo-demo',
+  //     url: 'modules/todo/index.js'
+  //   }
+  // },
+  //
+  // {
+  //   title: 'VueJS Replica - Demo',
+  //   link: 'vuejs-replica-demo',
+  //   module: {
+  //     id: 'vuejs-replica-demo',
+  //     url: 'modules/vuejs-replica/index.js'
+  //   }
+  // }
 ];
 console.log(Scope.data);
 
@@ -147,7 +147,17 @@ const items = [
     title: 'Galaxy.View.ViewNode'
   }
 ];
-// navService.setSubNavItems(items);
+navService.setSubNavItems([
+  {
+    title: 'Installation'
+  },
+  {
+    title: 'Bootstrap'
+  },
+  {
+    title: 'The Progressive Way'
+  }
+]);
 
 router.init({
   '/': function () {
@@ -160,7 +170,7 @@ router.init({
     })[0];
 
     if (nav) {
-      navService.setSubNavItems([]);
+      // navService.setSubNavItems([]);
       // Scope.data.moduleInputs.subMenus.items = [];
       // setTimeout(function () {
       Scope.data.activeModule = nav.module;
@@ -196,13 +206,13 @@ view.init([
         animations: animations.mainNavItem,
         children: [
           {
-            animations: {
-              '.active': {
-                sequence: 'active-nav',
-                position: '-=.2',
-                duration: .2
-              }
-            },
+            // animations: {
+            //   '.active': {
+            //     sequence: 'active-nav',
+            //     position: '-=.2',
+            //     duration: .2
+            //   }
+            // },
 
             tag: 'a',
             inputs: {
@@ -231,42 +241,42 @@ view.init([
           },
           {
             class: 'sub-nav-container',
-            $if: [
-              'nav.module',
-              'data.activeModule',
-              'data.navService.subNavItems.length',
-              function (mod, actMod, length) {
-                return mod === actMod && length;
-              }
-            ],
-            animations: {
-              enter: {
-                sequence: 'sub-nav-container',
-                addTo: 'main-nav-items',
-                // positionInParent: '-=.5',
-
-                from: {
-                  borderLeftWidth: 15,
-                  height: 0
-                },
-                to: {
-                  height: function (v, node) {
-                    node.style.height = 'auto';
-                    const height = node.offsetHeight;
-                    node.style.height = 0;
-
-                    return height;
-                  }
-                },
-                duration: 1.3
-              },
-              leave: {
-                to: {
-                  height: 0
-                },
-                duration: .2
-              }
-            },
+            // $if: [
+            //   'nav.module',
+            //   'data.activeModule',
+            //   'data.navService.subNavItems.length',
+            //   function (mod, actMod, length) {
+            //     return mod === actMod && length;
+            //   }
+            // ],
+            // animations: {
+            //   enter: {
+            //     sequence: 'sub-nav-container',
+            //     // addTo: 'main-nav-items',
+            //     // positionInParent: '-=.5',
+            //
+            //     from: {
+            //       borderLeftWidth: 15,
+            //       height: 0
+            //     },
+            //     to: {
+            //       height: function (v, node) {
+            //         node.style.height = 'auto';
+            //         const height = node.offsetHeight;
+            //         node.style.height = 0;
+            //
+            //         return height;
+            //       }
+            //     },
+            //     duration: .5
+            //   },
+            //   leave: {
+            //     to: {
+            //       height: 0
+            //     },
+            //     duration: .2
+            //   }
+            // },
 
             children: {
               tag: 'a',
@@ -275,7 +285,19 @@ view.init([
                 config: {
                   leaveWithParent: true
                 },
-                enter: animations.navSubItem,
+                enter: {
+                  sequence: 'main-nav-items',
+                  // addTo: 'main-nav-items',
+                  // addTo: 'sub-nav-container',
+                  // positionInParent: '-=.9',
+
+                  from: {
+                    opacity: 0,
+                    y: -10
+                  },
+                  position: '-=.3',
+                  duration: .35
+                },
                 leave: {}
               },
               $for: {

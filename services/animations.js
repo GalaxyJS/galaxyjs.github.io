@@ -143,7 +143,7 @@ animations.navSubItem = {
     y: -10
   },
   position: '-=.3',
-  duration: 1.35
+  duration: .35
 };
 
 Scope.exports = animations;
