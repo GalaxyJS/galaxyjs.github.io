@@ -4,7 +4,7 @@ const animations = {
   cardInOut: {
     enter: {
       sequence: 'card',
-      appendTo: 'main-nav-items',
+      // appendTo: 'main-nav-items',
 
       from: {
         transformOrigin: 'top center',

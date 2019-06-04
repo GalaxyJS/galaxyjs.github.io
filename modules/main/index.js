@@ -35,15 +35,15 @@ Scope.data.navItems = [
       url: 'modules/reactive/index.js'
     }
   },
-  {
-    title: 'Conditional Rendering',
-    link: 'conditional-rendering',
-    icon: 'fas fa-exclamation-triangle',
-    module: {
-      id: 'conditional-rendering',
-      url: 'modules/conditional-rendering/index.js'
-    }
-  },
+  // {
+  //   title: 'Conditional Rendering',
+  //   link: 'conditional-rendering',
+  //   icon: 'fas fa-exclamation-triangle',
+  //   module: {
+  //     id: 'conditional-rendering',
+  //     url: 'modules/conditional-rendering/index.js'
+  //   }
+  // },
 
   // {
   //   title: 'List Rendering',
@@ -170,7 +170,7 @@ router.init({
     })[0];
 
     if (nav) {
-      // navService.setSubNavItems([]);
+      navService.setSubNavItems([]);
       // Scope.data.moduleInputs.subMenus.items = [];
       // setTimeout(function () {
       Scope.data.activeModule = nav.module;
@@ -190,7 +190,7 @@ view.init([
     tag: 'div',
     id: 'main-nav',
     class: 'main-nav',
-    animations: animations.mainNav,
+    // animations: animations.mainNav,
     children: [
       {
         tag: 'h1',
@@ -203,7 +203,24 @@ view.init([
           as: 'nav'
         },
 
-        animations: animations.mainNavItem,
+        // animations: animations.mainNavItem,
+        animations: {
+          enter: {
+            sequence: 'main-nav-items',
+            // appendTo: 'side-bar',
+            // positionInParent: '-=.2',
+
+            from: {
+              transition: 'none',
+              autoAlpha: 0,
+              x: '-25%',
+              ease: Elastic.easeOut.config(1, .4),
+              clearProps: 'all'
+            },
+            // position: '-=.5',
+            duration: .3
+          }
+        },
         children: [
           {
             // animations: {
@@ -295,8 +312,8 @@ view.init([
                     opacity: 0,
                     y: -10
                   },
-                  position: '-=.3',
-                  duration: .35
+                  position: '-=.1',
+                  duration: .5
                 },
                 leave: {}
               },

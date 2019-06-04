@@ -22,7 +22,7 @@ const items = [
     title: 'The Progressive Way'
   }
 ];
-// navService.setSubNavItems(items);
+navService.setSubNavItems(items);
 
 view.init({
   class: 'card big',
