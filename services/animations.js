@@ -17,26 +17,25 @@ const animations = {
         }
       },
       to: {
+        transformOrigin: 'top center',
         top: 0,
         scale: 1,
         opacity: 1,
         position: 'absolute'
       },
-      duration: .3,
-      position: '-=.15'
+      duration: 1,
+      // position: '-=.15'
     },
     leave: {
       sequence: 'card',
-      from: {
-        transformOrigin: 'top center'
-      },
       to: {
+        transformOrigin: 'top center',
         display: 'none',
         scale: .9,
         opacity: 0
       },
-      positionInParent: '-=.5',
-      duration: .3
+      // positionInParent: '-=.5',
+      duration: 1
     }
   },
   itemInOut: {
