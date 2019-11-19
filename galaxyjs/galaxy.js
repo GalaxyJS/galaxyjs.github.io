@@ -2049,6 +2049,144 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
   return instance;
 }(this));
 
+(function () {
+  Galaxy.Module.Content.registerParser('text/css', parser);
+
+  const hosts = {};
+
+  function getHostId(id) {
+    if (hosts.hasOwnProperty(id)) {
+      return hosts[id];
+    }
+    const index = Object.keys(hosts).length;
+    const ids = {
+      host: 'gjs-host-' + index,
+      content: 'gjs-content-' + index,
+    };
+
+    hosts[id] = ids;
+
+    return ids;
+  }
+
+  function rulesForCssText(styleContent) {
+    const doc = document.implementation.createHTMLDocument(''),
+      styleElement = document.createElement('style');
+
+    styleElement.textContent = styleContent;
+    // the style will only be parsed once it is added to a document
+    doc.body.appendChild(styleElement);
+
+    return styleElement;
+  }
+
+  function parser(content) {
+    return {
+      imports: [],
+      source: function (Scope) {
+        const ids = getHostId(Scope.systemId);
+        const cssRules = rulesForCssText(content);
+        const hostSuffix = '[' + ids.host + ']';
+        const contentSuffix = '[' + ids.content + ']';
+        const parsedCSSRules = [];
+        const host = /(:host)/g;
+        const selector = /([^\s+>~,]+)/g;
+        const selectorReplacer = function (item) {
+          if (item === ':host') {
+            return item;
+          }
+
+          return item + contentSuffix;
+        };
+
+        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
+          let selectorText = css.selectorText.replace(selector, selectorReplacer);
+
+          css.selectorText = selectorText.replace(host, hostSuffix);
+          parsedCSSRules.push(css.cssText);
+        });
+        const parsedCSSText = parsedCSSRules.join('\n');
+
+        Scope.exports = {
+          tag: 'style',
+          id: Scope.systemId,
+          text: parsedCSSText,
+          _apply() {
+            this.parent.node.setAttribute(ids.host, '');
+            const children = this.parent.schema.children || [];
+            children.forEach((child) => {
+              child[ids.content] = '';
+            });
+            console.log(children)
+          }
+        };
+      }
+    };
+  }
+})();
+
+(function () {
+  Galaxy.Module.Content.registerParser('default', parser);
+
+  function parser() {
+    return {
+      imports: [],
+      source: ''
+    };
+  }
+})();
+
+(function () {
+  Galaxy.Module.Content.registerParser('function', parser);
+
+  function parser(content, metaData) {
+    const unique = [];
+    let imports = metaData.imports ? metaData.imports.slice(0) : [];
+    imports = imports.map(function (item) {
+      if (unique.indexOf(item) !== -1) {
+        return null;
+      }
+
+      unique.push(item);
+      return { url: item };
+    }).filter(Boolean);
+
+    return {
+      imports: imports,
+      source: content
+    };
+  }
+})();
+
+(function () {
+  Galaxy.Module.Content.registerParser('application/javascript', parser);
+
+  function parser(content) {
+    const imports = [];
+    const unique = [];
+    const parsedContent = content.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
+      let query = path.match(/([\S]+)/gm);
+      let url = query[query.length - 1];
+      if (unique.indexOf(url) !== -1) {
+        return 'Scope.import(\'' + url + '\')';
+      }
+
+      unique.push(url);
+      imports.push({
+        url: url,
+        fresh: query.indexOf('new') !== -1
+      });
+
+      return 'Scope.import(\'' + url + '\')';
+    });
+
+    return {
+      imports: imports,
+      source: parsedContent
+    };
+  }
+})();
+
 /* global Galaxy */
 'use strict';
 
@@ -2688,144 +2826,6 @@ Galaxy.GalaxyURI = /** @class */ (function () {
   return GalaxyURI;
 })();
 
-(function () {
-  Galaxy.Module.Content.registerParser('text/css', parser);
-
-  const hosts = {};
-
-  function getHostId(id) {
-    if (hosts.hasOwnProperty(id)) {
-      return hosts[id];
-    }
-    const index = Object.keys(hosts).length;
-    const ids = {
-      host: 'gjs-host-' + index,
-      content: 'gjs-content-' + index,
-    };
-
-    hosts[id] = ids;
-
-    return ids;
-  }
-
-  function rulesForCssText(styleContent) {
-    const doc = document.implementation.createHTMLDocument(''),
-      styleElement = document.createElement('style');
-
-    styleElement.textContent = styleContent;
-    // the style will only be parsed once it is added to a document
-    doc.body.appendChild(styleElement);
-
-    return styleElement;
-  }
-
-  function parser(content) {
-    return {
-      imports: [],
-      source: function (Scope) {
-        const ids = getHostId(Scope.systemId);
-        const cssRules = rulesForCssText(content);
-        const hostSuffix = '[' + ids.host + ']';
-        const contentSuffix = '[' + ids.content + ']';
-        const parsedCSSRules = [];
-        const host = /(:host)/g;
-        const selector = /([^\s+>~,]+)/g;
-        const selectorReplacer = function (item) {
-          if (item === ':host') {
-            return item;
-          }
-
-          return item + contentSuffix;
-        };
-
-        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
-          let selectorText = css.selectorText.replace(selector, selectorReplacer);
-
-          css.selectorText = selectorText.replace(host, hostSuffix);
-          parsedCSSRules.push(css.cssText);
-        });
-        const parsedCSSText = parsedCSSRules.join('\n');
-
-        Scope.exports = {
-          tag: 'style',
-          id: Scope.systemId,
-          text: parsedCSSText,
-          _apply() {
-            this.parent.node.setAttribute(ids.host, '');
-            const children = this.parent.schema.children || [];
-            children.forEach((child) => {
-              child[ids.content] = '';
-            });
-            console.log(children)
-          }
-        };
-      }
-    };
-  }
-})();
-
-(function () {
-  Galaxy.Module.Content.registerParser('default', parser);
-
-  function parser() {
-    return {
-      imports: [],
-      source: ''
-    };
-  }
-})();
-
-(function () {
-  Galaxy.Module.Content.registerParser('function', parser);
-
-  function parser(content, metaData) {
-    const unique = [];
-    let imports = metaData.imports ? metaData.imports.slice(0) : [];
-    imports = imports.map(function (item) {
-      if (unique.indexOf(item) !== -1) {
-        return null;
-      }
-
-      unique.push(item);
-      return { url: item };
-    }).filter(Boolean);
-
-    return {
-      imports: imports,
-      source: content
-    };
-  }
-})();
-
-(function () {
-  Galaxy.Module.Content.registerParser('application/javascript', parser);
-
-  function parser(content) {
-    const imports = [];
-    const unique = [];
-    const parsedContent = content.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
-      let query = path.match(/([\S]+)/gm);
-      let url = query[query.length - 1];
-      if (unique.indexOf(url) !== -1) {
-        return 'Scope.import(\'' + url + '\')';
-      }
-
-      unique.push(url);
-      imports.push({
-        url: url,
-        fresh: query.indexOf('new') !== -1
-      });
-
-      return 'Scope.import(\'' + url + '\')';
-    });
-
-    return {
-      imports: imports,
-      source: parsedContent
-    };
-  }
-})();
-
 /* global Galaxy, Promise */
 'use strict';
 
@@ -2892,19 +2892,14 @@ Galaxy.View = /** @class */(function () {
     const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
 
     View.LAST_FRAME_ID = requestAnimationFrame(() => {
-      // console.log(keys);
       keys.forEach((key) => {
         const batch = View.TO_BE_DESTROYED[key];
         if (!batch) {
-          // console.log(View.TO_BE_DESTROYED,key);
           return;
         }
         batch.action();
-        // View.destroyNodes(batch.node, batch.toBeRemoved, batch.sequence, batch.root);
         Reflect.deleteProperty(View.TO_BE_DESTROYED, key);
       });
-
-      // console.log(ViewNode.TO_BE_DESTROYED)
     });
   };
 
@@ -2926,7 +2921,6 @@ Galaxy.View = /** @class */(function () {
     const keys = Object.keys(View.TO_BE_CREATED).sort();
 
     View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-      // console.log(keys);
       keys.forEach((key) => {
         const batch = View.TO_BE_CREATED[key];
         if (!batch) {
@@ -3590,6 +3584,7 @@ Galaxy.View = /** @class */(function () {
      * @param {Object} scopeData
      * @param {Node|Element|null} position
      * @param {Node|Element|null} refNode
+     * @return {Galaxy.View.ViewNode}
      */
     createNode: function (nodeSchema, parent, scopeData, position, refNode) {
       const _this = this;
@@ -4435,6 +4430,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   ViewNode.REMOVE_SELF = function (flag) {
     const viewNode = this;
+    // console.log([viewNode], flag)
     if (!flag) {
       if (!viewNode.placeholder.parentNode) {
         insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
@@ -4446,6 +4442,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     } else {
       viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
       viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
+      viewNode.hasBeenDestroyed();
     }
   };
 
@@ -4631,6 +4628,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         GV.CREATE_IN_NEXT_FRAME(_this, function () {
           _this.node.style.display = null;
+          _this.node.setAttribute('data-state', 'enter-active');
           _this.hasBeenInserted();
           _this.populateEnterSequence();
           _this.hasBeenRendered();
@@ -4770,6 +4768,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         const node = cn[i]['galaxyViewNode'];
 
         if (node !== undefined/* && !node.transitory*/) {
+          debugger;
           nodes.push(node);
         }
       }
@@ -4880,7 +4879,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           AnimationMeta.get(enter.sequence).configs.enter = enter;
         }
 
-        viewNode.populateEnterSequence = function (sequence1) {
+        viewNode.populateEnterSequence = function () {
           value.config = value.config || {};
 
           // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
@@ -4891,16 +4890,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             }
           }
 
-          // sequence.next(function (done) {
-          // If the node is not in the DOM at this point, then skip its animations
-          // if (viewNode.node.offsetParent === null) {
-          // if (document.body.contains(viewNode.node) === null) {
-          //   // return done();
-          //   return;
-          // }
-
           AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, value.config);
-          // });
         };
       }
 
@@ -4931,13 +4921,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             viewNode.node.offsetHeight === 0 ||
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
-            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
+            TweenLite.killTweensOf(viewNode.node);
+            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, true);
           }
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode));
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, true));
         };
       } else {
-        viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode);
+        // viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode);
       }
 
       const classAnimationsHandler = function () {
@@ -5307,54 +5298,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     /**
      * @param {Galaxy.View.ViewNode} viewNode
      * @param {'leave'|'enter'} type
-     * @param {AnimationConfig} config
-     */
-    // addChild: function (viewNode, type, config) {
-    //   const _this = this;
-    //   const parent = config.parent;
-    //   let parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-    //
-    //   if (parent === true) {
-    //     parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-    //   } else if (parent) {
-    //     parentNodeTimeline = AnimationMeta.get(config.parent).timeline;
-    //   }
-    //
-    //   // console.log(config);
-    //   // if (type === 'leave') {
-    //   //   parentNodeTimeline = AnimationMeta.get(config.parent).timeline;
-    //   //   // debugger;
-    //   //   // return;
-    //   // }
-    //   const children = parentNodeTimeline.getChildren(false);
-    //   _this.timeline.pause();
-    //
-    //   if (_this.children.indexOf(parentNodeTimeline) === -1) {
-    //     const i = _this.children.push(parentNodeTimeline);
-    //     let posInParent = config.positionInParent || '+=0';
-    //
-    //     // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
-    //     if (parentNodeTimeline.timeline === null || children.length === 0) {
-    //       parentNodeTimeline.pause();
-    //       parentNodeTimeline._startTime = 0;
-    //       parentNodeTimeline.play(0);
-    //
-    //       if (posInParent.indexOf('-') === 0) {
-    //         posInParent = null;
-    //       }
-    //     }
-    //     parentNodeTimeline.add(function () {
-    //       _this.children.splice(i - 1, 1);
-    //       _this.timeline.resume();
-    //     }, posInParent);
-    //
-    //   }
-    //
-    //   parentNodeTimeline.resume();
-    // },
-    /**
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param {'leave'|'enter'} type
      * @param {AnimationMeta} child
      * @param {AnimationConfig} childConf
      */
@@ -5408,79 +5351,32 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           to || {});
       }
 
-      const children = _this.timeline.getChildren(false, true, true);
-
-      // viewNode.cache.animations = viewNode.cache.animations || {
-      //   timeline: new TimelineLite({
-      //     autoRemoveChildren: true,
-      //     smoothChildTiming: true
-      //   })
-      // };
-
-      // const nodeTimeline = viewNode.cache.animations.timeline;
-      // nodeTimeline.data = {
-      //   am: _this,
-      //   config: config,
-      //   n: viewNode.node
-      // };
-
       if (_this.nodes.indexOf(viewNode) === -1) {
-        _this.nodes.push({v: viewNode, t: tween, p: config.position});
-
-        _this.nodes.sort((a, b) => {
-          return a.v.index > b.v.index ? 1 : -1;
+        _this.nodes.push({
+          v: viewNode,
+          t: tween,
+          p: config.position
         });
       }
 
-      const time = _this.timeline._time;
-
-      // if (_this.name === 'main-nav-items' && time) {
+      // const time = _this.timeline._time;
+      // _this.timeline.pause();
+      // _this.timeline.clear();
+      // const aliveNodes = _this.nodes.filter((actor) => !actor.v.destroyed.resolved);
+      // console.log(aliveNodes);
+      // aliveNodes.forEach((actor) => {
+      //   // if (actor.v.destroyed.resolved) return;
       //
-      //   debugger;
-      // }
+      //   // console.log(actor.v)
+      //   _this.timeline.add(actor.t, actor.p || '+=0');
+      // });
 
-      // if (time < 0.3) {
-      _this.timeline.clear();
-      _this.nodes.forEach((actor) => {
-        _this.timeline.add(actor.t, actor.p || '+=0');
-      });
-      // }
-
-      if (time) {
-        _this.timeline.play(time);
-      }
-
-
-      // nodeTimeline.add(tween);
-
-      // if the animation has no parent but its parent animation is the same as its own animation
-      // then it should intercept the animation in order to make the animation proper visual wise
-      // const sameSequenceParentTimeline = AnimationMeta.getParentAnimationByName(viewNode, _this.name);
-      // if (sameSequenceParentTimeline) {
-      //   const currentProgress = sameSequenceParentTimeline.progress();
-      //   // if the currentProgress is 0 or bigger than the nodeTimeline start time
-      //   // then we can intercept the parentNodeTimeline
-      //   if (nodeTimeline.startTime() < currentProgress || currentProgress === 0) {
-      //     _this.timeline.add(nodeTimeline, config.position || '+=0');
-      //     return;
-      //   }
-      // }
-      // const indexes =
-      // debugger;
-      // if (children.indexOf(tween) === -1) {
-      //   // _this.children.push(nodeTimeline);
-      //   let progress = _this.timeline.progress();
-      //   if (children.length) {
-      //     _this.timeline.add(tween, config.position);
-      //   } else {
-      //     _this.timeline.add(tween);
-      //   }
+      // if (time) {
       //
-      //   if (progress === undefined) {
-      //     _this.timeline.play(0);
-      //   }
+      //   _this.timeline.play(time);
       // } else {
-      //   _this.timeline.add(tween, config.position);
+      _this.timeline.add(tween, config.position || '+=0');
+      // _this.timeline.play(0);
       // }
     }
   };
@@ -5797,7 +5693,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
        *
        * @type {RenderJobManager}
        */
-      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {steps: [], queue: [], mainPromise: null};
 
       if (config.options instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5874,43 +5770,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       let newTrackMap = null;
 
       config.oldChanges = changes;
-      // parent.sequences.enter.nextAction(afterInserted);
-      // const f = (function (ch, co) {
-      //   debugger;
-      //   return function () {
-      //     afterInserted(ch, co);
-      //   }
-      // })(changes, config);
       View.CREATE_IN_NEXT_FRAME(node, afterInserted);
 
       function afterInserted() {
-        // Truncate on reset or actions that does not change the array length
-        // if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
-        // node.renderingFlow.truncate();
-        // node.renderingFlow.onTruncate(function () {
-        // whenAllLeavesAreDone.cancel();
-        // });
-        // }
-        // if (parent.schema.class === 'sub-nav-container') debugger;
-
-        //const waitStepDone = registerWaitStep(parentCache.$for, parent.sequences.leave);
-        // let waitStepDone;
-        // const waitForLeave = new Promise(function (resolve) {
-        //   waitStepDone = function () {
-        //     removeOnTruncateHandler();
-        //     waitForLeave.resolved = true;
-        //     resolve();
-        //   };
-        // });
-        //
-        // // Wait step won't be resolve if the parent leave sequence get truncated. that's why we need to resolve it if that happens
-        // const removeOnTruncateHandler = parent.sequences.leave.onTruncate(function passWaitStep() {
-        //   if (!waitForLeave.resolved) {
-        //     waitStepDone();
-        //   }
-        // });
-        //////////////////////////////////////////////
-
         let leaveStep = null;
         if (config.trackBy instanceof Function && changes.type === 'reset') {
           newTrackMap = changes.params.map(function (item, i) {
@@ -5964,13 +5826,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             // waitStepDone();
           });
         } else if (changes.type === 'reset') {
-          if (node.cache.$forProcessing) {
-            return node.cache.$forPushProcess = () => {
-              changes = Object.assign({}, changes);
-              changes.type = 'push';
-              createPushProcess(node, config, changes, config.scope);
-            };
-          }
+          // if (node.cache.$forProcessing) {
+          //   return node.cache.$forPushProcess = () => {
+          //     changes = Object.assign({}, changes);
+          //     changes.type = 'push';
+          //     // createPushProcess(node, config, changes, config.scope);
+          //   };
+          // }
 
           const nodesToBeRemoved = config.nodes.slice(0);
           config.nodes = [];
@@ -5980,16 +5842,15 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             // waitStepDone();
           });
         } else {
-          if (node.cache.$forProcessing) {
-            return node.cache.$forPushProcess = () => {
-              createPushProcess(node, config, changes, config.scope);
-            };
-          }
+          // if (node.cache.$forProcessing) {
+          //   return node.cache.$forPushProcess = () => {
+          //     createPushProcess(node, config, changes, config.scope);
+          //   };
+          // }
           // if type is not 'reset' then there is no need for leave step
-          Promise.resolve().then(() => {
-            // waitStepDone();
-            node.cache.$forProcessing = false;
-          });
+          // Promise.resolve().then(() => {
+          //   node.cache.$forProcessing = false;
+          // });
         }
 
         // if $forProcessing is true, then there is no need for a new leave step
@@ -6008,37 +5869,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         // that calls the latest $forPushProcess
         // waitForLeave.then(() => {
         node.cache.$forPushProcess.call();
-        // });
       }
     }
   };
-
-  /**
-   *
-   * @param {RenderJobManager} jobManager
-   * @param {Galaxy.Sequence} parentLeaveSequence
-   * @returns {Function}
-   */
-  // function registerWaitStep(jobManager, parentLeaveSequence) {
-  //   let destroyDone;
-  //   const waitForDestroy = new Promise(function (resolve) {
-  //     destroyDone = function () {
-  //       removeOnTruncateHandler();
-  //       waitForDestroy.resolved = true;
-  //       resolve();
-  //     };
-  //   });
-  //
-  //   // Wait step won't be resolve if the parent leave sequence get truncated. that's why we need to resolve it if that happens
-  //   const removeOnTruncateHandler = parentLeaveSequence.onTruncate(function passWaitStep() {
-  //     if (!waitForDestroy.resolved) {
-  //       destroyDone();
-  //     }
-  //   });
-  //
-  //   jobManager.queue.push(waitForDestroy);
-  //   return destroyDone;
-  // }
 
   /**
    *
@@ -6053,35 +5886,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
 
     return function $forLeaveStep() {
-      const parent = node.parent;
-      // const parentLeaveSequence = parent.sequences.leave;
-      // const schema = node.schema;
-
-      // if parent leave sequence interrupted, then make sure these items will be removed from DOM
-      // parentLeaveSequence.onTruncate(function $forLeaveSequenceInterruptionResolver() {
-      //   itemsToBeRemoved.forEach(function (vn) {
-      //     vn.sequences.leave.truncate();
-      //     vn.detach();
-      //   });
-      // });
-
-      // let alternateDOMFlow = parent.schema.renderConfig.alternateDOMFlow;
-      // if (schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
-      //   alternateDOMFlow = schema.renderConfig.alternateDOMFlow;
-      // }
-      //
-      // if (alternateDOMFlow === false) {
-      //   View.ViewNode.destroyInNextFrame(node, itemsToBeRemoved, parentLeaveSequence, parentLeaveSequence);
-      // } else {
       View.DESTROY_IN_NEXT_FRAME(node, () => {
         View.destroyNodes(node, itemsToBeRemoved.reverse(), true);
       });
-      // }
 
-      // parentLeaveSequence.nextAction(function () {
-      //   parent.callLifecycleEvent('postForLeave');
       onDone();
-      // });
     };
   }
 
@@ -6094,9 +5903,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     let onEachAction = function (vn) {
       this.push(vn);
     };
-    // parentNode.sequences.enter.onTruncate(function $forPushProcess() {
-    //   parentNode.sequences.enter.removeByRef(node);
-    // });
 
     if (changes.type === 'push') {
       let length = config.nodes.length;
@@ -6179,23 +5985,25 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
       } else {
         // if the indexAs is not specified we run the loop without setting the for index for performance gain
+        let vn;
         for (let i = 0, len = newItems.length; i < len; i++) {
           itemDataScope = View.createMirror(nodeScopeData);
           itemDataScope['__rootScopeData__'] = config.scope;
           itemDataScope[as] = c[i];
           let cns = gClone(templateSchema);
-
-          const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
+          vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
           onEachAction.call(nodes, vn, positions[i]);
         }
+
+        // if (vn)
+        //   vn.rendered.then(() => {
+        //     debugger;
+        //   });
       }
     }
 
+
     node.cache.$forProcessing = false;
-    // parentNode.sequences.enter.nextAction(function () {
-    //   parentNode.callLifecycleEvent('post$forEnter', newItems);
-    //   parentNode.stream.pour('post$forEnter', 'dom childList');
-    // }, node);
   }
 })(Galaxy);
 

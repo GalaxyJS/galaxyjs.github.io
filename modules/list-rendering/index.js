@@ -1,8 +1,11 @@
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
-Scope.data.capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
-Scope.data.countries = ['Netherlands', 'France', 'Hungary', 'Germany', '...', '...'];
+const countries = ['Netherlands', 'France', 'Hungary', 'Germany', '...', '...'];
+const capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+
+Scope.data.countries = countries;
+Scope.data.capitals = capitals;
 
 function trackBy(item) {
   return item.title;
@@ -44,7 +47,7 @@ const itemAnimations = {
       height: 0,
       opacity: 0
     },
-    position: '-=.25',
+    position: '-=.1',
     duration: .3
   }
 };
@@ -105,8 +108,8 @@ view.init({
               text: 'Populate',
               on: {
                 click: function () {
-                  Scope.data.capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
-                  Scope.data.countries = ['Netherlands', 'France', 'Hungary', 'Germany', '...', '...'];
+                  Scope.data.capitals = capitals.slice(0);
+                  Scope.data.countries = countries.slice(0);
                 }
               }
             },

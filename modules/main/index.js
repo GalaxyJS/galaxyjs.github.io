@@ -35,63 +35,63 @@ Scope.data.navItems = [
       url: 'modules/reactive/index.js'
     }
   },
-  // {
-  //   title: 'Conditional Rendering',
-  //   link: 'conditional-rendering',
-  //   icon: 'fas fa-exclamation-triangle',
-  //   module: {
-  //     id: 'conditional-rendering',
-  //     url: 'modules/conditional-rendering/index.js'
-  //   }
-  // },
+  {
+    title: 'Conditional Rendering',
+    link: 'conditional-rendering',
+    icon: 'fas fa-exclamation-triangle',
+    module: {
+      id: 'conditional-rendering',
+      url: 'modules/conditional-rendering/index.js'
+    }
+  },
 
-  // {
-  //   title: 'List Rendering',
-  //   link: 'list-rendering',
-  //   icon: 'fas fa-list-ul',
-  //   module: {
-  //     id: 'list-rendering',
-  //     url: 'modules/list-rendering/index.js'
-  //   }
-  // },
-  //
-  // {
-  //   title: 'Animations',
-  //   link: 'animations',
-  //   icon: 'fas fa-spinner',
-  //   module: {
-  //     id: 'animations',
-  //     url: 'modules/animations/index.js'
-  //   }
-  // },
-  //
-  // {
-  //   title: 'API',
-  //   link: 'api',
-  //   icon: 'fas fa-code',
-  //   module: {
-  //     id: 'api',
-  //     url: 'modules/api/index.js'
-  //   }
-  // },
-  //
-  // {
-  //   title: 'ToDo - Demo',
-  //   link: 'todo-demo',
-  //   module: {
-  //     id: 'todo-demo',
-  //     url: 'modules/todo/index.js'
-  //   }
-  // },
-  //
-  // {
-  //   title: 'VueJS Replica - Demo',
-  //   link: 'vuejs-replica-demo',
-  //   module: {
-  //     id: 'vuejs-replica-demo',
-  //     url: 'modules/vuejs-replica/index.js'
-  //   }
-  // }
+  {
+    title: 'List Rendering',
+    link: 'list-rendering',
+    icon: 'fas fa-list-ul',
+    module: {
+      id: 'list-rendering',
+      url: 'modules/list-rendering/index.js'
+    }
+  },
+
+  {
+    title: 'Animations',
+    link: 'animations',
+    icon: 'fas fa-spinner',
+    module: {
+      id: 'animations',
+      url: 'modules/animations/index.js'
+    }
+  },
+
+  {
+    title: 'API',
+    link: 'api',
+    icon: 'fas fa-code',
+    module: {
+      id: 'api',
+      url: 'modules/api/index.js'
+    }
+  },
+
+  {
+    title: 'ToDo - Demo',
+    link: 'todo-demo',
+    module: {
+      id: 'todo-demo',
+      url: 'modules/todo/index.js'
+    }
+  },
+
+  {
+    title: 'VueJS Replica - Demo',
+    link: 'vuejs-replica-demo',
+    module: {
+      id: 'vuejs-replica-demo',
+      url: 'modules/vuejs-replica/index.js'
+    }
+  }
 ];
 console.log(Scope.data);
 
