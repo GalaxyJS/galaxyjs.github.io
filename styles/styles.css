@@ -313,10 +313,11 @@ ul > li {
   overflow: hidden;
   position: relative;
   display: block;
+
 }
 
-ul > li > span {
-  float: left;
+ul > li > * {
+  vertical-align: middle;
 }
 
 input[type='checkbox'] {

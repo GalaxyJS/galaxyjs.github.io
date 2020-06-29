@@ -4,6 +4,7 @@ const animations = {
   cardInOut: {
     enter: {
       sequence: 'card',
+      // addTo: 'main-nav-items',
       // appendTo: 'main-nav-items',
 
       from: {
@@ -23,8 +24,7 @@ const animations = {
         opacity: 1,
         position: 'absolute'
       },
-      duration: 1,
-      // position: '-=.15'
+      duration: .5,
     },
     leave: {
       sequence: 'card',
@@ -35,7 +35,8 @@ const animations = {
         opacity: 0
       },
       // positionInParent: '-=.5',
-      duration: 1
+      // position: 'test',
+      duration: 1.5
     }
   },
   itemInOut: {

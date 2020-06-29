@@ -203,13 +203,9 @@ view.init([
           as: 'nav'
         },
 
-        // animations: animations.mainNavItem,
         animations: {
           enter: {
             sequence: 'main-nav-items',
-            // appendTo: 'side-bar',
-            // positionInParent: '-=.2',
-
             from: {
               transition: 'none',
               autoAlpha: 0,
@@ -217,20 +213,12 @@ view.init([
               ease: Elastic.easeOut.config(1, .4),
               clearProps: 'all'
             },
-            // position: '-=.5',
-            duration: .3
+            position: '-=.1',
+            duration: .2
           }
         },
         children: [
           {
-            // animations: {
-            //   '.active': {
-            //     sequence: 'active-nav',
-            //     position: '-=.2',
-            //     duration: .2
-            //   }
-            // },
-
             tag: 'a',
             inputs: {
               nav: '<>nav'
@@ -304,10 +292,6 @@ view.init([
                 },
                 enter: {
                   sequence: 'main-nav-items',
-                  // addTo: 'main-nav-items',
-                  // addTo: 'sub-nav-container',
-                  // positionInParent: '-=.9',
-
                   from: {
                     opacity: 0,
                     y: -10

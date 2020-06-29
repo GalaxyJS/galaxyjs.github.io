@@ -12,7 +12,7 @@ const itemAnimations = {
     leaveWithParent: true
   },
   enter: {
-    parent: 'card',
+    // parent: 'card',
     sequence: 'if-items',
     from: {
       opacity: 0,
@@ -26,7 +26,7 @@ const itemAnimations = {
     duration: .3
   },
   leave: {
-    parent: 'card',
+    // parent: 'card',
     sequence: 'if-items',
     to: {
       x: 25,
@@ -38,11 +38,11 @@ const itemAnimations = {
 };
 
 const listItemAnimations = {
-  config: {
-    enterWithParent: true
-  },
+  // config: {
+  //   enterWithParent: true
+  // },
   enter: {
-    parent: 'card',
+    // parent: 'card',
     sequence: 'if-items',
     from: {
       opacity: 0,
@@ -243,30 +243,31 @@ view.init({
             }
           ]
         },
-        // {
-        //   $if: '<>data.conditionForList',
-        //   animations: {
-        //     leave: {
-        //       sequence: 'if-items',
-        //       to: {
-        //         opacity: 0
-        //       },
-        //       duration: 3
-        //     }
-        //   },
-        //   children: [
-        //     {
-        //       tag: 'p',
-        //       animations: listItemAnimations,
-        //
-        //       $for: {
-        //         data: ['first', 'Second', 'third'],
-        //         as: 'item'
-        //       },
-        //       text: '<>item'
-        //     }
-        //   ]
-        // },
+        {
+          $if: '<>data.conditionForList',
+          animations: {
+            leave: {
+              sequence: 'if-items',
+              to: {
+                opacity: 0,
+                clearProps: 'all'
+              },
+              duration: 1
+            }
+          },
+          children: [
+            {
+              tag: 'p',
+              animations: listItemAnimations,
+
+              $for: {
+                data: ['first', 'Second', 'third'],
+                as: 'item'
+              },
+              text: '<>item'
+            }
+          ]
+        },
         '<h2>Rendering Strategy</h2>' +
         '<p>The way <strong>$if</strong> handles DOM manipulation is important to be understood. ' +
         'When condition is false, then the element will be detached from DOM and upon on true ' +

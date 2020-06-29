@@ -6,7 +6,7 @@ const effects = Scope.import('services/effects.js');
 
 view.init({
   class: 'card big',
-  // animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'img',

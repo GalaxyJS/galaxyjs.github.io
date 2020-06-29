@@ -1,8 +1,6 @@
 const view = Scope.import('galaxy/view');
 const effects = Scope.import('services/effects.js');
 
-// const css = Scope.import('./style.css');
-
 const originalDataList = [
   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'
 ];
@@ -99,7 +97,7 @@ view.init([
     animations: {
       enter: {
         sequence: 'card',
-        startAfter: 'main-nav-items',
+        // startAfter: 'main-nav-items',
 
         from: {
           x: 80,
@@ -111,7 +109,7 @@ view.init([
       },
       leave: {
         sequence: 'card',
-        parent: 'children',
+        // parent: 'children',
 
         to: {
           y: 150,
@@ -162,7 +160,7 @@ view.init([
               animations: {
                 enter: {
                   sequence: 'boxes',
-                  startAfter: 'card',
+                  addTo: 'card',
 
                   from: {
                     scale: 0
@@ -171,11 +169,12 @@ view.init([
                   position: '-=.25'
                 },
                 leave: {
+                  sequence: 'boxes',
                   to: {
                     scale: 0
                   },
-                  duration: .35,
-                  // position: '-=.25'
+                  duration: .15,
+                  position: '<0.05'
                 }
               },
               class: 'box',

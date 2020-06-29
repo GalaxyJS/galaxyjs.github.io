@@ -7,16 +7,25 @@ const capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'
 Scope.data.countries = countries;
 Scope.data.capitals = capitals;
 
+var pro = new Promise(function (resolve) {
+  Scope.data.resolve = resolve;
+});
+
+setTimeout(function () {
+  Scope.data.resolve();
+  console.log('asdasdasdasdasd')
+}, 8000)
+
 function trackBy(item) {
   return item.title;
 }
 
 const itemAnimations = {
-  config: {
-    leaveWithParent: true
-  },
+  // config: {
+  //   leaveWithParent: true
+  // },
   enter: {
-    parent: 'card',
+    addTo: 'card',
     sequence: 'list-items',
     from: {
       opacity: 0,
@@ -40,6 +49,10 @@ const itemAnimations = {
   },
   leave: {
     sequence: 'list-items',
+    addTo: 'card',
+    await: function () {
+      return pro;
+    },
     to: {
       overflow: 'hidden',
       paddingTop: 0,
@@ -57,8 +70,8 @@ const button = {
   text: 'Empty',
   on: {
     click: function () {
-      Scope.data.countries = [];
       Scope.data.capitals = [];
+      Scope.data.countries = [];
     }
   }
 };
@@ -110,6 +123,15 @@ view.init({
                 click: function () {
                   Scope.data.capitals = capitals.slice(0);
                   Scope.data.countries = countries.slice(0);
+                }
+              }
+            },
+            {
+              tag: 'button',
+              text: 'Resolve',
+              on: {
+                click: function () {
+                  Scope.data.resolve();
                 }
               }
             },

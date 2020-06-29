@@ -527,7 +527,7 @@
  * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
  * @license   Licensed under MIT license
  *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
- * @version   v4.2.4+314e4831
+ * @version   v4.2.8+1e68dce6
  */
 
 (function (global, factory) {
@@ -758,23 +758,12 @@
   var FULFILLED = 1;
   var REJECTED = 2;
 
-  var TRY_CATCH_ERROR = { error: null };
-
   function selfFulfillment() {
     return new TypeError("You cannot resolve a promise with itself");
   }
 
   function cannotReturnOwn() {
     return new TypeError('A promises callback cannot return that same promise.');
-  }
-
-  function getThen(promise) {
-    try {
-      return promise.then;
-    } catch (error) {
-      TRY_CATCH_ERROR.error = error;
-      return TRY_CATCH_ERROR;
-    }
   }
 
   function tryThen(then$$1, value, fulfillmentHandler, rejectionHandler) {
@@ -832,10 +821,7 @@
     if (maybeThenable.constructor === promise.constructor && then$$1 === then && maybeThenable.constructor.resolve === resolve$1) {
       handleOwnThenable(promise, maybeThenable);
     } else {
-      if (then$$1 === TRY_CATCH_ERROR) {
-        reject(promise, TRY_CATCH_ERROR.error);
-        TRY_CATCH_ERROR.error = null;
-      } else if (then$$1 === undefined) {
+      if (then$$1 === undefined) {
         fulfill(promise, maybeThenable);
       } else if (isFunction(then$$1)) {
         handleForeignThenable(promise, maybeThenable, then$$1);
@@ -849,7 +835,14 @@
     if (promise === value) {
       reject(promise, selfFulfillment());
     } else if (objectOrFunction(value)) {
-      handleMaybeThenable(promise, value, getThen(value));
+      var then$$1 = void 0;
+      try {
+        then$$1 = value.then;
+      } catch (error) {
+        reject(promise, error);
+        return;
+      }
+      handleMaybeThenable(promise, value, then$$1);
     } else {
       fulfill(promise, value);
     }
@@ -928,31 +921,18 @@
     promise._subscribers.length = 0;
   }
 
-  function tryCatch(callback, detail) {
-    try {
-      return callback(detail);
-    } catch (e) {
-      TRY_CATCH_ERROR.error = e;
-      return TRY_CATCH_ERROR;
-    }
-  }
-
   function invokeCallback(settled, promise, callback, detail) {
     var hasCallback = isFunction(callback),
       value = void 0,
       error = void 0,
-      succeeded = void 0,
-      failed = void 0;
+      succeeded = true;
 
     if (hasCallback) {
-      value = tryCatch(callback, detail);
-
-      if (value === TRY_CATCH_ERROR) {
-        failed = true;
-        error = value.error;
-        value.error = null;
-      } else {
-        succeeded = true;
+      try {
+        value = callback(detail);
+      } catch (e) {
+        succeeded = false;
+        error = e;
       }
 
       if (promise === value) {
@@ -961,14 +941,13 @@
       }
     } else {
       value = detail;
-      succeeded = true;
     }
 
     if (promise._state !== PENDING) {
       // noop
     } else if (hasCallback && succeeded) {
       resolve(promise, value);
-    } else if (failed) {
+    } else if (succeeded === false) {
       reject(promise, error);
     } else if (settled === FULFILLED) {
       fulfill(promise, value);
@@ -1046,16 +1025,28 @@
 
 
       if (resolve$$1 === resolve$1) {
-        var _then = getThen(entry);
+        var _then = void 0;
+        var error = void 0;
+        var didError = false;
+        try {
+          _then = entry.then;
+        } catch (e) {
+          didError = true;
+          error = e;
+        }
 
         if (_then === then && entry._state !== PENDING) {
           this._settledAt(entry._state, i, entry._result);
         } else if (typeof _then !== 'function') {
           this._remaining--;
           this._result[i] = entry;
-        } else if (c === Promise$2) {
+        } else if (c === Promise$1) {
           var promise = new c(noop);
-          handleMaybeThenable(promise, entry, _then);
+          if (didError) {
+            reject(promise, error);
+          } else {
+            handleMaybeThenable(promise, entry, _then);
+          }
           this._willSettleAt(promise, i);
         } else {
           this._willSettleAt(new c(function (resolve$$1) {
@@ -1387,7 +1378,7 @@
    @constructor
    */
 
-  var Promise$2 = function () {
+  var Promise$1 = function () {
     function Promise(resolver) {
       this[PROMISE_ID] = nextId();
       this._result = this._state = undefined;
@@ -1633,28 +1624,32 @@
       var promise = this;
       var constructor = promise.constructor;
 
-      return promise.then(function (value) {
-        return constructor.resolve(callback()).then(function () {
-          return value;
+      if (isFunction(callback)) {
+        return promise.then(function (value) {
+          return constructor.resolve(callback()).then(function () {
+            return value;
+          });
+        }, function (reason) {
+          return constructor.resolve(callback()).then(function () {
+            throw reason;
+          });
         });
-      }, function (reason) {
-        return constructor.resolve(callback()).then(function () {
-          throw reason;
-        });
-      });
+      }
+
+      return promise.then(callback, callback);
     };
 
     return Promise;
   }();
 
-  Promise$2.prototype.then = then;
-  Promise$2.all = all;
-  Promise$2.race = race;
-  Promise$2.resolve = resolve$1;
-  Promise$2.reject = reject$1;
-  Promise$2._setScheduler = setScheduler;
-  Promise$2._setAsap = setAsap;
-  Promise$2._asap = asap;
+  Promise$1.prototype.then = then;
+  Promise$1.all = all;
+  Promise$1.race = race;
+  Promise$1.resolve = resolve$1;
+  Promise$1.reject = reject$1;
+  Promise$1._setScheduler = setScheduler;
+  Promise$1._setAsap = setAsap;
+  Promise$1._asap = asap;
 
   /*global self*/
   function polyfill() {
@@ -1687,18 +1682,18 @@
       }
     }
 
-    local.Promise = Promise$2;
+    local.Promise = Promise$1;
   }
 
 // Strange compat..
-  Promise$2.polyfill = polyfill;
-  Promise$2.Promise = Promise$2;
+  Promise$1.polyfill = polyfill;
+  Promise$1.Promise = Promise$1;
 
-  Promise$2.polyfill();
-
-  return Promise$2;
+  return Promise$1;
 
 })));
+
+
 /* global Galaxy, Promise */
 'use strict';
 
@@ -1721,7 +1716,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     return a;
   };
 
-  const importedLibraries = {};
+  const cachedModules = {};
 
   /**
    *
@@ -1874,17 +1869,17 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           }).catch(reject);
         }
 
-        const compilationStep = function (moduleContent) {
-          return _this.compileModuleContent(module, moduleContent, invokers);
-        };
+        // const compilationStep = function (moduleContent) {
+        //   return _this.compileModuleContent(module, moduleContent, invokers);
+        // };
 
-        const executionStep = function (compiledModule) {
-          return _this.executeCompiledModule(compiledModule);
-        };
+        // const executionStep = function (compiledModule) {
+        //   return _this.executeCompiledModule(compiledModule);
+        // };
 
         contentFetcher
-          .then(compilationStep)
-          .then(executionStep)
+          .then(moduleContent => _this.compileModuleContent(module, moduleContent, invokers))
+          .then(compiledModule => _this.executeCompiledModule(compiledModule))
           .then(resolve)
           .catch(reject);
       });
@@ -1903,7 +1898,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       const promise = new Promise(function (resolve, reject) {
         const doneImporting = function (module, imports) {
-          imports.splice(imports.indexOf(/*module.importId || */module.url) - 1, 1);
+          imports.splice(imports.indexOf(module.url) - 1, 1);
 
           if (imports.length === 0) {
             // This will load the original initializer
@@ -1936,7 +1931,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
               doneImporting(module, importsCopy);
             }
             // Module is already loaded and we don't need a new instance of it (Singleton)
-            else if (importedLibraries[item.url] && !item.fresh) {
+            else if (cachedModules[item.url] && !item.fresh) {
               doneImporting(module, importsCopy);
             }
             // Module is not loaded
@@ -1945,6 +1940,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 item.url = scope.uri.path + item.url.substr(2);
               }
 
+              // if(item.url === '/galaxy/site/modules/api/test.css') debugger;
               Galaxy.load({
                 name: item.name,
                 url: item.url,
@@ -1978,11 +1974,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             module.scope.inject(item, module.addOns[item]);
           }
 
-          for (let item in importedLibraries) {
-            if (importedLibraries.hasOwnProperty(item)) {
-              const asset = importedLibraries[item];
+          for (let item in cachedModules) {
+            if (cachedModules.hasOwnProperty(item)) {
+              const asset = cachedModules[item];
               if (asset.module) {
-                module.scope.inject(asset.name, asset.module);
+                module.scope.inject(asset.libId, asset.module);
               }
             }
           }
@@ -2001,10 +1997,13 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
           Reflect.deleteProperty(module, 'addOnProviders');
 
-          const mId = module.url;
-          if (!importedLibraries[mId]) {
-            importedLibraries[mId] = {
-              name: mId,
+          const libId = module.url;
+          // if the module export hast _temp then do not cache the module
+          if (module.scope.exports._temp) {
+            module.scope.parentScope.inject(libId, module.scope.exports);
+          } else if (!cachedModules[libId]) {
+            cachedModules[libId] = {
+              libId: libId,
               module: module.scope.exports
             };
           }
@@ -2048,144 +2047,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
   return instance;
 }(this));
-
-(function () {
-  Galaxy.Module.Content.registerParser('text/css', parser);
-
-  const hosts = {};
-
-  function getHostId(id) {
-    if (hosts.hasOwnProperty(id)) {
-      return hosts[id];
-    }
-    const index = Object.keys(hosts).length;
-    const ids = {
-      host: 'gjs-host-' + index,
-      content: 'gjs-content-' + index,
-    };
-
-    hosts[id] = ids;
-
-    return ids;
-  }
-
-  function rulesForCssText(styleContent) {
-    const doc = document.implementation.createHTMLDocument(''),
-      styleElement = document.createElement('style');
-
-    styleElement.textContent = styleContent;
-    // the style will only be parsed once it is added to a document
-    doc.body.appendChild(styleElement);
-
-    return styleElement;
-  }
-
-  function parser(content) {
-    return {
-      imports: [],
-      source: function (Scope) {
-        const ids = getHostId(Scope.systemId);
-        const cssRules = rulesForCssText(content);
-        const hostSuffix = '[' + ids.host + ']';
-        const contentSuffix = '[' + ids.content + ']';
-        const parsedCSSRules = [];
-        const host = /(:host)/g;
-        const selector = /([^\s+>~,]+)/g;
-        const selectorReplacer = function (item) {
-          if (item === ':host') {
-            return item;
-          }
-
-          return item + contentSuffix;
-        };
-
-        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
-          let selectorText = css.selectorText.replace(selector, selectorReplacer);
-
-          css.selectorText = selectorText.replace(host, hostSuffix);
-          parsedCSSRules.push(css.cssText);
-        });
-        const parsedCSSText = parsedCSSRules.join('\n');
-
-        Scope.exports = {
-          tag: 'style',
-          id: Scope.systemId,
-          text: parsedCSSText,
-          _apply() {
-            this.parent.node.setAttribute(ids.host, '');
-            const children = this.parent.schema.children || [];
-            children.forEach((child) => {
-              child[ids.content] = '';
-            });
-            console.log(children)
-          }
-        };
-      }
-    };
-  }
-})();
-
-(function () {
-  Galaxy.Module.Content.registerParser('default', parser);
-
-  function parser() {
-    return {
-      imports: [],
-      source: ''
-    };
-  }
-})();
-
-(function () {
-  Galaxy.Module.Content.registerParser('function', parser);
-
-  function parser(content, metaData) {
-    const unique = [];
-    let imports = metaData.imports ? metaData.imports.slice(0) : [];
-    imports = imports.map(function (item) {
-      if (unique.indexOf(item) !== -1) {
-        return null;
-      }
-
-      unique.push(item);
-      return { url: item };
-    }).filter(Boolean);
-
-    return {
-      imports: imports,
-      source: content
-    };
-  }
-})();
-
-(function () {
-  Galaxy.Module.Content.registerParser('application/javascript', parser);
-
-  function parser(content) {
-    const imports = [];
-    const unique = [];
-    const parsedContent = content.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
-      let query = path.match(/([\S]+)/gm);
-      let url = query[query.length - 1];
-      if (unique.indexOf(url) !== -1) {
-        return 'Scope.import(\'' + url + '\')';
-      }
-
-      unique.push(url);
-      imports.push({
-        url: url,
-        fresh: query.indexOf('new') !== -1
-      });
-
-      return 'Scope.import(\'' + url + '\')';
-    });
-
-    return {
-      imports: imports,
-      source: parsedContent
-    };
-  }
-})();
 
 /* global Galaxy */
 'use strict';
@@ -2826,6 +2687,145 @@ Galaxy.GalaxyURI = /** @class */ (function () {
   return GalaxyURI;
 })();
 
+(function () {
+  Galaxy.Module.Content.registerParser('text/css', parser);
+
+  const hosts = {};
+
+  function getHostId(id) {
+    if (hosts.hasOwnProperty(id)) {
+      return hosts[id];
+    }
+    const index = Object.keys(hosts).length;
+    const ids = {
+      host: 'gjs-host-' + index,
+      content: 'gjs-content-' + index,
+    };
+
+    hosts[id] = ids;
+
+    return ids;
+  }
+
+  function rulesForCssText(styleContent) {
+    const doc = document.implementation.createHTMLDocument(''),
+      styleElement = document.createElement('style');
+
+    styleElement.textContent = styleContent;
+    // the style will only be parsed once it is added to a document
+    doc.body.appendChild(styleElement);
+
+    return styleElement;
+  }
+
+  function parser(content) {
+    return {
+      imports: [],
+      source: function (Scope) {
+        const ids = getHostId(Scope.systemId);
+        const cssRules = rulesForCssText(content);
+        const hostSuffix = '[' + ids.host + ']';
+        const contentSuffix = '[' + ids.content + ']';
+        const parsedCSSRules = [];
+        const host = /(:host)/g;
+        const selector = /([^\s+>~,]+)/g;
+        const selectorReplacer = function (item) {
+          if (item === ':host') {
+            return item;
+          }
+
+          return item + contentSuffix;
+        };
+
+        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
+          let selectorText = css.selectorText.replace(selector, selectorReplacer);
+
+          css.selectorText = selectorText.replace(host, hostSuffix);
+          parsedCSSRules.push(css.cssText);
+        });
+        const parsedCSSText = parsedCSSRules.join('\n');
+
+        Scope.exports = {
+          _temp: true,
+          tag: 'style',
+          id: Scope.systemId,
+          text: parsedCSSText,
+          _apply() {
+            this.parent.node.setAttribute(ids.host, '');
+            const children = this.parent.schema.children || [];
+            children.forEach((child) => {
+              child[ids.content] = '';
+            });
+            console.log(children)
+          }
+        };
+      }
+    };
+  }
+})();
+
+(function () {
+  Galaxy.Module.Content.registerParser('default', parser);
+
+  function parser() {
+    return {
+      imports: [],
+      source: ''
+    };
+  }
+})();
+
+(function () {
+  Galaxy.Module.Content.registerParser('function', parser);
+
+  function parser(content, metaData) {
+    const unique = [];
+    let imports = metaData.imports ? metaData.imports.slice(0) : [];
+    imports = imports.map(function (item) {
+      if (unique.indexOf(item) !== -1) {
+        return null;
+      }
+
+      unique.push(item);
+      return { url: item };
+    }).filter(Boolean);
+
+    return {
+      imports: imports,
+      source: content
+    };
+  }
+})();
+
+(function () {
+  Galaxy.Module.Content.registerParser('application/javascript', parser);
+
+  function parser(content) {
+    const imports = [];
+    const unique = [];
+    const parsedContent = content.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
+      let query = path.match(/([\S]+)/gm);
+      let url = query[query.length - 1];
+      if (unique.indexOf(url) !== -1) {
+        return 'Scope.import(\'' + url + '\')';
+      }
+
+      unique.push(url);
+      imports.push({
+        url: url,
+        fresh: query.indexOf('new') === 0
+      });
+
+      return 'Scope.import(\'' + url + '\')';
+    });
+
+    return {
+      imports: imports,
+      source: parsedContent
+    };
+  }
+})();
+
 /* global Galaxy, Promise */
 'use strict';
 
@@ -2852,19 +2852,18 @@ Galaxy.View = /** @class */(function () {
    *
    * @param {Galaxy.View.ViewNode} node
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @param {Galaxy.Sequence} sequence
-   * @param {Galaxy.Sequence} root
    * @memberOf Galaxy.View
    * @static
    */
-  View.destroyNodes = function (node, toBeRemoved, sequence, root) {
+  View.destroyNodes = function (node, toBeRemoved) {
+    // View.DESTROY_IN_NEXT_FRAME(node, () => {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
-      // remove.renderingFlow.truncate();
-      remove.destroy(sequence, root);
+      remove.destroy();
     }
+    // });
   };
 
   View.TO_BE_DESTROYED = {};
@@ -2884,12 +2883,20 @@ Galaxy.View = /** @class */(function () {
       View.LAST_FRAME_ID = null;
     }
 
-    View.TO_BE_DESTROYED[node.index] = {
-      node,
-      action
-    };
+    if (View.TO_BE_DESTROYED[node.index]) {
+      View.TO_BE_DESTROYED[node.index].push({
+        node,
+        action
+      });
+    } else {
+      View.TO_BE_DESTROYED[node.index] = [{
+        node,
+        action
+      }];
+    }
 
     const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
+    View._sort_value = keys;
 
     View.LAST_FRAME_ID = requestAnimationFrame(() => {
       keys.forEach((key) => {
@@ -2897,7 +2904,10 @@ Galaxy.View = /** @class */(function () {
         if (!batch) {
           return;
         }
-        batch.action();
+        batch.forEach(function (b) {
+          b.action();
+        });
+
         Reflect.deleteProperty(View.TO_BE_DESTROYED, key);
       });
     });
@@ -2913,10 +2923,22 @@ Galaxy.View = /** @class */(function () {
       View.LAST_CREATE_FRAME_ID = null;
     }
 
-    View.TO_BE_CREATED[node.index] = {
-      node,
-      action
-    };
+    if (View.TO_BE_CREATED[node.index]) {
+      View.TO_BE_CREATED[node.index].push({
+        node,
+        action
+      });
+    } else {
+      View.TO_BE_CREATED[node.index] = [{
+        node,
+        action
+      }];
+    }
+
+    // View.TO_BE_CREATED[node.index] = {
+    //   node,
+    //   action
+    // };
 
     const keys = Object.keys(View.TO_BE_CREATED).sort();
 
@@ -2926,7 +2948,10 @@ Galaxy.View = /** @class */(function () {
         if (!batch) {
           return;
         }
-        batch.action();
+        batch.forEach(function (b) {
+          b.action();
+        });
+
         Reflect.deleteProperty(View.TO_BE_CREATED, key);
       });
     });
@@ -4589,7 +4614,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      *
      * @param {Galaxy.Sequence} sequence
      */
-    populateLeaveSequence: ViewNode.REMOVE_SELF,
+    populateLeaveSequence: null,
 
     detach: function () {
       const _this = this;
@@ -4626,23 +4651,21 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.node.style.display = 'none';
         _this.node.setAttribute('data-state', 'enter');
 
+        _this.hasBeenInserted();
+        _this.hasBeenRendered();
+
         GV.CREATE_IN_NEXT_FRAME(_this, function () {
           _this.node.style.display = null;
           _this.node.setAttribute('data-state', 'enter-active');
-          _this.hasBeenInserted();
           _this.populateEnterSequence();
-          _this.hasBeenRendered();
         });
       } else if (!flag && _this.node.parentNode) {
-        // enterSequence.truncate();
         _this.callLifecycleEvent('preRemove');
 
         _this.origin = true;
         _this.transitory = true;
-
         GV.DESTROY_IN_NEXT_FRAME(_this, () => {
           _this.populateLeaveSequence(false);
-
           _this.origin = false;
           _this.transitory = false;
           _this.node.style.cssText = '';
@@ -4659,7 +4682,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      */
     registerChild: function (childNode, position) {
       const _this = this;
-      // childNode.parent = _this;
+      if (childNode.populateLeaveSequence === null) {
+        childNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF;
+      }
 
       if (_this.contentRef) {
         _this.contentRef.insertBefore(childNode.placeholder, position);
@@ -4698,58 +4723,80 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         this.properties.push(reactiveData);
       }
     },
-
-    /**
-     *
-     * @param {Boolean} mainLeaveSequence
-     * @param {Galaxy.Sequence} rootSequence
-     */
-    destroy: function (mainLeaveSequence, rootSequence) {
+    hasAnimation: function () {
       const _this = this;
-      _this.transitory = true;
-      const leaveSequence = true;
+      const children = _this.getChildNodes();
 
-      // The node is the original node that is being removed
-      if (!mainLeaveSequence) {
-        _this.origin = true;
-        if (_this.inDOM) {
-          _this.clean(leaveSequence, rootSequence);
-          _this.populateLeaveSequence(leaveSequence);
-          _this.node.setAttribute('data-state', 'leave-origin');
+      if (_this.populateLeaveSequence) {
+        return true;
+      }
 
-          GV.DESTROY_IN_NEXT_FRAME(_this, () => {
-            _this.callLifecycleEvent('postRemove');
-            _this.callLifecycleEvent('postDestroy');
-
-            _this.node.style.cssText = '';
-          });
+      for (let i = 0, len = children.length; i < len; i++) {
+        const node = children[i];
+        if (node.populateLeaveSequence) {
+          return true;
         }
-      } else if (mainLeaveSequence) {
-        if (_this.inDOM) {
-          _this.clean(leaveSequence, rootSequence);
-          _this.populateLeaveSequence(leaveSequence);
-          _this.node.setAttribute('data-state', 'leave');
 
-          GV.DESTROY_IN_NEXT_FRAME(_this, () => {
-            _this.callLifecycleEvent('postRemove');
-            _this.callLifecycleEvent('postDestroy');
-          });
+        if (node.hasAnimation()) {
+          return true;
         }
       }
 
-      _this.properties.forEach(function (reactiveData) {
-        reactiveData.removeNode(_this);
-      });
+      return false;
+    },
+    updateChildrenLeaveSequence: function (hasAnimation) {
+      const _this = this;
+      const children = _this.getChildNodes();
 
-      _this.dependedObjects.forEach(function (dependent) {
-        dependent.reactiveData.removeNode(dependent.item);
-      });
+      if (hasAnimation) {
+        if (!_this.populateLeaveSequence) {
+          _this.populateLeaveSequence = function () {
 
-      _this.properties = [];
-      _this.dependedObjects = [];
-      _this.inDOM = false;
-      _this.schema.node = undefined;
-      _this.inputs = {};
+          };
+        }
+      } else {
+        _this.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF;
+        return;
+      }
+
+      for (let i = 0, len = children.length; i < len; i++) {
+        const node = children[i];
+        node.updateChildrenLeaveSequence(hasAnimation);
+      }
+    },
+
+    /**
+     *
+     */
+    destroy: function () {
+      const _this = this;
+      _this.transitory = true;
+      GV.DESTROY_IN_NEXT_FRAME(_this, () => {
+        if (_this.inDOM) {
+          const flag = _this.hasAnimation();
+          _this.updateChildrenLeaveSequence(flag);
+          _this.clean();
+          _this.populateLeaveSequence(true);
+          _this.node.setAttribute('data-state', 'leave');
+
+          _this.callLifecycleEvent('postRemove');
+          _this.callLifecycleEvent('postDestroy');
+        }
+
+        _this.properties.forEach(function (reactiveData) {
+          reactiveData.removeNode(_this);
+        });
+
+        _this.dependedObjects.forEach(function (dependent) {
+          dependent.reactiveData.removeNode(dependent.item);
+        });
+
+        _this.properties = [];
+        _this.dependedObjects = [];
+        _this.inDOM = false;
+        _this.schema.node = undefined;
+        _this.inputs = {};
+      });
     },
 
     /**
@@ -4758,17 +4805,17 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Object} item
      */
     addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({reactiveData: reactiveData, item: item});
+      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
     },
 
     getChildNodes: function () {
       const nodes = [];
-      const cn = Array.prototype.slice.call(this.node.childNodes, 0);
+      const cn = Array.prototype.slice.call(this.node.children, 0);
       for (let i = cn.length - 1; i >= 0; i--) {
         const node = cn[i]['galaxyViewNode'];
 
         if (node !== undefined/* && !node.transitory*/) {
-          debugger;
+          // debugger;
           nodes.push(node);
         }
       }
@@ -4794,26 +4841,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     /**
      *
-     * @param {Galaxy.Sequence} leaveSequence
-     * @param {Galaxy.Sequence} root
      * @return {Galaxy.Sequence}
      */
-    clean: function (leaveSequence, root) {
+    clean: function () {
       const _this = this;
       const toBeRemoved = _this.getChildNodes();
 
-      // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
-      // children should also get destroyed as child
-      if (leaveSequence) {
-        GV.DESTROY_IN_NEXT_FRAME(_this, () => {
-          GV.destroyNodes(_this, toBeRemoved, leaveSequence, root);
-        });
-
-        return;
-      }
-
       GV.DESTROY_IN_NEXT_FRAME(_this, () => {
-        GV.destroyNodes(_this, toBeRemoved, null, root);
+        GV.destroyNodes(_this, toBeRemoved);
       });
     },
 
@@ -4852,11 +4887,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
 })(Galaxy.View);
 
-/* global Galaxy, TweenLite, TimelineLite */
+/* global Galaxy, gsap, TimelineLite */
 'use strict';
 
 (function (Galaxy) {
-  if (!window.TweenLite || !window.TimelineLite) {
+  if (!window.gsap || !window.TimelineLite) {
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
@@ -4896,6 +4931,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       const leave = value.leave;
       if (leave) {
+
+        if (leave === true) {
+          viewNode.populateLeaveSequence = Galaxy.View.EMPTY_CALL;
+          return;
+        }
+
         if (leave.sequence) {
           AnimationMeta.get(leave.sequence).configs.leave = leave;
         }
@@ -4912,20 +4953,21 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             }
           }
 
-          if (TweenLite.getTweensOf(viewNode.node).length) {
-            TweenLite.killTweensOf(viewNode.node);
+          if (gsap.getTweensOf(viewNode.node).length) {
+            gsap.killTweensOf(viewNode.node);
           }
-
+          // Galaxy.View.TO_BE_DESTROYED;
+          // debugger;
           // in the case which the viewNode is not visible, then ignore its animation
           if (viewNode.node.offsetWidth === 0 ||
             viewNode.node.offsetHeight === 0 ||
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
-            TweenLite.killTweensOf(viewNode.node);
-            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, true);
+            gsap.killTweensOf(viewNode.node);
+            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
-
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, true));
+          // debugger;
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
       } else {
         // viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode);
@@ -4990,14 +5032,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    *
    * @typedef {Object} AnimationConfig
    * @property {string} [parent]
+   * @property {Promise} [await]
    * @property {string|number} [positionInParent]
    * @property {string|number} [position]
    * @property {number} [duration]
    * @property {object} [from]
    * @property {object} [to]
-   * @property {string} [attachTo]
    * @property {string} [addTo]
-   * @property {string} [appendTo]
+
    */
 
   AnimationMeta.ANIMATIONS = {};
@@ -5044,7 +5086,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     let tween = null;
     if (from && to) {
-      tween = TweenLite.fromTo(node,
+      tween = gsap.fromTo(node,
         duration,
         from,
         to);
@@ -5061,11 +5103,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         from.onComplete = onComplete;
       }
 
-      tween = TweenLite.from(node,
+      tween = gsap.from(node,
         duration,
         from);
     } else if (to) {
-      tween = TweenLite.to(node,
+      tween = gsap.to(node,
         duration,
         to);
     } else {
@@ -5161,9 +5203,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -5190,17 +5232,32 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       // }
 
       // if(newConfig.attachTo === 'main-nav-items') debugger;
+
+      if (newConfig.await) {
+        const am = AnimationMeta.get(newConfig.addTo);
+
+        if (!am.aaa) {
+          // am.aaa = newConfig.await();
+          // am.timeline.addPause('+=0');
+          // // animationMeta.timeline.addPause('+=0');
+          // // debugger;
+          // newConfig.await().then(function () {
+          //
+          // });
+        }
+      }
+
       if (newConfig.addTo) {
         animationMeta.addTo(newConfig.addTo, newConfig.positionInParent);
       }
 
-      if (newConfig.attachTo) {
-        animationMeta.attachTo(newConfig.attachTo, newConfig.positionInParent);
-      }
-
-      if (newConfig.appendTo) {
-        animationMeta.appendTo(newConfig.appendTo, newConfig.positionInParent);
-      }
+      // if (newConfig.attachTo) {
+      //   animationMeta.attachTo(newConfig.attachTo, newConfig.positionInParent);
+      // }
+      //
+      // if (newConfig.appendTo) {
+      //   animationMeta.appendTo(newConfig.appendTo, newConfig.positionInParent);
+      // }
 
       // if (newConfig.startAfter) {
       //   const parent = AnimationMeta.get(newConfig.startAfter);
@@ -5227,10 +5284,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       autoRemoveChildren: true,
       smoothChildTiming: false,
       onComplete: function () {
-        // if(name === 'sub-nav-container') {
-        //   // const cc = _this.timeline.getChildren(false);
-        //   debugger;
+        // if(name === 'card') {
+        // const cc = _this.timeline.getChildren(false);
+        // debugger;
+        // console.log(name)
         // }
+        // _this.timeline.clear();
+        AnimationMeta.ANIMATIONS[name] = null;
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
@@ -5264,13 +5324,36 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       console.log(sequenceName);
       const animationMeta = AnimationMeta.get(sequenceName);
       const children = animationMeta.timeline.getChildren(false);
-      const farChildren = children.filter((item) => !item._time);
-      debugger;
+      // const farChildren = children.filter((item) => !item._time);
+
       if (children.indexOf(this.timeline) === -1) {
         animationMeta.timeline.pause();
+        // debugger;
         // if(sequenceName ==='main-nav-items' ) debugger;
-        animationMeta.timeline.add(this.timeline, this.timeline._time);
+        animationMeta.timeline.add(this.timeline);
+        // animationMeta.timeline.add(function () {
+        //   debugger
+        //   animationMeta.timeline.remove(this.timeline);
+        // });
         animationMeta.timeline.resume();
+      } else {
+        // debugger;
+        animationMeta.timeline.pause();
+        const time = animationMeta.timeline.time();
+        animationMeta.timeline.clear();
+        // console.log(children);
+        // animationMeta.timeline.invalidate();
+        children.forEach(function (t) {
+          if (t.data === 'isPause') {
+            animationMeta.timeline.addPause();
+          } else {
+            animationMeta.timeline.add(t);
+          }
+
+        });
+        // animationMeta.timeline.resume();
+        animationMeta.timeline.play(time);
+        // debugger;
       }
     },
     attachTo(sequenceName, pip) {
@@ -5292,7 +5375,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       this.timeline.pause();
       animationMeta.timeline.eventCallback('onComplete', () => {
-        this.timeline.resume();
+        this.timeline.play(0);
       });
     },
     /**
@@ -5333,7 +5416,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       if (config.from && config.to) {
-        tween = TweenLite.fromTo(viewNode.node,
+        tween = gsap.fromTo(viewNode.node,
           duration || 0,
           config.from || {},
           to);
@@ -5342,11 +5425,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         from.onComplete = onComplete;
         from.onStartParams = [viewNode];
         from.onStart = onStart;
-        tween = TweenLite.from(viewNode.node,
+        tween = gsap.from(viewNode.node,
           duration || 0,
           from || {});
       } else {
-        tween = TweenLite.to(viewNode.node,
+        tween = gsap.to(viewNode.node,
           duration || 0,
           to || {});
       }
@@ -5359,7 +5442,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         });
       }
 
-      // const time = _this.timeline._time;
+      const time = _this.timeline._time;
       // _this.timeline.pause();
       // _this.timeline.clear();
       // const aliveNodes = _this.nodes.filter((actor) => !actor.v.destroyed.resolved);
@@ -5693,7 +5776,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
        *
        * @type {RenderJobManager}
        */
-      parentNode.cache.$for = parentNode.cache.$for || {steps: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
 
       if (config.options instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -5765,8 +5848,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       const parent = node.parent;
-      const parentCache = parent.cache;
-      const parentSchema = parent.schema;
+      // const parentCache = parent.cache;
+      // const parentSchema = parent.schema;
       let newTrackMap = null;
 
       config.oldChanges = changes;
@@ -5826,20 +5909,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             // waitStepDone();
           });
         } else if (changes.type === 'reset') {
-          // if (node.cache.$forProcessing) {
-          //   return node.cache.$forPushProcess = () => {
-          //     changes = Object.assign({}, changes);
-          //     changes.type = 'push';
-          //     // createPushProcess(node, config, changes, config.scope);
-          //   };
-          // }
-
           const nodesToBeRemoved = config.nodes.slice(0);
           config.nodes = [];
           leaveStep = createLeaveStep(node, nodesToBeRemoved, function () {
             changes = Object.assign({}, changes);
             changes.type = 'push';
-            // waitStepDone();
           });
         } else {
           // if (node.cache.$forProcessing) {
@@ -5886,9 +5960,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
 
     return function $forLeaveStep() {
-      View.DESTROY_IN_NEXT_FRAME(node, () => {
-        View.destroyNodes(node, itemsToBeRemoved.reverse(), true);
-      });
+      // View.DESTROY_IN_NEXT_FRAME(node, () => {
+      View.destroyNodes(node, itemsToBeRemoved.reverse());
+      // });
 
       onDone();
     };
@@ -5994,14 +6068,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
           onEachAction.call(nodes, vn, positions[i]);
         }
-
-        // if (vn)
-        //   vn.rendered.then(() => {
-        //     debugger;
-        //   });
       }
     }
-
 
     node.cache.$forProcessing = false;
   }
@@ -6028,160 +6096,21 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.$if = parentNode.cache.$if || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
-      const parentNode = node.parent;
-      const parentCache = parentNode.cache;
-      const parentSchema = parentNode.schema;
 
       if (expression) {
         value = expression();
       }
 
-      // Only apply $if logic on the elements that are rendered
-      if (!node.rendered.resolved) {
-        if (!value) {
-          node.inDOM = false;
-        }
-        return;
-      }
-
-      // node.renderingFlow.truncate();
-      // node.renderingFlow.onTruncate(function () {
-      //   config.onDone.ignore = true;
-      // });
-
-
-      Galaxy.View.CREATE_IN_NEXT_FRAME(node, function () {
+      node.rendered.then(() => {
         node.setInDOM(value);
       });
-
-      // if (value) {
-      //   const waitStepDone = registerWaitStep(parentCache.$if);
-      //   node.renderingFlow.nextAction(function () {
-      //     waitStepDone();
-      //   });
-      // } else {
-      //   const waitStepDone = registerWaitStep(parentCache.$if);
-      //   const process = createFalseProcess(node, waitStepDone);
-      //   if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
-      //     parentCache.$if.leaveProcessList.push(process);
-      //   } else {
-      //     parentCache.$if.leaveProcessList.unshift(process);
-      //   }
-      // }
-      //
-      // activateLeaveProcess(parentCache.$if);
-      //
-      // const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$if, function () {
-      //   if (value) {
-      //     runTrueProcess(node);
-      //   }
-      // });
-      // config.onDone = whenAllLeavesAreDone;
-      //
-      // parentCache.$if.mainPromise = parentCache.$if.mainPromise || Promise.all(parentNode.cache.$if.queue);
-      // parentCache.$if.mainPromise.then(whenAllLeavesAreDone);
     }
   };
-
-  /**
-   *
-   * @param {Object} $ifData
-   * @returns {Function}
-   */
-  function registerWaitStep($ifData) {
-    let destroyDone;
-    const waitForDestroy = new Promise(function (resolve) {
-      destroyDone = function () {
-        waitForDestroy.resolved = true;
-        resolve();
-      };
-    });
-
-    $ifData.queue.push(waitForDestroy);
-
-    return destroyDone;
-  }
-
-  function activateLeaveProcess($ifData) {
-    if ($ifData.leaveProcessList.length && !$ifData.leaveProcessList.active) {
-      $ifData.leaveProcessList.active = true;
-      // We start the leaving process in the next frame so the app has enough time to register all the leave processes
-      // that belong to parentNode
-      Promise.resolve().then(function () {
-        $ifData.leaveProcessList.forEach(function (action) {
-          action();
-        });
-        $ifData.leaveProcessList = [];
-        $ifData.leaveProcessList.active = false;
-      });
-    }
-  }
-
-  /**
-   *
-   * @param {Object} $ifData
-   * @param {Function} callback
-   * @returns {Function}
-   */
-  function createWhenAllDoneProcess($ifData, callback) {
-    const whenAllLeavesAreDone = function () {
-      if (whenAllLeavesAreDone.ignore) {
-        return;
-      }
-      // Because the items inside queue will change on the fly we have manually check whether all the
-      // promises have resolved and if not we hav eto use Promise.all on the list again
-      const allNotResolved = $ifData.queue.some(function (promise) {
-        return promise.resolved !== true;
-      });
-
-      if (allNotResolved) {
-        // if not all resolved, then listen to the list again
-        $ifData.queue = $ifData.queue.filter(function (p) {
-          return !p.resolved;
-        });
-
-        $ifData.mainPromise = Promise.all($ifData.queue);
-        $ifData.mainPromise.then(whenAllLeavesAreDone);
-        return;
-      }
-
-      $ifData.queue = [];
-      $ifData.mainPromise = null;
-      callback();
-    };
-
-    return whenAllLeavesAreDone;
-  }
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
-   */
-  function runTrueProcess(node) {
-    node.renderingFlow.nextAction(function () {
-      node.setInDOM(true);
-    });
-  }
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
-   * @param {Function} onDone
-   * @returns {Function}
-   */
-  function createFalseProcess(node, onDone) {
-    return function () {
-      node.renderingFlow.nextAction(function () {
-        node.setInDOM(false);
-        onDone();
-      });
-    };
-  }
 })(Galaxy);
 
 
@@ -6270,34 +6199,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
-          // Promise.resolve().then(function () {
-          // Only truncate renderingFlow if the node is in the DOM
-          // if (_this.inDOM) {
-          //   _this.renderingFlow.truncate();
-          // }
+          _this.clean();
 
-          // _this.renderingFlow.nextAction(function () {
-          // const nodes = _this.getChildNodes();
-          _this.clean(true);
-          // _this.sequences.leave.nextAction(function () {
-          // _this.flush(nodes);
-          // });
-
-          moduleLoaderGenerator(_this, data, moduleMeta)(function () {
-          });
-          // });
-          // });
+          moduleLoaderGenerator(_this, data, moduleMeta)();
         });
       } else if (!moduleMeta) {
-        // Promise.resolve().then(function () {
-        //   _this.renderingFlow.nextAction(function () {
-        // const nodes = _this.getChildNodes();
-        _this.clean(true);
-        // _this.sequences.leave.nextAction(function () {
-        // _this.flush(nodes);
-        // });
-        // });
-        // });
+        _this.clean();
       }
 
       data.moduleMeta = moduleMeta;
@@ -6305,7 +6212,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   };
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
-    return function (done) {
+    return function () {
       if (cache.module) {
         cache.module.destroy();
       }
@@ -6332,20 +6239,19 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         moduleScope = moduleScope.parentScope;
       }
 
-      // Promise.resolve().then(function () {
-      // viewNode.renderingFlow.truncate();
-      currentScope.load(moduleMeta, {
-        element: viewNode
-      }).then(function (module) {
-        cache.module = module;
-        viewNode.node.setAttribute('module', module.systemId);
-        module.start();
-        done();
-      }).catch(function (response) {
-        console.error(response);
-        done();
+      Galaxy.View.CREATE_IN_NEXT_FRAME(viewNode, () => {
+        currentScope.load(moduleMeta, {
+          element: viewNode
+        }).then(function (module) {
+          cache.module = module;
+          viewNode.node.setAttribute('module', module.systemId);
+          module.start();
+          // done();
+        }).catch(function (response) {
+          console.error(response);
+          // done();
+        });
       });
-      // });
     };
   };
 })(Galaxy);

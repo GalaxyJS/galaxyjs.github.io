@@ -115,24 +115,27 @@ view.init({
             animations: {
               config: {},
               enter: {
-                // startAfter: 'card',
-                parent: true,
+                addTo: 'card',
+                // parent: true,
                 sequence: 'todo-items',
                 from: {
-                  height: 0,
-                  paddingTop: 0,
-                  paddingBottom: 0
+                  scale: 0
                 },
+                // to: {
+                //   height: function(v,a) {
+                //     // debugger;
+                //     const aaa = a.getBoundingClientRect();
+                //     debugger;
+                //     return aaa.height;
+                //   }
+                // },
                 position: '-=.1',
-                duration: calculateDuration,
-                chainToParent: true
+                duration: calculateDuration
               },
               leave: {
                 sequence: 'card',
                 to: {
-                  height: 0,
-                  paddingTop: 0,
-                  paddingBottom: 0
+                  scale: 0
                 },
                 position: '-=.1',
                 duration: .5
