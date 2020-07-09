@@ -59,7 +59,7 @@ view.init({
                   let res = items.filter(function (item) {
                     return !item.done;
                   });
-                  // console.info(items, JSON.stringify(res));
+
                   return res.length === 0;
                 }
               ],

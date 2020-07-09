@@ -202,10 +202,9 @@ view.init([
           data: '<>data.navItems.changes',
           as: 'nav'
         },
-
         animations: {
           enter: {
-            sequence: 'main-nav-items',
+            sequence: 'card',
             from: {
               transition: 'none',
               autoAlpha: 0,
@@ -246,60 +245,28 @@ view.init([
           },
           {
             class: 'sub-nav-container',
-            // $if: [
-            //   'nav.module',
-            //   'data.activeModule',
-            //   'data.navService.subNavItems.length',
-            //   function (mod, actMod, length) {
-            //     return mod === actMod && length;
-            //   }
-            // ],
-            // animations: {
-            //   enter: {
-            //     sequence: 'sub-nav-container',
-            //     // addTo: 'main-nav-items',
-            //     // positionInParent: '-=.5',
-            //
-            //     from: {
-            //       borderLeftWidth: 15,
-            //       height: 0
-            //     },
-            //     to: {
-            //       height: function (v, node) {
-            //         node.style.height = 'auto';
-            //         const height = node.offsetHeight;
-            //         node.style.height = 0;
-            //
-            //         return height;
-            //       }
-            //     },
-            //     duration: .5
-            //   },
-            //   leave: {
-            //     to: {
-            //       height: 0
-            //     },
-            //     duration: .2
-            //   }
-            // },
-
             children: {
               tag: 'a',
               class: 'nav-item sub',
               animations: {
-                config: {
-                  leaveWithParent: true
-                },
                 enter: {
-                  sequence: 'main-nav-items',
+                  sequence: 'card',
                   from: {
                     opacity: 0,
                     y: -10
                   },
-                  position: '-=.1',
-                  duration: .5
+                  position: '-=.2',
+                  duration: .3
                 },
-                leave: {}
+                leave: {
+                  sequence: 'card',
+                  to: {
+                    opacity: 0,
+                    y: -10
+                  },
+                  position: '-=.12',
+                  duration: .2
+                }
               },
               $for: {
                 as: 'subNav',

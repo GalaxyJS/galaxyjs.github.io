@@ -25,8 +25,7 @@ const itemAnimations = {
   //   leaveWithParent: true
   // },
   enter: {
-    addTo: 'card',
-    sequence: 'list-items',
+    sequence: 'card',
     from: {
       opacity: 0,
       height: 0,
@@ -48,8 +47,7 @@ const itemAnimations = {
     duration: .4
   },
   leave: {
-    sequence: 'list-items',
-    addTo: 'card',
+    sequence: 'card',
     await: function () {
       return pro;
     },

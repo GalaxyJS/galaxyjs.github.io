@@ -6,6 +6,12 @@ const data = Scope.import('./data.js');
 
 Scope.data.products = data;
 
+test.watch = [];
+
+function test() {
+  return 'do something';
+}
+
 view.init({
   tag: 'div',
   class: 'card',
@@ -51,7 +57,6 @@ view.init({
                     ]
                   }
                 },
-
                 {
                   tag: 'button',
                   class: 'flex-item-al',

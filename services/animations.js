@@ -36,7 +36,7 @@ const animations = {
       },
       // positionInParent: '-=.5',
       // position: 'test',
-      duration: 1.5
+      duration: .4
     }
   },
   itemInOut: {

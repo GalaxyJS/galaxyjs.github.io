@@ -18,103 +18,27 @@ const dialogBlueprint = {
 };
 
 view.init([
-  // dialogBlueprint,
-  // {
-  //   tag: 'div',
-  //   class: {
-  //     'dialog-animation': true,
-  //     show: [
-  //       'data.dialog.originNode',
-  //       'data.dialog.targetNode',
-  //       function (origin, target) {
-  //         // target.originNode = origin;
-  //         // target.target
-  //         // console.log(origin, target);
-  //         this.data.origin = origin;
-  //         this.data.target = target;
-  //         return (origin && target);
-  //       }
-  //     ]
-  //   },
-  //
-  //   animations: {
-  //     '+=show': {
-  //       from: function () {
-  //         const node = this.data.origin;
-  //         const nodeStyle = window.getComputedStyle(node);
-  //         // const offParent = node.offsetParent;
-  //         const dimensions = node.getBoundingClientRect();
-  //         // const parentDimension = offParent.getBoundingClientRect();
-  //         console.log(node.style);
-  //         return {
-  //           width: dimensions.width,
-  //           height: dimensions.height,
-  //           left: dimensions.left,
-  //           top: dimensions.top,
-  //           position: 'fixed',
-  //           zIndex: 100,
-  //           backgroundColor: nodeStyle.backgroundColor || '#fff'
-  //         };
-  //       },
-  //       to: function () {
-  //         const _this = this;
-  //         const node = this.data.target;
-  //         const nodeStyle = window.getComputedStyle(node);
-  //         // const offParent = node.offsetParent;
-  //         const dimensions = node.getBoundingClientRect();
-  //         // const parentDimension = offParent ? offParent.getBoundingClientRect() : {left: 0, top: 0};
-  //         // console.log(dimensions, node);
-  //         return {
-  //           ease: 'Power2.easeInOut',
-  //           width: dimensions.width,
-  //           height: dimensions.height,
-  //           left: dimensions.left,
-  //           top: dimensions.top,
-  //           boxShadow: nodeStyle.boxShadow,
-  //           // backgroundColor: nodeStyle.backgroundColor || '#fff',
-  //           clearProps: '',
-  //           onComplete: function () {
-  //             requestAnimationFrame(function () {
-  //               Scope.data.dialog.targetNode = null;
-  //             });
-  //           },
-  //         };
-  //       },
-  //
-  //       duration: .5
-  //     },
-  //     '-=show': {
-  //       to: {
-  //         opacity: 0,
-  //         display: 'none'
-  //       },
-  //       duration: .5
-  //     }
-  //   }
-  // },
   {
-    class: 'card big',
+    class: 'card big anime',
     animations: {
       enter: {
         sequence: 'card',
-        // startAfter: 'main-nav-items',
-
         from: {
           x: 80,
           y: 150,
           rotationZ: -8,
           opacity: 0
         },
+        position: '+=.1',
         duration: .5
       },
       leave: {
         sequence: 'card',
-        // parent: 'children',
-
         to: {
           y: 150,
           opacity: 0
         },
+        position: '+=.1',
         duration: .5
       }
     },
@@ -159,9 +83,7 @@ view.init([
             children: {
               animations: {
                 enter: {
-                  sequence: 'boxes',
-                  addTo: 'card',
-
+                  sequence: 'card',
                   from: {
                     scale: 0
                   },
@@ -169,12 +91,12 @@ view.init([
                   position: '-=.25'
                 },
                 leave: {
-                  sequence: 'boxes',
+                  sequence: 'card',
                   to: {
                     scale: 0
                   },
                   duration: .15,
-                  position: '<0.05'
+                  position: '-=0.05'
                 }
               },
               class: 'box',
