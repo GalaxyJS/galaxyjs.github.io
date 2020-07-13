@@ -6,26 +6,24 @@ const capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'
 
 Scope.data.countries = countries;
 Scope.data.capitals = capitals;
-
-var pro = new Promise(function (resolve) {
+Scope.data.pro = new Promise(function (resolve) {
   Scope.data.resolve = resolve;
 });
 
-setTimeout(function () {
+setTimeout(() => {
   Scope.data.resolve();
-  console.log('asdasdasdasdasd')
-}, 8000)
-
-function trackBy(item) {
-  return item.title;
-}
+  console.log('resolved');
+}, 2500);
 
 const itemAnimations = {
   // config: {
   //   leaveWithParent: true
   // },
   enter: {
-    sequence: 'card',
+    // sequence: 'card',
+    addTo: 'card',
+    sequence: 'ok',
+    // await: Scope.data.pro,
     from: {
       opacity: 0,
       height: 0,
@@ -47,10 +45,8 @@ const itemAnimations = {
     duration: .4
   },
   leave: {
+    withParent: true,
     sequence: 'card',
-    await: function () {
-      return pro;
-    },
     to: {
       overflow: 'hidden',
       paddingTop: 0,

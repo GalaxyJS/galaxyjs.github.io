@@ -91,6 +91,7 @@ view.init([
                   position: '-=.25'
                 },
                 leave: {
+                  // withParent: true,
                   sequence: 'card',
                   to: {
                     scale: 0

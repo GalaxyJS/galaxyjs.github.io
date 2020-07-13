@@ -7,13 +7,11 @@ Scope.data.conditionForMultiple = true;
 Scope.data.conditionForList = true;
 
 const itemAnimations = {
-  config: {
-    enterWithParent: true,
-    leaveWithParent: true
-  },
+
   enter: {
-    // parent: 'card',
-    sequence: 'if-items',
+    withParent: true,
+    sequence: 'if-sequence',
+    addTo: 'card',
     from: {
       opacity: 0,
       x: 20
@@ -26,14 +24,16 @@ const itemAnimations = {
     duration: .3
   },
   leave: {
-    // parent: 'card',
-    sequence: 'if-items',
+    // withParent: true,
+
+    sequence: 'if-sequence',
+    addTo: 'card',
     to: {
       x: 25,
       opacity: 0
     },
     position: '-=.18',
-    duration: .2
+    duration: .3
   }
 };
 
