@@ -190,7 +190,7 @@ view.init([
     tag: 'div',
     id: 'main-nav',
     class: 'main-nav',
-    // animations: animations.mainNav,
+    animations: animations.mainNav,
     children: [
       {
         tag: 'h1',
@@ -212,8 +212,8 @@ view.init([
               ease: Elastic.easeOut.config(1, .4),
               clearProps: 'all'
             },
-            position: '-=.1',
-            duration: .2
+            position: '-=.25',
+            duration: .3
           }
         },
         children: [

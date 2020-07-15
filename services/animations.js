@@ -106,9 +106,9 @@ const animations = {
 
 animations.mainNav = {
   enter: {
-    sequence: 'side-bar',
+    sequence: 'card',
     from: {
-      ease: 'Power3.easeOut',
+      ease: Elastic.easeOut.config(1.2, .8),
       x: '-100%'
     },
     duration: .5

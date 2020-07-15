@@ -13,7 +13,11 @@ Scope.data.pro = new Promise(function (resolve) {
 setTimeout(() => {
   Scope.data.resolve();
   console.log('resolved');
-}, 2500);
+
+  for (let i = 0; i < 2000; i++) {
+    capitals.push('city ' + i);
+  }
+}, 4000);
 
 const itemAnimations = {
   // config: {
@@ -23,7 +27,7 @@ const itemAnimations = {
     // sequence: 'card',
     addTo: 'card',
     sequence: 'ok',
-    // await: Scope.data.pro,
+    await: Scope.data.pro,
     from: {
       opacity: 0,
       height: 0,
@@ -142,7 +146,7 @@ view.init({
                 '<h3>Capitals</h3>',
                 {
                   tag: 'li',
-                  animations: itemAnimations,
+                  // animations: itemAnimations,
                   class: 'flex-row',
                   $for: {
                     data: '<>data.capitals.changes',
@@ -154,24 +158,24 @@ view.init({
 
               ]
             },
-            {
-              tag: 'ul',
-
-              children: [
-                '<h3>Countries</h3>',
-                {
-                  tag: 'li',
-                  animations: itemAnimations,
-                  class: 'flex-row',
-                  $for: {
-                    data: '<>data.countries.changes',
-                    as: 'item2'
-                  },
-                  text: '<>item2'
-                }
-
-              ]
-            }
+            // {
+            //   tag: 'ul',
+            //
+            //   children: [
+            //     '<h3>Countries</h3>',
+            //     {
+            //       tag: 'li',
+            //       animations: itemAnimations,
+            //       class: 'flex-row',
+            //       $for: {
+            //         data: '<>data.countries.changes',
+            //         as: 'item2'
+            //       },
+            //       text: '<>item2'
+            //     }
+            //
+            //   ]
+            // }
           ]
         }
       ]
