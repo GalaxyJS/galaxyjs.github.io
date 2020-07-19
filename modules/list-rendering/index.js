@@ -14,9 +14,22 @@ setTimeout(() => {
   Scope.data.resolve();
   console.log('resolved');
 
-  for (let i = 0; i < 2000; i++) {
-    capitals.push('city ' + i);
-  }
+  // for (let i = 0; i < 2000; i++) {
+  //   capitals.push('city ' + i);
+  // }
+}, 7000);
+
+Scope.data.pro2 = new Promise(function (resolve) {
+  Scope.data.resolve2 = resolve;
+});
+
+setTimeout(() => {
+  Scope.data.resolve2();
+  console.log('resolved 2');
+
+  // for (let i = 0; i < 2000; i++) {
+  //   capitals.push('city ' + i);
+  // }
 }, 4000);
 
 const itemAnimations = {
@@ -77,7 +90,30 @@ const button = {
 view.init({
   tag: 'div',
   class: 'card big',
-  animations: animations.cardInOut,
+  animations: {
+    enter: {
+      sequence: 'card',
+      await: Scope.data.pro2,
+      from: {
+        transformOrigin: 'top center',
+        scale: 1.1,
+        opacity: 0,
+        position: 'absolute',
+        top: 0,
+        x: function (val, node) {
+          return node.offsetLeft;
+        }
+      },
+      to: {
+        transformOrigin: 'top center',
+        top: 0,
+        scale: 1,
+        opacity: 1,
+        position: 'absolute'
+      },
+      duration: .5,
+    },
+  },
   lifecycle: {
     postChildrenInsert: function () {
       PR.prettyPrint();
@@ -146,7 +182,7 @@ view.init({
                 '<h3>Capitals</h3>',
                 {
                   tag: 'li',
-                  // animations: itemAnimations,
+                  animations: itemAnimations,
                   class: 'flex-row',
                   $for: {
                     data: '<>data.capitals.changes',
@@ -158,24 +194,24 @@ view.init({
 
               ]
             },
-            // {
-            //   tag: 'ul',
-            //
-            //   children: [
-            //     '<h3>Countries</h3>',
-            //     {
-            //       tag: 'li',
-            //       animations: itemAnimations,
-            //       class: 'flex-row',
-            //       $for: {
-            //         data: '<>data.countries.changes',
-            //         as: 'item2'
-            //       },
-            //       text: '<>item2'
-            //     }
-            //
-            //   ]
-            // }
+            {
+              tag: 'ul',
+
+              children: [
+                '<h3>Countries</h3>',
+                {
+                  tag: 'li',
+                  animations: itemAnimations,
+                  class: 'flex-row',
+                  $for: {
+                    data: '<>data.countries.changes',
+                    as: 'item2'
+                  },
+                  text: '<>item2'
+                }
+
+              ]
+            }
           ]
         }
       ]
