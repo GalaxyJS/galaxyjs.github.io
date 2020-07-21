@@ -1,7 +1,7 @@
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
-const countries = ['Netherlands', 'France', 'Hungary', 'Germany', '...', '...'];
+const countries = ['Netherlands', 'France', 'Hungary', 'Germany', 'Czech Republic', 'Austria'];
 const capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
 
 Scope.data.countries = countries;
@@ -12,11 +12,6 @@ Scope.data.pro = new Promise(function (resolve) {
 
 setTimeout(() => {
   Scope.data.resolve();
-  console.log('resolved');
-
-  // for (let i = 0; i < 2000; i++) {
-  //   capitals.push('city ' + i);
-  // }
 }, 7000);
 
 Scope.data.pro2 = new Promise(function (resolve) {
@@ -25,22 +20,8 @@ Scope.data.pro2 = new Promise(function (resolve) {
 
 setTimeout(() => {
   Scope.data.resolve2();
-  console.log('resolved 2');
-  //
-  // for (let i = 0; i < 3000; i++) {
-  //   capitals.push('city ' + i);
-  // }
-}, 3000);
 
-// setInterval(() => {
-//   for (let i = 0; i < 100; i++) {
-//     Scope.data.capitals.push('city ' + i);
-//   }
-//
-//   setTimeout(() => {
-//     Scope.data.capitals = [];
-//   }, 2000);
-// }, 5000);
+}, 3000);
 
 
 const itemAnimations = {
@@ -51,7 +32,6 @@ const itemAnimations = {
     // sequence: 'card',
     addTo: 'card',
     sequence: 'ok',
-    // await: Scope.data.pro,
     from: {
       opacity: 0,
       height: 0,
@@ -101,31 +81,7 @@ const button = {
 view.init({
   tag: 'div',
   class: 'card big',
-  animations: {
-    enter: {
-      sequence: 'card',
-      // await: Scope.data.pro2,
-      from: {
-        transformOrigin: 'top center',
-        scale: 1.1,
-        opacity: 0,
-        position: 'absolute',
-        top: 0,
-        x: function (val, node) {
-          return node.offsetLeft;
-        }
-      },
-      to: {
-        transformOrigin: 'top center',
-        top: 0,
-        scale: 1,
-        opacity: 1,
-        position: 'absolute'
-      },
-      duration: .5,
-    },
-    // leave: {}
-  },
+  animations: animations.cardInOut,
   lifecycle: {
     postChildrenInsert: function () {
       PR.prettyPrint();
@@ -194,7 +150,7 @@ view.init({
                 '<h3>Capitals</h3>',
                 {
                   tag: 'li',
-                  // animations: itemAnimations,
+                  animations: itemAnimations,
                   class: 'flex-row',
                   $for: {
                     data: '<>data.capitals.changes',
@@ -206,24 +162,24 @@ view.init({
 
               ]
             },
-            // {
-            //   tag: 'ul',
-            //
-            //   children: [
-            //     '<h3>Countries</h3>',
-            //     {
-            //       tag: 'li',
-            //       animations: itemAnimations,
-            //       class: 'flex-row',
-            //       $for: {
-            //         data: '<>data.countries.changes',
-            //         as: 'item2'
-            //       },
-            //       text: '<>item2'
-            //     }
-            //
-            //   ]
-            // }
+            {
+              tag: 'ul',
+
+              children: [
+                '<h3>Countries</h3>',
+                {
+                  tag: 'li',
+                  animations: itemAnimations,
+                  class: 'flex-row',
+                  $for: {
+                    data: '<>data.countries.changes',
+                    as: 'item2'
+                  },
+                  text: '<>item2'
+                }
+
+              ]
+            }
           ]
         }
       ]

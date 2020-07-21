@@ -13,19 +13,20 @@ Scope.flag = true;
 
 const items = [
   {
-    title: 'Installation'
+    title: 'Installation',
+    href: '#/guide/installation'
   },
   {
-    title: 'Bootstrap'
+    title: 'Bootstrap',
+    href: '#/guide/bootstrap'
   },
   {
-    title: 'The Progressive Way'
+    title: 'The Progressive Way',
+    href: '#/guide/the-progressive-way'
   }
 ];
 
-// setTimeout(() => {
 navService.setSubNavItems(items);
-// }, 400)
 
 
 view.init({
@@ -49,7 +50,7 @@ view.init({
       class: 'content',
       tag: 'section',
       children: [
-        '<h2>Installation</h2>' +
+        '<h2 id="/guide/installation">Installation</h2>' +
         '<p>Simply copy & paste the following into your page\'s head</p>',
         {
           tag: 'pre',
@@ -75,7 +76,7 @@ view.init({
             '|-node_modules\n' +
             '|-package.json'
         },
-        '<h2>Bootstrap</h2>' +
+        '<h2 id="/guide/bootstrap">Bootstrap</h2>' +
         '<p>Add this code into the app/index.html</p>',
         {
           tag: 'pre',
@@ -151,7 +152,7 @@ view.init({
         '  tag: \'h1\',\n' +
         '  text: \'Hello World!\'\n' +
         '});</pre>',
-        '<h2>The Progressive Way</h2>' +
+        '<h2 id="/guide/the-progressive-way">The Progressive Way</h2>' +
         '<p>Sometimes you already have a page and you just want to add some reactive functionality to some elements. You can easily do this by transforming your target element into a Galaxy module:</p>',
         {
           tag: 'pre',
@@ -174,7 +175,8 @@ view.init({
             '// load module\n' +
             'Galaxy.load(module);'
         },
-        '<h2>List Rendering</h2>' +
+        '<h2>List Rendering</h2>',
+        '<p style="font-size: .87em">To learn more go to <a href="#/list-rendering">List Rendering</a></p>',
         '<p>GalaxyJS provide <strong>$for</strong> directive for list rendering. <strong>$for</strong> reacts to <code class="prettyprint' +
         ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',
         {
@@ -220,17 +222,6 @@ view.init({
             '\n' +
             '// load module\n' +
             'Galaxy.load(module);'
-        },
-        {
-          tag: 'p',
-          children: [
-            'To learn more go to ',
-            {
-              tag: 'a',
-              text: 'List Rendering',
-              href: '#/list-rendering'
-            }
-          ]
         }
       ]
     }

@@ -150,7 +150,7 @@ a {
 
 .main-nav {
   position: absolute;
-  background-color: rgba(255, 255, 255, .2);
+  background-color: #fff;
   border: none;
   box-shadow: 0 0 28px rgba(100, 103, 105, .1);
   color: #8f8f8f;
@@ -232,6 +232,7 @@ a {
   text-align: justify;
   box-shadow: 0 -2px 7px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(80, 80, 80, .1);
   position: relative;
+  max-width: 100%;
 }
 
 .card.big > .card.big {
@@ -265,6 +266,7 @@ a {
   width: 100%;
   margin: 0;
   height: auto;
+  overflow: hidden;
 }
 
 .card .banner + h1 {
@@ -381,16 +383,27 @@ ul.items-list > li:hover {
   }
 
   .main-nav {
-    box-shadow: 0 5px 25px rgba(40, 40, 40, .2);
+    box-shadow: 0 5px 15px rgba(40, 40, 40, .2);
     height: 60px;
     width: 100%;
     padding: 10px 0;
     outline: none;
+    overflow: hidden;
+    transition: all .2s ease-in-out;
   }
 
-  .main-nav:focus {
-    height: 60%;
+  .main-nav > div {
+    display: none;
+  }
 
+  .main-nav.expand {
+    height: 60%;
+    box-shadow: 0 15px 25px rgba(40, 40, 40, .35);
+    overflow: auto;
+  }
+
+  .main-nav.expand > div {
+    display: block;
   }
 
   .main-nav > h1 {

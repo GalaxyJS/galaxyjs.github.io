@@ -50,6 +50,7 @@ Scope.data.navItems = [
     link: 'list-rendering',
     icon: 'fas fa-list-ul',
     module: {
+      fresh: true,
       id: 'list-rendering',
       url: 'modules/list-rendering/index.js'
     }
@@ -95,7 +96,6 @@ Scope.data.navItems = [
 ];
 console.log(Scope.data);
 
-// Scope.data.activeModule = Scope.data.navItems[3].module;
 Scope.data.activeModule = null;
 
 Scope.data.todos = [
@@ -147,17 +147,17 @@ const items = [
     title: 'Galaxy.View.ViewNode'
   }
 ];
-navService.setSubNavItems([
-  {
-    title: 'Installation'
-  },
-  {
-    title: 'Bootstrap'
-  },
-  {
-    title: 'The Progressive Way'
-  }
-]);
+// navService.setSubNavItems([
+//   {
+//     title: 'Installation'
+//   },
+//   {
+//     title: 'Bootstrap'
+//   },
+//   {
+//     title: 'The Progressive Way'
+//   }
+// ]);
 
 router.init({
   '/': function () {
@@ -189,8 +189,16 @@ view.init([
   {
     tag: 'div',
     id: 'main-nav',
-    class: 'main-nav',
+    class: {
+      'main-nav': true,
+      'expand': '<>data.expandNav'
+    },
     animations: animations.mainNav,
+    on: {
+      click(vn) {
+        Scope.data.expandNav = !Scope.data.expandNav;
+      }
+    },
     children: [
       {
         tag: 'h1',
@@ -283,7 +291,8 @@ view.init([
                   }
                 ]
               },
-              text: '<>subNav.title'
+              text: '<>subNav.title',
+              href: '<>subNav.href'
             }
           }
         ]

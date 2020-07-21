@@ -34,8 +34,6 @@ const animations = {
         scale: .9,
         opacity: 0
       },
-      // positionInParent: '-=.5',
-      // position: 'test',
       duration: .4
     }
   },

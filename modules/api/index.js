@@ -6,6 +6,7 @@ const effects = Scope.import('services/effects.js');
 const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
 console.log(test);
+
 const items = [
   {
     title: 'Galaxy.Scope'

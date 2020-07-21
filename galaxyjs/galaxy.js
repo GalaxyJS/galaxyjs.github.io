@@ -2749,6 +2749,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
         Scope.exports = {
           _temp: true,
           tag: 'style',
+          type: 'text/css',
           id: Scope.systemId,
           text: parsedCSSText,
           _apply() {
@@ -2757,7 +2758,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
             children.forEach((child) => {
               child[ids.content] = '';
             });
-            console.log(children)
+            // console.log(children)
           }
         };
       }
@@ -4562,11 +4563,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
-        _this.node.style.display = 'none';
+        _this.node.style.setProperty('display', 'none');
         _this.hasBeenInserted();
 
         GV.CREATE_IN_NEXT_FRAME(_this.index, function () {
-          _this.node.style.display = '';
+          // _this.node.style.display = '';
+          _this.node.style.removeProperty('display');
           _this.hasBeenRendered();
           _this.populateEnterSequence();
         });
@@ -5458,7 +5460,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
     const newClasses = getClasses(classes);
-
+// debugger;
     _this.notifyObserver('class', newClasses, oldClasses);
     // _this.sequences.classList.nextAction(function () {
     _this.node.setAttribute('class', newClasses.join(' '));
@@ -6174,7 +6176,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       for (let key in value) {
         const valueObj = value[key];
         if (valueObj instanceof Promise) {
-          valueObj.then(function (v) {
+          valueObj.then((v) => {
             node.style[key] = v;
           });
         } else {
