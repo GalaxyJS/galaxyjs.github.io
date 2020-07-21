@@ -15,9 +15,6 @@ const items = [
     title: 'Galaxy.Module'
   },
   {
-    title: 'Galaxy.Sequence'
-  },
-  {
     title: 'Galaxy.Observer'
   },
   {

@@ -1696,6 +1696,11 @@
 
 /* global Galaxy, Promise */
 'use strict';
+/*!
+ * GalaxyJS
+ * Eeliya Rasta
+ * Released under the MIT License.
+ */
 
 window.AsyncFunction = Object.getPrototypeOf(async function () {
 }).constructor;
@@ -1897,7 +1902,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      */
     compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
       const _this = this;
-      const promise = new Promise(function (resolve, reject) {
+      const compilationStep = new Promise(function (resolve, reject) {
         const doneImporting = function (module, imports) {
           imports.splice(imports.indexOf(module.url) - 1, 1);
 
@@ -1941,7 +1946,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 item.url = scope.uri.path + item.url.substr(2);
               }
 
-              // if(item.url === '/galaxy/site/modules/api/test.css') debugger;
               Galaxy.load({
                 name: item.name,
                 url: item.url,
@@ -1960,7 +1964,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         resolve(module);
       });
 
-      return promise;
+      return compilationStep;
     },
 
     /**
@@ -2127,6 +2131,7 @@ Galaxy.Module.Content = /** @class */ (function () {
    *
    * @param {string} type
    * @param {*} content
+   * @param {*} metaData
    * @constructor
    * @memberOf Galaxy.Module
    */
@@ -2168,15 +2173,16 @@ Galaxy.Observer = /** @class */ (function () {
     this.subjectsActions = {};
     this.allSubjectAction = [];
 
-    if (!this.context.hasOwnProperty('__observers__')) {
-      defProp(context, '__observers__', {
+    const __observers__ = '__observers__';
+    if (!this.context.hasOwnProperty(__observers__)) {
+      defProp(context, __observers__, {
         value: [],
         writable: true,
         configurable: true
       });
     }
 
-    this.context['__observers__'].push(this);
+    this.context[__observers__].push(this);
   }
 
   Observer.prototype = {
@@ -2368,228 +2374,6 @@ Galaxy.Scope = /** @class */ (function () {
   };
 
   return Scope;
-})();
-
-/* global Galaxy, Promise */
-'use strict';
-
-Galaxy.Sequence = /** @class */ (function () {
-  const disabledProcess = function () {
-  };
-
-  /**
-   *
-   * @constructor
-   * @memberOf Galaxy.Sequence
-   */
-  function Process() {
-    const _this = this;
-    let _resolve;
-    const p = new Promise(function (resolve) {
-      _resolve = resolve;
-    });
-    _this.then = p.then;
-
-    _this.cancel = function () {
-      _this._canceled = true;
-    };
-
-    _this.proceed = function () {
-      if (_this._canceled) {
-        return;
-      }
-
-      _resolve();
-    };
-
-    _this.then = p.then.bind(p);
-  }
-
-  Process.prototype = {
-    _canceled: false,
-    cancel: null,
-    proceed: null,
-    then: null
-  };
-
-  Sequence.Process = Process;
-
-  /**
-   *
-   * @constructor
-   * @memberOf Galaxy
-   */
-  function Sequence() {
-    const _this = this;
-    _this.truncateHandlers = [];
-    _this.activeStateResolve = null;
-    _this.isFinished = false;
-    _this.processing = false;
-    _this.truncating = false;
-    /** activeState is a promise that will resolve when all the sequence activities has been resolved
-     *
-     * @type {Promise}
-     */
-    _this.activeState = Promise.resolve('sequence-constructor');
-    _this.actions = [];
-    _this.resolver = Promise.resolve();
-
-    _this.reset();
-  }
-
-  Sequence.prototype = {
-    reset: function () {
-      const _this = this;
-      _this.actions = [];
-      _this.isFinished = false;
-      _this.processing = false;
-
-      _this.activeState = new Promise((function (_host) {
-        return function (resolve) {
-          _host.activeStateResolve = function () {
-            _host.isFinished = true;
-            _host.processing = false;
-            if (_host.truncateHandlers.length > 1) {
-              _host.truncateHandlers = [];
-            }
-            resolve();
-          };
-        };
-      })(_this));
-
-      return _this;
-    },
-
-    next: function (action, ref, position) {
-      const _this = this;
-
-      // if sequence was finished, then reset the sequence
-      if (_this.isFinished) {
-        _this.reset();
-      }
-
-      // we create an act object in order to be able to change the process on the fly
-      // when this sequence is truncated, then the process of any active action should be disabled
-      const act = {
-        // position: position,
-        data: {
-          ref: ref
-        },
-        process: _this.proceed,
-        run: function run() {
-          const local = this;
-          action.call(local.data, function () {
-            local.process.call(_this);
-          }, function (e) {
-            console.error(e);
-          });
-        }
-      };
-
-      // if (position) {
-      //   const subActions = _this.actions.filter(function (act) {
-      //     return act.position === position;
-      //   });
-      //
-      //   if (subActions.length) {
-      //     const lastItem = subActions[subActions.length - 1];
-      //     this.actions.splice(_this.actions.indexOf(lastItem) + 1, 0, act);
-      //   } else {
-      //     _this.actions.push(act);
-      //   }
-      // } else {
-      _this.actions.push(act);
-      // }
-
-      if (!_this.processing) {
-        _this.processing = true;
-        _this.resolver.then(act.run.bind(act));
-      }
-
-      return _this;
-    },
-
-    proceed: function sequenceProceed() {
-      const _this = this;
-      const oldAction = _this.actions.shift();
-      const firstAction = _this.actions[0];
-
-      if (firstAction) {
-        _this.resolver.then(firstAction.run.bind(firstAction));
-      } else if (oldAction) {
-        _this.activeStateResolve();
-      }
-    },
-
-    onTruncate: function (act) {
-      const _this = this;
-      if (_this.truncateHandlers.indexOf(act) === -1) {
-        _this.truncateHandlers.push(act);
-      }
-
-      return function removeOnTruncate() {
-        if (_this.truncating) {
-          return;
-        }
-
-        const index = _this.truncateHandlers.indexOf(act);
-        if (index !== -1) {
-          _this.truncateHandlers.splice(index, 1);
-        }
-      };
-    },
-
-    truncate: function () {
-      const _this = this;
-
-      _this.truncating = true;
-      _this.actions.forEach(function (item) {
-        item.process = disabledProcess;
-      });
-
-      let i = 0;
-      const len = _this.truncateHandlers.length;
-      for (; i < len; i++) {
-        if (!_this.truncateHandlers[i]) {
-          continue;
-        }
-        _this.truncateHandlers[i].call(this);
-      }
-
-      _this.truncateHandlers = [];
-      _this.isFinished = true;
-      _this.processing = false;
-      _this.truncating = false;
-      _this.actions = [];
-
-      return _this;
-    },
-
-    removeByRef: function (ref) {
-      let first = false;
-      this.actions = this.actions.filter(function (item, i) {
-        const flag = item.data.ref !== ref;
-        if (flag && i === 0) {
-          first = true;
-        }
-        return flag;
-      });
-
-      if (first && this.actions[0]) {
-        this.actions[0].run();
-      } else if (!first && !this.actions[0] && this.processing && !this.isFinished) {
-        this.activeStateResolve();
-      }
-    },
-
-    nextAction: function (action, ref, position) {
-      this.next(function (done) {
-        action.call(this);
-        done('sequence-action');
-      }, ref, position);
-    }
-  };
-  return Sequence;
 })();
 
 /* global Galaxy */
@@ -4522,16 +4306,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       this.setInDOM(false);
     },
 
-    /**
-     *
-     * @param {Galaxy.Sequence} sequence
-     */
     populateEnterSequence: EMPTY_CALL,
 
-    /**
-     *
-     * @param {Galaxy.Sequence} sequence
-     */
     populateLeaveSequence: null,
 
     detach: function () {
@@ -4713,7 +4489,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Object} item
      */
     addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({reactiveData: reactiveData, item: item});
+      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
     },
 
     getChildNodes: function () {
@@ -4871,10 +4647,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           }
 
           const rect = viewNode.node.getBoundingClientRect();
-          // if (viewNode.node.classList.contains('box')) {
-          //   viewNode.node.style.border = '1px solid red';
-          //   console.log(viewNode.node.offsetHeight, rect.height)
-          // }
           // in the case which the viewNode is not visible, then ignore its animation
           if (rect.width === 0 ||
             rect.height === 0 ||
@@ -4902,17 +4674,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         viewNode.observer.on('classList', function (classes, oldClasses) {
           oldClasses = oldClasses || [];
 
-          // const classSequence = viewNode.sequences.classList;
           try {
             classes.forEach(function (item) {
               if (item && oldClasses.indexOf(item) === -1) {
                 if (item.indexOf('@') === 0) {
                   const classEvent = value[item];
                   if (classEvent) {
-                    // classSequence.nextAction(function () {
                     viewNode.node.classList.remove(item);
                     AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config);
-                    // });
                   }
 
                   return;
@@ -4923,10 +4692,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
                   return;
                 }
 
-                // classSequence.nextAction(function (done) {
                 viewNode.node.classList.remove(item);
-                AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config, done);
-                // });
+                AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config);
               }
             });
 
@@ -4937,10 +4704,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
                   return;
                 }
 
-                // classSequence.nextAction(function (done) {
                 viewNode.node.classList.add(item);
-                AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config, done);
-                // });
+                AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config);
               }
             });
           } catch (exception) {
@@ -5127,9 +4892,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);

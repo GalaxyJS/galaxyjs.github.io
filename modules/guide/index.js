@@ -55,7 +55,7 @@ view.init({
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
-          text: '<script src="https://gitcdn.xyz/repo/GalaxyJS/galaxyjs.github.io/master/galaxyjs/galaxy.js"></script>'
+          text: '<script src="https://cdn.jsdelivr.net/gh/GalaxyJS/galaxyjs.github.io/galaxyjs/galaxy.js"></script>'
         },
         '<h2>Recommended project file & folder structure</h2>' +
         '<p>You can have whatever directory structure you like as long as you know how to the load modules. The following structure is' +
