@@ -6,12 +6,6 @@ const data = Scope.import('./data.js');
 
 Scope.data.products = data;
 
-test.watch = [];
-
-function test() {
-  return 'do something';
-}
-
 view.init({
   tag: 'div',
   class: 'card',
@@ -40,6 +34,7 @@ view.init({
                   tag: 'input',
                   class: 'flex-item-25',
                   type: 'number',
+                  min: 0,
                   value: '<>product.quantity'
                 },
                 {
@@ -47,12 +42,32 @@ view.init({
                   class: 'flex-item-50',
                   text: '<>product.title',
                   children: {
+                    animations: {
+                      leave: {
+                        to: {
+                          opacity: 0
+                        },
+                        duration: .5
+                      }
+                    },
+                    style: {
+                      paddingLeft: '10px',
+                      fontSize: '.85em',
+                      fontWeight: 'bold',
+                      marginLeft: 'auto',
+                      color: [
+                        'product.quantity',
+                        function (q) {
+                          return q < 1 ? '#aaa' : '#3a0';
+                        }
+                      ],
+                    },
                     tag: 'span',
-                    text: ' - OUT OF STOCK',
-                    $if: [
+                    // text: 'out of stock',
+                    text: [
                       'product.quantity',
                       function (q) {
-                        return !q || q < 1;
+                        return q < 1 ? 'out of stock' : 'in stock';
                       }
                     ]
                   }
@@ -73,13 +88,54 @@ view.init({
               ]
             },
             {
-              tag: 'h3',
-              text: [
-                'data.products',
-                function (products) {
-                  return 'Total: ' + products.reduce(function (sum, item) {
-                    return sum + item.quantity;
-                  }, 0);
+              tag: 'div',
+              children: [
+                {
+                  tag: 'h3',
+                  text: [
+                    'data.products',
+                    function (products) {
+                    console.log('asdasd')
+                      return 'Total: ' + products.reduce(function (sum, item) {
+                        return sum + item.quantity;
+                      }, 0);
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              tag: 'hr'
+            },
+            {
+              class: 'field',
+              focus: '<>this.focused',
+              children: [
+                {
+                  tag: 'label',
+                  text: 'New Item'
+                },
+                {
+                  tag: 'input',
+                  value: '<>this.title',
+                  on: {
+                    focus: function () {
+                      this.parent.data.focused = true;
+                    },
+                    blur: function () {
+                      this.parent.data.focused = false;
+                    },
+                    keyup: function (event) {
+                      if (event.keyCode === 13 && this.data.title) {
+                        Scope.data.products.push({
+                          id: (new Date()).getTime(),
+                          quantity: 0,
+                          title: this.data.title
+                        });
+                        this.data.title = null;
+                      }
+                    }
+                  }
                 }
               ]
             }
