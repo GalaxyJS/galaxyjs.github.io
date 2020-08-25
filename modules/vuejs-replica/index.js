@@ -5,6 +5,8 @@ const view = Scope.import('galaxy/view');
 const data = Scope.import('./data.js');
 
 Scope.data.products = data;
+Scope.data.test = data;
+Scope.data.test2 = data;
 
 view.init({
   tag: 'div',
@@ -93,9 +95,9 @@ view.init({
                 {
                   tag: 'h3',
                   text: [
-                    'data.products',
+                    'data.test2',
                     function (products) {
-                    console.log('asdasd')
+                      console.log('ffff');
                       return 'Total: ' + products.reduce(function (sum, item) {
                         return sum + item.quantity;
                       }, 0);

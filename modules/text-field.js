@@ -1,7 +1,7 @@
 /* globals Scope */
 
-var view = Scope.import('galaxy/view');
-var inputs = Scope.import('galaxy/inputs');
+let view = Scope.import('galaxy/view');
+let inputs = Scope.import('galaxy/inputs');
 
 Scope.mod = {
   url: null

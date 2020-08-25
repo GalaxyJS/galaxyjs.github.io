@@ -7,6 +7,12 @@ const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
 Scope.data.navService = navService;
 
+// setTimeout(() => {
+//   setInterval(() => {
+//     Scope.data.activeModule = Scope.data.activeModule === Scope.data.navItems[0].module ? Scope.data.navItems[8].module : Scope.data.navItems[0].module;
+//   }, 1200);
+// }, 5000);
+
 Scope.data.navItems = [
   {
     title: 'Start',
@@ -126,7 +132,6 @@ function isActiveModule(mod, actMod) {
   return mod === actMod;
 }
 
-
 const items = [
   {
     title: 'Galaxy.Scope'
@@ -159,6 +164,7 @@ const items = [
 //   }
 // ]);
 
+router.config.baseURL = '/galaxy/site';
 router.init({
   '/': function () {
     router.navigate('start');
