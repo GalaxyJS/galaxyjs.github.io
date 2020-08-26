@@ -5,14 +5,8 @@ const view = Scope.import('galaxy/view');
 const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
+
 Scope.data.navService = navService;
-
-// setTimeout(() => {
-//   setInterval(() => {
-//     Scope.data.activeModule = Scope.data.activeModule === Scope.data.navItems[0].module ? Scope.data.navItems[8].module : Scope.data.navItems[0].module;
-//   }, 1200);
-// }, 5000);
-
 Scope.data.navItems = [
   {
     title: 'Start',
@@ -103,7 +97,6 @@ Scope.data.navItems = [
 console.log(Scope.data);
 
 Scope.data.activeModule = null;
-
 Scope.data.todos = [
   {
     title: 'Should add new item to todos',
@@ -117,54 +110,13 @@ Scope.data.todos = [
 
 Scope.data.fn = 'jh';
 
-Scope.data.moduleInputs = {
-  text: 'asdasd',
-  content: 'This is the default content',
-  items: '<>data.todos',
-  subMenus: {
-    items: []
-  }
-};
-
 isActiveModule.watch = ['nav.module', 'data.activeModule'];
 
 function isActiveModule(mod, actMod) {
   return mod === actMod;
 }
 
-const items = [
-  {
-    title: 'Galaxy.Scope'
-  },
-  {
-    title: 'Galaxy.Module'
-  },
-  {
-    title: 'Galaxy.Sequence'
-  },
-  {
-    title: 'Galaxy.Observer'
-  },
-  {
-    title: 'Galaxy.View'
-  },
-  {
-    title: 'Galaxy.View.ViewNode'
-  }
-];
-// navService.setSubNavItems([
-//   {
-//     title: 'Installation'
-//   },
-//   {
-//     title: 'Bootstrap'
-//   },
-//   {
-//     title: 'The Progressive Way'
-//   }
-// ]);
-
-router.config.baseURL = '/galaxy/site';
+router.config.baseURL = '/';
 router.init({
   '/': function () {
     router.navigate('start');
@@ -177,11 +129,7 @@ router.init({
 
     if (nav) {
       navService.setSubNavItems([]);
-      // Scope.data.moduleInputs.subMenus.items = [];
-      // setTimeout(function () {
       Scope.data.activeModule = nav.module;
-      // }, 300);
-
     }
   }
 });
@@ -313,19 +261,12 @@ view.init([
       {
         tag: 'main',
         module: '<>data.activeModule',
-        inputs: Scope.data.moduleInputs,
-        lifecycle: {
-          beforeCreate() {
-          },
-          created() {
-          },
-          beforeMount() {
-          },
-          mounted() {
-          },
-          beforeDestroy() {
-          },
-          destroyed() {
+        inputs: {
+          text: 'asdasd',
+          content: 'This is the default content',
+          items: '<>data.todos',
+          subMenus: {
+            items: []
           }
         },
         on: {

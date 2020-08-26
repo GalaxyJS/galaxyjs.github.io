@@ -7,7 +7,6 @@ Scope.data.conditionForMultiple = true;
 Scope.data.conditionForList = true;
 
 const itemAnimations = {
-
   enter: {
     withParent: true,
     sequence: 'if-sequence',
@@ -24,10 +23,9 @@ const itemAnimations = {
     duration: .3
   },
   leave: {
-    // withParent: true,
-
+    withParent: true,
     sequence: 'if-sequence',
-    addTo: 'card',
+    // addTo: 'card',
     to: {
       x: 25,
       opacity: 0
@@ -38,11 +36,7 @@ const itemAnimations = {
 };
 
 const listItemAnimations = {
-  // config: {
-  //   enterWithParent: true
-  // },
   enter: {
-    // parent: 'card',
     sequence: 'if-items',
     from: {
       opacity: 0,
@@ -56,14 +50,13 @@ const listItemAnimations = {
     duration: .3
   },
   leave: {
-    parent: 'card',
     sequence: 'if-items',
     to: {
       x: 25,
       opacity: 0
     },
     position: '-=.18',
-    duration: .2
+    duration: .5
   }
 };
 
@@ -120,9 +113,6 @@ view.init({
           tag: 'p',
           text: 'This paragraph has $if',
           animations: {
-            config: {
-              leaveWithParent: true
-            },
             enter: {
               from: {
                 opacity: 0,
@@ -135,6 +125,7 @@ view.init({
               duration: .3
             },
             leave: {
+              withParent: true,
               to: {
                 y: -15,
                 opacity: 0
@@ -246,6 +237,12 @@ view.init({
         {
           $if: '<>data.conditionForList',
           animations: {
+            enter: {
+              to: {
+                opacity: 1
+              },
+              duration: .1
+            },
             leave: {
               sequence: 'if-items',
               to: {

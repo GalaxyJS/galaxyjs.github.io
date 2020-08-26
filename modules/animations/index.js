@@ -71,7 +71,13 @@ view.init([
                 text: 'Replay',
                 on: {
                   click: function () {
-                    Scope.data.boxes = originalDataList.slice(0);
+                    Scope.data.boxes = [];
+                    view.nextFrame(() => {
+                      const card = view.getAnimation('card');
+                      card.addOnComplete((event) => {
+                        Scope.data.boxes = originalDataList.slice(0);
+                      });
+                    });
                   }
                 }
               }
@@ -91,7 +97,6 @@ view.init([
                   position: '-=.25'
                 },
                 leave: {
-                  // withParent: true,
                   sequence: 'card',
                   to: {
                     scale: 0
