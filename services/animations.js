@@ -34,7 +34,7 @@ const animations = {
         scale: .9,
         opacity: 0
       },
-      duration: .4
+      duration: 1.4
     }
   },
   itemInOut: {

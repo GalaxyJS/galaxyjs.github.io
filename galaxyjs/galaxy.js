@@ -1722,7 +1722,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
   };
 
   const cachedModules = {};
-
+  Core.cm = cachedModules;
   /**
    *
    * @constructor
@@ -2003,7 +2003,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           Reflect.deleteProperty(module, 'addOnProviders');
 
           const libId = module.url;
-          // if the module export hast _temp then do not cache the module
+          // if the module export has _temp then do not cache the module
           if (module.scope.exports._temp) {
             module.scope.parentScope.inject(libId, module.scope.exports);
           } else if (!cachedModules[libId]) {
@@ -2300,6 +2300,7 @@ Galaxy.Scope = /** @class */ (function () {
      *
      */
     destroy: function () {
+      this.data = null;
       this.observers.forEach(function (observer) {
         observer.remove();
       });
@@ -3075,7 +3076,7 @@ Galaxy.View = /** @class */(function () {
         if (scopeData.hasOwnProperty('__rd__')) {
           parentReactiveData = scopeData.__rd__;
         } else {
-          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData);
+          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData, null);
         }
       }
       // When the node belongs to a nested $for, the scopeData would refer to the for item data
@@ -3342,15 +3343,11 @@ Galaxy.View = /** @class */(function () {
         nodes.forEach(function (node) {
           parent.node.appendChild(node);
         });
-
-        return nodes;
-      }
-
-      if (nodeSchema instanceof Array) {
+      } else if (nodeSchema instanceof Array) {
         for (i = 0, len = nodeSchema.length; i < len; i++) {
           _this.createNode(nodeSchema[i], parent, scopeData, null, refNode);
         }
-      } else if (nodeSchema !== null && typeof (nodeSchema) === 'object') {
+      } else if (nodeSchema instanceof Object) {
         let attributeValue, attributeName;
         const keys = Object.keys(nodeSchema);
         const needInitKeys = [];
@@ -3376,7 +3373,6 @@ Galaxy.View = /** @class */(function () {
         for (i = 0, len = needInitKeys.length; i < len; i++) {
           attributeName = needInitKeys[i];
           attributeValue = nodeSchema[attributeName];
-
           const bindings = View.getBindings(attributeValue);
           if (bindings.propertyKeysPaths) {
             View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
@@ -3387,12 +3383,8 @@ Galaxy.View = /** @class */(function () {
 
         viewNode.callLifecycleEvent('postInit');
         if (!viewNode.virtual) {
-          if (viewNode.inDOM) {
-            viewNode.setInDOM(true);
-          }
-
+          viewNode.setInDOM(true);
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
-
           viewNode.inserted.then(function () {
             viewNode.callLifecycleEvent('postChildrenInsert');
           });
@@ -3484,7 +3476,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
   ];
   const objKeys = Object.keys;
   const defProp = Object.defineProperty;
-  const scopeBuilder = function () {
+  const scopeBuilder = function (id) {
     return {
       id: '{Scope}',
       shadow: {},
@@ -3529,16 +3521,17 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     this.refs = [];
     this.shadow = {};
     this.oldValue = {};
-    this.nodeCount = 0;
+    this.nodeCount = -1;
 
     if (this.data && this.data.hasOwnProperty('__rd__')) {
       this.refs = this.data.__rd__.refs;
-
+      // if (this.id === '{Scope}.data.products') debugger;
       const refExist = this.getRefById(this.id);
       if (refExist) {
-        // Sometime a object is already reactive, but its parent is dead, meaning all references to it are lost
+        // Sometime an object is already reactive, but its parent is dead, meaning all references to it are lost
         // In such a case that parent con be replace with a live parent
-        if (this.parent.isDead && refExist.parent.refs.length === 1 && refExist.parent.refs[0] === refExist.parent) {
+        if (refExist.parent.isDead) {
+          // debugger;
           refExist.parent = parent;
         }
 
@@ -3576,6 +3569,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
   }
 
   ReactiveData.prototype = {
+    get isDead() {
+      return this.nodeCount === 0 && this.refs.length === 1 && this.refs[0] === this;
+    },
     // If parent data is an array, then this would be an item inside the array
     // therefore its keyInParent should NOT be its index in the array but the
     // array's keyInParent. This way we redirect each item in the array to the
@@ -3814,20 +3810,21 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       });
 
       _this.sync(key);
-      if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
-        const seen = {};
-        seen[_this.keyInParent] = true;
-        const allKeys = _this.refs.map((item) => item.keyInParent);
-        const keys = allKeys.filter((item) => {
-          return seen.hasOwnProperty(item) ? false : (seen[item] = true);
-        });
+      // if (this.id === '{Scope}.data.p') debugger;
+      // if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
+      // const seen = {};
+      // seen[_this.keyInParent] = true;
+      const allKeys = _this.refs.map((item) => item.keyInParent);
+      // const keys = allKeys.filter((item) => {
+      //   return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+      // });
 
-        keys.forEach(kip => {
-          _this.parent.notify(kip);
-        });
-      } else {
-        _this.parent.notify(_this.keyInParent);
-      }
+      allKeys.forEach((kip, i) => {
+        _this.refs[i].parent.notify(kip);
+      });
+      // } else {
+      //   _this.parent.notify(_this.keyInParent);
+      // }
     },
 
     notifyDown: function (key) {
@@ -3850,9 +3847,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     sync: function (propertyKey) {
       const _this = this;
 
-      const map = this.nodesMap[propertyKey];
+      const map = _this.nodesMap[propertyKey];
       const oldValue = _this.oldValue[propertyKey];
-      const value = this.data[propertyKey];
+      const value = _this.data[propertyKey];
 
       // notify the observers on the data
       Galaxy.Observer.notify(_this.data, propertyKey, value, oldValue);
@@ -3919,40 +3916,34 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      *
      */
     removeMyRef: function () {
-      if (this.data && this.data.hasOwnProperty('__rd__')) {
-        // if I am not the original reference, then remove me from the refs
-        if (this.data.__rd__ !== this) {
-          this.refs = [this];
-          this.data.__rd__.removeRef(this);
-        }
-        // if I am the original reference and the only one, then remove the __rd__
-        else if (this.refs.length === 1) {
-          // TODO: Should be tested as much as possible to make sure it works with no bug
-          delete this.data.__rd__;
-          if (this.data instanceof Array) {
-            delete this.data.live;
-            delete this.data.changes;
-          }
-        }
-        // if I am the original reference and not the only one
-        else {
-          this.data.__rd__.removeRef(this);
-
-          const nextOwner = this.refs[0];
-          defProp(this.data, '__rd__', {
-            enumerable: false,
-            configurable: true,
-            value: nextOwner
-          });
-
-          nextOwner.walk(this.data);
-
-          this.refs = [this];
+      if (!this.data || !this.data.hasOwnProperty('__rd__')) return;
+      // if I am not the original reference, then remove me from the refs
+      if (this.data.__rd__ !== this) {
+        this.refs = [this];
+        this.data.__rd__.removeRef(this);
+      }
+      // if I am the original reference and the only one, then remove the __rd__
+      else if (this.refs.length === 1) {
+        // TODO: Should be tested as much as possible to make sure it works with no bug
+        delete this.data.__rd__;
+        if (this.data instanceof Array) {
+          delete this.data.live;
+          delete this.data.changes;
         }
       }
-    },
-    get isDead() {
-      return this.nodeCount === 0;
+      // if I am the original reference and not the only one
+      else {
+        this.data.__rd__.removeRef(this);
+        const nextOwner = this.refs[0];
+        defProp(this.data, '__rd__', {
+          enumerable: false,
+          configurable: true,
+          value: nextOwner
+        });
+        nextOwner.walk(this.data);
+        this.refs = [this];
+      }
+
     },
     /**
      *
@@ -3979,6 +3970,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           nodes: []
         };
       }
+
+      if (this.nodeCount === -1) this.nodeCount = 0;
 
       const index = map.nodes.indexOf(node);
       // Check if the node with the same property already exist
@@ -4201,9 +4194,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     return r + res;
   };
 
-  ViewNode.REMOVE_SELF = function (flag) {
+  ViewNode.REMOVE_SELF = function (destroy) {
     const viewNode = this;
-    if (!flag) {
+    if (destroy) {
+      // Destroy
+      viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
+      viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
+      viewNode.hasBeenDestroyed();
+    } else {
       // Detach
       if (!viewNode.placeholder.parentNode) {
         insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
@@ -4212,11 +4210,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       if (viewNode.node.parentNode) {
         removeChild(viewNode.node.parentNode, viewNode.node);
       }
-    } else {
-      // Destroy
-      viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
-      viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
-      viewNode.hasBeenDestroyed();
     }
   };
 
@@ -4253,6 +4246,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
     _this.transitory = false;
+    _this.leaveWithParent = false;
 
     const cache = {};
     defProp(_this, 'cache', {
@@ -4351,6 +4345,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     populateEnterSequence: EMPTY_CALL,
 
     populateLeaveSequence: null,
+    // function (flag) {
+    //   Galaxy.View.AnimationMeta.installGSAPAnimation(this, 'leave', { sequence: 'DESTROY' }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(this, flag));
+    // }
 
     detach: function () {
       const _this = this;
@@ -4459,9 +4456,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return true;
       }
 
+      // if (_this.leaveWithParent) {
+      //   return true;
+      // }
+
       for (let i = 0, len = children.length; i < len; i++) {
         const node = children[i];
-        if (node.populateLeaveSequence) {
+        if (node.leaveWithParent) {
           return true;
         }
 
@@ -4490,11 +4491,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
     },
 
-    /**
-     *
-     */
     destroy: function () {
-      // if(this.virtual)debugger
       const _this = this;
       _this.transitory = true;
 
@@ -4573,11 +4570,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     /**
      *
-     * @return {Galaxy.Sequence}
      */
     clean: function () {
       const _this = this;
-      // const toBeRemoved = _this.getChildNodes();
       GV.destroyNodes(_this, _this.getChildNodes());
     },
 
@@ -4615,6 +4610,84 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   return ViewNode;
 
 })(Galaxy.View);
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
+  const valueFn = property.value || Galaxy.View.setAttr;
+  const setter = function (value, oldValue) {
+    if (value instanceof Promise) {
+      const asyncCall = function (asyncValue) {
+        valueFn(viewNode, asyncValue, oldValue, attrName);
+      };
+      value.then(asyncCall).catch(asyncCall);
+    } else if (value instanceof Function) {
+      const result = value.call(viewNode);
+      valueFn(viewNode, result, value.oldResult, attrName);
+      value.oldResult = value;
+    } else {
+      valueFn(viewNode, value, oldValue, attrName);
+    }
+  };
+
+  if (expression) {
+    return function (none, oldValue) {
+      const expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+
+Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
+  if (!property.name) {
+    console.error(property);
+    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
+  }
+
+  const valueFn = property.value || Galaxy.View.setProp;
+
+  const setter = function (value, oldValue) {
+    if (value instanceof Promise) {
+      const asyncCall = function (asyncValue) {
+        valueFn(viewNode, asyncValue, oldValue, property.name);
+        viewNode.notifyObserver(property.name, value, oldValue);
+      };
+      value.then(asyncCall).catch(asyncCall);
+    } else {
+      valueFn(viewNode, value, oldValue, property.name);
+      viewNode.notifyObserver(property.name, value, oldValue);
+    }
+  };
+
+  if (expression) {
+    return function (none, oldValue) {
+      const expressionValue = expression(none);
+      setter(expressionValue, oldValue);
+    };
+  }
+
+  return setter;
+};
+
+/* global Galaxy */
+(function () {
+  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
+    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
+    const cache = viewNode.cache[attrName];
+
+    return createReactiveFunction(behavior, viewNode, cache, expression, scope);
+  };
+
+  function createReactiveFunction(behavior, vn, data, expression, scope) {
+    return function (value, oldValue) {
+      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
+    };
+  }
+})();
 
 /* global Galaxy, gsap, TimelineLite */
 'use strict';
@@ -4667,6 +4740,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           console.warn(viewNode.node);
         }
 
+        viewNode.leaveWithParent = leave.withParent === true;
         viewNode.populateLeaveSequence = function (flag) {
           value.config = value.config || {};
 
@@ -5466,7 +5540,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   };
 
   function afterInserted(node, config, changes) {
-    // let leaveStep = null;
     let newTrackMap = null;
     if (config.trackBy instanceof Function && changes.type === 'reset') {
       newTrackMap = changes.params.map(function (item, i) {
@@ -6079,84 +6152,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   }
 })(Galaxy);
 
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
-  const valueFn = property.value || Galaxy.View.setAttr;
-  const setter = function (value, oldValue) {
-    if (value instanceof Promise) {
-      const asyncCall = function (asyncValue) {
-        valueFn(viewNode, asyncValue, oldValue, attrName);
-      };
-      value.then(asyncCall).catch(asyncCall);
-    } else if (value instanceof Function) {
-      const result = value.call(viewNode);
-      valueFn(viewNode, result, value.oldResult, attrName);
-      value.oldResult = value;
-    } else {
-      valueFn(viewNode, value, oldValue, attrName);
-    }
-  };
-
-  if (expression) {
-    return function (none, oldValue) {
-      const expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
-  if (!property.name) {
-    console.error(property);
-    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
-  }
-
-  const valueFn = property.value || Galaxy.View.setProp;
-
-  const setter = function (value, oldValue) {
-    if (value instanceof Promise) {
-      const asyncCall = function (asyncValue) {
-        valueFn(viewNode, asyncValue, oldValue, property.name);
-        viewNode.notifyObserver(property.name, value, oldValue);
-      };
-      value.then(asyncCall).catch(asyncCall);
-    } else {
-      valueFn(viewNode, value, oldValue, property.name);
-      viewNode.notifyObserver(property.name, value, oldValue);
-    }
-  };
-
-  if (expression) {
-    return function (none, oldValue) {
-      const expressionValue = expression(none);
-      setter(expressionValue, oldValue);
-    };
-  }
-
-  return setter;
-};
-
-/* global Galaxy */
-(function () {
-  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
-    const cache = viewNode.cache[attrName];
-
-    return createReactiveFunction(behavior, viewNode, cache, expression, scope);
-  };
-
-  function createReactiveFunction(behavior, vn, data, expression, scope) {
-    return function (value, oldValue) {
-      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
-    };
-  }
-})();
 
 /* global Galaxy */
 'use strict';

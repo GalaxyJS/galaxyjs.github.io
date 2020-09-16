@@ -2,11 +2,14 @@
 
 const animations = Scope.import('services/animations.js');
 const view = Scope.import('galaxy/view');
-const data = Scope.import('./data.js');
+const data = Scope.import('data/products.js');
 
-Scope.data.products = data;
-Scope.data.test = data;
-Scope.data.test2 = data;
+Scope.data = {
+  products: data,
+  test: data
+};
+
+console.log( data);
 
 view.init({
   tag: 'div',
@@ -46,6 +49,7 @@ view.init({
                   children: {
                     animations: {
                       leave: {
+                        sequence: 'DESTROY',
                         to: {
                           opacity: 0
                         },
@@ -64,6 +68,11 @@ view.init({
                         }
                       ],
                     },
+                    // class: {
+                    //   'default': true,
+                    //   '=> data.activeProduct.title === product.title': 'active',
+                    //   '=> data.activeProduct.title !== product.title': 'inactive'
+                    // },
                     tag: 'span',
                     // text: 'out of stock',
                     text: [
@@ -72,6 +81,12 @@ view.init({
                         return q < 1 ? 'out of stock' : 'in stock';
                       }
                     ]
+                    // text: {
+                    //   'product.quantity < 1': 'Out of Stock',
+                    //   'product.quantity >= 1': 'In Stock',
+                    //   'success': 'The data has been saved!',
+                    //   'alert': 'Something went wrong!'
+                    // }
                   }
                 },
                 {
@@ -95,7 +110,7 @@ view.init({
                 {
                   tag: 'h3',
                   text: [
-                    'data.test2',
+                    'data.test',
                     function (products) {
                       console.log('ffff');
                       return 'Total: ' + products.reduce(function (sum, item) {
