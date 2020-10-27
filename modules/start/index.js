@@ -3,12 +3,14 @@
 const view = Scope.import('galaxy/view');
 const effects = Scope.import('services/effects.js');
 const data = Scope.import('data/products.js');
+const animations = Scope.import('services/animations.js');
 
 Scope.data.p = data;
 
-console.log(data)
+console.log(data);
 view.init({
   class: 'card big',
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'img',
@@ -78,5 +80,4 @@ view.init({
       ]
     }
   ]
-})
-;
+});

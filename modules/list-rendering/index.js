@@ -10,18 +10,18 @@ Scope.data.pro = new Promise(function (resolve) {
   Scope.data.resolve = resolve;
 });
 
-setTimeout(() => {
-  Scope.data.resolve();
-}, 7000);
-
-Scope.data.pro2 = new Promise(function (resolve) {
-  Scope.data.resolve2 = resolve;
-});
-
-setTimeout(() => {
-  Scope.data.resolve2();
-
-}, 3000);
+// setTimeout(() => {
+//   Scope.data.resolve();
+// }, 7000);
+//
+// Scope.data.pro2 = new Promise(function (resolve) {
+//   Scope.data.resolve2 = resolve;
+// });
+//
+// setTimeout(() => {
+//   Scope.data.resolve2();
+//
+// }, 3000);
 
 
 const itemAnimations = {
@@ -53,8 +53,9 @@ const itemAnimations = {
     duration: .4
   },
   leave: {
-    withParent: true,
-    sequence: 'ok',
+    addTo: 'card',
+    // withParent: true,
+    sequence: 'DESTROY',
     to: {
       overflow: 'hidden',
       paddingTop: 0,
@@ -81,7 +82,8 @@ const button = {
 view.init({
   tag: 'div',
   class: 'card big',
-  animations: animations.cardInOut,
+  // animations: animations.cardInOut,
+  animations:{},
   lifecycle: {
     postChildrenInsert: function () {
       PR.prettyPrint();
