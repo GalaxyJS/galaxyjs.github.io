@@ -9,7 +9,7 @@ Scope.data = {
   test: data
 };
 
-console.log( data);
+console.log(data);
 
 view.init({
   tag: 'div',
@@ -25,13 +25,17 @@ view.init({
           text: 'VueJS Replica'
         },
         {
+          tag: 'h1',
+          text: '<>data.products.length'
+        },
+        {
           tag: 'ul',
           children: [
             {
               tag: 'li',
               class: 'flex-row',
               $for: {
-                data: '<>data.products.changes',
+                data: '<>data.products',
                 as: 'product'
               },
               children: [
@@ -112,7 +116,7 @@ view.init({
                   text: [
                     'data.test',
                     function (products) {
-                      console.log('ffff');
+                      console.log('products', products);
                       return 'Total: ' + products.reduce(function (sum, item) {
                         return sum + item.quantity;
                       }, 0);

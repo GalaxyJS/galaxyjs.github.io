@@ -5,7 +5,6 @@ const animations = Scope.import('services/animations.js');
 const effects = Scope.import('services/effects.js');
 const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
-console.log(test);
 
 const items = [
   {
@@ -55,8 +54,7 @@ view.init({
     },
     {
       tag: 'h1',
-      text: 'API',
-      class: 'test'
+      text: 'API'
     },
     {
       tag: 'section',
@@ -111,14 +109,6 @@ view.init({
         '<p>Modules are the building blocks of the application and they can be variety of things like components, services, utilities and etc.</p>' +
         '<p>Modules will provide you with a Galaxy.Scope instance which gives you the ability to import plugins and other type of' +
         ' resources.</p>',
-        {
-          tag: 'h2',
-          text: 'Galaxy.Sequence'
-        },
-        {
-          tag: 'h2',
-          text: 'Galaxy.Observer'
-        },
         {
           tag: 'h2',
           text: 'Galaxy.View'

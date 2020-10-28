@@ -91,7 +91,8 @@ view.init([
                 enter: {
                   sequence: 'card',
                   from: {
-                    scale: 0
+                    scale: 0,
+                    opacity: 1
                   },
                   duration: .35,
                   position: '-=.25'
@@ -99,15 +100,16 @@ view.init([
                 leave: {
                   sequence: 'card',
                   to: {
-                    scale: 0
+                    scale: 0,
+                    opacity: 0
                   },
                   duration: .15,
-                  position: '-=0.05'
+                  position: '-=0.08'
                 }
               },
               class: 'box',
               $for: {
-                data: '<>data.boxes.changes',
+                data: '<>data.boxes',
                 as: 'item'
               },
               text: '<>item',

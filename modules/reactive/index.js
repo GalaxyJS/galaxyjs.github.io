@@ -124,10 +124,10 @@ view.init({
             $for: {
               data: [
                 'data.list.changes',
-                function (changes) {
-                  console.info('ArrayChange instance:', changes);
-                  console.info('Type of change is', '`' + changes.type + '`', '\nparameters:', changes.params, '\n\n');
-                  return changes;
+                function (array) {
+                  console.info('ArrayChange instance:', array);
+                  console.info('Type of change is', '`' + array.type + '`', '\nparameters:', array.params, '\n\n');
+                  return array;
                 }
               ],
               as: 'city'

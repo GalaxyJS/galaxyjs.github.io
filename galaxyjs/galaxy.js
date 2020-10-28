@@ -2504,6 +2504,16 @@ Galaxy.GalaxyURI = /** @class */ (function () {
     return styleElement;
   }
 
+  function applyContentAttr(children, ids) {
+    children.forEach((child) => {
+      child[ids.content] = '';
+
+      if (child.children) {
+        applyContentAttr(child.children, ids);
+      }
+    });
+  }
+
   function parser(content) {
     return {
       imports: [],
@@ -2511,7 +2521,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
         const ids = getHostId(Scope.systemId);
         const cssRules = rulesForCssText(content);
         const hostSuffix = '[' + ids.host + ']';
-        const contentSuffix = '[' + ids.content + ']';
+        // const contentSuffix = '[' + ids.content + ']';
         const parsedCSSRules = [];
         const host = /(:host)/g;
         const selector = /([^\s+>~,]+)/g;
@@ -2520,7 +2530,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
             return item;
           }
 
-          return item + contentSuffix;
+          return item /*+ contentSuffix*/;
         };
 
         Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
@@ -2540,10 +2550,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
           _apply() {
             this.parent.node.setAttribute(ids.host, '');
             const children = this.parent.schema.children || [];
-            children.forEach((child) => {
-              child[ids.content] = '';
-            });
-            // console.log(children)
+            applyContentAttr(children, ids);
           }
         };
       }
@@ -3401,10 +3408,16 @@ Galaxy.View = /** @class */(function () {
 /* global Galaxy */
 
 Galaxy.View.ArrayChange = /** @class */ (function () {
+  let lastId = 0;
+
   function ArrayChange() {
+    this.id = lastId++;
+    if (lastId > 10000000) {
+      lastId = 0;
+    }
     this.init = null;
     this.original = null;
-    this.snapshot = [];
+    // this.snapshot = [];
     this.returnValue = null;
     this.params = [];
     this.type = 'reset';
@@ -3712,13 +3725,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       const _this = this;
 
       if (arr.hasOwnProperty('changes')) {
-        return arr.changes;
+        return arr.changes.init;
       }
       // _this.makeReactiveObject(value, 'changes', true);
 
       const initialChanges = new Galaxy.View.ArrayChange();
       initialChanges.original = arr;
-      initialChanges.snapshot = arr.slice(0);
+      // initialChanges.snapshot = arr.slice(0);
       initialChanges.type = 'reset';
       initialChanges.params = arr;
       initialChanges.params.forEach(function (item) {
@@ -3731,7 +3744,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       initialChanges.init = initialChanges;
       arr.changes = initialChanges;
       // _this.oldValue['changes'] = Object.assign({}, initialChanges);
-      _this.makeReactiveObject(arr, 'changes');
+      // _this.makeReactiveObject(arr, 'changes');
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
@@ -3747,7 +3760,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             const returnValue = originalMethod.apply(this, args);
             const changes = new Galaxy.View.ArrayChange();
             changes.original = arr;
-            changes.snapshot = arr.slice(0);
             changes.type = method;
             changes.params = args;
             changes.returnValue = returnValue;
@@ -3771,12 +3783,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
               });
             }
 
-            // const cacheOldValue = value.changes;
-            // _this.oldValue['changes'] = cacheOldValue;
+            arr.changes = changes;
             // For arrays we have to sync length manually
             // if we use notify here we will get
             _this.notifyDown('length');
-            arr.changes = changes;
+            _this.notifyDown('changes');
+            _this.notify(_this.keyInParent);
 
             return returnValue;
           },
@@ -3985,6 +3997,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         map.nodes.push(node);
 
         let initValue = this.data[dataKey];
+        // if the value is a instance of Array, then we should set its change property to its initial state
+        if (initValue instanceof Array && initValue.changes) {
+          initValue.changes = initValue.changes.init;
+        }
         // We need initValue for cases where ui is bound to a property of an null object
         // TODO: This line seem obsolete
         // if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {
@@ -4291,6 +4307,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @type {RenderConfig}
      */
     this.schema.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, schema.renderConfig || {});
+    this.schema.animations = this.schema.animations || {};
 
     __node__.value = this.node;
     defProp(this.schema, 'node', __node__);
@@ -5356,6 +5373,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       this.virtualize();
 
       return {
+        changeId: null,
         throttleId: null,
         nodes: [],
         options: options,
@@ -5390,6 +5408,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       if (config.options) {
         const bindings = View.getBindings(config.options.data);
+
         config.watch = bindings.propertyKeysPaths;
         node.localPropertyNames.add(config.options.as);
         if (config.options.indexAs) {
@@ -5408,9 +5427,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           });
         } else if (config.options.data instanceof Array) {
           const setter = node.setters['$for'] = View.createSetter(node, '$for', config.options.data, null, config.scope);
-          const value = new Galaxy.View.ArrayChange();
-          value.params = config.options.data;
-          setter(value);
+          setter(config.options.data);
         }
       }
 
@@ -5421,22 +5438,45 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      *
      * @this {Galaxy.View.ViewNode}
      * @param config The return of prepare
-     * @param changes
+     * @param array
      * @param oldChanges
      * @param {Function} expression
      */
-    apply: function (config, changes, oldChanges, expression) {
-      // The idea is that when the
+    apply: function (config, array, oldChanges, expression) {
+      // if (config.options.as === 'product')
+      //   debugger
+
+      let changes = null;
       if (expression) {
-        changes = expression();
-        if (changes === null || changes === undefined) {
+        array = expression();
+        if (array === null || array === undefined) {
           return;
         }
 
-        if (!(changes instanceof Galaxy.View.ArrayChange)) {
-          throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
-        }
+        // if (!(changes instanceof Galaxy.View.ArrayChange)) {
+        //   debugger;
+        //   throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
+        // }
+      } else {
+        changes = array.changes;
       }
+
+
+      if (!changes && array instanceof Array) {
+        const initialChanges = new Galaxy.View.ArrayChange();
+        initialChanges.original = array;
+        initialChanges.type = 'reset';
+        initialChanges.params = array;
+        changes = array.changes = initialChanges;
+      }
+
+      const node = this;
+
+      if (changes.id === config.changeId) {
+        return;
+      }
+
+      config.changeId = changes.id;
 
       if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
         return console.warn('%c$for %cdata is not a type of ArrayChange' +
@@ -5456,7 +5496,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       /** @type {Galaxy.View.ViewNode} */
-      const node = this;
       config.oldChanges = changes;
       config.throttleId = window.requestAnimationFrame(() => {
         afterInserted(node, config, changes);

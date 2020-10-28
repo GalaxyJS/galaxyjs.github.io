@@ -171,7 +171,7 @@ view.init([
       {
         tag: 'div',
         $for: {
-          data: '<>data.navItems.changes',
+          data: '<>data.navItems',
           as: 'nav'
         },
         animations: {
@@ -245,7 +245,7 @@ view.init([
                 data: [
                   'nav.module',
                   'data.activeModule',
-                  'data.navService.subNavItems.changes',
+                  'data.navService.subNavItems',
                   function (m, am, c) {
                     if (m === am) {
                       return c;

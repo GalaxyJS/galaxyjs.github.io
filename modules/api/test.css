@@ -1,7 +1,7 @@
-:host {
-  font-weight: bold;
+:host > h1 {
+  color: #d05e77;
 }
 
-:host > .test {
-  color: red;
+:host ul > li > strong {
+  color: #aaa;
 }

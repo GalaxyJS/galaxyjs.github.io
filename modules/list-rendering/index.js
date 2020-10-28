@@ -54,7 +54,6 @@ const itemAnimations = {
   },
   leave: {
     addTo: 'card',
-    // withParent: true,
     sequence: 'DESTROY',
     to: {
       overflow: 'hidden',
@@ -64,7 +63,7 @@ const itemAnimations = {
       opacity: 0
     },
     position: '-=.1',
-    duration: .3
+    duration: .2
   }
 };
 
@@ -82,8 +81,8 @@ const button = {
 view.init({
   tag: 'div',
   class: 'card big',
-  // animations: animations.cardInOut,
-  animations:{},
+  animations: animations.cardInOut,
+  // animations:{},
   lifecycle: {
     postChildrenInsert: function () {
       PR.prettyPrint();
@@ -155,7 +154,7 @@ view.init({
                   animations: itemAnimations,
                   class: 'flex-row',
                   $for: {
-                    data: '<>data.capitals.changes',
+                    data: '<>data.capitals',
                     as: 'item'
                   },
                   test: '<>this.stuff',
@@ -174,7 +173,7 @@ view.init({
                   animations: itemAnimations,
                   class: 'flex-row',
                   $for: {
-                    data: '<>data.countries.changes',
+                    data: '<>data.countries',
                     as: 'item2'
                   },
                   text: '<>item2'

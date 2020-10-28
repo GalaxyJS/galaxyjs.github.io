@@ -109,7 +109,7 @@ view.init({
             tag: 'li',
             // $for: 'titem in inputs.items',
             $for: {
-              data: '<>inputs.items.changes',
+              data: '<>inputs.items',
               as: 'titem'
             },
             animations: {
