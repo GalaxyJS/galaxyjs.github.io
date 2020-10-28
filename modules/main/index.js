@@ -6,6 +6,16 @@ const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
 
+// setTimeout(() => {
+//   setInterval(() => {
+//     if (Scope.data.activeModule.id === 'start') {
+//       router.navigate('vuejs-replica-demo');
+//     } else {
+//       router.navigate('start');
+//     }
+//   }, 1500);
+// }, 2000);
+
 Scope.data.navService = navService;
 Scope.data.navItems = [
   {

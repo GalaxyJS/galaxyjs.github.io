@@ -4,7 +4,6 @@ Scope.import('galaxy/inputs');
 const view = Scope.import('galaxy/view');
 // const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
-const animations = Scope.import('services/animations.js');
 const effects = Scope.import('services/effects.js');
 
 Scope.surfaces = [];
@@ -31,7 +30,6 @@ navService.setSubNavItems(items);
 
 view.init({
   class: 'card big',
-  animations: animations.cardInOut,
   lifecycle: {
     postChildrenInsert: function () {
       PR.prettyPrint();
