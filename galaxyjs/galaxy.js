@@ -1723,6 +1723,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
   const cachedModules = {};
   Core.cm = cachedModules;
+
   /**
    *
    * @constructor
@@ -1992,31 +1993,32 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const moduleSource = typeof source === 'function' ?
             source :
             new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
-          moduleSource.call(module.scope, module.scope);
+          moduleSource.call(module.scope, module.scope).then(() => {
 
-          Reflect.deleteProperty(module, 'source');
+            Reflect.deleteProperty(module, 'source');
 
-          module.addOnProviders.forEach(function (item) {
-            item.finalize();
+            module.addOnProviders.forEach(function (item) {
+              item.finalize();
+            });
+
+            Reflect.deleteProperty(module, 'addOnProviders');
+
+            const libId = module.url;
+            // if the module export has _temp then do not cache the module
+            if (module.scope.exports._temp) {
+              module.scope.parentScope.inject(libId, module.scope.exports);
+            } else if (!cachedModules[libId]) {
+              cachedModules[libId] = {
+                libId: libId,
+                module: module.scope.exports
+              };
+            }
+
+            const currentModule = module;
+
+            currentModule.init();
+            return resolve(currentModule);
           });
-
-          Reflect.deleteProperty(module, 'addOnProviders');
-
-          const libId = module.url;
-          // if the module export has _temp then do not cache the module
-          if (module.scope.exports._temp) {
-            module.scope.parentScope.inject(libId, module.scope.exports);
-          } else if (!cachedModules[libId]) {
-            cachedModules[libId] = {
-              libId: libId,
-              module: module.scope.exports
-            };
-          }
-
-          const currentModule = module;
-
-          currentModule.init();
-          resolve(currentModule);
         } catch (error) {
           console.error(error.message + ': ' + module.url);
           console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
@@ -2517,7 +2519,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
   function parser(content) {
     return {
       imports: [],
-      source: function (Scope) {
+      source: async function (Scope) {
         const ids = getHostId(Scope.systemId);
         const cssRules = rulesForCssText(content);
         const hostSuffix = '[' + ids.host + ']';
@@ -3392,9 +3394,7 @@ Galaxy.View = /** @class */(function () {
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
-          viewNode.inserted.then(function () {
-            viewNode.callLifecycleEvent('postChildrenInsert');
-          });
+          viewNode.inserted.then(() => viewNode.callLifecycleEvent('postChildrenInsert'));
         }
 
         return viewNode;
@@ -3412,7 +3412,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
 
   function ArrayChange() {
     this.id = lastId++;
-    if (lastId > 10000000) {
+    if (lastId > 100000000) {
       lastId = 0;
     }
     this.init = null;
@@ -4396,7 +4396,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.callLifecycleEvent('postInsert');
         _this.hasBeenInserted();
 
-        GV.CREATE_IN_NEXT_FRAME(_this.index, function () {
+        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
           // _this.node.style.display = '';
           _this.hasBeenRendered();
           _this.populateEnterSequence();
@@ -4699,6 +4699,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           }
 
           const rect = viewNode.node.getBoundingClientRect();
+
           // in the case which the viewNode is not visible, then ignore its animation
           if (rect.width === 0 ||
             rect.height === 0 ||
@@ -4955,16 +4956,35 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parent = animationMeta.timeline;
+        console.log(parent)
         while (parent.parent !== gsap.globalTimeline) {
           parent = parent.parent;
         }
 
+        // We don't want the animation wait for the(await) of this `viewNode` if it's destroyed, before it gets a chance
+        // to resolve its await.
+        // Therefore, we need to remove await that is added by this view node upon its destruction.
+        console.log(viewNode.populateLeaveSequence)
+        viewNode.destroyed.then(() => {
+          debugger;
+          const index = animationMeta.awaits.indexOf(newConfig.await);
+          if (index !== -1) {
+            animationMeta.awaits.splice(index, 1);
+            parent.resume();
+          }
+        });
+
         parent.add(() => {
           parent.pause();
           newConfig.await.then(() => {
+            const index = animationMeta.awaits.indexOf(newConfig.await);
+            if (index !== -1) {
+              animationMeta.awaits.splice(index, 1);
+            }
             parent.resume();
           });
         });
+
 
         animationMeta.awaits.push(newConfig.await);
       }
@@ -5427,6 +5447,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           });
         } else if (config.options.data instanceof Array) {
           const setter = node.setters['$for'] = View.createSetter(node, '$for', config.options.data, null, config.scope);
+          const value = new Galaxy.View.ArrayChange();
+          value.params = config.options.data;
+          config.options.data.changes = value;
           setter(config.options.data);
         }
       }
@@ -5443,14 +5466,26 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Function} expression
      */
     apply: function (config, array, oldChanges, expression) {
-      // if (config.options.as === 'product')
-      //   debugger
-
       let changes = null;
       if (expression) {
         array = expression();
         if (array === null || array === undefined) {
           return;
+        }
+
+        if (array instanceof Galaxy.View.ArrayChange) {
+          changes = array;
+        } else if (array instanceof Array) {
+          const initialChanges = new Galaxy.View.ArrayChange();
+          initialChanges.original = array;
+          initialChanges.type = 'reset';
+          initialChanges.params = array;
+          changes = array.changes = initialChanges;
+        } else {
+          changes = {
+            type: 'reset',
+            params: []
+          };
         }
 
         // if (!(changes instanceof Galaxy.View.ArrayChange)) {
@@ -5461,17 +5496,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         changes = array.changes;
       }
 
-
-      if (!changes && array instanceof Array) {
-        const initialChanges = new Galaxy.View.ArrayChange();
-        initialChanges.original = array;
-        initialChanges.type = 'reset';
-        initialChanges.params = array;
-        changes = array.changes = initialChanges;
-      }
-
       const node = this;
-
       if (changes.id === config.changeId) {
         return;
       }

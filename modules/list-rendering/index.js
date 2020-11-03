@@ -32,6 +32,7 @@ const itemAnimations = {
     // sequence: 'card',
     addTo: 'card',
     sequence: 'ok',
+    await: Scope.data.pro,
     from: {
       opacity: 0,
       height: 0,
