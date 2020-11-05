@@ -25,11 +25,7 @@ Scope.data.pro = new Promise(function (resolve) {
 
 
 const itemAnimations = {
-  // config: {
-  //   leaveWithParent: true
-  // },
   enter: {
-    // sequence: 'card',
     addTo: 'card',
     sequence: 'ok',
     await: Scope.data.pro,
@@ -55,7 +51,8 @@ const itemAnimations = {
   },
   leave: {
     addTo: 'card',
-    sequence: 'DESTROY',
+    sequence: 'ok',
+    withParent: true,
     to: {
       overflow: 'hidden',
       paddingTop: 0,

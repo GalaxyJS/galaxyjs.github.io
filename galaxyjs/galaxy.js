@@ -3196,7 +3196,9 @@ Galaxy.View = /** @class */(function () {
         bindings.propertyKeysPaths.forEach(function (path) {
           try {
             const rd = View.propertyScopeLookup(data, path);
-            viewNode.addDependedObject(rd, subjectsClone);
+            viewNode.finalize.push(() => {
+              rd.removeNode(subjectsClone);
+            });
           } catch (error) {
             console.error('Could not find: ' + path + '\n', error);
           }
@@ -4257,7 +4259,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.setters = {};
     /** @type {galaxy.View.ViewNode} */
     _this.parent = parent;
-    _this.dependedObjects = [];
+    // _this.dependedObjects = [];
+    _this.finalize = [];
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
     _this.transitory = false;
@@ -4406,8 +4409,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.origin = true;
         _this.transitory = true;
-        const flag = _this.hasAnimation();
-        _this.updateChildrenLeaveSequence(flag);
+        _this.updateChildrenLeaveSequence(_this.hasAnimation());
         GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateLeaveSequence(false);
           _this.origin = false;
@@ -4472,10 +4474,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return true;
       }
 
-      // if (_this.leaveWithParent) {
-      //   return true;
-      // }
-
       for (let i = 0, len = children.length; i < len; i++) {
         const node = children[i];
         if (node.leaveWithParent) {
@@ -4516,13 +4514,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.updateChildrenLeaveSequence(flag);
         _this.clean();
       }
-      _this.properties.forEach(function (reactiveData) {
+
+      _this.properties.forEach((reactiveData) => {
         reactiveData.removeNode(_this);
       });
 
-      _this.dependedObjects.forEach(function (dependent) {
-        dependent.reactiveData.removeNode(dependent.item);
-      });
+      _this.finalize.forEach(act => act.call(_this));
 
       GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
         if (_this.inDOM) {
@@ -4533,20 +4530,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.localPropertyNames.clear();
         _this.properties = [];
-        _this.dependedObjects = [];
+        _this.finalize = [];
         _this.inDOM = false;
         _this.schema.node = undefined;
         _this.inputs = {};
       });
-    },
-
-    /**
-     *
-     * @param {Galaxy.View.ReactiveData} reactiveData
-     * @param {Object} item
-     */
-    addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
     },
 
     getChildNodes: function () {
@@ -4706,6 +4694,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
             gsap.killTweensOf(viewNode.node);
+            // if (viewNode.schema.tag === 'li')
+            //   debugger;
+            // return AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
+            //   sequence: 'DESTROY',
+            //   duration: .000001
+            // }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
             return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
 
@@ -4716,7 +4710,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
             sequence: 'DESTROY',
             duration: .000001
-          }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(this, flag));
+          }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
       }
 
@@ -4956,26 +4950,31 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parent = animationMeta.timeline;
-        console.log(parent)
+        console.log(parent, parent === gsap.globalTimeline, animationMeta);
+
         while (parent.parent !== gsap.globalTimeline) {
+          if (!parent.parent) return;
           parent = parent.parent;
         }
 
-        // We don't want the animation wait for the(await) of this `viewNode` if it's destroyed, before it gets a chance
-        // to resolve its await.
-        // Therefore, we need to remove await that is added by this view node upon its destruction.
-        console.log(viewNode.populateLeaveSequence)
-        viewNode.destroyed.then(() => {
-          debugger;
-          const index = animationMeta.awaits.indexOf(newConfig.await);
-          if (index !== -1) {
-            animationMeta.awaits.splice(index, 1);
-            parent.resume();
-          }
-        });
-
         parent.add(() => {
+          if (viewNode.destroyed.resolved) {
+            return;
+          }
+
           parent.pause();
+
+          const removeAwait = () => {
+            const index = animationMeta.awaits.indexOf(newConfig.await);
+            if (index !== -1) {
+              animationMeta.awaits.splice(index, 1);
+            }
+            parent.resume();
+          };
+          // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance to resolve.
+          // Therefore, we need to remove await.
+          viewNode.finalize.push(removeAwait);
+
           newConfig.await.then(() => {
             const index = animationMeta.awaits.indexOf(newConfig.await);
             if (index !== -1) {
@@ -4983,8 +4982,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
             }
             parent.resume();
           });
-        });
-
+        }, newConfig.position);
 
         animationMeta.awaits.push(newConfig.await);
       }
@@ -5418,8 +5416,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param config Return of prepare method
      */
     install: function (config) {
-      const node = this;
-      const parentNode = node.parent;
+      const viewNode = this;
+      const parentNode = viewNode.parent;
       /**
        *
        * @type {RenderJobManager}
@@ -5430,23 +5428,25 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         const bindings = View.getBindings(config.options.data);
 
         config.watch = bindings.propertyKeysPaths;
-        node.localPropertyNames.add(config.options.as);
+        viewNode.localPropertyNames.add(config.options.as);
         if (config.options.indexAs) {
-          node.localPropertyNames.add(config.options.indexAs);
+          viewNode.localPropertyNames.add(config.options.indexAs);
         }
 
         if (bindings.propertyKeysPaths) {
-          View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
+          View.makeBinding(viewNode, '$for', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
-              node.addDependedObject(rd, node);
+              viewNode.finalize.push(() => {
+                rd.removeNode(viewNode);
+              });
             } catch (error) {
               console.error('Could not find: ' + path + '\n', error);
             }
           });
         } else if (config.options.data instanceof Array) {
-          const setter = node.setters['$for'] = View.createSetter(node, '$for', config.options.data, null, config.scope);
+          const setter = viewNode.setters['$for'] = View.createSetter(viewNode, '$for', config.options.data, null, config.scope);
           const value = new Galaxy.View.ArrayChange();
           value.params = config.options.data;
           config.options.data.changes = value;
@@ -5528,11 +5528,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
   };
 
-  function afterInserted(node, config, changes) {
+  function afterInserted(viewNode, config, changes) {
     let newTrackMap = null;
     if (config.trackBy instanceof Function && changes.type === 'reset') {
       newTrackMap = changes.params.map(function (item, i) {
-        return config.trackBy.call(node, item, i);
+        return config.trackBy.call(viewNode, item, i);
       });
       // list of nodes that should be removed
       const hasBeenRemoved = [];
@@ -5571,33 +5571,33 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         config.trackMap = newTrackMap;
       }
 
-      if (node.cache.$forProcessing) {
-        return node.cache.$forPushProcess = () => {
-          createPushProcess(node, config, newChanges, config.scope);
+      if (viewNode.cache.$forProcessing) {
+        return viewNode.cache.$forPushProcess = () => {
+          createPushProcess(viewNode, config, newChanges, config.scope);
         };
       }
 
-      View.destroyNodes(node, hasBeenRemoved.reverse());
+      View.destroyNodes(viewNode, hasBeenRemoved.reverse());
       changes = newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(node, nodesToBeRemoved.reverse());
+      View.destroyNodes(viewNode, nodesToBeRemoved.reverse());
       changes = Object.assign({}, changes);
       changes.type = 'push';
     }
 
     // if $forProcessing is true, then there is no need for a new leave step
     // we just need to update the $forPushProcess
-    node.cache.$forProcessing = true;
+    viewNode.cache.$forProcessing = true;
 
-    node.cache.$forPushProcess = () => {
-      createPushProcess(node, config, changes, config.scope);
+    viewNode.cache.$forPushProcess = () => {
+      createPushProcess(viewNode, config, changes, config.scope);
     };
 
     // $forPushProcess can change on the fly therefore we need to register a function
     // that calls the latest $forPushProcess
-    node.cache.$forPushProcess.call();
+    viewNode.cache.$forPushProcess.call();
   }
 
   function createPushProcess(node, config, changes, nodeScopeData) {
