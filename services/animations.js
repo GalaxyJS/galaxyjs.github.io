@@ -106,10 +106,28 @@ animations.mainNav = {
   enter: {
     sequence: 'card',
     from: {
-      ease: Elastic.easeOut.config(1.2, .8),
+      ease: 'elastic.inOut(1.2, .8)',
       x: '-100%'
     },
     duration: .5
+  },
+  'add:expand': {
+    duration: .5,
+    to: {
+      ease: 'power2.inOut',
+      height: '60%',
+      boxShadow: '0 15px 25px rgba(40, 40, 40, .35)',
+      overflow: 'auto'
+    }
+  },
+  'remove:expand': {
+    duration: .3,
+    to: {
+      ease: 'power2.inOut',
+      height: 60,
+      boxShadow: '0 5px 15px rgba(40, 40, 40, .2)',
+      overflow: 'hidden'
+    }
   }
 };
 

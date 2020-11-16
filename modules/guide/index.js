@@ -1,6 +1,4 @@
 /* globals Scope, Promise, PR */
-Scope.import('galaxy/inputs');
-
 const view = Scope.import('galaxy/view');
 // const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
@@ -14,15 +12,15 @@ Scope.flag = true;
 const items = [
   {
     title: 'Installation',
-    href: '#/guide/installation'
+    href: 'guide/installation'
   },
   {
     title: 'Bootstrap',
-    href: '#/guide/bootstrap'
+    href: 'guide/bootstrap'
   },
   {
     title: 'The Progressive Way',
-    href: '#/guide/the-progressive-way'
+    href: 'guide/the-progressive-way'
   }
 ];
 
@@ -43,7 +41,6 @@ view.init({
       class: 'banner',
       src: 'assets/images/guide.jpg',
       height: '410',
-      blurCaption: effects.getBlurCaption()
     },
     '<h1>Guide Page</h1>',
     {

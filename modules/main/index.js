@@ -128,11 +128,12 @@ function isActiveModule(mod, actMod) {
 
 router.config.baseURL = '/';
 router.init({
-  '/': function () {
+  '/': () => {
     router.navigate('start');
   },
 
-  '/:moduleId': function (params) {
+  '/:moduleId': (params, asdasd) => {
+    console.log(params, asdasd);
     const nav = Scope.data.navItems.filter(function (item) {
       return item.module.id === params.moduleId;
     })[0];
@@ -160,7 +161,14 @@ view.init([
     animations: animations.mainNav,
     on: {
       click(vn) {
-        Scope.data.expandNav = !Scope.data.expandNav;
+        if (window.innerWidth < 768) {
+          Scope.data.expandNav = !Scope.data.expandNav;
+        }
+      },
+      tap(vn) {
+        if (window.innerWidth < 768) {
+          Scope.data.expandNav = !Scope.data.expandNav;
+        }
       }
     },
     children: [
@@ -194,13 +202,14 @@ view.init([
             inputs: {
               nav: '<>nav'
             },
-
             class: {
               'nav-item': true,
               active: isActiveModule
             },
+            href: '<>nav.link',
             on: {
-              click: function () {
+              click: function (e) {
+                e.preventDefault();
                 router.navigate(this.inputs.nav.link);
               }
             },
@@ -255,8 +264,18 @@ view.init([
                   }
                 ]
               },
+              inputs: {
+                subNav: '<>subNav'
+              },
               text: '<>subNav.title',
-              href: '<>subNav.href'
+              href: '<>subNav.href',
+              on: {
+                click: function (e) {
+                  e.preventDefault();
+                  // debugger;
+                  router.navigate(this.inputs.subNav.href);
+                }
+              }
             }
           }
         ]

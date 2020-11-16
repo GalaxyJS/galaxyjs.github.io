@@ -1,13 +1,8 @@
 /* globals Scope */
 
 const view = Scope.import('galaxy/view');
-const effects = Scope.import('services/effects.js');
-const data = Scope.import('data/products.js');
 const animations = Scope.import('services/animations.js');
 
-Scope.data.p = data;
-
-console.log(data);
 view.init({
   class: 'card big',
   animations: animations.cardInOut,
@@ -18,7 +13,7 @@ view.init({
       src: 'assets/images/galaxy.jpeg',
       height: '420',
       alt: 'Galaxy',
-      blurCaption: effects.getBlurCaption()
+      // blurCaption: effects.getBlurCaption()
     },
     '<h1>Welcome To GalaxyJS</h1>',
     {
@@ -40,11 +35,6 @@ view.init({
             '<li><strong>Flexible Structure</strong> in order to achieve most optimal solution for your app</li>' +
             '<li><strong>Scalability</strong> and <strong>Extendability</strong></li>'
           ]
-        },
-
-        {
-          tag: 'strong',
-          text: '<>data.p.length'
         },
         {
           tag: 'p',

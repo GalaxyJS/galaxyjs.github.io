@@ -53,7 +53,6 @@ view.init([
         class: 'banner',
         src: 'assets/images/asphalt-blur-cars.jpg',
         height: '410',
-        blurCaption: effects.getBlurCaption()
       },
       {
         tag: 'h1',

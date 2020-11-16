@@ -1,5 +1,4 @@
 const view = Scope.import('galaxy/view');
-Scope.import('galaxy/inputs');
 
 Scope.data.focused = false;
 

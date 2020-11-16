@@ -2,25 +2,29 @@
 const test = Scope.import('./test.css');
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
-const effects = Scope.import('services/effects.js');
 const router = Scope.import('galaxy/router');
 const navService = Scope.import('services/navigation.js');
 
 const items = [
   {
-    title: 'Galaxy.Scope'
+    title: 'Galaxy.Scope',
+    href: 'api/scope'
   },
   {
-    title: 'Galaxy.Module'
+    title: 'Galaxy.Module',
+    href: 'api/module'
   },
   {
-    title: 'Galaxy.Observer'
+    title: 'Galaxy.Observer',
+    href: 'api/observer'
   },
   {
-    title: 'Galaxy.View'
+    title: 'Galaxy.View',
+    href: 'api/view'
   },
   {
-    title: 'Galaxy.View.ViewNode'
+    title: 'Galaxy.View.ViewNode',
+    href: 'api/viewnode'
   }
 ];
 navService.setSubNavItems(items);
@@ -29,8 +33,8 @@ router.init({
   '/': function () {
     console.log('API Router Root');
   },
-  '/:subId': function (params) {
-    console.log('API Router', params);
+  '/:subId': function (params, pp) {
+    console.log('API Router', params, pp, Scope);
   }
 });
 
@@ -50,7 +54,6 @@ view.init({
       class: 'banner',
       src: 'assets/images/tools.jpg',
       height: '410',
-      blurCaption: effects.getBlurCaption()
     },
     {
       tag: 'h1',

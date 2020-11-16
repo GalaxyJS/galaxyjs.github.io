@@ -1,9 +1,9 @@
 /** @typedef {Galaxy.Scope} Scope */
 
-const inputs = Scope.import('galaxy/inputs');
 /** @type Galaxy.View */
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
+const inputs = Scope.inputs;
 
 const ToDoService = {
   data: inputs.items,
@@ -119,7 +119,8 @@ view.init({
                 // parent: true,
                 sequence: 'todo-items',
                 from: {
-                  scale: 0
+                  opacity: 0,
+                  x: 25
                 },
                 // to: {
                 //   height: function(v,a) {
@@ -133,15 +134,16 @@ view.init({
                 duration: calculateDuration
               },
               leave: {
+                withParent: true,
                 sequence: 'card',
                 to: {
-                  scale: 0
+                  opacity: 0,
+                  x: 25
                 },
                 position: '-=.1',
-                duration: .5
+                duration: .15
               }
             },
-            // id: '<>item.title',
             class: {
               done: '<>titem.done'
             },

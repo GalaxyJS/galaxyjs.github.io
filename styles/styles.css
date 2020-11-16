@@ -71,35 +71,35 @@ hr {
 }
 
 h1 {
-  font-size: 2.2em;
+  font-size: 2.21em;
   cursor: default;
   margin: 20px 0;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 h2 {
   font-size: 2em;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 h3 {
   font-size: 1.8em;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 h4 {
   font-size: 1.6em;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 h5 {
   font-size: 1.4em;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 h6 {
   font-size: 1.2em;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 h2 > a {
@@ -122,8 +122,8 @@ h2 > a:hover {
 
 html, body {
   font-family: 'Nunito', sans-serif;
-  font-size: 15px;
-  line-height: 22px;
+  font-size: 16px;
+  line-height: 18px;
   position: relative;
   height: 100%;
   max-width: 100%;
@@ -195,6 +195,7 @@ a {
 
 .main-nav > h1 {
   color: rgba(0, 0, 0, .25);
+  pointer-events: none;
 }
 
 .nav-item {
@@ -260,7 +261,6 @@ a {
   background-color: #fff;
   border-radius: 6px;
   padding: 0;
-  text-align: justify;
   box-shadow: 0 -2px 7px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(80, 80, 80, .1);
   position: relative;
   max-width: 100%;
@@ -303,10 +303,11 @@ a {
 .card .banner + h1 {
   position: relative;
   margin-top: -90px;
-  line-height: 20px;
-  padding: 35px 25px;
+  padding: 27px 25px;
   color: #fff;
   text-shadow: 0 0 15px rgba(0, 0, 0, .4);
+  white-space: nowrap;
+  background-color: rgba(0, 0, 0, .15);
 }
 
 .card h2 {
@@ -328,8 +329,8 @@ a {
 }
 
 .content {
-  margin-bottom: 2em;
-  padding: 0 1.5em;
+  margin-bottom: 50px;
+  padding: 0 25px;
 }
 
 .content > h3 {
@@ -409,6 +410,7 @@ ul.items-list > li:hover {
 @media only screen and (min-device-width: 320px) and (max-device-width: 767px) {
   html, body {
     font-size: 14px;
+    line-height: 16px;
   }
 
   .nav-item {
@@ -433,7 +435,6 @@ ul.items-list > li:hover {
     padding: 10px 0;
     outline: none;
     overflow: hidden;
-    transition: all .2s ease-in-out;
   }
 
   .main-nav > div {
@@ -473,6 +474,20 @@ ul.items-list > li:hover {
 
   .card.big {
     width: auto;
+  }
+
+  .card .banner {
+
+  }
+
+  .card .banner + h1 {
+    padding: 15px;
+    margin-top: -60px;
+  }
+
+  .content {
+    margin-bottom: 45px;
+    padding: 0 15px;
   }
 }
 

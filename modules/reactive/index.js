@@ -20,7 +20,6 @@ view.init({
       class: 'banner',
       src: 'assets/images/watch.jpg',
       height: '355',
-      blurCaption: effects.getBlurCaption()
     },
     {
       tag: 'h1',
