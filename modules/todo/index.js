@@ -28,7 +28,8 @@ Scope.data.newItem = {
   title: '',
   done: false
 };
-
+// console.log(inputs.items);
+console.log(Scope.data.newItem, Scope.data);
 view.init({
   tag: 'div',
   class: 'card',
@@ -107,29 +108,20 @@ view.init({
           tag: 'ul',
           children: {
             tag: 'li',
-            // $for: 'titem in inputs.items',
             $for: {
               data: '<>inputs.items',
               as: 'titem'
             },
             animations: {
-              config: {},
               enter: {
                 addTo: 'card',
                 // parent: true,
                 sequence: 'todo-items',
                 from: {
                   opacity: 0,
-                  x: 25
+                  x: 25,
+                  clearProps: 'all'
                 },
-                // to: {
-                //   height: function(v,a) {
-                //     // debugger;
-                //     const aaa = a.getBoundingClientRect();
-                //     debugger;
-                //     return aaa.height;
-                //   }
-                // },
                 position: '-=.1',
                 duration: calculateDuration
               },
@@ -145,7 +137,8 @@ view.init({
               }
             },
             class: {
-              done: '<>titem.done'
+              done: '<>titem.done',
+              test: true
             },
 
             children: [
@@ -166,16 +159,18 @@ view.init({
             url: './field.js'
           },
           inputs: {
-            data: '<>data.newItem'
+            entry: '<>data.newItem'
           },
           on: {
             confirm: function () {
+              // console.log(Scope.data.newItem);
+              // debugger
               ToDoService.add(Scope.data.newItem);
               Scope.data.newItem = {
                 title: '',
                 done: false
               };
-
+              // console.log(Scope.data.newItem);
             }
           }
         },

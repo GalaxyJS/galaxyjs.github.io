@@ -9,12 +9,12 @@ const navService = Scope.import('services/navigation.js');
 // setTimeout(() => {
 //   setInterval(() => {
 //     if (Scope.data.activeModule.id === 'start') {
-//       router.navigate('vuejs-replica-demo');
+//       router.navigate('todo-demo');
 //     } else {
 //       router.navigate('start');
 //     }
 //   }, 1500);
-// }, 2000);
+// }, 6000);
 
 Scope.data.navService = navService;
 Scope.data.navItems = [
@@ -104,7 +104,7 @@ Scope.data.navItems = [
     }
   }
 ];
-console.log(Scope.data);
+// console.log(Scope.data);
 
 Scope.data.activeModule = null;
 Scope.data.todos = [
@@ -133,7 +133,7 @@ router.init({
   },
 
   '/:moduleId': (params, asdasd) => {
-    console.log(params, asdasd);
+    // console.log(params, asdasd);
     const nav = Scope.data.navItems.filter(function (item) {
       return item.module.id === params.moduleId;
     })[0];

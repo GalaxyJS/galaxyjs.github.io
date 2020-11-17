@@ -12,7 +12,7 @@ view.init({
     },
     {
       tag: 'input',
-      value: '<>inputs.data.title',
+      value: '<>inputs.entry.title',
       on: {
         focus: function () {
           Scope.data.focused = true;

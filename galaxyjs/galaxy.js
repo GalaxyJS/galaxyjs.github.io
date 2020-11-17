@@ -3057,12 +3057,12 @@ Galaxy.View = /** @class */(function () {
    *
    * @param {Galaxy.View.ViewNode | Object} target
    * @param {String} targetKeyName
-   * @param {Galaxy.View.ReactiveData} parentReactiveData
+   * @param {Galaxy.View.ReactiveData} hostReactiveData
    * @param {Galaxy.View.ReactiveData} scopeData
    * @param {Object} bindings
    * @param {Galaxy.View.ViewNode | undefined} root
    */
-  View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
+  View.makeBinding = function (target, targetKeyName, hostReactiveData, scopeData, bindings, root) {
     const propertyKeysPaths = bindings.propertyKeysPaths;
     const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, scopeData, bindings);
 
@@ -3081,18 +3081,18 @@ Galaxy.View = /** @class */(function () {
         childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
 
-      if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
+      if (!hostReactiveData && !(scopeData instanceof Galaxy.Scope)) {
         if (scopeData.hasOwnProperty('__rd__')) {
-          parentReactiveData = scopeData.__rd__;
+          hostReactiveData = scopeData.__rd__;
         } else {
-          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData, null);
+          hostReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData, null);
         }
       }
       // When the node belongs to a nested $for, the scopeData would refer to the for item data
       // But developer should still be able to access root scopeData
       if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
         propertyKey === 'data') {
-        parentReactiveData = null;
+        hostReactiveData = null;
       }
 
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
@@ -3100,7 +3100,7 @@ Galaxy.View = /** @class */(function () {
         propertyKey = propertyKeyPathItems[1];
         bindings.propertyKeysPaths = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
-        parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
+        hostReactiveData = new Galaxy.View.ReactiveData('data', root.data);
         value = View.propertyLookup(root.data, propertyKey);
       } else if (value) {
         value = View.propertyLookup(value, propertyKey);
@@ -3113,11 +3113,11 @@ Galaxy.View = /** @class */(function () {
 
       let reactiveData;
       if (initValue instanceof Object) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, parentReactiveData);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, hostReactiveData);
       } else if (childPropertyKeyPath) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKey, null, parentReactiveData);
-      } else if (parentReactiveData) {
-        parentReactiveData.addKeyToShadow(propertyKey);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, null, hostReactiveData);
+      } else if (hostReactiveData) {
+        hostReactiveData.addKeyToShadow(propertyKey);
       }
 
       if (childPropertyKeyPath === null) {
@@ -3132,7 +3132,7 @@ Galaxy.View = /** @class */(function () {
                 return expressionFn();
               }
 
-              return parentReactiveData.data[propertyKey];
+              return hostReactiveData.data[propertyKey];
             },
             enumerable: true,
             configurable: true
@@ -3140,7 +3140,7 @@ Galaxy.View = /** @class */(function () {
         }
 
         // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
-        if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
+        if (!hostReactiveData && scopeData instanceof Galaxy.Scope) {
           // If the propertyKey is referring to some local value then there is no error
           if (target instanceof Galaxy.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
             return;
@@ -3151,7 +3151,7 @@ Galaxy.View = /** @class */(function () {
             propertyKey + '`\n');
         }
 
-        parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
+        hostReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
 
       }
 
@@ -3665,7 +3665,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      * @param shadow
      */
     makeReactiveObject: function (data, key, shadow) {
-      const _this = this;
+      // const _this = this;
       const property = Object.getOwnPropertyDescriptor(data, key);
       const getter = property && property.get;
       let value = data[key];
@@ -3675,27 +3675,27 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           return getter ? getter.call(data) : value;
         },
         set: function (val) {
+          const thisRD = data.__rd__;
           if (value === val) {
             // If value is array, then sync should be called so nodes that are listening to array itself get updated
             if (val instanceof Array) {
-              _this.sync(key);
+              thisRD.sync(key);
             } else if (val instanceof Object) {
-              _this.notifyDown(key);
+              thisRD.notifyDown(key);
             }
             return;
           }
 
-          _this.oldValue[key] = value;
+          thisRD.oldValue[key] = value;
           value = val;
 
           // This means that the property suppose to be an object and there probably active binds to it
-          if (_this.shadow[key]) {
-            _this.makeKeyEnum(key);
+          if (thisRD.shadow[key]) {
+            thisRD.makeKeyEnum(key);
             // setData provide downward data flow
-            _this.shadow[key].setData(val);
+            thisRD.shadow[key].setData(val);
           }
-
-          _this.notify(key);
+          thisRD.notify(key, value);
         },
         enumerable: !shadow,
         configurable: true
@@ -3711,7 +3711,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // This is for when the makeReactive method has been called by setData
       this.sync(key);
 
-      _this.oldValue[key] = value;
+      this.oldValue[key] = value;
     },
     /**
      *
@@ -3745,14 +3745,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       _this.sync('length');
       initialChanges.init = initialChanges;
       arr.changes = initialChanges;
-      // _this.oldValue['changes'] = Object.assign({}, initialChanges);
-      // _this.makeReactiveObject(arr, 'changes');
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
         const originalMethod = ARRAY_PROTO[method];
         defProp(arr, method, {
           value: function () {
+            const thisRD = this.__rd__;
             let i = arguments.length;
             const args = new Array(i);
             while (i--) {
@@ -3770,7 +3769,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             if (method === 'push' || method === 'reset' || method === 'unshift') {
               changes.params.forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
-                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
               });
             } else if (method === 'pop' || method === 'shift') {
@@ -3780,17 +3779,15 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             } else if (method === 'splice') {
               changes.params.slice(2).forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
-                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
               });
             }
 
             arr.changes = changes;
-            // For arrays we have to sync length manually
-            // if we use notify here we will get
-            _this.notifyDown('length');
-            _this.notifyDown('changes');
-            _this.notify(_this.keyInParent);
+            thisRD.notifyDown('length');
+            thisRD.notifyDown('changes');
+            thisRD.notify(thisRD.keyInParent);
 
             return returnValue;
           },
@@ -3804,13 +3801,14 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     /**
      *
      * @param {string} key
+     * @param {any} value
      * @param refs
      */
-    notify: function (key, refs) {
+    notify: function (key, value, refs) {
       const _this = this;
 
       if (this.refs === refs) {
-        _this.sync(key);
+        _this.sync(key, value);
         return;
       }
 
@@ -3819,10 +3817,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           return;
         }
 
-        ref.notify(key, _this.refs);
+        ref.notify(key, value, _this.refs);
       });
 
-      _this.sync(key);
+      _this.sync(key, value);
       // if (this.id === '{Scope}.data.p') debugger;
       // if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
       // const seen = {};
@@ -3833,7 +3831,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // });
 
       allKeys.forEach((kip, i) => {
-        _this.refs[i].parent.notify(kip);
+        _this.refs[i].parent.notify(kip, null, value);
       });
       // } else {
       //   _this.parent.notify(_this.keyInParent);
@@ -3857,7 +3855,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      *
      * @param {string} propertyKey
      */
-    sync: function (propertyKey) {
+    sync: function (propertyKey, v) {
       const _this = this;
 
       const map = _this.nodesMap[propertyKey];
@@ -3953,7 +3951,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           configurable: true,
           value: nextOwner
         });
-        nextOwner.walk(this.data);
+
         this.refs = [this];
       }
 
@@ -4718,31 +4716,31 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           oldClasses = oldClasses || [];
 
           try {
-            classes.forEach(function (item) {
-              // Class has been added
-              if (item && oldClasses.indexOf(item) === -1) {
-                const classEvent = value['add:' + item];
-                if (classEvent) {
-                  viewNode.node.classList.remove(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-                    viewNode.node.classList.add(item);
-                  });
-                }
-              }
-            });
-
-            oldClasses.forEach(function (item) {
-              if (item && classes.indexOf(item) === -1) {
-                // Class has been removed
-                const classEvent = value['remove:' + item];
-                if (classEvent) {
-                  viewNode.node.classList.add(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-                    viewNode.node.classList.remove(item);
-                  });
-                }
-              }
-            });
+            // classes.forEach(function (item) {
+            //   // Class has been added
+            //   if (item && oldClasses.indexOf(item) === -1) {
+            //     const classEvent = value['add:' + item];
+            //     if (classEvent) {
+            //       viewNode.node.classList.remove(item);
+            //       AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
+            //         viewNode.node.classList.add(item);
+            //       });
+            //     }
+            //   }
+            // });
+            //
+            // oldClasses.forEach(function (item) {
+            //   if (item && classes.indexOf(item) === -1) {
+            //     // Class has been removed
+            //     const classEvent = value['remove:' + item];
+            //     if (classEvent) {
+            //       viewNode.node.classList.add(item);
+            //       AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
+            //         viewNode.node.classList.remove(item);
+            //       });
+            //     }
+            //   }
+            // });
           } catch (exception) {
             console.warn(exception);
           }
@@ -5229,31 +5227,31 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
 
       /** @type Galaxy.View.ViewNode */
-      const _this = this;
-      const node = _this.node;
+      const viewNode = this;
+      const node = viewNode.node;
 
       if (expression) {
         value = expression();
       }
 
-      const oldClassList = _this.node.classList;
+      const oldClassList = viewNode.node.classList;
       if (typeof value === 'string') {
-        _this.notifyObserver('classList', value.split(' '), oldClassList);
+        viewNode.notifyObserver('classList', value.split(' '), oldClassList);
         return node.setAttribute('class', value);
       } else if (value instanceof Array) {
-        _this.notifyObserver('classList', value, oldClassList);
+        viewNode.notifyObserver('classList', value, oldClassList);
         return node.setAttribute('class', value.join(' '));
       } else if (value === null || value === undefined) {
-        _this.notifyObserver('classList', [], oldClassList);
+        viewNode.notifyObserver('classList', [], oldClassList);
         return node.removeAttribute('class');
       }
 
       node.setAttribute('class', []);
       // when value is an object
-      const clone = Galaxy.View.bindSubjectsToData(_this, value, data.scope, true);
+      const clone = Galaxy.View.bindSubjectsToData(viewNode, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
 
-      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
+      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);
         const staticClasses = {};
         for (let key in items) {
@@ -5263,21 +5261,21 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           }
         }
 
-        applyClasses.call(_this, '*', true, false, staticClasses);
+        applyClasses.call(viewNode, '*', true, false, staticClasses);
 
-        _this.rendered.then(function () {
-          applyClasses.call(_this, '*', true, false, clone);
+        viewNode.rendered.then(function () {
+          applyClasses.call(viewNode, '*', true, false, clone);
 
           observer.onAll(function (key, value, oldValue) {
-            applyClasses.call(_this, key, value, oldValue, clone);
+            applyClasses.call(viewNode, key, value, oldValue, clone);
           });
         });
       } else {
         observer.onAll(function (key, value, oldValue) {
-          applyClasses.call(_this, key, value, oldValue, clone);
+          applyClasses.call(viewNode, key, value, oldValue, clone);
         });
 
-        applyClasses.call(_this, '*', true, false, clone);
+        applyClasses.call(viewNode, '*', true, false, clone);
       }
     }
   };
@@ -5313,6 +5311,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.notifyObserver('class', newClasses, oldClasses);
     _this.node.setAttribute('class', newClasses.join(' '));
     _this.notifyObserver('classList', newClasses, oldClasses);
+    // if (_this.schema.tag === 'li')
+    //   debugger
   }
 })(Galaxy);
 
