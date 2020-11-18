@@ -713,7 +713,7 @@ input, select {
   color: #455a64;
 }
 
-.field[focus] > input, .field[focused] > select {
+.field[focused] > input, .field[focused] > select {
   border-color: #607e8c;
 }
 

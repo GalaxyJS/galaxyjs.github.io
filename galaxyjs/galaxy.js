@@ -1694,7 +1694,7 @@
 })));
 
 
-/* global Galaxy, Promise */
+/* global Galaxy, Promise, AsyncFunction */
 'use strict';
 /*!
  * GalaxyJS
@@ -1768,7 +1768,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     clone: function (obj) {
       let clone = obj instanceof Array ? [] : {};
       clone.__proto__ = obj.__proto__;
+      // if(clone.hasOwnProperty('content'))debugger;
       for (let i in obj) {
+        // debugger;
         if (obj.hasOwnProperty(i)) {
           if (obj[i] instanceof Promise) {
             clone[i] = obj[i];
@@ -1993,13 +1995,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const moduleSource = typeof source === 'function' ?
             source :
             new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
-          moduleSource.call(module.scope, module.scope).then(() => {
+          moduleSource.call(null, module.scope).then(() => {
 
             Reflect.deleteProperty(module, 'source');
 
-            module.addOnProviders.forEach(function (item) {
-              item.finalize();
-            });
+            module.addOnProviders.forEach(item => item.start());
 
             Reflect.deleteProperty(module, 'addOnProviders');
 
@@ -2015,7 +2015,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
 
             const currentModule = module;
-
             currentModule.init();
             return resolve(currentModule);
           });
@@ -2632,13 +2631,12 @@ Galaxy.View = /** @class */(function () {
 
   View.EMPTY_CALL = function () {
   };
-  View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
-  View.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
+  View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$|^=\\s*([^\\[\\]<>]*)\\s*$');
 
   /**
    *
    * @typedef {Object} Galaxy.View.SchemaProperty
-   * @property {string} [type]
+   * @property {'attr'|'prop'|'reactive'} [type]
    * @property {Function} [setup]
    * @property {Function} [createSetter]
    * @property {Function} [value]
@@ -2807,8 +2805,8 @@ Galaxy.View = /** @class */(function () {
 
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
-    if (value !== null && value !== undefined) {
-      viewNode.node.setAttribute(name, value);
+    if (value !== null && value !== undefined && value !== false) {
+      viewNode.node.setAttribute(name, value === true ? '' : value);
     } else {
       viewNode.node.removeAttribute(name);
     }
@@ -3744,7 +3742,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
       _this.sync('length');
       initialChanges.init = initialChanges;
-      arr.changes = initialChanges;
+      // arr.changes = initialChanges;
+      defProp(arr, 'changes', {
+        enumerable: false,
+        configurable: true,
+        value: initialChanges
+      });
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
@@ -3784,7 +3787,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
               });
             }
 
-            arr.changes = changes;
+            // arr.changes = changes;
+            defProp(arr, 'changes', {
+              enumerable: false,
+              configurable: true,
+              value: changes
+            });
             thisRD.notifyDown('length');
             thisRD.notifyDown('changes');
             thisRD.notify(thisRD.keyInParent);
@@ -3825,17 +3833,18 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
       // const seen = {};
       // seen[_this.keyInParent] = true;
-      const allKeys = _this.refs.map((item) => item.keyInParent);
+      // const allKeys = _this.refs.map((item) => item.keyInParent);
       // const keys = allKeys.filter((item) => {
       //   return seen.hasOwnProperty(item) ? false : (seen[item] = true);
       // });
 
-      allKeys.forEach((kip, i) => {
-        _this.refs[i].parent.notify(kip, null, value);
+      // allKeys.forEach((kip, i) => {
+      //   _this.refs[i].parent.notify(kip, null, value);
+      // });
+
+      _this.refs.forEach(function (ref) {
+        ref.parent.notify(ref.keyInParent, null, value);
       });
-      // } else {
-      //   _this.parent.notify(_this.keyInParent);
-      // }
     },
 
     notifyDown: function (key) {
@@ -3999,7 +4008,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         let initValue = this.data[dataKey];
         // if the value is a instance of Array, then we should set its change property to its initial state
         if (initValue instanceof Array && initValue.changes) {
-          initValue.changes = initValue.changes.init;
+          // initValue.changes = initValue.changes.init;
+          defProp(initValue, 'changes', {
+            enumerable: false,
+            configurable: true,
+            value: initValue.changes.init
+          });
         }
         // We need initValue for cases where ui is bound to a property of an null object
         // TODO: This line seem obsolete
@@ -4252,7 +4266,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.inputs = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
-    _this.properties = [];
+    _this.properties = new Set();
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
     /** @type {galaxy.View.ViewNode} */
@@ -4444,7 +4458,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      */
     installSetter: function (reactiveData, propertyName, expression) {
       const _this = this;
-      _this.registerProperty(reactiveData);
+      _this.properties.add(reactiveData);
 
       _this.setters[propertyName] = GV.createSetter(_this, propertyName, reactiveData, expression);
       if (!_this.setters[propertyName]) {
@@ -4454,15 +4468,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
     },
 
-    /**
-     *
-     * @param {Galaxy.View.ReactiveData} reactiveData
-     */
-    registerProperty: function (reactiveData) {
-      if (this.properties.indexOf(reactiveData) === -1) {
-        this.properties.push(reactiveData);
-      }
-    },
     hasAnimation: function () {
       const _this = this;
       const children = _this.getChildNodes();
@@ -4526,7 +4531,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.localPropertyNames.clear();
-        _this.properties = [];
+        _this.properties.clear();
         _this.finalize = [];
         _this.inDOM = false;
         _this.schema.node = undefined;
@@ -5361,22 +5366,22 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
 (function (Galaxy) {
   const PROPERTY_NAME = 'disabled';
+  /**
+   *
+   * @type {Galaxy.View.SchemaProperty}
+   */
   Galaxy.View.NODE_SCHEMA_PROPERTY_MAP[PROPERTY_NAME] = {
     type: 'attr',
     name: PROPERTY_NAME,
     value: function (viewNode, value, oldValue, attr) {
-      viewNode.rendered.then(function () {
+      viewNode.rendered.then(() => {
         if (viewNode.schema.tag.toLowerCase() === 'form') {
           const children = viewNode.node.querySelectorAll('input, textarea, select, button');
 
           if (value) {
-            Array.prototype.forEach.call(children, function (input) {
-              input.setAttribute('disabled', '');
-            });
+            Array.prototype.forEach.call(children, input => input.setAttribute('disabled', ''));
           } else {
-            Array.prototype.forEach.call(children, function (input) {
-              input.removeAttribute('disabled');
-            });
+            Array.prototype.forEach.call(children, input => input.removeAttribute('disabled'));
           }
         }
       });
@@ -5504,7 +5509,17 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         //   throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         // }
       } else {
-        changes = array.changes;
+        if (array instanceof Galaxy.View.ArrayChange) {
+          changes = array;
+        } else if (array instanceof Array) {
+          changes = array.changes;
+        }
+      }
+
+      if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
+        return console.warn('%c$for %cdata is not a type of ArrayChange' +
+          '\ndata: ' + config.options.data +
+          '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
 
       const node = this;
@@ -5514,15 +5529,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       config.changeId = changes.id;
 
-      if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
-        return console.warn('%c$for %cdata is not a type of ArrayChange' +
-          '\ndata: ' + config.options.data +
-          '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
-      }
-
-      if (config.throttleId) {
-        window.cancelAnimationFrame(config.throttleId);
-      }
+      // if (config.throttleId) {
+      //   window.cancelAnimationFrame(config.throttleId);
+      // }
 
       if (!changes || typeof changes === 'string') {
         changes = {
@@ -5533,7 +5542,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       /** @type {Galaxy.View.ViewNode} */
       config.oldChanges = changes;
-      config.throttleId = window.requestAnimationFrame(() => {
+      /*config.throttleId = */
+      window.requestAnimationFrame(() => {
         afterInserted(node, config, changes);
       });
     }
@@ -5739,15 +5749,16 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
 
-      if (config.throttleId) {
-        window.cancelAnimationFrame(config.throttleId);
-      }
+      // if (config.throttleId) {
+      //   window.cancelAnimationFrame(config.throttleId);
+      // }
 
       if (expression) {
         value = expression();
       }
 
-      config.throttleId = window.requestAnimationFrame(() => {
+      /*config.throttleId = */
+      window.requestAnimationFrame(() => {
         node.rendered.then(() => {
           if (node.inDOM !== value) {
             node.setInDOM(value);
@@ -6444,25 +6455,20 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
 
     destroy: function () {
       window.removeEventListener('popstate', this.listener);
-      // window.removeEventListener('hashchange', this.listener);
     }
   };
 
   G.registerAddOnProvider('galaxy/router', function (scope, module) {
     return {
       create: function () {
-        if (module.systemId === 'system') {
-          return new SimpleRouter(module);
-        } else {
-          const router = new SimpleRouter(module);
-          scope.on('module.destroy', function () {
-            router.destroy();
-          });
-
-          return router;
+        const router = new SimpleRouter(module);
+        if (module.systemId !== 'system') {
+          scope.on('module.destroy', () => router.destroy());
         }
+
+        return router;
       },
-      finalize: function () { }
+      start: function () { }
     };
   });
 
@@ -6481,7 +6487,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
       create: function () {
         return new Galaxy.View(scope);
       },
-      finalize: function () {
+      start: function () {
       }
     };
   });

@@ -4,6 +4,7 @@
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const inputs = Scope.inputs;
+Scope.data.inputsCopy = Galaxy.clone(Scope.inputs);
 
 const ToDoService = {
   data: inputs.items,
@@ -24,12 +25,34 @@ function calculateDuration() {
   return listAnimationDuration;
 }
 
+const checkAllButton = {
+  tag: 'button',
+  text: 'Check All',
+  disabled: [
+    'inputs.items',
+    function (items) {
+      let res = items.filter(function (item) {
+        return !item.done;
+      });
+
+      return res.length === 0;
+    }
+  ],
+  on: {
+    click: function () {
+      inputs.items.forEach(function (item) {
+        item.done = true;
+      });
+    }
+  }
+};
+
 Scope.data.newItem = {
   title: '',
   done: false
 };
 // console.log(inputs.items);
-console.log(Scope.data.newItem, Scope.data);
+console.log(checkAllButton, Scope);
 view.init({
   tag: 'div',
   class: 'card',
@@ -51,27 +74,7 @@ view.init({
         {
           class: 'fa-end',
           children: [
-            {
-              tag: 'button',
-              text: 'Check All',
-              disabled: [
-                'inputs.items',
-                function (items) {
-                  let res = items.filter(function (item) {
-                    return !item.done;
-                  });
-
-                  return res.length === 0;
-                }
-              ],
-              on: {
-                click: function () {
-                  inputs.items.forEach(function (item) {
-                    item.done = true;
-                  });
-                }
-              }
-            },
+            checkAllButton,
             {
               tag: 'button',
               text: 'Un-Check All',
@@ -115,7 +118,6 @@ view.init({
             animations: {
               enter: {
                 addTo: 'card',
-                // parent: true,
                 sequence: 'todo-items',
                 from: {
                   opacity: 0,

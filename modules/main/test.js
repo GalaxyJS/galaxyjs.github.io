@@ -1,5 +1,4 @@
 const view = Scope.import('galaxy/view');
-const sad = Scope.import('./test2.js');
 Scope.data.selected = 'two';
 Scope.data.opts = [true];
 Scope.data.active = true;
@@ -46,7 +45,3 @@ const form = {
   ]
 };
 view.init(form);
-
-view.renderingFlow.nextAction(function () {
-
-});

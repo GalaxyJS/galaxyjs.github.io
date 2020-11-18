@@ -1,10 +1,11 @@
+/* global Scope */
 const view = Scope.import('galaxy/view');
 
 Scope.data.focused = false;
 
 view.init({
   class: 'field',
-  focus: '<>data.focused',
+  focused: '<>data.focused',
   children: [
     {
       tag: 'label',
