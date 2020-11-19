@@ -65,7 +65,7 @@ const itemAnimations = {
   }
 };
 
-const button = {
+const emptyButton = {
   tag: 'button',
   text: 'Empty',
   on: {
@@ -80,7 +80,6 @@ view.init({
   tag: 'div',
   class: 'card big',
   animations: animations.cardInOut,
-  // animations:{},
   lifecycle: {
     postChildrenInsert: function () {
       PR.prettyPrint();
@@ -136,7 +135,7 @@ view.init({
                 }
               }
             },
-            button
+            emptyButton
           ]
         },
         {

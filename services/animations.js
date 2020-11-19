@@ -4,12 +4,9 @@ const animations = {
   cardInOut: {
     enter: {
       sequence: 'card',
-      // addTo: 'main-nav-items',
-      // appendTo: 'main-nav-items',
-
       from: {
         transformOrigin: 'top center',
-        scale: 1.1,
+        scale: 1.12,
         opacity: 0,
         position: 'absolute',
         top: 0,
@@ -18,6 +15,7 @@ const animations = {
         }
       },
       to: {
+        ease: 'power1.out',
         transformOrigin: 'top center',
         top: 0,
         scale: 1,
@@ -29,6 +27,7 @@ const animations = {
     leave: {
       sequence: 'card',
       to: {
+        ease: 'power1.in',
         transformOrigin: 'top center',
         display: 'none',
         scale: .9,
