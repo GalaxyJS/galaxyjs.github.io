@@ -94,8 +94,8 @@ view.init({
           tag: 'h1',
           text: 'List Rendering'
         },
-        '<p>We can use the <strong>$for</strong> property to render a list of items based on an array.</p>',
-        '<p><strong>$for</strong> uses the <code class="prettyprint lang-js">changes</code> property of the bound array to render the' +
+        '<p>We can use the <strong>repeat</strong> property to render a list of items based on an array.</p>',
+        '<p><strong>repeat</strong> uses the <code class="prettyprint lang-js">changes</code> property of the bound array to render the' +
         ' content.</p>',
         '<p><code class="prettyprint lang-js">changes</code> is reactive property that is being added to the arrays that by GalaxyJS' +
         ' and it\'s instance of ArrayChange. </p>',
@@ -106,7 +106,7 @@ view.init({
         '\n' +
         'view.init({\n' +
         '  tag: \'p\'\n' +
-        '  $for: {\n' +
+        '  repeat: {\n' +
         '    data: \'<>data.list.changes\' // We bind to list.changes property \n' +
         '    as: \'item\'\n' +
         '  },\n' +
@@ -150,7 +150,7 @@ view.init({
                   tag: 'li',
                   animations: itemAnimations,
                   class: 'flex-row',
-                  $for: {
+                  repeat: {
                     data: '<>data.capitals',
                     as: 'item'
                   },
@@ -169,7 +169,7 @@ view.init({
                   tag: 'li',
                   animations: itemAnimations,
                   class: 'flex-row',
-                  $for: {
+                  repeat: {
                     data: '<>data.countries',
                     as: 'item2'
                   },

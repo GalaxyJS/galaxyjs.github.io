@@ -178,7 +178,7 @@ view.init([
       },
       {
         tag: 'div',
-        $for: {
+        repeat: {
           data: '<>data.navItems',
           as: 'nav'
         },
@@ -249,7 +249,7 @@ view.init([
                   duration: .2
                 }
               },
-              $for: {
+              repeat: {
                 as: 'subNav',
                 data: [
                   'nav.module',

@@ -34,7 +34,7 @@ view.init({
             {
               tag: 'li',
               class: 'flex-row',
-              $for: {
+              repeat: {
                 data: '<>data.products',
                 as: 'product'
               },

@@ -5,6 +5,7 @@ const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const inputs = Scope.inputs;
 Scope.data.inputsCopy = Galaxy.clone(Scope.inputs);
+Scope.data.fields = ['a', 'b']
 
 const ToDoService = {
   data: inputs.items,
@@ -15,6 +16,14 @@ const ToDoService = {
     }
   }
 };
+
+function addToList() {
+  ToDoService.add(Scope.data.newItem);
+  Scope.data.newItem = {
+    title: '',
+    done: false
+  };
+}
 
 function calculateDuration() {
   let listAnimationDuration = 1 / (inputs.items.length || 1);
@@ -111,7 +120,7 @@ view.init({
           tag: 'ul',
           children: {
             tag: 'li',
-            $for: {
+            repeat: {
               data: '<>inputs.items',
               as: 'titem'
             },
@@ -164,16 +173,7 @@ view.init({
             entry: '<>data.newItem'
           },
           on: {
-            confirm: function () {
-              // console.log(Scope.data.newItem);
-              // debugger
-              ToDoService.add(Scope.data.newItem);
-              Scope.data.newItem = {
-                title: '',
-                done: false
-              };
-              // console.log(Scope.data.newItem);
-            }
+            confirm: addToList
           }
         },
         {
@@ -183,13 +183,7 @@ view.init({
               tag: 'button',
               text: 'Add',
               on: {
-                click: function () {
-                  ToDoService.add(Scope.data.newItem);
-                  Scope.data.newItem = {
-                    title: '',
-                    done: false
-                  };
-                }
+                click: addToList
               }
             }
           ]

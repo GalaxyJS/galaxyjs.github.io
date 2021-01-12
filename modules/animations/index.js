@@ -107,7 +107,7 @@ view.init([
                 }
               },
               class: 'box',
-              $for: {
+              repeat: {
                 data: '<>data.boxes',
                 as: 'item'
               },
@@ -137,7 +137,7 @@ view.init([
           '      position: \'-=.25\'\n' +
           '    }\n' +
           '  },\n' +
-          '  $for: {\n' +
+          '  repeat: {\n' +
           '    data: \'<>data.boxes.changes\',\n' +
           '    as: \'item\'\n' +
           '  },\n' +

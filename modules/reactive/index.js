@@ -120,7 +120,7 @@ view.init({
           tag: 'ul',
           class: 'circle',
           children: {
-            $for: {
+            repeat: {
               data: [
                 'data.list.changes',
                 function (array) {

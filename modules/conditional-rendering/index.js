@@ -257,7 +257,7 @@ view.init({
               tag: 'p',
               animations: listItemAnimations,
 
-              $for: {
+              repeat: {
                 data: ['first', 'Second', 'third'],
                 as: 'item'
               },

@@ -174,7 +174,7 @@ view.init({
         },
         '<h2>List Rendering</h2>',
         '<p style="font-size: .87em">To learn more go to <a href="#/list-rendering">List Rendering</a></p>',
-        '<p>GalaxyJS provide <strong>$for</strong> directive for list rendering. <strong>$for</strong> reacts to <code class="prettyprint' +
+        '<p>GalaxyJS provide <strong>repeat</strong> directive for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
         ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',
         {
           tag: 'pre',
@@ -203,7 +203,7 @@ view.init({
             '         view.init({\n' +
             '           tag: \'ul\',\n' +
             '           children: {\n' +
-            '             $for: {\n' +
+            '             repeat: {\n' +
             '                // Use the list.changes property to keep track of array changes\n' +
             '                // and update the view accordingly\n' +
             '                data: \'<>data.list.changes\',\n' +
