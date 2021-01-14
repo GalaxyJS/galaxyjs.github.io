@@ -876,11 +876,20 @@ a.icon.gitter {
   display: inline-block;
   width: 85px;
   height: 85px;
-  line-height: 85px;
-  background-color: #d05e77;
-  border-radius: 0 10px 10px;
-  margin: 8px;
+  /*line-height: 85px;*/
+  /*background-color: #d05e77;*/
+  /*border-radius: 0 10px 10px;*/
+  /*margin: 8px;*/
+  padding: 8px;
   color: #fff;
+
+}
+
+.box > span {
+  display: block;
+  border-radius: 0 10px 10px;
+  background-color: #d05e77;
+  line-height: 85px;
   font-size: 60px;
   text-align: center;
   text-transform: uppercase;

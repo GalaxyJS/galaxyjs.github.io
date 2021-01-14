@@ -2,7 +2,7 @@ const view = Scope.import('galaxy/view');
 const effects = Scope.import('services/effects.js');
 
 const originalDataList = [
-  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'
+  'a', 'b', 'c', 'd', 'e', 'f', 'g'/*, 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'*/
 ];
 Scope.data.boxes = originalDataList.slice(0);
 
@@ -18,6 +18,7 @@ const dialogBlueprint = {
 };
 
 view.init([
+  // dialogBlueprint,
   {
     class: 'card big anime',
     animations: {
@@ -86,6 +87,9 @@ view.init([
             tag: 'div',
             class: 'box-container',
             children: {
+              style: {
+                width: 'calc(100% / ' + Scope.data.boxes.length + ')',
+              },
               animations: {
                 enter: {
                   sequence: 'card',
@@ -111,12 +115,15 @@ view.init([
                 data: '<>data.boxes',
                 as: 'item'
               },
-              text: '<>item',
               on: {
                 click: function () {
                   Scope.data.dialog.originNode = this.node;
                   Scope.data.dialog.targetNode = dialogBlueprint.node;
                 }
+              },
+              children: {
+                tag: 'span',
+                text: '<>item',
               }
             }
           },

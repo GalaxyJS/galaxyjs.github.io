@@ -6049,6 +6049,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           valueObj.then((v) => {
             node.style[key] = v;
           });
+        } else if (typeof valueObj === 'function') {
+          node.style[key] = valueObj.call(node);
         } else {
           node.style[key] = valueObj;
         }

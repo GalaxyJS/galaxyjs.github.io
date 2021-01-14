@@ -23,7 +23,6 @@ Scope.data.pro = new Promise(function (resolve) {
 //
 // }, 3000);
 
-
 const itemAnimations = {
   enter: {
     addTo: 'card',
