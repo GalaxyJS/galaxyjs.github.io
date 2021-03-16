@@ -747,6 +747,7 @@ button {
   transition: all 90ms linear;
   user-select: none;
   display: inline-block;
+  text-transform: uppercase;
 }
 
 button:first-of-type {

@@ -56,6 +56,16 @@ view.init([
   },
   {
     $if: '<>data.conditionForList',
+    animations: {
+      leave: {
+        to: {
+          opacity: 0,
+          x: 20,
+          clearProps: 'all'
+        },
+        duration: .3
+      }
+    },
     children: [
       {
         tag: 'p',
