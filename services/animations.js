@@ -22,10 +22,11 @@ const animations = {
         opacity: 1,
         position: 'absolute'
       },
-      duration: .5,
+      duration: .25,
     },
     leave: {
       sequence: 'card',
+      from:{},
       to: {
         ease: 'power1.in',
         transformOrigin: 'top center',
@@ -33,7 +34,7 @@ const animations = {
         scale: .9,
         opacity: 0
       },
-      duration: .4
+      duration: .5
     }
   },
   itemInOut: {
@@ -161,4 +162,4 @@ animations.navSubItem = {
   duration: .35
 };
 
-Scope.exports = animations;
+Scope.export = animations;

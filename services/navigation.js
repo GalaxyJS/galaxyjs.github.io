@@ -5,4 +5,4 @@ const service = {
   }
 };
 
-Scope.exports = service;
+Scope.export = service;

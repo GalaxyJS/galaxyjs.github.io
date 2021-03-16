@@ -5,8 +5,6 @@ const animations = Scope.import('services/animations.js');
 
 Scope.data.myValue = 10;
 
-gsap.to(Scope.data, { myValue: 1000, duration: 6 ,delay: 2});
-
 view.init({
   class: 'card big',
   animations: animations.cardInOut,
@@ -24,11 +22,7 @@ view.init({
       tag: 'section',
       class: 'content',
       children: [
-        '<h2>The framework to make stunning web applications</h2>',
-        {
-          tag: 'strong',
-          text: '<>data.myValue'
-        }
+        '<h2>The framework to make stunning web applications</h2>'
       ]
     },
     {

@@ -1,5 +1,5 @@
 
-Scope.exports = {
+Scope.export = {
   getBlurCaption: function () {
     // action.watch = ['data.none'];
 
@@ -7,7 +7,7 @@ Scope.exports = {
       const viewNode = this;
       const node = viewNode.node;
 
-      this.rendered.then(function () {
+      viewNode.rendered.then(function () {
         if (node.complete) {
           load();
         } else {

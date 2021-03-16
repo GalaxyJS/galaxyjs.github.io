@@ -26,7 +26,6 @@ const items = [
 
 navService.setSubNavItems(items);
 
-
 view.init({
   class: 'card big',
   animations: animations.cardInOut,
@@ -72,6 +71,12 @@ view.init({
             '|\n' +
             '|-node_modules\n' +
             '|-package.json'
+        },
+        '<p>Too lazy to do it yourself!?, Here... clone the following repository ;)</p>',
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-html',
+          text: '-- GALAXYJS BOILERPLATE PROJECT URL --'
         },
         '<h2 id="/guide/bootstrap">Bootstrap</h2>' +
         '<p>Add this code into the app/index.html</p>',
@@ -133,18 +138,16 @@ view.init({
           tag: 'h2',
           html: 'Now, lets see what is going on here!'
         },
+        '<pre class="prettyprint inline lang-js">Scope.import(\'galaxy/view\')</pre>' +
+        '<p>is loading the view addon which provides functionality necessary to create the UI/UX' +
+        ' of your module and/or component.</p>',
+        '<pre class="prettyprint inline lang-js">view.config.cleanContainer = true</pre> ' +
+        '<p>Above code tells the view addon to start by cleaning the its parent and then render its content. In this case, this code will' +
+        ' remove the \'Loading...\' from the body.</p>',
         {
           tag: 'p',
-          html: '<pre class="prettyprint inline lang-js">Scope.import(\'galaxy/view\')</pre> is loading the view addon which provides functionality ' +
-            'necessary to create the UI/UX of your module and/or component.'
+          html: 'Then we initialize our view with a <strong>h1</strong> tag and <strong>\'Hello World!\'</strong> as its text content.'
         },
-        {
-          tag: 'p',
-          html: '<pre class="prettyprint inline lang-js">view.config.cleanContainer = true</pre> tells the view addon to start by' +
-            ' cleaning the parent. In this case, this code will remove the \'Loading...\' from the body. This is also useful when you want' +
-            ' to start with a clean element.'
-        },
-        'Then we initialize our view with a <strong>h1</strong> tag and <strong>\'Hello World!\'</strong> as its text content.' +
         '<pre class="prettyprint inline lang-js">view.init({\n' +
         '  tag: \'h1\',\n' +
         '  text: \'Hello World!\'\n' +
@@ -204,9 +207,8 @@ view.init({
             '           tag: \'ul\',\n' +
             '           children: {\n' +
             '             repeat: {\n' +
-            '                // Use the list.changes property to keep track of array changes\n' +
-            '                // and update the view accordingly\n' +
-            '                data: \'<>data.list.changes\',\n' +
+            '                // Bind to data.list property\n' +
+            '                data: \'<>data.list\',\n' +
             '                // An alias for each list item\n' +
             '                as: \'item\'\n' +
             '             },\n' +

@@ -1859,21 +1859,26 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         }
 
         let url = module.url + '?' + _this.convertToURIString(module.params || {});
-        // contentFetcher makes sure that any module gets loaded from network only once unless fresh property is present
+        // contentFetcher makes sure that any module gets loaded from network only once unless cache property is present
         let contentFetcher = Galaxy.moduleContents[url];
         if (!contentFetcher || module.fresh) {
-          contentFetcher = Galaxy.moduleContents[url] = fetch(url).then(function (response) {
+          Galaxy.moduleContents[url] = contentFetcher = fetch(url).then((response) => {
             if (!response.ok) {
               console.error(response.statusText, url);
               return reject(response.statusText);
             }
 
-            const contentType = response.headers.get('content-type');
-            return response.text().then(function (content) {
-              return new Galaxy.Module.Content(contentType, content, module);
-            });
+            return response;
           }).catch(reject);
         }
+
+        
+        contentFetcher = contentFetcher.then(response => {
+          const contentType = module.contentType || response.headers.get('content-type');
+          return response.clone().text().then(content => {
+            return new Galaxy.Module.Content(contentType, content, module);
+          });
+        });
 
         contentFetcher
           .then(moduleContent => _this.compileModuleContent(module, moduleContent, invokers))
@@ -1940,6 +1945,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 name: item.name,
                 url: item.url,
                 fresh: item.fresh,
+                contentType: item.contentType,
                 parentScope: scope,
                 invokers: invokers
               }).then(function () {
@@ -1989,12 +1995,12 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
             const id = module.url;
             // if the module export has _temp then do not cache the module
-            if (module.scope.exports._temp) {
-              module.scope.parentScope.inject(id, module.scope.exports);
+            if (module.scope.export._temp) {
+              module.scope.parentScope.inject(id, module.scope.export);
             } else if (!cachedModules[id]) {
               cachedModules[id] = {
                 id: id,
-                module: module.scope.exports
+                module: module.scope.export
               };
             }
 
@@ -2194,7 +2200,7 @@ Galaxy.Module.Content = /** @class */ (function () {
         });
         const parsedCSSText = parsedCSSRules.join('\n');
 
-        Scope.exports = {
+        Scope.export = {
           _temp: true,
           tag: 'style',
           type: 'text/css',
@@ -2214,10 +2220,12 @@ Galaxy.Module.Content = /** @class */ (function () {
 (function (GMC) {
   GMC.registerParser('default', parser);
 
-  function parser() {
+  function parser(content) {
     return {
       imports: [],
-      source: ''
+      source: async function as_text(scope) {
+        scope.export = content;
+      }
     };
   }
 })(Galaxy.Module.Content);
@@ -2250,7 +2258,7 @@ Galaxy.Module.Content = /** @class */ (function () {
   function parser(content) {
     const imports = [];
     const unique = [];
-    const parsedContent = content.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
+    let parsedContent = content.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
       let url = query[query.length - 1];
       if (unique.indexOf(url) !== -1) {
@@ -2260,7 +2268,25 @@ Galaxy.Module.Content = /** @class */ (function () {
       unique.push(url);
       imports.push({
         url: url,
-        fresh: query.indexOf('new') === 0
+        fresh: query.indexOf('new') === 0,
+        contentType: null
+      });
+
+      return 'Scope.import(\'' + url + '\')';
+    });
+
+    parsedContent = parsedContent.replace(/Scope\.importAsText\(['|"](.*)['|"]\);/gm, function (match, path) {
+      let query = path.match(/([\S]+)/gm);
+      let url = query[query.length - 1];
+      if (unique.indexOf(url) !== -1) {
+        return 'Scope.import(\'' + url + '\')';
+      }
+
+      unique.push(url);
+      imports.push({
+        url: url,
+        fresh: true,
+        contentType: 'text/plain'
       });
 
       return 'Scope.import(\'' + url + '\')';
@@ -2289,7 +2315,7 @@ Galaxy.Scope = /** @class */ (function () {
     _this.systemId = module.systemId;
     _this.parentScope = module.parentScope || null;
     _this.element = element || null;
-    _this.exports = {};
+    _this.export = {};
     _this.uri = new Galaxy.GalaxyURI(module.url);
     _this.eventHandlers = {};
     _this.observers = [];
@@ -4253,16 +4279,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      *
      * @type {RenderConfig}
      */
-    this.schema.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, schema.renderConfig || {});
-    this.schema.animations = this.schema.animations || {};
+    _this.schema.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, schema.renderConfig || {});
+    // _this.schema.animations = this.schema.animations || {};
 
     __node__.value = this.node;
-    defProp(this.schema, 'node', __node__);
+    defProp(_this.schema, 'node', __node__);
 
     referenceToThis.value = this;
-    if(!this.node._gvn) {
-      defProp(this.node, '_gvn', referenceToThis);
-      defProp(this.placeholder, '_gvn', referenceToThis);
+    if (!_this.node._gvn) {
+      defProp(_this.node, '_gvn', referenceToThis);
+      defProp(_this.placeholder, '_gvn', referenceToThis);
     }
     _this.callLifecycleEvent('postCreate');
   }
@@ -4429,6 +4455,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (hasAnimation) {
         if (!_this.populateLeaveSequence) {
           _this.populateLeaveSequence = EMPTY_CALL;
+          if (_this.origin) {
+            _this.populateLeaveSequence = ViewNode.REMOVE_SELF;
+          }
         }
       } else {
         _this.populateLeaveSequence = ViewNode.REMOVE_SELF;

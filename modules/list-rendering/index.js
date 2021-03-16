@@ -6,28 +6,11 @@ const capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'
 
 Scope.data.countries = countries;
 Scope.data.capitals = capitals;
-Scope.data.pro = new Promise(function (resolve) {
-  Scope.data.resolve = resolve;
-});
-
-// setTimeout(() => {
-//   Scope.data.resolve();
-// }, 7000);
-//
-// Scope.data.pro2 = new Promise(function (resolve) {
-//   Scope.data.resolve2 = resolve;
-// });
-//
-// setTimeout(() => {
-//   Scope.data.resolve2();
-//
-// }, 3000);
 
 const itemAnimations = {
   enter: {
     addTo: 'card',
     sequence: 'ok',
-    await: Scope.data.pro,
     from: {
       opacity: 0,
       height: 0,
@@ -96,9 +79,9 @@ view.init({
         '<p>We can use the <strong>repeat</strong> property to render a list of items based on an array.</p>',
         '<p><strong>repeat</strong> uses the <code class="prettyprint lang-js">changes</code> property of the bound array to render the' +
         ' content.</p>',
-        '<p><code class="prettyprint lang-js">changes</code> is reactive property that is being added to the arrays that by GalaxyJS' +
+        '<p><code class="prettyprint lang-js">changes</code> is reactive property that is being added to arrays by GalaxyJS' +
         ' and it\'s instance of ArrayChange. </p>',
-        '<h2>Example</h2>',
+        '<p class="example">Example</p>',
         '<pre class="prettyprint lang-js">' +
         'const view = Scope.import(\'galaxy/view\');\n' +
         'Scope.data.capitals= [\'Amsterdam\', \'Paris\', \'Budapest\', \'Berlin\', \'Prague\', \'Vienna\'];\n' +
@@ -106,7 +89,7 @@ view.init({
         'view.init({\n' +
         '  tag: \'p\'\n' +
         '  repeat: {\n' +
-        '    data: \'<>data.list.changes\' // We bind to list.changes property \n' +
+        '    data: \'<>data.list\' // You can also use \'<>data.list.changes\' if you wish to bind to ArrayChange property \n' +
         '    as: \'item\'\n' +
         '  },\n' +
         '  text: \'<>item\'\n' +
@@ -125,15 +108,15 @@ view.init({
                 }
               }
             },
-            {
-              tag: 'button',
-              text: 'Resolve',
-              on: {
-                click: function () {
-                  Scope.data.resolve();
-                }
-              }
-            },
+            // {
+            //   tag: 'button',
+            //   text: 'Resolve',
+            //   on: {
+            //     click: function () {
+            //       Scope.data.resolve();
+            //     }
+            //   }
+            // },
             emptyButton
           ]
         },

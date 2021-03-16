@@ -1,4 +1,4 @@
-Scope.exports = [
+Scope.export = [
   {
     id: 1,
     quantity: 5,

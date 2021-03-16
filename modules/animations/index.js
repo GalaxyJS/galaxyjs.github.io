@@ -145,7 +145,7 @@ view.init([
           '    }\n' +
           '  },\n' +
           '  repeat: {\n' +
-          '    data: \'<>data.boxes.changes\',\n' +
+          '    data: \'<>data.boxes\',\n' +
           '    as: \'item\'\n' +
           '  },\n' +
           '  text: \'<>item\'\n' +

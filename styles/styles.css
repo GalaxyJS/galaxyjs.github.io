@@ -122,8 +122,8 @@ h2 > a:hover {
 
 html, body {
   font-family: 'Nunito', sans-serif;
-  font-size: 16px;
-  line-height: 18px;
+  font-size: 15px;
+  line-height: 22px;
   position: relative;
   height: 100%;
   max-width: 100%;
@@ -183,7 +183,7 @@ a {
   background-color: #fff;
   border: none;
   box-shadow: 0 0 28px rgba(100, 103, 105, .1);
-  color: #8f8f8f;
+  color: #7f7f7f;
   font-weight: normal;
   left: 0;
   overflow-y: auto;
@@ -261,7 +261,7 @@ a {
   background-color: #fff;
   border-radius: 6px;
   padding: 0;
-  box-shadow: 0 -2px 7px rgba(0, 0, 0, 0.04), 0 11px 23px rgba(80, 80, 80, .1);
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04), 0 9px 19px rgba(80, 80, 80, .08);
   position: relative;
   max-width: 100%;
 }
@@ -302,6 +302,7 @@ a {
 
 .card .banner + h1 {
   position: relative;
+  height: 90px;
   margin-top: -90px;
   padding: 27px 25px;
   color: #fff;
@@ -589,6 +590,8 @@ pre.prettyprint {
   border-radius: 4px;
   padding: 15px;
   background-color: #eee;
+  font-size: .85em;
+  line-height: 1.4em;
 }
 
 code.prettyprint {
@@ -866,6 +869,12 @@ a.icon.gitter {
   justify-content: end;
   align-items: center;
   flex-wrap: wrap;
+}
+
+p.example {
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 5px;
 }
 
 .box-container {
