@@ -77,18 +77,21 @@ h1 {
   cursor: default;
   margin: 20px 0;
   line-height: 1;
+  text-transform: capitalize;
 }
 
 h2 {
   font-size: 2em;
   line-height: 1;
   margin: 15px 0;
+  text-transform: capitalize;
 }
 
 h3 {
   font-size: 1.8em;
   line-height: 1.15;
-  margin: 10px 0;
+  margin: 15px 0;
+  text-transform: capitalize;
 }
 
 h4 {
@@ -167,6 +170,14 @@ pre *, code * {
 
 a {
   color: #009688;
+}
+
+p.important {
+  border-radius: 4px;
+  background-color: #f8e5c0;
+  color: #b10e21;
+  font-weight: 500;
+  padding: 10px;
 }
 
 .main-content {
@@ -318,13 +329,19 @@ a {
 }
 
 .card h2 {
-  font-size: 1.2em;
-  margin-top: 30px;
-  margin-bottom: 10px;
+  font-size: 1.35em;
+  margin-top: 45px;
 }
 
-.card h2 + p {
-  margin-top: 0;
+.card h2:first-child {
+  font-size: 1.35em;
+  margin-top: 15px;
+}
+
+.card h3 {
+  font-size: 1.05em;
+  margin-top: 30px;
+  font-weight: 600;
 }
 
 .info-pane > .card.big {

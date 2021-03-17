@@ -5,6 +5,9 @@ const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
 const effects = Scope.import('services/effects.js');
 
+const startFromScratchSampleCode = Scope.importAsText('./start-from-scratch.sample-code.html');
+const galaxyModuleSampleCode = Scope.importAsText('./galaxy-module.sample-code.js');
+
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
@@ -20,10 +23,6 @@ const items = [
   },
   {
     title: 'UI Creation',
-    href: 'guide/the-progressive-way'
-  },
-  {
-    title: 'The Progressive Way',
     href: 'guide/the-progressive-way'
   }
 ];
@@ -57,7 +56,7 @@ view.init({
           class: 'prettyprint lang-html',
           text: '<script src="https://cdn.jsdelivr.net/gh/GalaxyJS/galaxyjs.github.io/galaxyjs/galaxy.js"></script>'
         },
-        '<h2>Recommended project file & folder structure</h2>' +
+        '<h3>Recommended project file & folder structure</h3>' +
         '<p>You can have whatever directory structure you like as long as you know how to the load modules. The following structure is' +
         ' recommended and we are using this structure though out our guide.</p>',
         {
@@ -76,55 +75,27 @@ view.init({
             '|-node_modules\n' +
             '|-package.json'
         },
-        '<p>Too lazy to do it yourself!?, Here... clone the following repository ;)</p>',
+        '<p>Too lazy to do it yourself!?, Here... clone the following repository 😉</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
           text: '-- GALAXYJS BOILERPLATE PROJECT URL --'
         },
         '<h2 id="/guide/bootstrap">Getting started</h2>' +
+        '<p class="important">This guide assumes intermediate level knowledge of JavaScript, CSS and HTML.</p>' +
         '<p>There are 2 ways to use GalaxyJS</p>' +
-        '<ol><li><strong>1 - </strong>Start a project with GalaxyJS from scratch</li>' +
-        '<li><strong>2 - </strong>Add GalaxyJS to an existing webpage</li></ol>' +
-        '<p>Add this code into the app/index.html</p>',
+        '<ol><li><strong>1 - </strong>Start a project with GalaxyJS from scratch.</li>' +
+        '<li><strong>2 - </strong>Add GalaxyJS to an existing webpage.</li></ol>' +
+        '<h3>1 - Start a project from scratch 😎👍👍</h3>' +
+        '<p>This is the easiest way to start since you are going to use GalaxyJS as your web application framework.</p>' +
+        '<p>First create a project directory with the recommended structure that is suggested above. Then add this code into the <code class="prettyprint">/app/index.html</code></p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
-          text: '<!DOCTYPE html>\n' +
-            '<html>\n' +
-            '  <head>\n' +
-            '    <title>Learning GalaxyJS</title>\n' +
-            '    <meta charset="UTF-8">\n' +
-            '\n' +
-            '    <script src="path/to/galaxy-min.js"></script>\n' +
-            '\n' +
-            '    <script>\n' +
-            '      (function () {\n' +
-            '          // This will ensure that you boot Galaxy when everything is loaded\n' +
-            '          // If you are using JQuery, you can also use $(document).ready(run);\n' +
-            '          window.addEventListener(\'load\', run);\n' +
-            '\n' +
-            '          function run() {\n' +
-            '              Galaxy.boot({\n' +
-            '                  // The path to your main module file\n' +
-            '                  url: \'modules/main/index.js\',\n' +
-            '                  // The container element for your app\n' +
-            '                  element: document.querySelector(\'body\')\n' +
-            '              }).then(function (module) {\n' +
-            '                  module.start();\n' +
-            '              });\n' +
-            '          }\n' +
-            '      })();\n' +
-            '    </script>\n' +
-            '  </head>\n' +
-            '\n' +
-            '  <body>\n' +
-            '    Loading...\n' +
-            '  </body>\n' +
-            '</html>'
+          text: startFromScratchSampleCode
         },
-        '<h2>Main module</h2>' +
-        '<p>Add this code into the app/modules/index.js</p>',
+        '<h3>Main module</h3>' +
+        '<p>Add this code into the <code class="prettyprint">app/modules/index.js</code></p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
@@ -142,11 +113,11 @@ view.init({
           text: 'TADAAA! you have created your first app with GalaxyJS!'
         },
         {
-          tag: 'h2',
+          tag: 'h3',
           html: 'Now, lets see what is going on here!'
         },
-        '<pre class="prettyprint inline lang-js">Scope.import(\'galaxy/view\')</pre>' +
-        '<p>is loading the view addon which provides functionality necessary to create the UI/UX' +
+        '<pre class="prettyprint inline lang-js">const view = Scope.import(\'galaxy/view\');</pre>' +
+        '<p>This line is loading the view addon which provides functionality necessary to create the UI/UX' +
         ' of your module and/or component.</p>',
         '<pre class="prettyprint inline lang-js">view.config.cleanContainer = true</pre> ' +
         '<p>Above code tells the view addon to start by cleaning the its parent and then render its content. In this case, this code will' +
@@ -159,30 +130,15 @@ view.init({
         '  tag: \'h1\',\n' +
         '  text: \'Hello World!\'\n' +
         '});</pre>',
-        '<h2 id="/guide/the-progressive-way">The Progressive Way</h2>' +
+        '<h3 id="/guide/the-progressive-way">2 - Add GalaxyJS to an existing webpage</h3>' +
         '<p>Sometimes you already have a page and you just want to add some reactive functionality to some elements. You can easily do this by transforming your target element into a Galaxy module:</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          text: 'const module = {\n' +
-            '        // Addons that you need for your module\n' +
-            '        imports: [\'galaxy/view\'],\n' +
-            '        // The element which is going to be the module\n' +
-            '        element: document.querySelector(\'#target\'),\n' +
-            '        constructor: function (Scope) {\n' +
-            '           const view = Scope.import(\'galaxy/view\');\n' +
-            '           view.config.cleanContainer = true;\n' +
-            '           view.init({\n' +
-            '             tag: \'h2\',\n' +
-            '             text: \'Hello World from GalaxyJS!\'\n' +
-            '           });\n' +
-            '        }\n' +
-            '      };\n' +
-            '\n' +
-            '// load module\n' +
-            'Galaxy.load(module);'
+          text: galaxyModuleSampleCode
         },
-        '<h2>List Rendering</h2>',
+        '<h2>UI Creation</h2>',
+        '<h3>List Rendering</h3>',
         '<p style="font-size: .87em">To learn more go to <a href="#/list-rendering">List Rendering</a></p>',
         '<p>GalaxyJS provide <strong>repeat</strong> directive for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
         ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',

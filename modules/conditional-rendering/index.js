@@ -37,7 +37,7 @@ view.init({
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          html: singleNodeExample,
+          text: singleNodeExample,
           expandable: exapndable
         },
         // '<pre class="prettyprint lang-js">' + singleNodeExample + '</pre>',
@@ -62,7 +62,7 @@ view.init({
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          html: multipleNodesExample,
+          text: multipleNodesExample,
           expandable: exapndable
         },
         // '<pre class="prettyprint lang-js">' + multipleNodesExample + '</pre>',
@@ -79,7 +79,7 @@ view.init({
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          html: listExample,
+          text: listExample,
           expandable: exapndable
         },
         {

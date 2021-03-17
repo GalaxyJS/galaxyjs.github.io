@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Learning GalaxyJS</title>
+  <meta charset="UTF-8">
+
+    <script src="path/to/galaxy-min.js"></script>
+
+    <script>
+      (function () {
+      // This will ensure that you boot Galaxy when everything is loaded
+      // If you are using JQuery, you can also use $(document).ready(run);
+      window.addEventListener('load', run);
+
+      function run() {
+      Galaxy.boot({
+      // The path to your main module file
+      url: 'modules/main/index.js',
+      // The container element for your app
+      element: document.querySelector('body')
+    }).then(function (module) {
+      module.start();
+    });
+    }
+    })();
+    </script>
+</head>
+
+<body>
+Loading...
+</body>
+</html>
