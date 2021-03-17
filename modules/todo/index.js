@@ -5,7 +5,7 @@ const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const inputs = Scope.inputs;
 Scope.data.inputsCopy = Galaxy.clone(Scope.inputs);
-Scope.data.fields = ['a', 'b']
+Scope.data.fields = ['a', 'b'];
 
 const ToDoService = {
   data: inputs.items,
@@ -152,17 +152,21 @@ view.init({
               test: true
             },
 
-            children: [
-              {
-                tag: 'span',
-                text: '<>titem.title'
-              },
-              {
-                tag: 'input',
-                type: 'checkbox',
-                checked: '<>titem.done'
-              }
-            ]
+            children: {
+              tag: 'label',
+              class: 'checkbox',
+              children: [
+                {
+                  tag: 'input',
+                  type: 'checkbox',
+                  checked: '<>titem.done'
+                },
+                {
+                  tag: 'span',
+                  text: '<>titem.title'
+                }
+              ]
+            }
           }
         },
         {

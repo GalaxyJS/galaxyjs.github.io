@@ -124,41 +124,44 @@ view.init({
           class: 'flex-row start grid',
           children: [
             {
-              tag: 'ul',
-
               children: [
                 '<h3>Capitals</h3>',
                 {
-                  tag: 'li',
-                  animations: itemAnimations,
-                  class: 'flex-row',
-                  repeat: {
-                    data: '<>data.capitals',
-                    as: 'item'
-                  },
-                  test: '<>this.stuff',
-                  text: '<>item'
-                }
-
+                  tag: 'ul',
+                  children: [
+                    {
+                      tag: 'li',
+                      animations: itemAnimations,
+                      class: 'flex-row',
+                      repeat: {
+                        data: '<>data.capitals',
+                        as: 'item'
+                      },
+                      test: '<>this.stuff',
+                      text: '<>item'
+                    }
+                  ]
+                },
               ]
             },
             {
-              tag: 'ul',
-
               children: [
                 '<h3>Countries</h3>',
                 {
-                  tag: 'li',
-                  animations: itemAnimations,
-                  class: 'flex-row',
-                  repeat: {
-                    data: '<>data.countries',
-                    as: 'item2'
-                  },
-                  text: '<>item2'
-                }
-
-              ]
+                  tag: 'ul',
+                  children: [
+                    {
+                      tag: 'li',
+                      animations: itemAnimations,
+                      class: 'flex-row',
+                      repeat: {
+                        data: '<>data.countries',
+                        as: 'item2'
+                      },
+                      text: '<>item2'
+                    }
+                  ]
+                }]
             }
           ]
         }

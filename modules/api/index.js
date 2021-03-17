@@ -7,7 +7,7 @@ const navService = Scope.import('services/navigation.js');
 
 const items = [
   {
-    title: 'Galaxy.Scope',
+    title: 'Scope',
     href: 'api/scope'
   },
   {
@@ -19,7 +19,7 @@ const items = [
     href: 'api/observer'
   },
   {
-    title: 'Galaxy.View',
+    title: 'View',
     href: 'api/view'
   },
   {

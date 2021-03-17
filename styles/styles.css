@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+/*@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');*/
+
 
 /* http://meyerweb.com/eric/tools/css/reset/
    v2.0 | 20110126
@@ -80,11 +82,13 @@ h1 {
 h2 {
   font-size: 2em;
   line-height: 1;
+  margin: 15px 0;
 }
 
 h3 {
   font-size: 1.8em;
-  line-height: 1;
+  line-height: 1.15;
+  margin: 10px 0;
 }
 
 h4 {
@@ -120,10 +124,20 @@ h2 > a:hover {
   opacity: 1;
 }
 
+* {
+  /*font-family: 'Nunito', sans-serif;*/
+  font-family: 'Quicksand', sans-serif;
+}
+
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
 html, body {
-  font-family: 'Nunito', sans-serif;
-  font-size: 15px;
-  line-height: 22px;
+  /*font-family: 'Nunito', sans-serif;*/
+  /*font-family: 'Quicksand', sans-serif;*/
+  font-size: 16px;
+  line-height: 20px;
   position: relative;
   height: 100%;
   max-width: 100%;
@@ -149,14 +163,6 @@ pre, code {
 
 pre *, code * {
   font-family: 'Ubuntu Mono', monospace;
-}
-
-* {
-  font-family: 'Nunito', sans-serif;
-}
-
-*, *:before, *:after {
-  box-sizing: border-box;
 }
 
 a {
@@ -353,6 +359,7 @@ a {
 
 ul {
   padding: 0;
+  margin: 15px 0;
   overflow: hidden;
 }
 
@@ -369,12 +376,22 @@ ul > li > * {
 }
 
 input[type='checkbox'] {
-  margin: 0 5px;
+  margin: 0;
   border: 2px solid #000;
   border-radius: 2px;
   width: 18px;
   height: 18px;
   display: inline-block;
+}
+
+input[type='checkbox'] + span {
+  margin-left: 10px;
+}
+
+label.checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 ul.circle > li {
@@ -885,25 +902,36 @@ p.example {
 .box {
   display: inline-block;
   width: 85px;
-  height: 85px;
   /*line-height: 85px;*/
   /*background-color: #d05e77;*/
   /*border-radius: 0 10px 10px;*/
   /*margin: 8px;*/
-  padding: 8px;
   color: #fff;
+  position: relative;
+}
 
+.box > .height {
+  display: block;
+  padding-top: 100%;
 }
 
 .box > span {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 0 10px 10px;
   background-color: #d05e77;
-  line-height: 85px;
-  font-size: 60px;
+  line-height: 1;
+  font-size: 3em;
   text-align: center;
   text-transform: uppercase;
   font-weight: bold;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+
 }
 
 .dialog {

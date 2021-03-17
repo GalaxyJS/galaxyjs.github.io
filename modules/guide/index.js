@@ -15,8 +15,12 @@ const items = [
     href: 'guide/installation'
   },
   {
-    title: 'Bootstrap',
+    title: 'Getting started',
     href: 'guide/bootstrap'
+  },
+  {
+    title: 'UI Creation',
+    href: 'guide/the-progressive-way'
   },
   {
     title: 'The Progressive Way',
@@ -78,7 +82,10 @@ view.init({
           class: 'prettyprint lang-html',
           text: '-- GALAXYJS BOILERPLATE PROJECT URL --'
         },
-        '<h2 id="/guide/bootstrap">Bootstrap</h2>' +
+        '<h2 id="/guide/bootstrap">Getting started</h2>' +
+        '<p>There are 2 ways to use GalaxyJS</p>' +
+        '<ol><li><strong>1 - </strong>Start a project with GalaxyJS from scratch</li>' +
+        '<li><strong>2 - </strong>Add GalaxyJS to an existing webpage</li></ol>' +
         '<p>Add this code into the app/index.html</p>',
         {
           tag: 'pre',

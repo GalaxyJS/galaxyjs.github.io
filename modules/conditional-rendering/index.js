@@ -75,8 +75,13 @@ view.init({
         },
 
         '<h2>Condition on a list</h2>',
-        '<p class="example">Example</p>' +
-        '<pre class="prettyprint lang-js">' + listExample + '</pre>',
+        '<p class="example">Example</p>',
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-js',
+          html: listExample,
+          expandable: exapndable
+        },
         {
           tag: 'section',
           module: {
