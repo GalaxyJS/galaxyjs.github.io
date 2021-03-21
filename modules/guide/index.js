@@ -131,16 +131,18 @@ view.init({
         '  text: \'Hello World!\'\n' +
         '});</pre>',
         '<h3 id="/guide/the-progressive-way">2 - Add GalaxyJS to an existing webpage</h3>' +
-        '<p>Sometimes you already have a page and you just want to add some reactive functionality to some elements. You can easily do this by transforming your target element into a Galaxy module:</p>',
+        '<p>Sometimes you already have a page and you just want to add some reactive functionality to a page. You can easily do this by transforming your target element into a Galaxy module:</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
           text: galaxyModuleSampleCode
         },
         '<h2>UI Creation</h2>',
+        '<h3>Modules</h3>',
+        '<p></p>',
         '<h3>List Rendering</h3>',
         '<p style="font-size: .87em">To learn more go to <a href="#/list-rendering">List Rendering</a></p>',
-        '<p>GalaxyJS provide <strong>repeat</strong> directive for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
+        '<p>GalaxyJS provide <strong>repeat</strong> property for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
         ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',
         {
           tag: 'pre',

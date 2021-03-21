@@ -1,0 +1,8 @@
+ArrayChange {
+  id: number, // Auto generated
+  init: ArrayChange, // Reference to the first ArrayChange when the host array became reactive
+  original: Array, // Reference to the original array
+  params: Array, // Arguments that has been passed to the method which mutating the array
+  returnValue: any,
+  type: string // Refer to action that happened on the array e. g. 'push'
+}

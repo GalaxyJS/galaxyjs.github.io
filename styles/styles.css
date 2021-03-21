@@ -96,7 +96,7 @@ h3 {
 
 h4 {
   font-size: 1.6em;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 h5 {
@@ -357,9 +357,6 @@ p.important {
   padding: 0 25px;
 }
 
-.content > h3 {
-}
-
 .content > h1 {
   margin-bottom: 0;
 }
@@ -372,6 +369,13 @@ p.important {
 
 .content > h1:last-of-type {
   margin-bottom: 30px;
+}
+
+.example-box {
+  padding: 5px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  border-radius: 8px;
 }
 
 ul {
@@ -390,6 +394,11 @@ ul > li {
 
 ul > li > * {
   vertical-align: middle;
+}
+
+li > p {
+  margin-top: 0;
+  margin-bottom: 5px;
 }
 
 input[type='checkbox'] {
@@ -412,20 +421,20 @@ label.checkbox {
 }
 
 ul.circle > li {
-  padding-left: 22px;
+  padding-left: 15px;
 }
 
 ul.circle > li:before {
   content: ' ';
   position: absolute;
-  width: 14px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   line-height: 10px;
-  background-color: #009688;
-  margin: 11px 2px;
+  background-color: #555;
+  margin: 13px 0 0;
   left: 0;
   top: 0;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 ul.items-list > li {
@@ -622,7 +631,7 @@ ul.items-list > li:hover {
 pre.prettyprint {
   border: none;
   border-radius: 4px;
-  padding: 15px;
+  padding: 10px 15px;
   background-color: #eee;
   font-size: .85em;
   line-height: 1.4em;
