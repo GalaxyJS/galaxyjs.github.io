@@ -26,7 +26,9 @@ view.init({
         },
         {
           tag: 'h1',
-          text: '<>data.products.length'
+          text: ['<>data.products.length', (len) => {
+            return 'No of product type: ' + len;
+          }]
         },
         {
           tag: 'ul',

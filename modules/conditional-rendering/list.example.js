@@ -1,34 +1,9 @@
 const view = Scope.import('galaxy/view');
 
-const listAnimations = {
-  enter: {
-    sequence: 'if-items',
-    from: {
-      opacity: 0,
-      x: 20
-    },
-    to: {
-      opacity: 1,
-      x: 0
-    },
-    position: '-=.2',
-    duration: .3
-  },
-  leave: {
-    sequence: 'if-items',
-    to: {
-      x: 25,
-      opacity: 0
-    },
-    position: '-=.18',
-    duration: .5
-  }
-};
-
 Scope.data.conditionForList = true;
 view.init([
   {
-    tag: 'p',
+    tag: 'div',
     children: [
       {
         tag: 'button',

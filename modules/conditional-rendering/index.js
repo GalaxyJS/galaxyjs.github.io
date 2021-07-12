@@ -42,7 +42,7 @@ view.init({
         },
         // '<pre class="prettyprint lang-js">' + singleNodeExample + '</pre>',
         {
-          tag: 'section',
+          class: 'example-box',
           module: {
             id: 'single-node-example',
             url: './single-node.example.js'
@@ -67,7 +67,7 @@ view.init({
         },
         // '<pre class="prettyprint lang-js">' + multipleNodesExample + '</pre>',
         {
-          tag: 'section',
+          class: 'example-box',
           module: {
             id: 'multiple-nodes-example',
             url: './multiple-nodes.example.js'
@@ -83,7 +83,7 @@ view.init({
           expandable: exapndable
         },
         {
-          tag: 'section',
+          class: 'example-box',
           module: {
             id: 'list-example',
             url: './list.example.js'

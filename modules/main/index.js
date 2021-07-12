@@ -20,7 +20,7 @@ Scope.data.navService = navService;
 Scope.data.navItems = [
   {
     title: 'Start',
-    link: 'start',
+    link: '/start',
     icon: 'fas fa-play',
     module: {
       id: 'start',
@@ -29,7 +29,7 @@ Scope.data.navItems = [
   },
   {
     title: 'Guide',
-    link: 'guide',
+    link: '/guide',
     icon: 'fas fa-map',
     module: {
       id: 'guide',
@@ -38,7 +38,7 @@ Scope.data.navItems = [
   },
   {
     title: 'Reactive',
-    link: 'reactive',
+    link: '/reactive',
     icon: 'fas fa-exchange-alt',
     module: {
       id: 'reactive',
@@ -47,7 +47,7 @@ Scope.data.navItems = [
   },
   {
     title: 'Conditional Rendering',
-    link: 'conditional-rendering',
+    link: '/conditional-rendering',
     icon: 'fas fa-exclamation-triangle',
     module: {
       id: 'conditional-rendering',
@@ -57,7 +57,7 @@ Scope.data.navItems = [
 
   {
     title: 'List Rendering',
-    link: 'list-rendering',
+    link: '/list-rendering',
     icon: 'fas fa-list-ul',
     module: {
       fresh: true,
@@ -68,7 +68,7 @@ Scope.data.navItems = [
 
   {
     title: 'Animations',
-    link: 'animations',
+    link: '/animations',
     icon: 'fas fa-spinner',
     module: {
       id: 'animations',
@@ -78,7 +78,7 @@ Scope.data.navItems = [
 
   {
     title: 'API',
-    link: 'api',
+    link: '/api',
     icon: 'fas fa-code',
     module: {
       id: 'api',
@@ -88,7 +88,7 @@ Scope.data.navItems = [
 
   {
     title: 'ToDo - Demo',
-    link: 'todo-demo',
+    link: '/todo-demo',
     module: {
       id: 'todo-demo',
       url: 'modules/todo/index.js'
@@ -97,7 +97,7 @@ Scope.data.navItems = [
 
   {
     title: 'VueJS Replica - Demo',
-    link: 'vuejs-replica-demo',
+    link: '/vuejs-replica-demo',
     module: {
       id: 'vuejs-replica-demo',
       url: 'modules/vuejs-replica/index.js'
@@ -126,14 +126,10 @@ function isActiveModule(mod, actMod) {
   return mod === actMod;
 }
 
-router.config.baseURL = '/';
 router.init({
-  '/': () => {
-    router.navigate('start');
-  },
+  '/': '/start',
 
-  '/:moduleId': (params, asdasd) => {
-    // console.log(params, asdasd);
+  '/:moduleId': (params) => {
     const nav = Scope.data.navItems.filter(function (item) {
       return item.module.id === params.moduleId;
     })[0];
@@ -204,7 +200,7 @@ view.init([
             },
             class: {
               'nav-item': true,
-              active: isActiveModule
+              'active': isActiveModule
             },
             href: '<>nav.link',
             on: {
@@ -225,30 +221,58 @@ view.init([
             ]
           },
           {
-            class: 'sub-nav-container',
-            children: {
-              tag: 'a',
-              class: 'nav-item sub',
-              animations: {
-                enter: {
-                  sequence: 'card',
-                  from: {
-                    opacity: 0,
-                    y: -10
-                  },
-                  position: '-=.2',
-                  duration: .3
+            animations: {
+              enter: {
+                sequence: 'card',
+                from: {
+                  height: 0
                 },
-                leave: {
-                  sequence: 'card',
-                  to: {
-                    opacity: 0,
-                    y: -10
+                to: {
+                  height: function (value, node) {
+                    return node.scrollHeight;
                   },
-                  position: '-=.12',
-                  duration: .2
+                  ease: 'power1.inOut',
+                },
+                duration: function () {
+                  return this.inputs.moduleId === Scope.data.activeModule.id && navService.subNavItems.length ? .2 : 0;
+                },
+                position: '-=.2'
+              },
+              leave: {
+                sequence: 'card',
+                to: {
+                  height: 0,
+                  ease: 'power1.inOut',
+                },
+                duration: function () {
+                  return this.node.offsetHeight > 0 ? .2 : 0;
+                },
+                position: '-=.2'
+              }
+            },
+            $if: [
+              'nav.module.id',
+              'data.activeModule.id',
+              'data.navService.subNavItems.length',
+              function (mid, ami, len) {
+                // console.log(this.properties, this);
+                return mid === ami && len;
+              }
+            ],
+            inputs: {
+              moduleId: '<>nav.module.id'
+            },
+            class: {
+              'sub-nav-container': true,
+            },
+            children: {
+              animations: {
+                leave: {
+                  withParent: true
                 }
               },
+              tag: 'a',
+              class: 'nav-item sub',
               repeat: {
                 as: 'subNav',
                 data: [
@@ -272,7 +296,6 @@ view.init([
               on: {
                 click: function (e) {
                   e.preventDefault();
-                  // debugger;
                   router.navigate(this.inputs.subNav.href);
                 }
               }

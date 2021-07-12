@@ -1,12 +1,14 @@
 /* globals Scope, Promise, PR */
 const view = Scope.import('galaxy/view');
-// const router = Scope.import('galaxy/router');
+const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
-const effects = Scope.import('services/effects.js');
+const scrollToRouter = Scope.import('services/scroll-to-router.js');
 
-const startFromScratchSampleCode = Scope.importAsText('./start-from-scratch.sample-code.html');
-const galaxyModuleSampleCode = Scope.importAsText('./galaxy-module.sample-code.js');
+const startFromScratchExample = Scope.importAsText('./start-from-scratch.example.html');
+const galaxyModuleExample = Scope.importAsText('./galaxy-module.example.js');
+const helloWorldExample = Scope.importAsText('./hello-world.example.js');
+const divExample = Scope.importAsText('./div.example.js');
 
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
@@ -15,19 +17,24 @@ Scope.flag = true;
 const items = [
   {
     title: 'Installation',
-    href: 'guide/installation'
+    href: '/guide/installation'
   },
   {
     title: 'Getting started',
-    href: 'guide/bootstrap'
+    href: '/guide/getting-started'
   },
   {
     title: 'UI Creation',
-    href: 'guide/the-progressive-way'
+    href: '/guide/ui-creation'
   }
 ];
 
 navService.setSubNavItems(items);
+
+function setupRouter() {
+  // router.init(Object.assign({}, scrollToRouter, { '/': '/installation' }));
+  router.assign(scrollToRouter, { '/': '/installation' });
+}
 
 view.init({
   class: 'card big',
@@ -40,6 +47,7 @@ view.init({
   children: [
     {
       tag: 'img',
+      id: 'installation',
       class: 'banner',
       src: 'assets/images/guide.jpg',
       height: '410',
@@ -49,7 +57,7 @@ view.init({
       class: 'content',
       tag: 'section',
       children: [
-        '<h2 id="/guide/installation">Installation</h2>' +
+        '<h2>Installation</h2>' +
         '<p>Simply copy & paste the following into your page\'s head</p>',
         {
           tag: 'pre',
@@ -75,13 +83,13 @@ view.init({
             '|-node_modules\n' +
             '|-package.json'
         },
-        '<p>Too lazy to do it yourself!?, Here... clone the following repository 😉</p>',
+        '<p>Too lazy to do it yourself!? Here... clone the following repository 😉</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
           text: '-- GALAXYJS BOILERPLATE PROJECT URL --'
         },
-        '<h2 id="/guide/bootstrap">Getting started</h2>' +
+        '<h2 id="getting-started">Getting started</h2>' +
         '<p class="important">This guide assumes intermediate level knowledge of JavaScript, CSS and HTML.</p>' +
         '<p>There are 2 ways to use GalaxyJS</p>' +
         '<ol><li><strong>1 - </strong>Start a project with GalaxyJS from scratch.</li>' +
@@ -92,7 +100,7 @@ view.init({
         {
           tag: 'pre',
           class: 'prettyprint lang-html',
-          text: startFromScratchSampleCode
+          text: startFromScratchExample
         },
         '<h3>Main module</h3>' +
         '<p>Add this code into the <code class="prettyprint">app/modules/index.js</code></p>',
@@ -130,18 +138,56 @@ view.init({
         '  tag: \'h1\',\n' +
         '  text: \'Hello World!\'\n' +
         '});</pre>',
-        '<h3 id="/guide/the-progressive-way">2 - Add GalaxyJS to an existing webpage</h3>' +
+        '<h3>2 - Add GalaxyJS to an existing webpage</h3>' +
         '<p>Sometimes you already have a page and you just want to add some reactive functionality to a page. You can easily do this by transforming your target element into a Galaxy module:</p>',
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          text: galaxyModuleSampleCode
+          text: galaxyModuleExample
         },
-        '<h2>UI Creation</h2>',
+        '<h2 id="ui-creation">UI Creation</h2>',
         '<h3>Modules</h3>',
-        '<p></p>',
+        '<p>Modules are the building blocks of your application. A module can serve a visual purpose like a UI component or it can a serve functional purpose like service</p>',
+        '<p>For a visual module you can think of a page or a section of application UI or something simpler like a button or a text field.</p>',
+        '<p>For a functional module you can think of a services, utilities and etc.</p>',
+        '<p>Simpler way of describing a module would be that: A module is a just bunch of codes 😂.' +
+        ' Those codes could either draw something on the screen 😎 or do something behind the screen 🤓.</p>',
+        '<p>Now lets build our first module. A module that renders a paragraph with text \'Hello World\'.</p>',
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-js',
+          text: helloWorldExample
+        },
+        '<p>In the above code we started by importing <code class="prettyprint">\'galaxy/view\'</code> service which we can use to create UI blocks.</p>',
+        '<p><code class="prettyprint">view.init()</code> accepts an array or object which is the blueprint of ' +
+        'our UI block. In this case a <strong>p</strong> tag with <strong>Hello World!</strong> as its text.</p>',
+        {
+          class: 'example-box',
+          module: {
+            id: 'hello-world-example',
+            url: './hello-world.example.js'
+          }
+        },
+        '<p>How about a div with a paragraph!</p>',
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-js',
+          text: divExample
+        },
+        '<p>With <code class="prettyprint">children</code> property we can add nodes to the elements that can have children.</p>',
+        {
+          class: 'example-box',
+          module: {
+            id: 'div-example',
+            url: './div.example.js'
+          }
+        },
+        '<p>As you can see, you create your HTML structure by using objects. This way you don\'t have to ' +
+        'go back and forth between JS and HTML.</p>',
+        '<p>Keep in mind that a blueprint object is not template/static object. it\'s a live object which reflects the ui state.</p>',
+
         '<h3>List Rendering</h3>',
-        '<p style="font-size: .87em">To learn more go to <a href="#/list-rendering">List Rendering</a></p>',
+        '<p style="font-size: .87em">To learn more go to <a href="/list-rendering">List Rendering</a></p>',
         '<p>GalaxyJS provide <strong>repeat</strong> property for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
         ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',
         {
@@ -188,6 +234,18 @@ view.init({
             'Galaxy.load(module);'
         }
       ]
+    },
+    {
+      tag: 'keyframe',
+      animations: {
+        enter: {
+          sequence: 'card',
+          duration: .1,
+          onComplete: function () {
+            setupRouter();
+          }
+        }
+      }
     }
   ]
 });

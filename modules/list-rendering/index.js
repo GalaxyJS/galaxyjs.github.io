@@ -1,6 +1,8 @@
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
+const simpleListExample = Scope.importAsText('./simple-list.example.js');
+
 const countries = ['Netherlands', 'France', 'Hungary', 'Germany', 'Czech Republic', 'Austria'];
 const capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
 
@@ -82,19 +84,18 @@ view.init({
         '<p><code class="prettyprint lang-js">changes</code> is reactive property that is being added to arrays by GalaxyJS' +
         ' and it\'s instance of ArrayChange. </p>',
         '<p class="example">Example</p>',
-        '<pre class="prettyprint lang-js">' +
-        'const view = Scope.import(\'galaxy/view\');\n' +
-        'Scope.data.capitals= [\'Amsterdam\', \'Paris\', \'Budapest\', \'Berlin\', \'Prague\', \'Vienna\'];\n' +
-        '\n' +
-        'view.init({\n' +
-        '  tag: \'p\'\n' +
-        '  repeat: {\n' +
-        '    data: \'<>data.list\' // You can also use \'<>data.list.changes\' if you wish to bind to ArrayChange property \n' +
-        '    as: \'item\'\n' +
-        '  },\n' +
-        '  text: \'<>item\'\n' +
-        '});' +
-        '</pre>',
+        {
+          tag: 'pre',
+          class: 'prettyprint lang-js',
+          text: simpleListExample
+        },
+        {
+          tag: 'section',
+          module: {
+            id: 'simple-list-example',
+            url: './simple-list.example.js'
+          },
+        },
         {
           tag: 'p',
           children: [

@@ -1,0 +1,16 @@
+:host ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 10px 10px;
+  font-size: .9em;
+  text-align: justify;
+}
+
+:host ul > li {
+  padding: 0;
+  min-height: 90px;
+}
+
+:host ul > li > h4 {
+  margin-bottom: 5px;
+}

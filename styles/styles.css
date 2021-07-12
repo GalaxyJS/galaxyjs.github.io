@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;500;600;700;800&display=swap');
+/*@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;200;300;400;500;600;700&display=swap');*/
+/*@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');*/
 /*@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');*/
 
 
@@ -58,6 +60,7 @@ table {
 */
 p {
   margin: 15px 0;
+  line-height: 22px;
 }
 
 .bold {
@@ -73,39 +76,40 @@ hr {
 }
 
 h1 {
-  font-size: 2.21em;
+  font-size: 1.75em;
   cursor: default;
   margin: 20px 0;
-  line-height: 1;
+  line-height: 28px;
   text-transform: capitalize;
 }
 
 h2 {
-  font-size: 2em;
+  font-size: 1.66em;
   line-height: 1;
   margin: 15px 0;
   text-transform: capitalize;
 }
 
 h3 {
-  font-size: 1.8em;
+  font-size: 1.30em;
   line-height: 1.15;
   margin: 15px 0;
   text-transform: capitalize;
+  color: #484848;
 }
 
 h4 {
-  font-size: 1.6em;
-  line-height: 1.1;
+  font-size: 1.2em;
+  line-height: 22px;
 }
 
 h5 {
-  font-size: 1.4em;
-  line-height: 1;
+  font-size: 1.05em;
+  line-height: 22px;
 }
 
 h6 {
-  font-size: 1.2em;
+  font-size: 1em;
   line-height: 1;
 }
 
@@ -129,7 +133,9 @@ h2 > a:hover {
 
 * {
   /*font-family: 'Nunito', sans-serif;*/
-  font-family: 'Quicksand', sans-serif;
+  /*font-family: 'Quicksand', sans-serif;*/
+  /*font-family: 'Josefin Sans', sans-serif;*/
+  font-family: 'Assistant', sans-serif;
 }
 
 *, *:before, *:after {
@@ -140,7 +146,7 @@ html, body {
   /*font-family: 'Nunito', sans-serif;*/
   /*font-family: 'Quicksand', sans-serif;*/
   font-size: 16px;
-  line-height: 20px;
+  line-height: 22px;
   position: relative;
   height: 100%;
   max-width: 100%;
@@ -226,7 +232,7 @@ p.important {
   cursor: pointer;
   transition: background-color .2s ease-in-out;
   overflow: hidden;
-  font-weight: bold;
+  font-weight: 500;
   font-size: .9em;
 }
 
@@ -242,9 +248,13 @@ p.important {
 }
 
 .sub-nav-container {
-  border-left: 15px solid #17a7e0;
+  border-left: 15px solid transparent;
   overflow: hidden;
   color: #666;
+}
+
+.nav-item.active + .sub-nav-container {
+  border-color: #17a7e0;
 }
 
 .nav-item.sub {
@@ -326,22 +336,19 @@ p.important {
   text-shadow: 0 0 15px rgba(0, 0, 0, .4);
   white-space: nowrap;
   background-color: rgba(0, 0, 0, .15);
+  font-size: 2em;
 }
 
-.card h2 {
-  font-size: 1.35em;
+.content > h2 {
   margin-top: 45px;
 }
 
-.card h2:first-child {
-  font-size: 1.35em;
+.content > h2:first-child {
   margin-top: 15px;
 }
 
-.card h3 {
-  font-size: 1.05em;
+.content > h3 {
   margin-top: 30px;
-  font-weight: 600;
 }
 
 .info-pane > .card.big {
@@ -363,8 +370,9 @@ p.important {
 
 .content > h1 + h1 {
   margin-top: 0;
-  font-weight: 100;
   color: #aaa;
+  line-height: 28px;
+  font-size: 1.25em;
 }
 
 .content > h1:last-of-type {
@@ -372,10 +380,20 @@ p.important {
 }
 
 .example-box {
-  padding: 5px;
+  padding: 10px;
   overflow: hidden;
   border: 1px solid #eee;
-  border-radius: 8px;
+  border-radius: 10px;
+  margin: 15px -10px;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, .06);
+}
+
+.example-box > *:first-child {
+  margin-top: 0;
+}
+
+.example-box > *:last-child {
+  margin-bottom: 0;
 }
 
 ul {

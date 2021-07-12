@@ -3,7 +3,7 @@ const view = Scope.import('galaxy/view');
 Scope.data.condition = true;
 view.init([
   {
-    tag: 'p',
+    tag: 'div',
     children: [
       {
         tag: 'button',

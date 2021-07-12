@@ -2,6 +2,7 @@
 
 /** @type Galaxy.View */
 const view = Scope.import('galaxy/view');
+const style = Scope.import('./style.css');
 const animations = Scope.import('services/animations.js');
 const inputs = Scope.inputs;
 Scope.data.inputsCopy = Galaxy.clone(Scope.inputs);
@@ -67,6 +68,7 @@ view.init({
   class: 'card',
   animations: animations.cardInOut,
   children: [
+    style,
     {
       tag: 'section',
       class: 'content',

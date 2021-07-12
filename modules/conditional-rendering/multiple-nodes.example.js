@@ -31,7 +31,7 @@ const itemAnimations = {
 Scope.data.conditionForMultiple = true;
 view.init([
   {
-    tag: 'p',
+    tag: 'div',
     children: [
       {
         tag: 'button',

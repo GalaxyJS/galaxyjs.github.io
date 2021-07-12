@@ -32,10 +32,8 @@ view.init({
         {
           tag: 'ul',
           children: [
-            '<li><strong>Animations</strong> are built in utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a></li>' +
-            '<li><strong>Performant</strong>, it uses native setter/getter to achieve reactive UI</li>' +
-            '<li><strong>Flexible Structure</strong> in order to achieve most optimal solution for your app</li>' +
-            '<li><strong>Scalability</strong> and <strong>Extendability</strong></li>'
+            '<li><strong>Animations</strong> are built in, utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a></li>' +
+            '<li><strong>Versatile</strong> in order to achieve most optimal solution for your app</li>'
           ]
         },
         {

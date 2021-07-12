@@ -1,5 +1,5 @@
 /* global Scope, PR */
-const test = Scope.import('./test.css');
+const test = Scope.import('./style.css');
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const router = Scope.import('galaxy/router');
@@ -28,6 +28,45 @@ const items = [
   }
 ];
 navService.setSubNavItems(items);
+Scope.data.api = {
+  scope: [
+    {
+      title: 'systemId',
+      description: 'The id of this module'
+    },
+    {
+      title: 'parentScope',
+      description: 'Reference to the parent scope'
+    },
+    {
+      title: 'element',
+      description: 'Reference to the HTML element'
+    },
+    {
+      title: 'on(event, handler)',
+      description: 'Register event listener on the different stage of module lifecycle. ' +
+        'Stages are <code class="prettyprint lang-js">\'module.init\'</code>' +
+        ', <code class="prettyprint lang-js">\'module.start\'</code> ' +
+        'and <code class="prettyprint lang-js">\'module.destroy\'</code>'
+    },
+    {
+      title: 'observe(object)',
+      description: ''
+    }
+  ],
+  view: [
+    {
+      title: 'config.cleanContainer',
+      description: 'If set true, the view will empty its container upon initialization. Default is set to false.'
+    },
+    {
+      title: 'init(uiBlueprint)',
+      description: 'init method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
+        ' following code will create a pharagraph tag with `Hello World!` text inside it.' +
+        '<code class="prettyprint lang-js">view.init({ tag: \'p\', text: \'Hello World!\' });</code>'
+    }
+  ]
+};
 
 router.init({
   '/': function () {
@@ -73,35 +112,20 @@ view.init({
           children: [
             {
               tag: 'li',
-              html: '<strong>systemId</strong> The id of this module'
-            },
-            {
-              tag: 'li',
-              html: '<strong>parentScope</strong> Reference to the parent scope'
-            },
-            {
-              tag: 'li',
-              html: '<strong>element</strong> Reference to the HTML element'
-            },
-            {
-              tag: 'li',
+              repeat: {
+                as: 'doc',
+                data: '<>data.api.scope'
+              },
               children: [
                 {
-                  tag: 'strong',
-                  text: 'on(event, handler)'
+                  tag: 'h5',
+                  text: '<>doc.title'
                 },
                 {
                   tag: 'p',
-                  html: 'Register event listener on the different stage of module lifecycle. ' +
-                    'Stages are <code class="prettyprint lang-js">\'module.init\'</code>' +
-                    ', <code class="prettyprint lang-js">\'module.start\'</code> ' +
-                    'and <code class="prettyprint lang-js">\'module.destroy\'</code>'
+                  html: '<>doc.description'
                 }
               ]
-            },
-            {
-              tag: 'li',
-              html: '<strong>observe(object)</strong> ...'
             }
           ]
         },
@@ -116,16 +140,29 @@ view.init({
           tag: 'h2',
           text: 'Galaxy.View'
         },
-        '<p>View provide functionality for creating UI elements.</p> ' +
-        '<p>It is available as a plugin and can be retrieved by ' +
+        '<p>View provide functionality for creating rich UI blocks. ' +
+        'It is available as a plugin and can be retrieved by: <br/>' +
         '<code class="prettyprint lang-js">const view = Scope.import(\'galaxy/view\');</code></p>',
         {
           tag: 'ul',
           children: [
-            '<strong>init(uiBlueprint)</strong>' +
-            '<p>init method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
-            ' following code will create a pharagraph tag with `Hello World!` text inside it.</p>' +
-            '<pre class="prettyprint lang-js">view.init({ tag: \'p\', text: \'Hello World!\' });</pre>'
+            {
+              tag: 'li',
+              repeat: {
+                as: 'doc',
+                data: '<>data.api.view'
+              },
+              children: [
+                {
+                  tag: 'h5',
+                  text: '<>doc.title'
+                },
+                {
+                  tag: 'p',
+                  html: '<>doc.description'
+                }
+              ]
+            }
           ]
         },
         {
