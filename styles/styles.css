@@ -230,7 +230,8 @@ p.important {
 }
 
 .nav-item:hover, .nav-item a:hover {
-  background-color: rgb(233, 243, 247);
+  /*background-color: rgb(233, 243, 247);*/
+  color: #16a7e0;
 }
 
 .nav-item.active {
@@ -276,7 +277,7 @@ p.important {
   padding: 10px;
   font-size: .9em;
   line-height: 20px;
-  margin: 0 15px;
+  margin: 0 15px 5px;
   border-radius: 4px;
   text-decoration: none;
   color: inherit;
@@ -288,6 +289,11 @@ p.important {
   font-weight: bold;
   color: #16a7e0;
   /*color: #333;*/
+}
+
+.sub-nav-container > a:hover {
+  /*background-color: rgb(203, 234, 247);*/
+
 }
 
 .sub-nav-container > a:last-child {

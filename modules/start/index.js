@@ -22,13 +22,17 @@ view.init({
       tag: 'section',
       class: 'content',
       children: [
-        '<h2>The framework to make stunning web applications</h2>'
+        '<h2>The framework to make visually stunning web applications</h2>'
       ]
     },
     {
       tag: 'section',
       class: 'content',
       children: [
+        {
+          tag: 'p',
+          html: 'GalaxyJS is a opinionated framework for building visually rich web application. Its main key feature is utilizing utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a>'
+        },
         {
           tag: 'ul',
           children: [

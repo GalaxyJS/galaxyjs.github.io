@@ -8,23 +8,23 @@ const navService = Scope.import('services/navigation.js');
 const items = [
   {
     title: 'Scope',
-    href: 'api/scope'
+    href: '/api/scope'
   },
   {
-    title: 'Galaxy.Module',
-    href: 'api/module'
+    title: 'Module',
+    href: '/api/module'
   },
   {
-    title: 'Galaxy.Observer',
-    href: 'api/observer'
+    title: 'Observer',
+    href: '/api/observer'
   },
   {
     title: 'View',
-    href: 'api/view'
+    href: '/api/view'
   },
   {
-    title: 'Galaxy.View.ViewNode',
-    href: 'api/viewnode'
+    title: 'View.ViewNode',
+    href: '/api/viewnode'
   }
 ];
 navService.setSubNavItems(items);
@@ -41,6 +41,10 @@ Scope.data.api = {
     {
       title: 'element',
       description: 'Reference to the HTML element'
+    },
+    {
+      title: 'uri',
+      description: 'Path to the module'
     },
     {
       title: 'on(event, handler)',
@@ -69,9 +73,7 @@ Scope.data.api = {
 };
 
 router.init({
-  '/': function () {
-    console.log('API Router Root');
-  },
+  '/': '/scope',
   '/:subId': function (params, pp) {
     console.log('API Router', params, pp, Scope);
   }
@@ -105,7 +107,8 @@ view.init({
 
         {
           tag: 'h2',
-          text: 'Galaxy.Scope'
+          id: 'scope',
+          text: 'Scope'
         },
         {
           tag: 'ul',
@@ -131,14 +134,16 @@ view.init({
         },
         {
           tag: 'h2',
-          text: 'Galaxy.Module'
+          id: 'module',
+          text: 'Module'
         },
         '<p>Modules are the building blocks of the application and they can be variety of things like components, services, utilities and etc.</p>' +
         '<p>Modules will provide you with a Galaxy.Scope instance which gives you the ability to import plugins and other type of' +
         ' resources.</p>',
         {
           tag: 'h2',
-          text: 'Galaxy.View'
+          id: 'view',
+          text: 'View'
         },
         '<p>View provide functionality for creating rich UI blocks. ' +
         'It is available as a plugin and can be retrieved by: <br/>' +
@@ -167,7 +172,8 @@ view.init({
         },
         {
           tag: 'h2',
-          text: 'Galaxy.View.ViewNode'
+          id: 'viewnode',
+          text: 'View.ViewNode'
         }
       ]
     }

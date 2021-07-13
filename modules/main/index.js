@@ -7,7 +7,7 @@ const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
 
 Scope.data.navService = navService;
-Scope.data.navItems = [
+Scope.data.routes = [
   {
     title: 'Start',
     link: '/start',
@@ -94,9 +94,7 @@ Scope.data.navItems = [
     }
   }
 ];
-// console.log(Scope.data);
 
-Scope.data.activeModule = null;
 Scope.data.todos = [
   {
     title: 'Should add new item to todos',
@@ -108,19 +106,24 @@ Scope.data.todos = [
   }
 ];
 
-Scope.data.fn = 'jh';
-
-isActiveModule.watch = ['nav.module', 'data.activeModule'];
-
-function isActiveModule(mod, actMod) {
+const isActiveModule = [
+  'nav.module',
+  'data.activeModule'
+].compute((mod, actMod) => {
   return mod === actMod;
-}
+});
+
+const isActiveLink = [
+  'data.currentPath',
+  'subNav.href'
+].compute((currentPath, href) => {
+  return currentPath === href;
+});
 
 router.init({
   '/': '/start',
-
   '/:moduleId': (params) => {
-    const nav = Scope.data.navItems.filter(function (item) {
+    const nav = Scope.data.routes.filter(function (item) {
       return item.module.id === params.moduleId;
     })[0];
 
@@ -135,11 +138,9 @@ router.notFound(function () {
   console.error('404, Not Found!');
 });
 
-// Scope.data.currentPath = null;
-Galaxy.Router.onChange = function (path) {
-  debugger
+Galaxy.Router.currentPath.subscribe((path) => {
   Scope.data.currentPath = path;
-};
+});
 
 view.config.cleanContainer = true;
 view.init([
@@ -175,7 +176,7 @@ view.init([
           'active': isActiveModule
         },
         repeat: {
-          data: '<>data.navItems',
+          data: '<>data.routes',
           as: 'nav'
         },
         animations: {
@@ -265,12 +266,7 @@ view.init([
               },
               tag: 'a',
               class: {
-                active: [
-                  '<>data.currentPath',
-                  '<>subNav.href', (cp, href) => {
-                    return cp === href;
-                  }
-                ]
+                active: isActiveLink
               },
               repeat: {
                 as: 'subNav',
@@ -291,15 +287,17 @@ view.init([
               href: '<>subNav.href',
               on: {
                 click: function (e) {
-
                   e.preventDefault();
-                  debugger;
                   router.navigate(this.data.subNav.href);
                 }
               }
             }
           }
         ]
+      },
+      {
+        tag: 'h3',
+        text:'<>data.router.activeRoute'
       }
     ]
   },
@@ -310,23 +308,25 @@ view.init([
     children: [
       {
         tag: 'main',
-        module: '<>data.activeModule',
         inputs: {
-          text: 'asdasd',
           content: 'This is the default content',
-          items: '<>data.todos',
-          subMenus: {
-            items: []
-          }
+          items: '<>data.todos'
         },
+        module: '<>data.activeModule',
         on: {
           test: function (event) {
             console.info(event);
           }
         }
-      }
+      },
+      // {
+      //   ...router.viewport,
+      //   on: {
+      //     test: (event) => {
+      //       console.info(event);
+      //     }
+      //   }
+      // }
     ]
   }
 ]);
-
-Galaxy.Router.onChange(location.pathname);
