@@ -6,16 +6,6 @@ const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
 
-// setTimeout(() => {
-//   setInterval(() => {
-//     if (Scope.data.activeModule.id === 'start') {
-//       router.navigate('todo-demo');
-//     } else {
-//       router.navigate('start');
-//     }
-//   }, 1500);
-// }, 6000);
-
 Scope.data.navService = navService;
 Scope.data.navItems = [
   {
@@ -138,12 +128,18 @@ router.init({
       navService.setSubNavItems([]);
       Scope.data.activeModule = nav.module;
     }
-  }
+  },
 });
 
 router.notFound(function () {
   console.error('404, Not Found!');
 });
+
+// Scope.data.currentPath = null;
+Galaxy.Router.onChange = function (path) {
+  debugger
+  Scope.data.currentPath = path;
+};
 
 view.config.cleanContainer = true;
 view.init([
@@ -174,6 +170,10 @@ view.init([
       },
       {
         tag: 'div',
+        class: {
+          'nav-item': true,
+          'active': isActiveModule
+        },
         repeat: {
           data: '<>data.navItems',
           as: 'nav'
@@ -195,18 +195,11 @@ view.init([
         children: [
           {
             tag: 'a',
-            inputs: {
-              nav: '<>nav'
-            },
-            class: {
-              'nav-item': true,
-              'active': isActiveModule
-            },
             href: '<>nav.link',
             on: {
               click: function (e) {
                 e.preventDefault();
-                router.navigate(this.inputs.nav.link);
+                router.navigate(this.data.nav.link);
               }
             },
             children: [
@@ -255,7 +248,6 @@ view.init([
               'data.activeModule.id',
               'data.navService.subNavItems.length',
               function (mid, ami, len) {
-                // console.log(this.properties, this);
                 return mid === ami && len;
               }
             ],
@@ -272,7 +264,14 @@ view.init([
                 }
               },
               tag: 'a',
-              class: 'nav-item sub',
+              class: {
+                active: [
+                  '<>data.currentPath',
+                  '<>subNav.href', (cp, href) => {
+                    return cp === href;
+                  }
+                ]
+              },
               repeat: {
                 as: 'subNav',
                 data: [
@@ -288,15 +287,14 @@ view.init([
                   }
                 ]
               },
-              inputs: {
-                subNav: '<>subNav'
-              },
               text: '<>subNav.title',
               href: '<>subNav.href',
               on: {
                 click: function (e) {
+
                   e.preventDefault();
-                  router.navigate(this.inputs.subNav.href);
+                  debugger;
+                  router.navigate(this.data.subNav.href);
                 }
               }
             }
@@ -330,3 +328,5 @@ view.init([
     ]
   }
 ]);
+
+Galaxy.Router.onChange(location.pathname);

@@ -35,7 +35,6 @@ const items = [
 navService.setSubNavItems(items);
 
 function setupRouter() {
-  // router.init(Object.assign({}, scrollToRouter, { '/': '/fundamentals' }));
   router.assign(scrollToRouter, { '/': '/fundamentals' });
 }
 
@@ -309,18 +308,7 @@ view.init({
         },
       ]
     },
-    {
-      tag: 'keyframe',
-      animations: {
-        enter: {
-          sequence: 'card',
-          duration: .1,
-          onComplete: function () {
-            setupRouter();
-          }
-        }
-      }
-    },
+    view.keyframe.enter(setupRouter, 'card', .1)
   ]
 });
 

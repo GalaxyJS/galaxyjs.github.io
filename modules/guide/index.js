@@ -32,18 +32,12 @@ const items = [
 navService.setSubNavItems(items);
 
 function setupRouter() {
-  // router.init(Object.assign({}, scrollToRouter, { '/': '/installation' }));
   router.assign(scrollToRouter, { '/': '/installation' });
 }
 
 view.init({
   class: 'card big',
   animations: animations.cardInOut,
-  lifecycle: {
-    postChildrenInsert: function () {
-      PR.prettyPrint();
-    }
-  },
   children: [
     {
       tag: 'img',
@@ -235,18 +229,8 @@ view.init({
         }
       ]
     },
-    {
-      tag: 'keyframe',
-      animations: {
-        enter: {
-          sequence: 'card',
-          duration: .1,
-          onComplete: function () {
-            setupRouter();
-          }
-        }
-      }
-    }
+    view.keyframe.enter(PR.prettyPrint),
+    view.keyframe.enter(setupRouter, 'card')
   ]
 });
 

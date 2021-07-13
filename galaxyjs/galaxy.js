@@ -2683,6 +2683,10 @@ Galaxy.View = /** @class */(function (G) {
       type: 'prop',
       name: 'value'
     },
+    nodeValue: {
+      type: 'prop',
+      name: 'nodeValue'
+    },
     scrollTop: {
       type: 'prop',
       name: 'scrollTop'
@@ -3328,6 +3332,52 @@ Galaxy.View = /** @class */(function (G) {
     nextFrame: function (callback) {
       return window.requestAnimationFrame(callback);
     },
+    keyframe: {
+      /**
+       *
+       * @param {Function} onComplete
+       * @param {string} [sequence]
+       * @param {number} [duration=.01]
+       * @returns {{animations: {enter: {duration: number, sequence, onComplete}}, tag: string}}
+       */
+      enter: function (onComplete, sequence, duration) {
+        duration = duration || .01;
+
+        return {
+          tag: 'comment',
+          nodeValue: 'keyframe:enter',
+          animations: {
+            enter: {
+              duration,
+              sequence,
+              onComplete
+            }
+          }
+        };
+      },
+      /**
+       *
+       * @param {Function} onComplete
+       * @param {string} [sequence]
+       * @param {number} [duration=.01]
+       * @returns {{animations: {enter: {duration: number, sequence, onComplete}}, tag: string}}
+       */
+      leave: function (onComplete, sequence, duration) {
+        duration = duration || .01;
+
+        return {
+          tag: 'comment',
+          nodeValue: 'keyframe:leave',
+          animations: {
+            leave: {
+              duration,
+              sequence,
+              onComplete
+            }
+          }
+        };
+      }
+    },
     init: function (blueprint) {
       const _this = this;
 
@@ -3362,6 +3412,8 @@ Galaxy.View = /** @class */(function (G) {
         nodes.forEach(function (node) {
           parent.node.appendChild(node);
         });
+      } else if (typeof blueprint === 'function') {
+        blueprint();
       } else if (blueprint instanceof Array) {
         for (i = 0, len = blueprint.length; i < len; i++) {
           _this.createNode(blueprint[i], parent, scopeData, null, refNode, nodeData);
@@ -3391,6 +3443,8 @@ Galaxy.View = /** @class */(function (G) {
         // Value assignment stage
         for (i = 0, len = needInitKeys.length; i < len; i++) {
           attributeName = needInitKeys[i];
+          if (attributeName === 'children') continue;
+
           attributeValue = blueprint[attributeName];
           const bindings = View.getBindings(attributeValue);
           if (bindings.propertyKeysPaths) {
@@ -4107,10 +4161,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     if (tagName === 'comment') {
       return document.createComment('ViewNode');
-    }
-
-    if (tagName === 'keyframe') {
-      return document.createComment('keyframe');
     }
 
     return document.createElement(tagName);
@@ -4880,6 +4930,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @property {object} [from]
    * @property {object} [to]
    * @property {string} [addTo]
+   * @property {Function} [onStart]
    */
 
   AnimationMeta.ANIMATIONS = {};
@@ -4949,6 +5000,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return ((duration * 10) + (Number(po) * 10)) / 10;
   };
 
+  AnimationMeta.createStep = function (stepDescription, onStart, onComplete, viewNode) {
+    const step = Object.assign({}, stepDescription);
+    step.callbackScope = viewNode;
+    step.onStart = onStart;
+    step.onComplete = onComplete;
+
+    return step;
+  };
   /**
    *
    * @param {Galaxy.View.ViewNode} node
@@ -5191,15 +5250,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     add: function (viewNode, config, onComplete) {
       const _this = this;
-      const to = Object.assign({}, config.to || {});
-
-      let onStart = config.onStart;
-
-      to.callbackScope = viewNode;
-      // to.onStartParams = [viewNode];
-      // to.onUpdateParams = [viewNode]
-      to.onStart = onStart;
-      to.onComplete = onComplete;
 
       let tween = null;
       let duration = config.duration;
@@ -5208,24 +5258,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (config.from && config.to) {
-        tween = gsap.fromTo(viewNode.node,
-          duration || 0,
-          config.from || {},
-          to);
+        const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
+        tween = gsap.fromTo(viewNode.node, duration || 0, config.from, to);
       } else if (config.from) {
-        let from = Object.assign({}, config.from || {});
-
-        from.callbackScope = viewNode;
-        from.onStartParams = [viewNode];
-        from.onStart = onStart;
-        from.onComplete = onComplete;
-        tween = gsap.from(viewNode.node,
-          duration || 0,
-          from || {});
+        const from = AnimationMeta.createStep(config.from, config.onStart, onComplete, viewNode);
+        tween = gsap.from(viewNode.node, duration || 0, from);
       } else {
-        tween = gsap.to(viewNode.node,
-          duration || 0,
-          to || {});
+        const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
+        tween = gsap.to(viewNode.node, duration || 0, to);
       }
 
       if (_this.timeline.getChildren(false).length === 0) {
@@ -5240,7 +5280,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
     }
   };
-  window.AM = AnimationMeta;
 })(Galaxy);
 
 /* global Galaxy */
@@ -6306,6 +6345,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   // SimpleRouter.FOLLOWED_BY_SLASH_REGEXP = '(?:\/$|$)';
   // SimpleRouter.MATCH_REGEXP_FLAGS = '';
 
+  SimpleRouter.onChange = function () {
+
+  };
+
+  SimpleRouter.mainListener = function (e) {
+    SimpleRouter.onChange(location.pathname, e);
+  };
+
+  window.addEventListener('popstate', SimpleRouter.mainListener);
+
   function SimpleRouter(module) {
     const _this = this;
     this.config = {
@@ -6406,6 +6455,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return normalizedHash.replace(this.root, '/') || '/';
     },
 
+    onProceed: function () {
+
+    },
+
     callMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
       const path = _this.normalizeHash(hash);
@@ -6445,7 +6498,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
 
         if (_this.oldResolveId !== resolveId) {
-          // _this.oldResolveId = null;
           _this.oldResolveId = resolveId;
 
           const routeIndex = routesPath.indexOf(dynamicRoute.id);
@@ -6541,6 +6593,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       start: function () { }
     };
   });
+
+  G.Router = SimpleRouter;
 
 })(Galaxy);
 
