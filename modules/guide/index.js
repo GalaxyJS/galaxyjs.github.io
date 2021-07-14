@@ -32,7 +32,12 @@ const items = [
 navService.setSubNavItems(items);
 
 function setupRouter() {
-  router.assign(scrollToRouter, { '/': '/installation' });
+  const routes = scrollToRouter.slice(0);
+  routes[0] = {
+    path: '/',
+    redirectTo: '/installation'
+  };
+  router.init(routes);
 }
 
 view.init({

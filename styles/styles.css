@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap');
 /*@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;200;300;400;500;600;700&display=swap');*/
 /*@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');*/
 /*@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');*/
@@ -101,6 +102,8 @@ h3 {
 h4 {
   font-size: 1.2em;
   line-height: 22px;
+  color: #484848;
+  margin: 15px 0;
 }
 
 h5 {
@@ -142,9 +145,11 @@ h2 > a:hover {
   box-sizing: border-box;
 }
 
+button {
+  font-family: 'Montserrat', sans-serif;
+}
+
 html, body {
-  /*font-family: 'Nunito', sans-serif;*/
-  /*font-family: 'Quicksand', sans-serif;*/
   font-size: 16px;
   line-height: 22px;
   position: relative;
@@ -361,11 +366,19 @@ p.important {
   margin-top: 45px;
 }
 
+.content > h2 + h3, .content > h2 + h4 {
+  margin-top: 0;
+}
+
 .content > h2:first-child {
   margin-top: 15px;
 }
 
 .content > h3 {
+  margin-top: 30px;
+}
+
+.content > h4 {
   margin-top: 30px;
 }
 
@@ -412,6 +425,10 @@ p.important {
 
 .example-box > *:last-child {
   margin-bottom: 0;
+}
+
+.example-box h5 {
+  margin-bottom: 15px;
 }
 
 ul {
@@ -744,7 +761,7 @@ input, select {
   padding: 10px 8px;
   border: 2px solid transparent;
   border-radius: 5px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   outline: none;
 }
 
@@ -771,6 +788,17 @@ input, select {
   border-color: #607e8c;
 }
 
+input.w-50 {
+  width: calc(50% - 3px);
+  margin-right: 3px;
+  display: inline-block;
+}
+
+input.w-50 + .w-50 {
+  margin-left: 3px;
+  margin-right: 0;
+}
+
 .color-item {
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, .1);
@@ -784,18 +812,18 @@ input, select {
 }
 
 button {
-  background-color: #bfbfbf;
-  /*background-color: transparent;*/
-  border: 2px solid transparent;
-  color: rgba(0, 0, 0, .87);
+  background-color: transparent;
+  border: 1px solid;
+  color: #666;
   cursor: pointer;
-  font-weight: 600;
-  margin: 0 .6em;
+  font-weight: 500;
+  margin: 0 10px;
   outline: none;
-  padding: .6em 1em;
-  border-radius: 3px;
+  line-height: 22px;
+  padding: 8px 14px;
+  border-radius: 5px;
   transition-property: transform, border-color, background-color;
-  transition: all 90ms linear;
+  transition: all .1s linear;
   user-select: none;
   display: inline-block;
   text-transform: uppercase;
@@ -810,13 +838,17 @@ button:last-of-type {
 }
 
 button:hover, button:focus {
-  border-color: #909090;
-  /*box-shadow: 0 0 5px rgba(0,0,0,.1), 0 5px 15px rgba(0,0,0,.1);*/
+  color: #16a7e0;
 }
 
 button:active {
-  background-color: #909090;
-  transform: scale(.94);
+  /*color: #fff;*/
+  /*border-color: #16a7e0;*/
+  /*background-color: #16a7e0;*/
+  box-shadow: 0 0 6px #16a7e0, inset 0 0 2px #16a7e0;
+  /*text-shadow: 0 0 2px #16a7e0;*/
+  /*transform: scale(.99);*/
+  transition-duration: 0ms;
 }
 
 button:disabled {
@@ -825,7 +857,8 @@ button:disabled {
 }
 
 button:disabled:hover {
-  border-color: transparent;
+  color: #666;
+  /*border-color: transparent;*/
 }
 
 .fa-end {

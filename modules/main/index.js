@@ -120,19 +120,144 @@ const isActiveLink = [
   return currentPath === href;
 });
 
-router.init({
-  '/': '/start',
-  '/:moduleId': (params) => {
-    const nav = Scope.data.routes.filter(function (item) {
-      return item.module.id === params.moduleId;
-    })[0];
+// router.init({
+//   '/': '/start',
+//   '/:moduleId': (params) => {
+//     const nav = Scope.data.routes.filter(function (item) {
+//       return item.module.id === params.moduleId;
+//     })[0];
+//
+//     if (nav) {
+//       navService.setSubNavItems([]);
+//       Scope.data.activeModule = nav.module;
+//     }
+//   },
+// });
 
-    if (nav) {
-      navService.setSubNavItems([]);
-      Scope.data.activeModule = nav.module;
+router.init([
+  {
+    route: '/',
+    redirectTo: '/start'
+  },
+  {
+    route: '/start',
+    title: 'Start',
+    description: '',
+    icon: 'fas fa-play',
+    module: {
+      id: 'start',
+      url: 'modules/todo/index.js'
     }
   },
-});
+  {
+    route: '/:moduleId',
+    handle: (params) => {
+      const nav = Scope.data.routes.filter(function (item) {
+        return item.module.id === params.moduleId;
+      })[0];
+
+      if (nav) {
+        navService.setSubNavItems([]);
+        Scope.data.activeModule = nav.module;
+      }
+    }
+  }
+]);
+
+// router.init([
+//   {
+//     route: '/start',
+//     title: 'Start',
+//     description: '',
+//     icon: 'fas fa-play',
+//     module: {
+//       id: 'start',
+//       url: 'modules/start/index.js'
+//     }
+//   },
+//   {
+//     route: '/guide',
+//     title: 'Guide',
+//     description: '',
+//     icon: 'fas fa-map',
+//     module: {
+//       id: 'guide',
+//       url: 'modules/guide/index.js'
+//     },
+//     children: [
+//
+//     ]
+//   },
+//   {
+//     route: '/reactive',
+//     title: 'Reactive',
+//     description: '',
+//     icon: 'fas fa-exchange-alt',
+//     module: {
+//       id: 'reactive',
+//       url: 'modules/reactive/index.js'
+//     }
+//   },
+//   {
+//     route: '/conditional-rendering',
+//     title: 'Conditional Rendering',
+//     description: '',
+//     icon: 'fas fa-exclamation-triangle',
+//     module: {
+//       id: 'conditional-rendering',
+//       url: 'modules/conditional-rendering/index.js'
+//     }
+//   },
+//   {
+//     route: '/list-rendering',
+//     title: 'List Rendering',
+//     description: '',
+//     icon: 'fas fa-list-ul',
+//     module: {
+//       fresh: true,
+//       id: 'list-rendering',
+//       url: 'modules/list-rendering/index.js'
+//     }
+//   },
+//   {
+//     route: '/animations',
+//     title: 'Animations',
+//     description: '',
+//     icon: 'fas fa-spinner',
+//     module: {
+//       id: 'animations',
+//       url: 'modules/animations/index.js'
+//     }
+//   },
+//   {
+//     route: '/api',
+//     title: 'API',
+//     description: '',
+//     icon: 'fas fa-code',
+//     module: {
+//       id: 'api',
+//       url: 'modules/api/index.js'
+//     }
+//   },
+//   {
+//     route: '/todo-demo',
+//     title: 'ToDo - Demo',
+//     description: '',
+//     module: {
+//       id: 'todo-demo',
+//       url: 'modules/todo/index.js'
+//     }
+//   },
+//   {
+//     route: '/vuejs-replica-demo',
+//     title: 'VueJS Replica - Demo',
+//     description: '',
+//     module: {
+//       id: 'vuejs-replica-demo',
+//       url: 'modules/vuejs-replica/index.js'
+//     }
+//   }
+// ]);
 
 router.notFound(function () {
   console.error('404, Not Found!');
@@ -228,7 +353,8 @@ view.init([
                   ease: 'power1.inOut',
                 },
                 duration: function () {
-                  return this.inputs.moduleId === Scope.data.activeModule.id && navService.subNavItems.length ? .2 : 0;
+                  // return this.inputs.moduleId === Scope.data.activeModule.id && navService.subNavItems.length ? .2 : 0;
+                  return .2;
                 },
                 position: '-=.2'
               },
@@ -294,10 +420,6 @@ view.init([
             }
           }
         ]
-      },
-      {
-        tag: 'h3',
-        text:'<>data.router.activeRoute'
       }
     ]
   },
@@ -313,6 +435,7 @@ view.init([
           items: '<>data.todos'
         },
         module: '<>data.activeModule',
+        // module: '<>data.router.activeModule',
         on: {
           test: function (event) {
             console.info(event);

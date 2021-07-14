@@ -8,7 +8,8 @@ const exapndable = Scope.import('services/expandable.js');
 const scrollToRouter = Scope.import('services/scroll-to-router.js');
 
 const arrayInstanceExample = Scope.importAsText('./array-instance.example.text');
-const computedBindExample = Scope.importAsText('./computed-bind.example.js');
+const inlineComputedBindExample = Scope.importAsText('./inline-computed-bind.example.js');
+const arrayComputedBindExample = Scope.importAsText('./array-computed-bind.example.js');
 const moduleWithInputsExample = Scope.importAsText('./module-with-inputs.example.text');
 const classAndStyleExample = Scope.importAsText('./class-and-style.example.js');
 const viewNodeInputsExample = Scope.importAsText('./view-node-inputs.example.js');
@@ -163,7 +164,7 @@ view.init({
           ]
         },
         '<h2>ArrayChange</h2>' +
-        '<h3>Galaxy.View.ArrayChange</h3>' +
+        '<h4>Galaxy.View.ArrayChange</h4>' +
         '<p>An ArrayChange object represents the changes that has been made to an reactive array, consider the following code</p>' +
         '<pre class="prettyprint lang-js">' +
         'Scope.data.list = [\'Amsterdam\',\'Paris\']; \n' +
@@ -211,7 +212,7 @@ view.init({
               ],
               on: {
                 click: function () {
-                  Scope.data.ps.color = 'green';
+                  // Scope.data.ps.color = 'green';
                   Scope.data.list.push('Budapest');
                 }
               }
@@ -243,24 +244,36 @@ view.init({
             }
           ]
         },
-        {
-          tag: 'h2',
-          id: 'computed-binds',
-          text: 'Computed binds'
-        },
+
+        '<h2 id="computed-binds">Computed binds</h2>',
         '<p>Sometimes you might want to manipulate a bound value before it\'s rendered. To do this you need a computed bind.</p>',
         '<p>A computed bind is basically a function that watches the properties you specify for it and gets called anytime any of those properties changes.</p>',
         {
           module: {
-            url: './computed-bind.example.js'
+            url: './inline-computed-bind.example.js'
           }
         },
         {
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: computedBindExample
+          text: inlineComputedBindExample
         },
+
+        '<h4>Array.prototype.compute</h4>',
+        '<p>For higher code quality we suggest that instead of using inline compute syntax, you use <code class="prettyprint lang-js">Array.prototype.compute</code> function. Here is an example:</p>',
+        {
+          module: {
+            url: './array-computed-bind.example.js'
+          }
+        },
+        {
+          tag: 'pre',
+          exapndable: exapndable,
+          class: 'prettyprint lang-js',
+          text: arrayComputedBindExample
+        },
+
         {
           tag: 'h2',
           id: 'class-and-style',
