@@ -7,93 +7,93 @@ const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
 
 Scope.data.navService = navService;
-Scope.data.routes = [
-  {
-    title: 'Start',
-    link: '/start',
-    icon: 'fas fa-play',
-    module: {
-      id: 'start',
-      url: 'modules/start/index.js'
-    }
-  },
-  {
-    title: 'Guide',
-    link: '/guide',
-    icon: 'fas fa-map',
-    module: {
-      id: 'guide',
-      url: 'modules/guide/index.js'
-    }
-  },
-  {
-    title: 'Reactive',
-    link: '/reactive',
-    icon: 'fas fa-exchange-alt',
-    module: {
-      id: 'reactive',
-      url: 'modules/reactive/index.js'
-    }
-  },
-  {
-    title: 'Conditional Rendering',
-    link: '/conditional-rendering',
-    icon: 'fas fa-exclamation-triangle',
-    module: {
-      id: 'conditional-rendering',
-      url: 'modules/conditional-rendering/index.js'
-    }
-  },
-
-  {
-    title: 'List Rendering',
-    link: '/list-rendering',
-    icon: 'fas fa-list-ul',
-    module: {
-      fresh: true,
-      id: 'list-rendering',
-      url: 'modules/list-rendering/index.js'
-    }
-  },
-
-  {
-    title: 'Animations',
-    link: '/animations',
-    icon: 'fas fa-spinner',
-    module: {
-      id: 'animations',
-      url: 'modules/animations/index.js'
-    }
-  },
-
-  {
-    title: 'API',
-    link: '/api',
-    icon: 'fas fa-code',
-    module: {
-      id: 'api',
-      url: 'modules/api/index.js'
-    }
-  },
-
-  {
-    title: 'ToDo - Demo',
-    link: '/todo-demo',
-    module: {
-      id: 'todo-demo',
-      url: 'modules/todo/index.js'
-    }
-  },
-
-  {
-    title: 'VueJS Replica - Demo',
-    link: '/vuejs-replica-demo',
-    module: {
-      id: 'vuejs-replica-demo',
-      url: 'modules/vuejs-replica/index.js'
-    }
-  }
-];
+// Scope.data.routes = [
+//   {
+//     title: 'Start',
+//     link: '/start',
+//     icon: 'fas fa-play',
+//     module: {
+//       id: 'start',
+//       url: 'modules/start/index.js'
+//     }
+//   },
+//   {
+//     title: 'Guide',
+//     link: '/guide',
+//     icon: 'fas fa-map',
+//     module: {
+//       id: 'guide',
+//       url: 'modules/guide/index.js'
+//     }
+//   },
+//   {
+//     title: 'Reactive',
+//     link: '/reactive',
+//     icon: 'fas fa-exchange-alt',
+//     module: {
+//       id: 'reactive',
+//       url: 'modules/reactive/index.js'
+//     }
+//   },
+//   {
+//     title: 'Conditional Rendering',
+//     link: '/conditional-rendering',
+//     icon: 'fas fa-exclamation-triangle',
+//     module: {
+//       id: 'conditional-rendering',
+//       url: 'modules/conditional-rendering/index.js'
+//     }
+//   },
+//
+//   {
+//     title: 'List Rendering',
+//     link: '/list-rendering',
+//     icon: 'fas fa-list-ul',
+//     module: {
+//       fresh: true,
+//       id: 'list-rendering',
+//       url: 'modules/list-rendering/index.js'
+//     }
+//   },
+//
+//   {
+//     title: 'Animations',
+//     link: '/animations',
+//     icon: 'fas fa-spinner',
+//     module: {
+//       id: 'animations',
+//       url: 'modules/animations/index.js'
+//     }
+//   },
+//
+//   {
+//     title: 'API',
+//     link: '/api',
+//     icon: 'fas fa-code',
+//     module: {
+//       id: 'api',
+//       url: 'modules/api/index.js'
+//     }
+//   },
+//
+//   {
+//     title: 'ToDo - Demo',
+//     link: '/todo-demo',
+//     module: {
+//       id: 'todo-demo',
+//       url: 'modules/todo/index.js'
+//     }
+//   },
+//
+//   {
+//     title: 'VueJS Replica - Demo',
+//     link: '/vuejs-replica-demo',
+//     module: {
+//       id: 'vuejs-replica-demo',
+//       url: 'modules/vuejs-replica/index.js'
+//     }
+//   }
+// ];
 
 Scope.data.todos = [
   {
@@ -107,37 +107,25 @@ Scope.data.todos = [
 ];
 
 const isActiveModule = [
-  'nav.module',
-  'data.activeModule'
+  'nav.route',
+  'data.router.activeRoute'
 ].compute((mod, actMod) => {
   return mod === actMod;
 });
 
 const isActiveLink = [
-  'data.currentPath',
+  'data.router.activeRoute',
   'subNav.href'
 ].compute((currentPath, href) => {
+  console.log(currentPath, href)
   return currentPath === href;
 });
-
-// router.init({
-//   '/': '/start',
-//   '/:moduleId': (params) => {
-//     const nav = Scope.data.routes.filter(function (item) {
-//       return item.module.id === params.moduleId;
-//     })[0];
-//
-//     if (nav) {
-//       navService.setSubNavItems([]);
-//       Scope.data.activeModule = nav.module;
-//     }
-//   },
-// });
 
 router.init([
   {
     route: '/',
-    redirectTo: '/start'
+    redirectTo: '/start',
+    hidden: true
   },
   {
     route: '/start',
@@ -145,119 +133,31 @@ router.init([
     description: '',
     icon: 'fas fa-play',
     module: {
-      id: 'start',
-      url: 'modules/todo/index.js'
+      url: 'modules/start/index.js'
     }
   },
   {
-    route: '/:moduleId',
-    handle: (params) => {
-      const nav = Scope.data.routes.filter(function (item) {
-        return item.module.id === params.moduleId;
-      })[0];
-
-      if (nav) {
-        navService.setSubNavItems([]);
-        Scope.data.activeModule = nav.module;
-      }
+    title: 'Guide',
+    route: '/guide',
+    icon: 'fas fa-map',
+    module: {
+      url: 'modules/guide/index.js'
     }
-  }
-]);
-
-// router.init([
-//   {
-//     route: '/start',
-//     title: 'Start',
-//     description: '',
-//     icon: 'fas fa-play',
-//     module: {
-//       id: 'start',
-//       url: 'modules/start/index.js'
-//     }
-//   },
-//   {
-//     route: '/guide',
-//     title: 'Guide',
-//     description: '',
-//     icon: 'fas fa-map',
-//     module: {
-//       id: 'guide',
-//       url: 'modules/guide/index.js'
-//     },
-//     children: [
-//
-//     ]
-//   },
-//   {
-//     route: '/reactive',
-//     title: 'Reactive',
-//     description: '',
-//     icon: 'fas fa-exchange-alt',
-//     module: {
-//       id: 'reactive',
-//       url: 'modules/reactive/index.js'
-//     }
-//   },
-//   {
-//     route: '/conditional-rendering',
-//     title: 'Conditional Rendering',
-//     description: '',
-//     icon: 'fas fa-exclamation-triangle',
-//     module: {
-//       id: 'conditional-rendering',
-//       url: 'modules/conditional-rendering/index.js'
-//     }
-//   },
-//   {
-//     route: '/list-rendering',
-//     title: 'List Rendering',
-//     description: '',
-//     icon: 'fas fa-list-ul',
-//     module: {
-//       fresh: true,
-//       id: 'list-rendering',
-//       url: 'modules/list-rendering/index.js'
-//     }
-//   },
-//   {
-//     route: '/animations',
-//     title: 'Animations',
-//     description: '',
-//     icon: 'fas fa-spinner',
-//     module: {
-//       id: 'animations',
-//       url: 'modules/animations/index.js'
-//     }
-//   },
-//   {
-//     route: '/api',
-//     title: 'API',
-//     description: '',
-//     icon: 'fas fa-code',
-//     module: {
-//       id: 'api',
-//       url: 'modules/api/index.js'
-//     }
-//   },
-//   {
-//     route: '/todo-demo',
-//     title: 'ToDo - Demo',
-//     description: '',
-//     module: {
-//       id: 'todo-demo',
-//       url: 'modules/todo/index.js'
-//     }
-//   },
-//   {
-//     route: '/vuejs-replica-demo',
-//     title: 'VueJS Replica - Demo',
-//     description: '',
-//     module: {
-//       id: 'vuejs-replica-demo',
-//       url: 'modules/vuejs-replica/index.js'
-//     }
-//   }
-// ]);
+  },
+  // {
+  //   route: '/:moduleId',
+  //   handle: (params) => {
+  //     const nav = Scope.data.routes.filter(function (item) {
+  //       return item.module.id === params.moduleId;
+  //     })[0];
+  //
+  //     if (nav) {
+  //       navService.setSubNavItems([]);
+  //       Scope.data.activeModule = nav.module;
+  //     }
+  //   }
+  // }
+]).start();
 
 router.notFound(function () {
   console.error('404, Not Found!');
@@ -301,7 +201,7 @@ view.init([
           'active': isActiveModule
         },
         repeat: {
-          data: '<>data.routes',
+          data: '<>data.router.routes',
           as: 'nav'
         },
         animations: {
@@ -321,11 +221,11 @@ view.init([
         children: [
           {
             tag: 'a',
-            href: '<>nav.link',
+            href: '<>nav.route',
             on: {
               click: function (e) {
                 e.preventDefault();
-                router.navigate(this.data.nav.link);
+                router.navigate(this.data.nav.route);
               }
             },
             children: [
@@ -371,16 +271,13 @@ view.init([
               }
             },
             $if: [
-              'nav.module.id',
-              'data.activeModule.id',
-              'data.navService.subNavItems.length',
-              function (mid, ami, len) {
-                return mid === ami && len;
+              'nav.route',
+              'data.router.activeRoute',
+              // 'data.router.activeLink.children.length',
+              function (mid, ami) {
+                return mid === ami ;
               }
             ],
-            inputs: {
-              moduleId: '<>nav.module.id'
-            },
             class: {
               'sub-nav-container': true,
             },
@@ -397,10 +294,11 @@ view.init([
               repeat: {
                 as: 'subNav',
                 data: [
-                  'nav.module',
-                  'data.activeModule',
-                  'data.navService.subNavItems',
+                  'nav.route',
+                  'data.router.activeRoute',
+                  'data.router.activeLink.children',
                   function (m, am, c) {
+                    console.log(m, am,c)
                     if (m === am) {
                       return c;
                     }
@@ -410,7 +308,7 @@ view.init([
                 ]
               },
               text: '<>subNav.title',
-              href: '<>subNav.href',
+              href: '<>subNav.route',
               on: {
                 click: function (e) {
                   e.preventDefault();
@@ -429,27 +327,18 @@ view.init([
     class: 'main-content',
     children: [
       {
-        tag: 'main',
+        ...router.viewport,
         inputs: {
           content: 'This is the default content',
           items: '<>data.todos'
         },
-        module: '<>data.activeModule',
-        // module: '<>data.router.activeModule',
         on: {
           test: function (event) {
             console.info(event);
           }
         }
-      },
-      // {
-      //   ...router.viewport,
-      //   on: {
-      //     test: (event) => {
-      //       console.info(event);
-      //     }
-      //   }
-      // }
+      }
     ]
   }
 ]);
+console.log(router.data)

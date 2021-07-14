@@ -14,31 +14,27 @@ Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
 
-const items = [
+const routes = scrollToRouter.slice(0);
+routes[0] = {
+  route: '/',
+  redirectTo: '/installation',
+  hidden: true
+};
+
+router.init(routes.concat([
   {
     title: 'Installation',
-    href: '/guide/installation'
+    route: '/guide/installation'
   },
   {
     title: 'Getting started',
-    href: '/guide/getting-started'
+    route: '/guide/getting-started'
   },
   {
     title: 'UI Creation',
-    href: '/guide/ui-creation'
+    route: '/guide/ui-creation'
   }
-];
-
-navService.setSubNavItems(items);
-
-function setupRouter() {
-  const routes = scrollToRouter.slice(0);
-  routes[0] = {
-    path: '/',
-    redirectTo: '/installation'
-  };
-  router.init(routes);
-}
+]));
 
 view.init({
   class: 'card big',
@@ -235,7 +231,7 @@ view.init({
       ]
     },
     view.keyframe.enter(PR.prettyPrint),
-    view.keyframe.enter(setupRouter, 'card')
+    view.keyframe.enter(() => router.start(), 'card')
   ]
 });
 
