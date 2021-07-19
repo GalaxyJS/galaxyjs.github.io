@@ -3,7 +3,7 @@ const test = Scope.import('./style.css');
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const router = Scope.import('galaxy/router');
-const navService = Scope.import('services/navigation.js');
+// const navService = Scope.import('services/navigation.js');
 
 const items = [
   {
@@ -27,7 +27,7 @@ const items = [
     href: '/api/viewnode'
   }
 ];
-navService.setSubNavItems(items);
+// navService.setSubNavItems(items);
 Scope.data.api = {
   scope: [
     {
@@ -72,12 +72,22 @@ Scope.data.api = {
   ]
 };
 
-router.init({
-  '/': '/scope',
-  '/:subId': function (params, pp) {
-    console.log('API Router', params, pp, Scope);
+router.init([
+  {
+    path: '/',
+    redirectTo: '/scope'
+  },
+  {
+    path: '/:subId',
+    handle: (params, pp) => {
+      debugger;
+    }
+  },
+  {
+    path: '/scope',
+    handle: () => console.log('scope has hit')
   }
-});
+]).start();
 
 view.init({
   tag: 'div',

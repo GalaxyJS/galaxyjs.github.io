@@ -123,26 +123,34 @@ const isActiveLink = [
 
 router.init([
   {
-    route: '/',
+    path: '/',
     redirectTo: '/start',
     hidden: true
   },
   {
-    route: '/start',
+    path: '/start',
+    module: {
+      path: 'modules/start/index.js'
+    },
     title: 'Start',
     description: '',
     icon: 'fas fa-play',
-    module: {
-      url: 'modules/start/index.js'
-    }
   },
   {
-    title: 'Guide',
-    route: '/guide',
-    icon: 'fas fa-map',
+    path: '/guide',
     module: {
-      url: 'modules/guide/index.js'
-    }
+      path: 'modules/guide/index.js'
+    },
+    title: 'Guide',
+    icon: 'fas fa-map',
+  },
+  {
+    path: '/api',
+    module: {
+      path: 'modules/api/index.js'
+    },
+    title: 'API',
+    icon: 'fas fa-code',
   },
   // {
   //   route: '/:moduleId',
@@ -161,10 +169,6 @@ router.init([
 
 router.notFound(function () {
   console.error('404, Not Found!');
-});
-
-Galaxy.Router.currentPath.subscribe((path) => {
-  Scope.data.currentPath = path;
 });
 
 view.config.cleanContainer = true;
@@ -196,14 +200,11 @@ view.init([
       },
       {
         tag: 'div',
-        class: {
-          'nav-item': true,
-          'active': isActiveModule
-        },
         repeat: {
-          data: '<>data.router.routes',
+          data: '<>router.routes',
           as: 'nav'
         },
+        $if: '<>!nav.hidden',
         animations: {
           enter: {
             sequence: 'card',
@@ -218,14 +219,18 @@ view.init([
             duration: .3
           }
         },
+        class: {
+          'nav-item': true,
+          'active': '<>nav.isActive'
+        },
         children: [
           {
             tag: 'a',
-            href: '<>nav.route',
+            href: '<>nav.path',
             on: {
               click: function (e) {
                 e.preventDefault();
-                router.navigate(this.data.nav.route);
+                router.navigate(this.data.nav.path);
               }
             },
             children: [
@@ -271,8 +276,8 @@ view.init([
               }
             },
             $if: [
-              'nav.route',
-              'data.router.activeRoute',
+              'nav.path',
+              'router.activeRoute',
               // 'data.router.activeLink.children.length',
               function (mid, ami) {
                 return mid === ami ;
@@ -294,9 +299,9 @@ view.init([
               repeat: {
                 as: 'subNav',
                 data: [
-                  'nav.route',
-                  'data.router.activeRoute',
-                  'data.router.activeLink.children',
+                  'nav.path',
+                  'router.activeRoute',
+                  'router.activeLink.children',
                   function (m, am, c) {
                     console.log(m, am,c)
                     if (m === am) {
@@ -308,7 +313,7 @@ view.init([
                 ]
               },
               text: '<>subNav.title',
-              href: '<>subNav.route',
+              href: '<>subNav.path',
               on: {
                 click: function (e) {
                   e.preventDefault();
