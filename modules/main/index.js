@@ -124,8 +124,7 @@ const isActiveLink = [
 router.init([
   {
     path: '/',
-    redirectTo: '/start',
-    hidden: true
+    redirectTo: '/start'
   },
   {
     path: '/start',

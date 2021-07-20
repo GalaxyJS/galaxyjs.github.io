@@ -27,14 +27,14 @@ router.init([
     redirectTo: '/installation'
   },
   {
-    path: '/:subId',
+    path: '/:section',
     hidden: true,
     handle: (params) => {
-      if (!document.querySelector('#' + params.path)) {
+      if (!document.querySelector('#' + params.section)) {
         return true;
       }
 
-      gsap.to('#main-content', { scrollTo: { y: '#' + params.path, offsetY: 30 }, duration: .3 });
+      gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
       return true;
     }
   },
@@ -43,7 +43,7 @@ router.init([
     title: 'Installation'
   },
   {
-    path: '/guide/getting-started',
+    path: '/getting-started',
     title: 'Getting Started'
   },
   {
