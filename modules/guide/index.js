@@ -21,20 +21,50 @@ routes[0] = {
   hidden: true
 };
 
-router.init(routes.concat([
+router.init([
   {
-    title: 'Installation',
-    route: '/guide/installation'
+    path: '/',
+    redirectTo: '/installation'
   },
   {
-    title: 'Getting started',
-    route: '/guide/getting-started'
+    path: '/:subId',
+    hidden: true,
+    handle: (params) => {
+      if (!document.querySelector('#' + params.path)) {
+        return true;
+      }
+
+      gsap.to('#main-content', { scrollTo: { y: '#' + params.path, offsetY: 30 }, duration: .3 });
+      return true;
+    }
   },
   {
-    title: 'UI Creation',
-    route: '/guide/ui-creation'
+    path: '/installation',
+    title: 'Installation'
+  },
+  {
+    path: '/guide/getting-started',
+    title: 'Getting Started'
+  },
+  {
+    path: '/guide/ui-creation',
+    title: 'UI Creation'
   }
-]));
+]);
+// router.init(routes.concat([
+//   {
+//     title: 'Installation',
+//     route: '/guide/installation'
+//   },
+//   {
+//     title: 'Getting started',
+//     route: '/guide/getting-started'
+//   },
+//   {
+//     title: 'UI Creation',
+//     route: '/guide/ui-creation'
+//   }
+// ]));
 
 view.init({
   class: 'card big',

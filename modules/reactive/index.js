@@ -36,7 +36,7 @@ const items = [
 navService.setSubNavItems(items);
 
 function setupRouter() {
-  router.assign(scrollToRouter, { '/': '/fundamentals' });
+  // router.assign(scrollToRouter, { '/': '/fundamentals' });
 }
 
 view.init({

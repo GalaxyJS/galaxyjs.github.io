@@ -78,14 +78,20 @@ router.init([
     redirectTo: '/scope'
   },
   {
-    path: '/:subId',
+    path: '/:section',
+    hidden: true,
     handle: (params, pp) => {
-      debugger;
+      if (!document.querySelector('#' + params.section)){
+        return true;
+      }
+
+      gsap.to('#main-content', { scrollTo: { y: '#' + params.path, offsetY: 30 }, duration: .3 });
+      return true;
     }
   },
   {
     path: '/scope',
-    handle: () => console.log('scope has hit')
+    title: 'Scope'
   }
 ]).start();
 

@@ -3693,12 +3693,23 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           thisRD.oldValue[key] = value;
           value = val;
 
-          // This means that the property suppose to be an object and there probably active binds to it
-          if (thisRD.shadow[key]) {
-            thisRD.makeKeyEnum(key);
-            // setData provide downward data flow
-            thisRD.shadow[key].setData(val);
-          }
+
+          // if (thisRD.shadow[key]) {
+          //   thisRD.makeKeyEnum(key);
+          //   // setData provide downward data flow
+          //   thisRD.shadow[key].setData(val);
+          // }
+
+          // This means that the property suppose to be an object and there is probably an active binds to it
+          // the active bind could be in one of the ref so we have to check all the ref shadows
+          thisRD.refs.forEach(function (ref) {
+            if (ref.shadow[key]) {
+              ref.makeKeyEnum(key);
+              // setData provide downward data flow
+              ref.shadow[key].setData(val);
+            }
+          });
+
           thisRD.notify(key, value);
         },
         enumerable: !shadow,
@@ -3835,19 +3846,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       });
 
       _this.sync(key, value);
-      // if (this.id === '{Scope}.data.p') debugger;
-      // if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
-      // const seen = {};
-      // seen[_this.keyInParent] = true;
-      // const allKeys = _this.refs.map((item) => item.keyInParent);
-      // const keys = allKeys.filter((item) => {
-      //   return seen.hasOwnProperty(item) ? false : (seen[item] = true);
-      // });
-
-      // allKeys.forEach((kip, i) => {
-      //   _this.refs[i].parent.notify(kip, null, value);
-      // });
-
       _this.refs.forEach(function (ref) {
         ref.parent.notify(ref.keyInParent, null, value);
       });
@@ -6379,7 +6377,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     return {
       ...routeConfig,
-      hidden: routeConfig.hidden || Boolean(routeConfig.handle) || false,
+      active: false,
+      hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
       module: routeConfig.module || null,
       children: routeConfig.children || []
     };
@@ -6397,7 +6396,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.root = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
 
     _this.oldURL = '';
-    _this.oldResolveId = null;
+    _this.resolvedRouteValue = null;
 
     _this.routesMap = null;
     _this.resolvedRouteHash = {};
@@ -6500,38 +6499,51 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
         const dynamicRoute = dynamicRoutes[i];
         const match = dynamicRoute.paramFinderExpression.exec(normalizedHash);
-
         if (!match) {
           continue;
         }
-
         matchCount++;
 
         const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
-        if (_this.resolvedRouteHash[dynamicRoute.id] === normalizedHash) {
+        // if (_this.resolvedRouteHash[dynamicRoute.id] === normalizedHash) {
+        //   return;
+        // }
+        // _this.resolvedRouteHash[dynamicRoute.id] = normalizedHash;
+        if (_this.resolvedRouteValue === hash) {
           return;
         }
-        _this.resolvedRouteHash[dynamicRoute.id] = normalizedHash;
+        _this.resolvedRouteValue = hash;
 
         const routeIndex = routesPath.indexOf(dynamicRoute.id);
         const pathParameterPlaceholder = dynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
         const parts = hash.replace(pathParameterPlaceholder, '').split('/');
 
-        return _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
+        const shouldContinue = _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
+        if(!shouldContinue) {
+          return;
+        }
       }
 
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
       if (staticRoutes) {
-        if (_this.resolvedRouteHash[staticRoutes.path] === hash) {
+        const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
+        // debugger
+        if (_this.resolvedRouteValue === routeValue) {
           return;
         }
-        _this.resolvedRouteHash[staticRoutes.path] = hash;
+
+        _this.resolvedRouteValue = routeValue;
+        // if (_this.resolvedRouteHash[staticRoutes.path] === normalizedHash) {
+        //   return;
+        // }
+        // _this.resolvedRouteHash[staticRoutes.path] = normalizedHash;
 
         if (staticRoutes.redirectTo) {
           return this.navigate(staticRoutes.redirectTo);
         }
 
         matchCount++;
+        debugger
         return _this.callRoute(staticRoutes, normalizedHash, {}, parentParams);
       }
 
@@ -6542,20 +6554,22 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     callRoute: function (route, hash, params, parentParams) {
       if (typeof route.handle === 'function') {
-        this.data.activeModule = route.handle.call(null, params, parentParams);
+        return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
       }
 
       if (!route.redirectTo) {
         if (this.data.activeRoute) {
-          this.data.activeRoute.isActive = false;
+          this.data.activeRoute.active = false;
         }
 
-        route.isActive = true;
+        route.active = true;
       }
 
       this.data.activeRoute = route;
+
+      return false;
     },
 
     extractDynamicRoutes: function (routesPath) {

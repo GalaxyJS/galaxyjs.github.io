@@ -106,18 +106,18 @@ Scope.data.todos = [
   }
 ];
 
-const isActiveModule = [
-  'nav.route',
-  'data.router.activeRoute'
-].compute((mod, actMod) => {
-  return mod === actMod;
-});
+// const isActiveModule = [
+//   'nav.route',
+//   'data.router.activeRoute'
+// ].compute((mod, actMod) => {
+//   return mod === actMod;
+// });
 
 const isActiveLink = [
   'data.router.activeRoute',
   'subNav.href'
 ].compute((currentPath, href) => {
-  console.log(currentPath, href)
+  console.log(currentPath, href);
   return currentPath === href;
 });
 
@@ -143,6 +143,14 @@ router.init([
     },
     title: 'Guide',
     icon: 'fas fa-map',
+  },
+  {
+    path: '/reactive',
+    module: {
+      path: 'modules/reactive/index.js'
+    },
+    title: 'Reactive',
+    icon: 'fas fa-exchange-alt',
   },
   {
     path: '/api',
@@ -221,7 +229,7 @@ view.init([
         },
         class: {
           'nav-item': true,
-          'active': '<>nav.isActive'
+          'active': '<>nav.active'
         },
         children: [
           {
@@ -277,16 +285,32 @@ view.init([
             },
             $if: [
               'nav.path',
-              'router.activeRoute',
+              'router.activeRoute.path',
               // 'data.router.activeLink.children.length',
               function (mid, ami) {
-                return mid === ami ;
+                console.log(mid, ami);
+                return mid === ami;
               }
             ],
             class: {
               'sub-nav-container': true,
             },
             children: {
+              repeat: {
+                as: 'subNav',
+                data: [
+                  'nav.path',
+                  'router.activeRoute.path',
+                  'router.activeRoute.children',
+                  function (m, am, c) {
+                    if (m === am) {
+                      return c.filter(i => !i.hidden);
+                    }
+
+                    return null;
+                  }
+                ]
+              },
               animations: {
                 leave: {
                   withParent: true
@@ -294,30 +318,15 @@ view.init([
               },
               tag: 'a',
               class: {
-                active: isActiveLink
-              },
-              repeat: {
-                as: 'subNav',
-                data: [
-                  'nav.path',
-                  'router.activeRoute',
-                  'router.activeLink.children',
-                  function (m, am, c) {
-                    console.log(m, am,c)
-                    if (m === am) {
-                      return c;
-                    }
-
-                    return null;
-                  }
-                ]
+                active: '<>subNav.active'
               },
               text: '<>subNav.title',
               href: '<>subNav.path',
               on: {
                 click: function (e) {
                   e.preventDefault();
-                  router.navigate(this.data.subNav.href);
+                  debugger;
+                  router.navigate(this.data.subNav.path);
                 }
               }
             }
@@ -346,4 +355,4 @@ view.init([
     ]
   }
 ]);
-console.log(router.data)
+console.log(router.data);
