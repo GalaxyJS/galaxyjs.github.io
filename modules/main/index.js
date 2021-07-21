@@ -320,12 +320,11 @@ view.init([
                 active: '<>subNav.active'
               },
               text: '<>subNav.title',
-              href: '<>subNav.path',
+              href: '#',
               on: {
                 click: function (e) {
                   e.preventDefault();
-                  debugger;
-                  router.navigate(this.data.subNav.path);
+                  router.navigateToRoute(this.data.subNav);
                 }
               }
             }
@@ -354,4 +353,4 @@ view.init([
     ]
   }
 ]);
-console.log(router.data);
+console.log(router);

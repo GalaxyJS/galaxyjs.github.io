@@ -2656,9 +2656,6 @@ Galaxy.View = /** @class */(function (G) {
     children: {
       type: 'none'
     },
-    content: {
-      type: 'none'
-    },
     id: {
       type: 'attr'
     },
@@ -2717,7 +2714,6 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.PROPERTY_SETTERS = {
-
     'none': function () {
       return View.EMPTY_CALL;
     }
@@ -3325,8 +3321,8 @@ Galaxy.View = /** @class */(function (G) {
       _this.container = scope.element;
     } else {
       _this.container = new G.View.ViewNode(null, {
-        tag: scope.element.tagName
-      }, scope.element, _this);
+        tag: scope.element
+      }, _this);
 
       _this.container.hasBeenRendered();
     }
@@ -3433,7 +3429,7 @@ Galaxy.View = /** @class */(function (G) {
         const keys = Object.keys(blueprint);
         const needInitKeys = [];
 
-        const viewNode = new G.View.ViewNode(parent, blueprint, null, refNode, _this, nodeData);
+        const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, nodeData);
         parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
@@ -4288,18 +4284,21 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    *
    * @param blueprint
    * @param {Galaxy.View.ViewNode} parent
-   * @param {Node|Element|null} node
    * @param {Node|Element|null} refNode
    * @param {Galaxy.View} view
    * @param {any} nodeData
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(parent, blueprint, node, refNode, view, nodeData) {
+  function ViewNode(parent, blueprint, refNode, view, nodeData) {
     const _this = this;
     _this.view = view;
     /** @type {Node|Element|*} */
-    _this.node = node || createElem(blueprint.tag || 'div', parent);
+    if (blueprint.tag instanceof Node) {
+      _this.node = blueprint.tag;
+    } else {
+      _this.node = createElem(blueprint.tag || 'div', parent);
+    }
 
     _this.refNode = refNode || _this.node;
     _this.blueprint = blueprint;
@@ -6370,9 +6369,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     SimpleRouter.currentPath.update();
   };
 
-  SimpleRouter.prepareRoute = function (routeConfig) {
+  SimpleRouter.prepareRoute = function (routeConfig, parentScope) {
     if (routeConfig instanceof Array) {
-      return routeConfig.map(SimpleRouter.prepareRoute);
+      const routes = routeConfig.map((r) => SimpleRouter.prepareRoute(r, parentScope));
+      if (parentScope && parentScope.router) {
+        parentScope.router.activeRoute.children = routes;
+      }
+
+      return routes;
     }
 
     return {
@@ -6380,6 +6384,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       active: false,
       hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
       module: routeConfig.module || null,
+      parent: parentScope ? parentScope.router.activeRoute : null,
       children: routeConfig.children || []
     };
   };
@@ -6425,12 +6430,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   SimpleRouter.prototype = {
     init: function (routeConfigs) {
-      this.routes = SimpleRouter.prepareRoute(routeConfigs);
+      this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope);
       this.data.routes = this.routes;
 
-      if (this.scope.parentScope && this.scope.parentScope.router) {
-        this.scope.parentScope.router.activeRoute.children = this.routes;
-      }
+      // if (this.scope.parentScope && this.scope.parentScope.router) {
+      //   this.scope.parentScope.router.activeRoute.children = this.routes;
+      // }
 
       this.listener = this.detect.bind(this);
       window.addEventListener('popstate', this.listener);
@@ -6462,6 +6467,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       this.navigateToPath(path);
+    },
+
+    navigateToRoute: function (route) {
+      let path = route.path;
+      if(route.parent) {
+        path = route.parent.path + route.path;
+      }
+
+      this.navigate(path);
     },
 
     notFound: function () {
@@ -6528,9 +6542,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
-        console.log(staticRoutes.path === '/' , staticRoutes.redirectTo, normalizedHash.length > 1)
-        debugger
-        if (_this.resolvedRouteValue === routeValue || (staticRoutes.path === '/' && staticRoutes.redirectTo && normalizedHash.length > 1)) {
+        console.log(staticRoutes.path === '/', staticRoutes.redirectTo, normalizedHash.length > 1);
+        // debugger
+        if (_this.resolvedRouteValue === routeValue) {
           return;
         }
         // debugger;

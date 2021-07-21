@@ -3,7 +3,7 @@
 const view = Scope.import('galaxy/view');
 const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
-const navService = Scope.import('services/navigation.js');
+// const navService = Scope.import('services/navigation.js');
 const exapndable = Scope.import('services/expandable.js');
 const scrollToRouter = Scope.import('services/scroll-to-router.js');
 
@@ -15,29 +15,29 @@ const classAndStyleExample = Scope.importAsText('./class-and-style.example.js');
 const viewNodeInputsExample = Scope.importAsText('./view-node-inputs.example.js');
 Scope.data.list = ['Amsterdam', 'Paris'];
 
-const items = [
+router.init([
+  {
+    path: '/',
+    redirectTo: 'fundamentals'
+  },
+  scrollToRouter,
   {
     title: 'Fundamentals',
-    href: '/reactive/fundamentals'
+    path: '/fundamentals'
   },
   {
     title: 'Computed binds',
-    href: '/reactive/computed-binds'
+    path: '/computed-binds'
   },
   {
     title: 'Class and Style',
-    href: '/reactive/class-and-style'
+    path: '/class-and-style'
   },
   {
     title: 'Inputs property',
-    href: '/reactive/inputs-property'
+    path: '/inputs-property'
   }
-];
-navService.setSubNavItems(items);
-
-function setupRouter() {
-  // router.assign(scrollToRouter, { '/': '/fundamentals' });
-}
+]);
 
 view.init({
   class: 'card big',
@@ -321,7 +321,7 @@ view.init({
         },
       ]
     },
-    view.keyframe.enter(setupRouter, 'card', .1)
+    view.keyframe.enter(() => router.start(), 'card')
   ]
 });
 

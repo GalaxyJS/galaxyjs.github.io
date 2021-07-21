@@ -1,13 +1,12 @@
-Scope.export = [
-  {
-    route: '/',
-    redirectTo: '/404',
-  },
-  {
-    route: '/:path',
-    handle: (params) => {
-      if (!document.querySelector('#' + params.path)) return;
-      gsap.to('#main-content', { scrollTo: { y: '#' + params.path, offsetY: 30 }, duration: .3 });
+Scope.export = {
+  path: '/:section',
+  hidden: true,
+  handle: (params) => {
+    if (!document.querySelector('#' + params.section)) {
+      return true;
     }
+
+    gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
+    return true;
   }
-];
+};

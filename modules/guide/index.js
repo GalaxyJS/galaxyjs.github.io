@@ -14,13 +14,6 @@ Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
 
-const routes = scrollToRouter.slice(0);
-routes[0] = {
-  route: '/',
-  redirectTo: '/installation',
-  hidden: true
-};
-
 router.init([
   {
     path: '/',
@@ -47,7 +40,7 @@ router.init([
     title: 'Getting Started'
   },
   {
-    path: '/guide/ui-creation',
+    path: '/ui-creation',
     title: 'UI Creation'
   }
 ]);
@@ -189,8 +182,7 @@ view.init({
         {
           class: 'example-box',
           module: {
-            id: 'hello-world-example',
-            url: './hello-world.example.js'
+            path: './hello-world.example.js'
           }
         },
         '<p>How about a div with a paragraph!</p>',
@@ -203,8 +195,7 @@ view.init({
         {
           class: 'example-box',
           module: {
-            id: 'div-example',
-            url: './div.example.js'
+            path: './div.example.js'
           }
         },
         '<p>As you can see, you create your HTML structure by using objects. This way you don\'t have to ' +

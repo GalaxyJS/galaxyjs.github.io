@@ -81,7 +81,7 @@ router.init([
     path: '/:section',
     hidden: true,
     handle: (params, pp) => {
-      if (!document.querySelector('#' + params.section)){
+      if (!document.querySelector('#' + params.section)) {
         return true;
       }
 
@@ -93,7 +93,7 @@ router.init([
     path: '/scope',
     title: 'Scope'
   }
-]).start();
+]);
 
 view.init({
   tag: 'div',
@@ -192,6 +192,8 @@ view.init({
           text: 'View.ViewNode'
         }
       ]
-    }
+    },
+    view.keyframe.enter(PR.prettyPrint),
+    view.keyframe.enter(() => router.start(), 'card')
   ]
 });
