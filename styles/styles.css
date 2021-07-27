@@ -784,8 +784,7 @@ input, select {
   color: #455a64;
 }
 
-.field[focused] > input, .field[focused] > select {
-  /*background-color: #e3f4fa;*/
+.field[focused] > input, .field[focused] > select, input:focus {
   border-color: #16a7e0;
 }
 

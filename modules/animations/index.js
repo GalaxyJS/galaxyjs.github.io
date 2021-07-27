@@ -58,8 +58,7 @@ view.init([
         children: [
           {
             module: {
-              id: 'first-animation-example',
-              url: './first-animation.example.js'
+              path: './first-animation.example.js'
             }
           },
           '<p>This is the code that results in the above animation.</p>',
