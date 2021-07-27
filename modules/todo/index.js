@@ -173,7 +173,7 @@ view.init({
         },
         {
           module: {
-            url: './field.js'
+            path: './field.js'
           },
           inputs: {
             entry: '<>data.newItem'

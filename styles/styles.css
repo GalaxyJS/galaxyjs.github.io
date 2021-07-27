@@ -755,11 +755,11 @@ input, select {
   font-weight: 500;
   font-size: 15px;
   line-height: 20px;
-  background-color: #eee;
+  background-color: #fff;
   width: 100%;
   display: block;
   padding: 10px 8px;
-  border: 2px solid transparent;
+  border: 2px solid #aaa;
   border-radius: 5px;
   margin-bottom: 6px;
   outline: none;
@@ -785,7 +785,8 @@ input, select {
 }
 
 .field[focused] > input, .field[focused] > select {
-  border-color: #607e8c;
+  /*background-color: #e3f4fa;*/
+  border-color: #16a7e0;
 }
 
 input.w-50 {
@@ -842,12 +843,7 @@ button:hover, button:focus {
 }
 
 button:active {
-  /*color: #fff;*/
-  /*border-color: #16a7e0;*/
-  /*background-color: #16a7e0;*/
   box-shadow: 0 0 6px #16a7e0, inset 0 0 2px #16a7e0;
-  /*text-shadow: 0 0 2px #16a7e0;*/
-  /*transform: scale(.99);*/
   transition-duration: 0ms;
 }
 

@@ -7,94 +7,6 @@ const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
 
 Scope.data.navService = navService;
-// Scope.data.routes = [
-//   {
-//     title: 'Start',
-//     link: '/start',
-//     icon: 'fas fa-play',
-//     module: {
-//       id: 'start',
-//       url: 'modules/start/index.js'
-//     }
-//   },
-//   {
-//     title: 'Guide',
-//     link: '/guide',
-//     icon: 'fas fa-map',
-//     module: {
-//       id: 'guide',
-//       url: 'modules/guide/index.js'
-//     }
-//   },
-//   {
-//     title: 'Reactive',
-//     link: '/reactive',
-//     icon: 'fas fa-exchange-alt',
-//     module: {
-//       id: 'reactive',
-//       url: 'modules/reactive/index.js'
-//     }
-//   },
-//   {
-//     title: 'Conditional Rendering',
-//     link: '/conditional-rendering',
-//     icon: 'fas fa-exclamation-triangle',
-//     module: {
-//       id: 'conditional-rendering',
-//       url: 'modules/conditional-rendering/index.js'
-//     }
-//   },
-//
-//   {
-//     title: 'List Rendering',
-//     link: '/list-rendering',
-//     icon: 'fas fa-list-ul',
-//     module: {
-//       fresh: true,
-//       id: 'list-rendering',
-//       url: 'modules/list-rendering/index.js'
-//     }
-//   },
-//
-//   {
-//     title: 'Animations',
-//     link: '/animations',
-//     icon: 'fas fa-spinner',
-//     module: {
-//       id: 'animations',
-//       url: 'modules/animations/index.js'
-//     }
-//   },
-//
-//   {
-//     title: 'API',
-//     link: '/api',
-//     icon: 'fas fa-code',
-//     module: {
-//       id: 'api',
-//       url: 'modules/api/index.js'
-//     }
-//   },
-//
-//   {
-//     title: 'ToDo - Demo',
-//     link: '/todo-demo',
-//     module: {
-//       id: 'todo-demo',
-//       url: 'modules/todo/index.js'
-//     }
-//   },
-//
-//   {
-//     title: 'VueJS Replica - Demo',
-//     link: '/vuejs-replica-demo',
-//     module: {
-//       id: 'vuejs-replica-demo',
-//       url: 'modules/vuejs-replica/index.js'
-//     }
-//   }
-// ];
-
 Scope.data.todos = [
   {
     title: 'Should add new item to todos',
@@ -105,21 +17,6 @@ Scope.data.todos = [
     done: false
   }
 ];
-
-// const isActiveModule = [
-//   'nav.route',
-//   'data.router.activeRoute'
-// ].compute((mod, actMod) => {
-//   return mod === actMod;
-// });
-
-const isActiveLink = [
-  'data.router.activeRoute',
-  'subNav.href'
-].compute((currentPath, href) => {
-  console.log(currentPath, href);
-  return currentPath === href;
-});
 
 router.init([
   {
@@ -152,6 +49,30 @@ router.init([
     icon: 'fas fa-exchange-alt',
   },
   {
+    path: '/conditional-rendering',
+    module: {
+      path: 'modules/conditional-rendering/index.js'
+    },
+    title: 'Conditional Rendering',
+    icon: 'fas fa-exclamation-triangle',
+  },
+  {
+    path: '/list-rendering',
+    module: {
+      path: 'modules/list-rendering/index.js'
+    },
+    title: 'List Rendering',
+    icon: 'fas fa-list-ul',
+  },
+  {
+    path: '/animations',
+    module: {
+      path: 'modules/animations/index.js'
+    },
+    title: 'Animations',
+    icon: 'fas fa-spinner',
+  },
+  {
     path: '/api',
     module: {
       path: 'modules/api/index.js'
@@ -159,6 +80,20 @@ router.init([
     title: 'API',
     icon: 'fas fa-code',
   },
+  {
+    path: '/todo-demo',
+    module: {
+      path: 'modules/todo/index.js'
+    },
+    title: 'ToDo - Demo',
+  },
+  {
+    path: '/vuejs-replica-demo',
+    module: {
+      path: 'modules/vuejs-replica/index.js'
+    },
+    title: 'VueJS Replica - Demo',
+  }
   // {
   //   route: '/:moduleId',
   //   handle: (params) => {
@@ -264,10 +199,7 @@ view.init([
                   },
                   ease: 'power1.inOut',
                 },
-                duration: function () {
-                  // return this.inputs.moduleId === Scope.data.activeModule.id && navService.subNavItems.length ? .2 : 0;
-                  return .2;
-                },
+                duration: .2,
                 position: '-=.2'
               },
               leave: {
@@ -285,15 +217,12 @@ view.init([
             $if: [
               'nav.path',
               'router.activeRoute.path',
-              // 'data.router.activeLink.children.length',
-              function (mid, ami) {
-                console.log(mid, ami);
-                return mid === ami;
+              'router.activeRoute.children.length',
+              function (navPath, activeRoutePath, length) {
+                return navPath === activeRoutePath && length;
               }
             ],
-            class: {
-              'sub-nav-container': true,
-            },
+            class: 'sub-nav-container',
             children: {
               repeat: {
                 as: 'subNav',
@@ -301,9 +230,9 @@ view.init([
                   'nav.path',
                   'router.activeRoute.path',
                   'router.activeRoute.children',
-                  function (m, am, c) {
-                    if (m === am) {
-                      return c.filter(i => !i.hidden);
+                  function (navPath, activeRoutePath, childRoutes) {
+                    if (navPath === activeRoutePath) {
+                      return childRoutes.filter(i => !i.hidden);
                     }
 
                     return null;

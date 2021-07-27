@@ -5,28 +5,28 @@ const animations = Scope.import('services/animations.js');
 const router = Scope.import('galaxy/router');
 // const navService = Scope.import('services/navigation.js');
 
-const items = [
-  {
-    title: 'Scope',
-    href: '/api/scope'
-  },
-  {
-    title: 'Module',
-    href: '/api/module'
-  },
-  {
-    title: 'Observer',
-    href: '/api/observer'
-  },
-  {
-    title: 'View',
-    href: '/api/view'
-  },
-  {
-    title: 'View.ViewNode',
-    href: '/api/viewnode'
-  }
-];
+// const items = [
+//   {
+//     title: 'Scope',
+//     href: '/api/scope'
+//   },
+//   {
+//     title: 'Module',
+//     href: '/api/module'
+//   },
+//   {
+//     title: 'Observer',
+//     href: '/api/observer'
+//   },
+//   {
+//     title: 'View',
+//     href: '/api/view'
+//   },
+//   {
+//     title: 'View.ViewNode',
+//     href: '/api/viewnode'
+//   }
+// ];
 // navService.setSubNavItems(items);
 Scope.data.api = {
   scope: [
@@ -85,7 +85,7 @@ router.init([
         return true;
       }
 
-      gsap.to('#main-content', { scrollTo: { y: '#' + params.path, offsetY: 30 }, duration: .3 });
+      gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
       return true;
     }
   },
