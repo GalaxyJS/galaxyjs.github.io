@@ -232,6 +232,7 @@ view.init([
                   'router.activeRoute.children',
                   function (navPath, activeRoutePath, childRoutes) {
                     if (navPath === activeRoutePath) {
+                      console.log(childRoutes)
                       return childRoutes.filter(i => !i.hidden);
                     }
 

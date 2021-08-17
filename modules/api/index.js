@@ -2,6 +2,7 @@
 const test = Scope.import('./style.css');
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
+const memory = Scope.import('services/memory.js');
 const router = Scope.import('galaxy/router');
 // const navService = Scope.import('services/navigation.js');
 
@@ -28,6 +29,11 @@ const router = Scope.import('galaxy/router');
 //   }
 // ];
 // navService.setSubNavItems(items);
+
+memory.subscribe(function () {
+  console.log(memory.getState());
+
+});
 Scope.data.api = {
   scope: [
     {
@@ -99,11 +105,6 @@ view.init({
   tag: 'div',
   class: 'card big',
   animations: animations.cardInOut,
-  lifecycle: {
-    postChildrenInsert: function () {
-      PR.prettyPrint();
-    }
-  },
   children: [
     test,
     {
@@ -192,6 +193,15 @@ view.init({
           text: 'View.ViewNode'
         }
       ]
+    },
+    {
+      tag: 'button',
+      text: 'Click Me!',
+      on: {
+        click: () => {
+          memory.dispatch({ type: 'do' });
+        }
+      }
     },
     view.keyframe.enter(PR.prettyPrint),
     view.keyframe.enter(() => router.start(), 'card')
