@@ -48,30 +48,30 @@ router.init([
     title: 'Reactive',
     icon: 'fas fa-exchange-alt',
   },
-  {
-    path: '/conditional-rendering',
-    module: {
-      path: 'modules/conditional-rendering/index.js'
-    },
-    title: 'Conditional Rendering',
-    icon: 'fas fa-exclamation-triangle',
-  },
-  {
-    path: '/list-rendering',
-    module: {
-      path: 'modules/list-rendering/index.js'
-    },
-    title: 'List Rendering',
-    icon: 'fas fa-list-ul',
-  },
-  {
-    path: '/animations',
-    module: {
-      path: 'modules/animations/index.js'
-    },
-    title: 'Animations',
-    icon: 'fas fa-spinner',
-  },
+  // {
+  //   path: '/conditional-rendering',
+  //   module: {
+  //     path: 'modules/conditional-rendering/index.js'
+  //   },
+  //   title: 'Conditional Rendering',
+  //   icon: 'fas fa-exclamation-triangle',
+  // },
+  // {
+  //   path: '/list-rendering',
+  //   module: {
+  //     path: 'modules/list-rendering/index.js'
+  //   },
+  //   title: 'List Rendering',
+  //   icon: 'fas fa-list-ul',
+  // },
+  // {
+  //   path: '/animations',
+  //   module: {
+  //     path: 'modules/animations/index.js'
+  //   },
+  //   title: 'Animations',
+  //   icon: 'fas fa-spinner',
+  // },
   {
     path: '/api',
     module: {
@@ -80,20 +80,20 @@ router.init([
     title: 'API',
     icon: 'fas fa-code',
   },
-  {
-    path: '/todo-demo',
-    module: {
-      path: 'modules/todo/index.js'
-    },
-    title: 'ToDo - Demo',
-  },
-  {
-    path: '/vuejs-replica-demo',
-    module: {
-      path: 'modules/vuejs-replica/index.js'
-    },
-    title: 'VueJS Replica - Demo',
-  }
+  // {
+  //   path: '/todo-demo',
+  //   module: {
+  //     path: 'modules/todo/index.js'
+  //   },
+  //   title: 'ToDo - Demo',
+  // },
+  // {
+  //   path: '/vuejs-replica-demo',
+  //   module: {
+  //     path: 'modules/vuejs-replica/index.js'
+  //   },
+  //   title: 'VueJS Replica - Demo',
+  // }
   // {
   //   route: '/:moduleId',
   //   handle: (params) => {
@@ -198,8 +198,9 @@ view.init([
                     return node.scrollHeight;
                   },
                   ease: 'power1.inOut',
+                  delay: .1
                 },
-                duration: .2,
+                duration: .5,
                 position: '-=.2'
               },
               leave: {
@@ -207,9 +208,10 @@ view.init([
                 to: {
                   height: 0,
                   ease: 'power1.inOut',
+                  delay: .1
                 },
                 duration: function () {
-                  return this.node.offsetHeight > 0 ? .2 : 0;
+                  return this.node.offsetHeight > 0 ? .5 : 0;
                 },
                 position: '-=.2'
               }
@@ -219,6 +221,7 @@ view.init([
               'router.activeRoute.path',
               'router.activeRoute.children.length',
               function (navPath, activeRoutePath, length) {
+                // console.log(navPath , activeRoutePath , length)
                 return navPath === activeRoutePath && length;
               }
             ],
@@ -232,7 +235,6 @@ view.init([
                   'router.activeRoute.children',
                   function (navPath, activeRoutePath, childRoutes) {
                     if (navPath === activeRoutePath) {
-                      console.log(childRoutes)
                       return childRoutes.filter(i => !i.hidden);
                     }
 

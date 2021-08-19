@@ -2724,17 +2724,16 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} node
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
    * @memberOf Galaxy.View
    * @static
    */
-  View.destroyNodes = function (node, toBeRemoved) {
+  View.destroyNodes = function (toBeRemoved, hasAnimation) {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
-      remove.destroy();
+      remove.destroy(hasAnimation);
     }
   };
 
@@ -3244,7 +3243,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -3271,7 +3270,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -3453,11 +3452,9 @@ Galaxy.View = /** @class */(function (G) {
           }
         }
 
-        viewNode.callLifecycleEvent('postInit');
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
           _this.createNode(blueprint.children, viewNode, scopeData, null, refNode, nodeData);
-          viewNode.inserted.then(() => viewNode.callLifecycleEvent('postChildrenInsert'));
         }
 
         return viewNode;
@@ -4325,8 +4322,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.hasBeenRendered = function () {
         _this.rendered.resolved = true;
         done();
-
-        _this.callLifecycleEvent('rendered');
       };
     });
     _this.rendered.resolved = false;
@@ -4371,10 +4366,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       defProp(_this.node, '_gvn', referenceToThis);
       defProp(_this.placeholder, '_gvn', referenceToThis);
     }
-    _this.callLifecycleEvent('postCreate');
   }
 
   ViewNode.prototype = {
+    onLeaveComplete: null,
+    populateLeaveSequence: EMPTY_CALL,
+
     dump: function () {
       this.parent.garbage = this.parent.garbage.concat(this.garbage);
       this.parent.garbage.push(this);
@@ -4382,16 +4379,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
     query: function (selectors) {
       return this.node.querySelector(selectors);
-    },
-    /**
-     *
-     * @param {string} id event id
-     */
-    callLifecycleEvent: function (id) {
-      const lifecycle = this.blueprint.lifecycle;
-      if (lifecycle && typeof lifecycle[id] === 'function') {
-        lifecycle[id].apply(this, Array.prototype.slice.call(arguments, 1));
-      }
     },
 
     broadcast: function (event) {
@@ -4426,10 +4413,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       this.node.style.display = 'none';
     },
 
-    // contentRef: null,
-    onLeaveComplete: null,
-    populateLeaveSequence: null,
-
     detach: function () {
       const _this = this;
 
@@ -4447,8 +4430,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.inDOM = flag;
 
       if (flag && !_this.virtual) {
-        _this.callLifecycleEvent('preInsert');
-
         if (!_this.node.parentNode) {
           insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         }
@@ -4457,7 +4438,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           removeChild(_this.placeholder.parentNode, _this.placeholder);
         }
 
-        _this.callLifecycleEvent('postInsert');
         _this.hasBeenInserted();
 
         GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
@@ -4465,18 +4445,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           _this.populateEnterSequence();
         });
       } else if (!flag && _this.node.parentNode) {
-        _this.callLifecycleEvent('preRemove');
-
         _this.origin = true;
         _this.transitory = true;
-        _this.updateChildrenLeaveSequence(_this.hasAnimation());
+        _this.prepareLeaveSequence(_this.hasAnimation());
+
         GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
           _this.node.style.cssText = '';
-          _this.callLifecycleEvent('postAnimations');
-          _this.stream.pour('removed', 'dom');
         });
       }
     },
@@ -4497,7 +4474,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           _this.populateHideSequence();
           _this.origin = false;
           _this.transitory = false;
-          _this.callLifecycleEvent('postAnimations');
         });
       }
     },
@@ -4509,12 +4485,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     registerChild: function (childNode, position) {
       const _this = this;
-
-      // if (_this.contentRef) {
-      //   _this.contentRef.insertBefore(childNode.placeholder, position);
-      // } else {
       _this.node.insertBefore(childNode.placeholder, position);
-      // }
     },
 
     createNode: function (blueprint, localScope) {
@@ -4542,7 +4513,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const _this = this;
       const children = _this.getChildNodes();
 
-      if (_this.populateLeaveSequence) {
+      if (_this.populateLeaveSequence && _this.populateLeaveSequence !== EMPTY_CALL) {
         return true;
       }
 
@@ -4559,49 +4530,37 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       return false;
     },
-    updateChildrenLeaveSequence: function (hasAnimation) {
-      const _this = this;
-      const children = _this.getChildNodes();
 
+    prepareLeaveSequence: function (hasAnimation) {
+      const _this = this;
       if (hasAnimation) {
-        if (!_this.populateLeaveSequence) {
-          _this.populateLeaveSequence = EMPTY_CALL;
-          // if (_this.blueprint.class === 'catalog-page') {
-          //   console.log(_this.node);
-          // }
-          if(_this.ha) {
-            console.log(_this.node);
-            _this.populateLeaveSequence = ViewNode.REMOVE_SELF;
-          }
-          if (_this.origin) {
-            _this.populateLeaveSequence = ViewNode.REMOVE_SELF;
-          }
-        } else if (_this.populateLeaveSequence !== EMPTY_CALL) {
+        if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
+          _this.populateLeaveSequence = function () {
+            ViewNode.REMOVE_SELF.call(_this, false);
+          };
+        } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
           // Children with leave animation should not get removed from dom for visual purposes.
-          // Since their parent already has a leave animation and eventually will be removed from dom.
+          // Since their this node already has a leave animation and eventually will be removed from dom.
+          // this is not the case for when this node is being detached by $if
+          const children = _this.getChildNodes();
           for (let i = 0, len = children.length; i < len; i++) {
-            // children[i].onLeaveComplete = EMPTY_CALL;
+            children[i].onLeaveComplete = EMPTY_CALL;
           }
         }
       } else {
-        // _this.onLeaveComplete = true;
-        _this.populateLeaveSequence = ViewNode.REMOVE_SELF;
-        return;
-      }
-
-      for (let i = 0, len = children.length; i < len; i++) {
-        children[i].updateChildrenLeaveSequence(hasAnimation);
+        _this.populateLeaveSequence = function () {
+          ViewNode.REMOVE_SELF.call(_this, true);
+        };
       }
     },
 
-    destroy: function () {
+    destroy: function (hasAnimation) {
       const _this = this;
       _this.transitory = true;
 
       if (_this.inDOM) {
-        const flag = _this.hasAnimation();
-        _this.updateChildrenLeaveSequence(flag);
-        _this.clean();
+        _this.prepareLeaveSequence(hasAnimation || _this.hasAnimation());
+        _this.clean(hasAnimation);
       }
 
       _this.properties.forEach((reactiveData) => {
@@ -4613,8 +4572,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
         if (_this.inDOM) {
           _this.populateLeaveSequence(_this.onLeaveComplete);
-          _this.callLifecycleEvent('postRemove');
-          _this.callLifecycleEvent('postDestroy');
         }
 
         _this.localPropertyNames.clear();
@@ -4664,9 +4621,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     /**
      *
      */
-    clean: function () {
+    clean: function (hasAnimation) {
       const _this = this;
-      GV.destroyNodes(_this, _this.getChildNodes());
+      GV.destroyNodes(_this.getChildNodes(), hasAnimation);
     },
 
     /**
@@ -5649,6 +5606,25 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
+  function cleanModuleContent(viewNode) {
+
+      const children = viewNode.getChildNodes();
+      children.forEach(vn => {
+        if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
+          vn.populateLeaveSequence = function (onComplete) {
+            G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
+              sequence: 'DESTROY',
+              duration: .000001
+            }, {}, onComplete);
+          };
+        }
+      });
+
+    G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
+      viewNode.clean(true);
+    });
+  }
+
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
     name: 'module'
@@ -5683,17 +5659,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
-          // const children = _this.getChildNodes();
-          // children.forEach(c => {
-          //   console.log(c.node, c.populateLeaveSequence);
-          //   c.ha= true;
-          // });
-          _this.clean();
-
+          cleanModuleContent(_this);
           moduleLoaderGenerator(_this, data, moduleMeta)();
         });
       } else if (!moduleMeta) {
-        _this.clean();
+        cleanModuleContent(_this);
       }
 
       data.moduleMeta = moduleMeta;
@@ -5966,12 +5936,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         config.trackMap = newTrackMap;
       }
 
-      View.destroyNodes(viewNode, hasBeenRemoved.reverse());
+      View.destroyNodes(hasBeenRemoved.reverse());
       finalChanges = newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(viewNode, nodesToBeRemoved.reverse());
+      View.destroyNodes(nodesToBeRemoved.reverse());
       finalChanges = Object.assign({}, changes);
       finalChanges.type = 'push';
     }
@@ -6586,13 +6556,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     callRoute: function (route, hash, params, parentParams) {
-      if (typeof route.handle === 'function') {
-        return route.handle.call(this, params, parentParams);
-      } else {
-        this.data.activeModule = route.module;
-        this.data.parameters = params;
-      }
-
       if (!route.redirectTo) {
         if (this.data.activeRoute) {
           this.data.activeRoute.active = false;
@@ -6602,6 +6565,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       this.data.activeRoute = route;
+
+      if (typeof route.handle === 'function') {
+        return route.handle.call(this, params, parentParams);
+      } else {
+        this.data.activeModule = route.module;
+        this.data.parameters = params;
+      }
 
       return false;
     },

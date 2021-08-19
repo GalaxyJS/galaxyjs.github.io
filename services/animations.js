@@ -26,13 +26,14 @@ const animations = {
     },
     leave: {
       sequence: 'card',
-      from:{},
+      from: {},
       to: {
         ease: 'power1.in',
         transformOrigin: 'top center',
         display: 'none',
         scale: .9,
-        opacity: 0
+        opacity: 0,
+        delay: .2
       },
       duration: .5
     }

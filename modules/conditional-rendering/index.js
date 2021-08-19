@@ -45,7 +45,7 @@ view.init({
           class: 'example-box',
           module: {
             id: 'single-node-example',
-            url: './single-node.example.js'
+            path: './single-node.example.js'
           },
         },
 
@@ -70,7 +70,7 @@ view.init({
           class: 'example-box',
           module: {
             id: 'multiple-nodes-example',
-            url: './multiple-nodes.example.js'
+            path: './multiple-nodes.example.js'
           },
         },
 
@@ -86,7 +86,7 @@ view.init({
           class: 'example-box',
           module: {
             id: 'list-example',
-            url: './list.example.js'
+            path: './list.example.js'
           },
         },
         '<h2>Rendering Strategy</h2>' +
