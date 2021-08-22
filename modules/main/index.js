@@ -149,7 +149,9 @@ view.init([
         $if: '<>!nav.hidden',
         animations: {
           enter: {
-            sequence: 'card',
+            addTo:'card',
+            sequence: 'main-nav-items',
+            // sequence: 'card',
             from: {
               transition: 'none',
               autoAlpha: 0,
@@ -157,8 +159,8 @@ view.init([
               ease: Elastic.easeOut.config(1, .4),
               clearProps: 'all'
             },
-            position: '-=.25',
-            duration: .3
+            position: '-=.5',
+            duration: .6
           }
         },
         class: {
@@ -189,7 +191,8 @@ view.init([
           {
             animations: {
               enter: {
-                sequence: 'card',
+                withParent: true,
+                sequence: 'main-nav-items',
                 from: {
                   height: 0
                 },
@@ -200,11 +203,11 @@ view.init([
                   ease: 'power1.inOut',
                   delay: .1
                 },
-                duration: .5,
-                position: '-=.2'
+                duration: .3,
+                // position: '-=.2'
               },
               leave: {
-                sequence: 'card',
+                sequence: 'main-nav-items',
                 to: {
                   height: 0,
                   ease: 'power1.inOut',
@@ -217,11 +220,10 @@ view.init([
               }
             },
             $if: [
-              'nav.path',
-              'router.activeRoute.path',
-              'router.activeRoute.children.length',
+              '<>nav.path',
+              '<>router.activeRoute.path',
+              '<>router.activeRoute.children.length',
               function (navPath, activeRoutePath, length) {
-                // console.log(navPath , activeRoutePath , length)
                 return navPath === activeRoutePath && length;
               }
             ],
@@ -230,9 +232,9 @@ view.init([
               repeat: {
                 as: 'subNav',
                 data: [
-                  'nav.path',
-                  'router.activeRoute.path',
-                  'router.activeRoute.children',
+                  '<>nav.path',
+                  '<>router.activeRoute.path',
+                  '<>router.activeRoute.children',
                   function (navPath, activeRoutePath, childRoutes) {
                     if (navPath === activeRoutePath) {
                       return childRoutes.filter(i => !i.hidden);

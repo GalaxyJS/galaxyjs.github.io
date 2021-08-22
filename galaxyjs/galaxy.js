@@ -2847,14 +2847,14 @@ Galaxy.View = /** @class */(function (G) {
       const props = value.match(View.BINDING_SYNTAX_REGEX);
       if (props) {
         allProperties = ['<>' + props[2]];
-
         if (props[2].indexOf('!') === 0) {
           allProperties = ['<>' + props[2].slice(1)];
           propertyVariables = allProperties;
-          isExpression = true;
           handler = (a) => {
             return !a;
           };
+          propertyVariables.push(handler);
+          isExpression = true;
         }
       } else {
         allProperties = null;
@@ -3007,11 +3007,9 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     let functionContent = 'return [';
-
     let middle = '';
-    for (let i = 0, len = variables.length; i < len-1; i++) {
+    for (let i = 0, len = variables.length; i < len - 1; i++) {
       const variable = variables[i];
-
       if (typeof variable === 'string' && variable.indexOf('<>') === 0) {
         middle += 'lookUpFn(scope, "' + variable.replace(/<>/g, '') + '"),';
       } else {
@@ -3260,7 +3258,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -3287,7 +3285,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -5284,6 +5282,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (_this.timeline.getChildren(false).length === 0) {
         _this.timeline.add(tween);
       } else {
+        // console.log(config.position,viewNode.node)
         _this.timeline.add(tween, config.position || '+=0');
       }
 
@@ -6014,7 +6013,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             placeholdersPositions.push(target ? target.getPlaceholder() : defaultPosition);
           });
 
-          onEachAction = function (vn, i, item) {
+          onEachAction = function (vn, i) {
             this.splice(i, 0, vn);
           };
         }
@@ -6037,7 +6036,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     } else if (changes.type === 'splice') {
       let removedItems = Array.prototype.splice.apply(config.nodes, changes.params.slice(0, 2));
       newItems = changes.params.slice(2);
-      debugger;
       removedItems.forEach(function (node) {
         node.destroy();
       });
@@ -6097,7 +6095,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           nodeData[as] = c[i];
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node, nodeData);
-          onEachAction.call(nodes, vn, positions[i], nodeData[as]);
+          onEachAction.call(nodes, vn, positions[i]);
         }
       }
     }
