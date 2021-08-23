@@ -2819,12 +2819,17 @@ Galaxy.View = /** @class */(function (G) {
     viewNode.node[name] = value;
   };
 
-  View.createMirror = function (obj, forObj) {
-    let result = forObj || {};
+  View.createChildScope = function (parent) {
+    let result = {};
 
     defProp(result, '__parent__', {
       enumerable: false,
-      value: obj
+      value: parent
+    });
+
+    defProp(result, '__scope__', {
+      enumerable: false,
+      value: parent.__scope__ || parent
     });
 
     return result;
@@ -3109,7 +3114,7 @@ Galaxy.View = /** @class */(function (G) {
       }
       // When the node belongs to a nested repeat, the scopeData would refer to the for item data
       // But developer should still be able to access root scopeData
-      if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
+      if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__scope__') &&
         propertyKey === 'data') {
         hostReactiveData = null;
       }
@@ -3410,10 +3415,9 @@ Galaxy.View = /** @class */(function (G) {
      * @param {Object} scopeData
      * @param {Node|Element|null} position
      * @param {Node|Element|null} refNode
-     * @param {any} nodeData
      * @return {Galaxy.View.ViewNode}
      */
-    createNode: function (blueprint, parent, scopeData, position, refNode, nodeData) {
+    createNode: function (blueprint, parent, scopeData, position, refNode) {
       const _this = this;
       let i = 0, len = 0;
       if (typeof blueprint === 'string') {
@@ -3427,13 +3431,13 @@ Galaxy.View = /** @class */(function (G) {
         blueprint();
       } else if (blueprint instanceof Array) {
         for (i = 0, len = blueprint.length; i < len; i++) {
-          _this.createNode(blueprint[i], parent, scopeData, null, refNode, nodeData);
+          _this.createNode(blueprint[i], parent, scopeData, null, refNode);
         }
       } else if (blueprint instanceof Object) {
         let attributeValue, attributeName;
         const keys = Object.keys(blueprint);
         const needInitKeys = [];
-        const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, nodeData);
+        const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, scopeData);
         parent.registerChild(viewNode, position);
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
@@ -3465,7 +3469,7 @@ Galaxy.View = /** @class */(function (G) {
 
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
-          _this.createNode(blueprint.children, viewNode, scopeData, null, refNode, nodeData);
+          _this.createNode(blueprint.children, viewNode, scopeData, null, refNode);
         }
 
         return viewNode;
@@ -4155,7 +4159,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
 
   function createComment(t) {
-    return commentNode.cloneNode(t);
+    const n = commentNode.cloneNode();
+    n.textContent = t;
+    return n;
   }
 
   /**
@@ -4308,7 +4314,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     _this.refNode = refNode || _this.node;
     _this.blueprint = blueprint;
-    _this.data = nodeData || {};
+    _this.data = nodeData instanceof Galaxy.Scope ? {} : nodeData;
     _this.localPropertyNames = new Set();
     _this.inputs = {};
     _this.virtual = false;
@@ -4343,10 +4349,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.rendered.resolved = false;
 
     // We need this check because a comment element has no style
-    if (_this.node.style) {
-      _this.node.style.setProperty('display', 'none');
-      _this.rendered.then(() => _this.node.style.removeProperty('display'));
-    }
+    // if (_this.node.style) {
+    //   _this.rendered.then(() => _this.node.style.removeProperty('display'));
+    // }
 
     _this.inserted = new Promise(function (done) {
       _this.hasBeenInserted = function () {
@@ -4446,6 +4451,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.inDOM = flag;
 
       if (flag && !_this.virtual) {
+        if (_this.node.style) {
+          _this.node.style.setProperty('display', 'none');
+        }
+
         if (!_this.node.parentNode) {
           insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         }
@@ -4458,6 +4467,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
         GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
           _this.hasBeenRendered();
+          if (_this.node.style) {
+            _this.node.style.removeProperty('display');
+          }
           _this.populateEnterSequence();
         });
       } else if (!flag && _this.node.parentNode) {
@@ -4469,7 +4481,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
-          _this.node.style.cssText = '';
+          // _this.node.style.cssText = '';
         });
       }
     },
@@ -4565,7 +4577,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       } else {
         _this.populateLeaveSequence = function () {
-          ViewNode.REMOVE_SELF.call(_this, true);
+          ViewNode.REMOVE_SELF.call(_this, !_this.origin);
         };
       }
     },
@@ -4803,11 +4815,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
               return;
             }
 
-            // const parent = viewNode.parent;
+            const parent = viewNode.parent;
             // if enter.withParent flag is there, then only apply animation to the nodes are rendered rendered
-            // if (!parent.rendered.resolved) {
-            //   return;
-            // }
+            if (!parent.rendered.resolved) {
+              return;
+            }
           }
 
           if (gsap.getTweensOf(viewNode.node).length) {
@@ -5183,7 +5195,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
-      // its only child and we have to resume it it's not playing
+      // its only child and we have to resume it if it's not playing
       if (newConfig.addTo) {
         const addToAnimationMeta = new AnimationMeta(newConfig.addTo);
         if (!addToAnimationMeta.started) {
@@ -5576,15 +5588,29 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         config.throttleId = 0;
       }
       /** @type {Galaxy.View.ViewNode} */
-      const _this = this;
+      const viewNode = this;
       if (expression) {
         value = expression();
       }
 
+      let pes = null;
+      if (!viewNode.rendered.resolved && !value) {
+        // pes = viewNode.populateLeaveSequence;
+        // viewNode.populateLeaveSequence = (r) => {
+        // debugger;
+        // r();
+        // };
+      }
+
       config.throttleId = window.requestAnimationFrame(() => {
-        _this.rendered.then(() => {
-          if (_this.inDOM !== value) {
-            _this.setInDOM(value);
+        viewNode.rendered.then(() => {
+          if (viewNode.inDOM !== value) {
+            viewNode.setInDOM(value);
+          }
+
+          if (pes) {
+            // viewNode.populateLeaveSequence = pes;
+            // pes = null;
           }
         });
       });
@@ -5813,14 +5839,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         if (config.options.as === 'data') {
           throw new Error('`data` is an invalid value for repeat.as property. Please choose a different value.`');
         }
+        config.options.indexAs = config.options.indexAs || '__index__';
 
         const bindings = View.getBindings(config.options.data);
 
         config.watch = bindings.propertyKeysPaths;
         viewNode.localPropertyNames.add(config.options.as);
-        if (config.options.indexAs) {
-          viewNode.localPropertyNames.add(config.options.indexAs);
-        }
+        viewNode.localPropertyNames.add(config.options.indexAs);
+        // if (config.options.indexAs) {
+        //   viewNode.localPropertyNames.add(config.options.indexAs);
+        // }
 
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
@@ -5927,33 +5955,40 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   async function prepare(viewNode, config, changes) {
     let finalChanges = changes;
     let newTrackMap = null;
-    if (config.trackBy instanceof Function && changes.type === 'reset') {
-      newTrackMap = changes.params.map(function (item, i) {
-        return config.trackBy.call(viewNode, item, i);
+    // if (config.trackBy instanceof Function && changes.type === 'reset') {
+    if (typeof config.trackBy === 'string' && changes.type === 'reset') {
+      // newTrackMap = changes.params.map(function (item, i) {
+      //   return config.trackBy.call(viewNode, item, i);
+      // });
+      const trackByKey = config.trackBy;
+      newTrackMap = changes.params.map(item => {
+        return item[trackByKey];
       });
       // list of nodes that should be removed
       const hasBeenRemoved = [];
-      config.trackMap.forEach(function (id, i) {
+      config.trackMap = config.trackMap.filter(function (id, i) {
         if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
           hasBeenRemoved.push(config.nodes[i]);
+          return false;
         }
+        return true;
       });
-      // debugger
-      const newParams = [];
-      const positions = [];
-      newTrackMap.forEach(function (id, i) {
-        if (config.trackMap.indexOf(id) === -1) {
-          newParams.push(changes.params[i]);
-          positions.push(i);
-        }
-      });
-      config.positions = positions;
+
+      // const newParams = [];
+      // const positions = [];
+      // newTrackMap.forEach(function (id, i) {
+      //   if (config.trackMap.indexOf(id) === -1) {
+      //     newParams.push(changes.params[i]);
+      //     positions.push(i);
+      //   }
+      // });
+      // config.positions = positions;
 
       const newChanges = new G.View.ArrayChange();
       newChanges.init = changes.init;
       newChanges.type = changes.type;
       newChanges.original = changes.original;
-      newChanges.params = newParams;
+      newChanges.params = changes.params;
       newChanges.__rd__ = changes.__rd__;
       if (newChanges.type === 'reset' && newChanges.params.length) {
         newChanges.type = 'push';
@@ -5963,12 +5998,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return hasBeenRemoved.indexOf(node) === -1;
       });
 
-      if (config.options.as === 'selectedFilter')
-        debugger;
       // Map should be updated asap if the newChanges.type is reset
-      if (newChanges.type === 'reset' && newChanges.params.length === 0) {
-        config.trackMap = newTrackMap;
-      }
+      // if (changes.type === 'reset' && newChanges.params.length === 0) {
+      //   config.trackMap = [];
+      // }
 
       View.destroyNodes(hasBeenRemoved.reverse());
       finalChanges = newChanges;
@@ -5995,10 +6028,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const parentNode = node.parent;
     const positions = config.positions;
     const nodeScopeData = config.scope;
+    const trackMap = config.trackMap;
     const placeholdersPositions = [];
+    const as = config.options.as;
+    const indexAs = config.options.indexAs;
+    const nodes = config.nodes;
+    const trackByKey = config.trackBy;
+    const templateBlueprint = node.cloneBlueprint();
+    Reflect.deleteProperty(templateBlueprint, 'repeat');
+
     let defaultPosition = null;
     let newItems = [];
-    let onEachAction = function (vn) {
+    let onEachAction = function (vn, p, d) {
+      trackMap.push(d[config.trackBy]);
       this.push(vn);
     };
 
@@ -6013,8 +6055,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             placeholdersPositions.push(target ? target.getPlaceholder() : defaultPosition);
           });
 
-          onEachAction = function (vn, i) {
-            this.splice(i, 0, vn);
+          onEachAction = function (vn, p, d) {
+            trackMap.splice(p, 0, d[config.trackBy]);
+            this.splice(p, 0, vn);
           };
         }
       } else {
@@ -6022,15 +6065,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       newItems = changes.params;
-      if (config.trackBy instanceof Function) {
-        newItems.forEach(function (item, i) {
-          config.trackMap.push(config.trackBy.call(node, item, i));
-        });
-      }
     } else if (changes.type === 'unshift') {
       defaultPosition = config.nodes[0] ? config.nodes[0].getPlaceholder() : null;
       newItems = changes.params;
-      onEachAction = function (vn) {
+      onEachAction = function (vn, p, d) {
+        trackMap.unshift(d[config.trackBy]);
         this.unshift(vn);
       };
     } else if (changes.type === 'splice') {
@@ -6039,15 +6078,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       removedItems.forEach(function (node) {
         node.destroy();
       });
-      config.trackMap.splice(changes.params[0], changes.params[1]);
+      trackMap.splice(changes.params[0], changes.params[1]);
     } else if (changes.type === 'pop') {
       const lastItem = config.nodes.pop();
       lastItem && lastItem.destroy();
-      config.trackMap.pop();
+      trackMap.pop();
     } else if (changes.type === 'shift') {
       const firstItem = config.nodes.shift();
       firstItem && firstItem.destroy();
-      config.trackMap.shift();
+      trackMap.shift();
     } else if (changes.type === 'sort' || changes.type === 'reverse') {
       config.nodes.forEach(function (viewNode) {
         viewNode.destroy();
@@ -6055,50 +6094,52 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       config.nodes = [];
       newItems = changes.original;
-      Array.prototype[changes.type].call(config.trackMap);
+      Array.prototype[changes.type].call(trackMap);
     }
-
-    let itemDataScope = nodeScopeData;
-    const as = config.options.as;
-    const indexAs = config.options.indexAs;
-    const nodes = config.nodes;
-    const templateBlueprint = node.cloneBlueprint();
-    Reflect.deleteProperty(templateBlueprint, 'repeat');
 
     const view = node.view;
     if (newItems instanceof Array) {
-      const c = newItems.slice(0);
-
-      if (indexAs) {
+      const newItemsCopy = newItems.slice(0);
+      let vn;
+      if (trackByKey) {
         for (let i = 0, len = newItems.length; i < len; i++) {
-          itemDataScope = View.createMirror(nodeScopeData);
-          itemDataScope['__rootScopeData__'] = config.scope;
-          itemDataScope[as] = c[i];
-          itemDataScope[indexAs] = i;
-          let cns = gClone(templateBlueprint);
-          const nodeData = {};
-          nodeData[as] = c[i];
-          nodeData[as] = c[indexAs] = i;
+          const newItemCopy = newItemsCopy[i];
+          const index = trackMap.indexOf(newItemCopy[trackByKey]);
+          if (index !== -1) {
+            // console.log(as, config.nodes[index], index);
+            config.nodes[index].data.__index__ = index;
+            continue;
+          }
 
-          const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node, nodeData);
-          onEachAction.call(nodes, vn, positions[i]);
+          const itemDataScope = createItemDataScope(nodeScopeData, as, newItemCopy);
+          const cns = gClone(templateBlueprint);
+          // const nodeData = {};
+          // nodeData[as] = newItemCopy;
+          itemDataScope[indexAs] = trackMap.length;
+
+          vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
+          onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
         }
       } else {
-        // if the indexAs is not specified we run the loop without setting the for index for performance gain
-        let vn;
         for (let i = 0, len = newItems.length; i < len; i++) {
-          itemDataScope = View.createMirror(nodeScopeData);
-          itemDataScope['__rootScopeData__'] = config.scope;
-          itemDataScope[as] = c[i];
+          const itemDataScope = createItemDataScope(nodeScopeData, as, newItemsCopy[i]);
           let cns = gClone(templateBlueprint);
-          const nodeData = {};
-          nodeData[as] = c[i];
+          // const nodeData = {};
+          // nodeData[as] = newItemsCopy[i];
+          itemDataScope[indexAs] = i;
 
-          vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node, nodeData);
-          onEachAction.call(nodes, vn, positions[i]);
+          vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
+          onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
         }
       }
+
     }
+  }
+
+  function createItemDataScope(nodeScopeData, as, itemData) {
+    const itemDataScope = View.createChildScope(nodeScopeData);
+    itemDataScope[as] = itemData;
+    return itemDataScope;
   }
 })(Galaxy);
 
