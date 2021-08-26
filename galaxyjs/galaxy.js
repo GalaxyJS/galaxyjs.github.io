@@ -2636,7 +2636,6 @@ Galaxy.View = /** @class */(function (G) {
 
   View.REACTIVE_BEHAVIORS = {
     // example: {
-    //   regex: null,
     //   prepare: function (matches, scope) {},
     //   install: function (config) {},
     //   apply: function (config, value, oldValue, expressionFn) {}
@@ -3154,9 +3153,6 @@ Galaxy.View = /** @class */(function (G) {
         bindings.propertyKeysPaths.forEach(function (path) {
           try {
             const rd = View.propertyScopeLookup(data, path);
-            // if (path === 'filterOption.UniqueId') {
-            //   console.log(rd,data, path);
-            // }
             viewNode.finalize.push(() => {
               rd.removeNode(subjectsClone);
             });
@@ -3176,20 +3172,18 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
+   * @param {any} behavior
    * @param {Galaxy.View.ViewNode} node
    * @param {string} key
    * @param scopeData
    */
   View.installReactiveBehavior = function (behavior, node, key, scopeData) {
-    const bindTo = node.blueprint[key];
-    const matches = behavior.regex ? (typeof (bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
-    const data = behavior.prepare.call(node, matches, scopeData);
+    const data = behavior.prepare.call(node, scopeData, node.blueprint[key]);
     if (data !== undefined) {
       node.cache[key] = data;
     }
 
-    const needValueAssignment = behavior.install.call(node, data);
-    return needValueAssignment === undefined || needValueAssignment === null ? true : needValueAssignment;
+    return behavior.install.call(node, data);
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
@@ -3198,7 +3192,6 @@ Galaxy.View = /** @class */(function (G) {
      * @type {Galaxy.View.BlueprintProperty}
      */
     const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
-
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
     }
@@ -3773,8 +3766,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         return;
       }
 
-      const len = _this.refs.length;
-      for (let i = 0; i < len; i++) {
+      for (let i = 0, len = _this.refs.length; i < len; i++) {
         const ref = _this.refs[i];
         if (_this === ref) {
           continue;
@@ -3784,7 +3776,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       _this.sync(key, value);
-      for (let i = 0; i < len; i++) {
+      for (let i = 0, len = _this.refs.length; i < len; i++) {
         const ref = _this.refs[i];
         ref.parent.notify(ref.keyInParent, null, value);
       }
@@ -4151,12 +4143,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
-    name: '_create'
+    name: '_create',
+    createSetter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
     type: 'prop',
-    name: '_finalize'
+    name: '_finalize',
+    createSetter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
@@ -4598,7 +4592,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return '0';
     },
 
-
     get anchor() {
       if (this.inDOM) {
         return this.node;
@@ -4667,9 +4660,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     };
 
     if (expression) {
-      return function (none, oldValue) {
-        const expressionValue = expression(none);
-        setter(expressionValue, oldValue);
+      return function () {
+        const expressionValue = expression();
+        setter(expressionValue);
       };
     }
 
@@ -5307,24 +5300,56 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   };
 
   G.View.REACTIVE_BEHAVIORS['class'] = {
-    regex: G.View.BINDING_SYNTAX_REGEX,
-    prepare: function (m, s) {
+    prepare: function (scope, value) {
       return {
-        scope: s
+        scope,
+        subjects: value
       };
     },
-    install: function (data) {
+    install: function (config) {
+      if (this.virtual || config.subjects === null || config.subjects instanceof Array || typeof config.subjects !== 'object') {
+        return true;
+      }
+
+      const viewNode = this;
+      // when value is an object
+      const reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
+      const observer = new G.Observer(reactiveClasses);
+      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
+        const items = Object.getOwnPropertyDescriptors(reactiveClasses);
+        const staticClasses = {};
+        for (let key in items) {
+          const item = items[key];
+          if (item.enumerable && !item.hasOwnProperty('get')) {
+            staticClasses[key] = reactiveClasses[key];
+          }
+        }
+
+        applyClasses(viewNode, staticClasses);
+        viewNode.rendered.then(function () {
+          applyClasses(viewNode, reactiveClasses);
+          observer.onAll((key, value, oldValue) => {
+            applyClasses(viewNode, reactiveClasses);
+          });
+        });
+      } else {
+        applyClasses(viewNode, reactiveClasses);
+        observer.onAll((key, value, oldValue) => {
+          applyClasses(viewNode, reactiveClasses);
+        });
+      }
+
       return true;
     },
     /**
      *
-     * @param data
+     * @param config
      * @param value
      * @param oldValue
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    apply: function (data, value, oldValue, expression) {
+    apply: function (config, value, oldValue, expression) {
       if (this.virtual) {
         return;
       }
@@ -5345,32 +5370,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return node.removeAttribute('class');
       }
 
-      node.setAttribute('class', '');
-      // when value is an object
-      const clone = G.View.bindSubjectsToData(viewNode, value, data.scope, true);
-      const observer = new G.Observer(clone);
-      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
-        const items = Object.getOwnPropertyDescriptors(clone);
-        const staticClasses = {};
-        for (let key in items) {
-          const item = items[key];
-          if (item.enumerable && !item.hasOwnProperty('get')) {
-            staticClasses[key] = clone[key];
-          }
-        }
+      if (config.subjects === value) {
+        return;
+      }
 
-        applyClasses(viewNode, staticClasses);
+      // when value is an object
+      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         viewNode.rendered.then(function () {
-          applyClasses(viewNode, clone);
-          observer.onAll((key, value, oldValue) => {
-            applyClasses(viewNode, clone);
-          });
+          applyClasses(viewNode, value);
         });
       } else {
-        applyClasses(viewNode, clone);
-        observer.onAll((key, value, oldValue) => {
-          applyClasses(viewNode, clone);
-        });
+        applyClasses(viewNode, value);
       }
     }
   };
@@ -5394,7 +5404,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   }
 
   function applyClasses(viewNode, classes) {
-    const currentClasses = viewNode.node.getAttribute('class');
+    const currentClasses = viewNode.node.getAttribute('class') || [];
     const newClasses = getClasses(classes);
     if (JSON.stringify(currentClasses) === JSON.stringify(newClasses)) {
       return;
@@ -5413,8 +5423,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   };
 
   G.View.REACTIVE_BEHAVIORS['content'] = {
-    regex: null,
-    prepare: function (matches, scope) {
+    prepare: function () {
       this.virtualize();
       return {
         module: null
@@ -5532,35 +5541,34 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   };
 
   G.View.REACTIVE_BEHAVIORS['inputs'] = {
-    regex: null,
     /**
      *
      * @this {Galaxy.View.ViewNode}
-     * @param matches
+     * @param value
      * @param scope
      */
-    prepare: function (matches, scope) {
-      if (matches !== null && typeof matches !== 'object') {
+    prepare: function (scope, value) {
+      if (value !== null && typeof value !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.blueprint, null, '  '));
       }
 
       return {
-        subjects: matches,
+        subjects: value,
         scope: scope
       };
     },
     /**
      *
      * @this {Galaxy.View.ViewNode}
-     * @param data
+     * @param config
      * @return {boolean}
      */
-    install: function (data) {
+    install: function (config) {
       if (this.virtual) {
         return false;
       }
 
-      this.inputs = G.View.bindSubjectsToData(this, data.subjects, data.scope, true);
+      this.inputs = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
 
       return false;
     },
@@ -5593,18 +5601,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   };
 
   G.View.REACTIVE_BEHAVIORS['module'] = {
-    regex: null,
-    prepare: function (matches, scope) {
+    prepare: function (scope) {
       return {
         module: null,
         moduleMeta: null,
         scope: scope
       };
     },
-    install: function (data) {
+    install: function () {
       return true;
     },
-    apply: function handleModule(data, moduleMeta, oldModuleMeta, expression) {
+    apply: function handleModule(config, moduleMeta, oldModuleMeta, expression) {
       const _this = this;
 
       if (expression) {
@@ -5619,17 +5626,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return console.error('module property only accept objects as value', moduleMeta);
       }
 
-      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== data.moduleMeta) {
+      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
         // G.View.CREATE_IN_NEXT_FRAME(_this.index, () => {
         _this.rendered.then(function () {
           cleanModuleContent(_this);
-          moduleLoaderGenerator(_this, data, moduleMeta)();
+          moduleLoaderGenerator(_this, config, moduleMeta)();
         });
         // });
       } else if (!moduleMeta) {
         cleanModuleContent(_this);
       }
-      data.moduleMeta = moduleMeta;
+      config.moduleMeta = moduleMeta;
     }
   };
 
@@ -5716,20 +5723,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   };
 
   View.REACTIVE_BEHAVIORS['repeat'] = {
-    regex: null,
-    prepare: function (options, scope) {
+    prepare: function (scope, value) {
       this.virtualize();
 
       return {
         changeId: null,
         throttleId: null,
         nodes: [],
-        options: options,
+        options: value,
         oldChanges: {},
         positions: [],
         trackMap: [],
         scope: scope,
-        trackBy: options.trackBy
+        trackBy: value.trackBy
       };
     },
 
@@ -5751,10 +5757,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         config.watch = bindings.propertyKeysPaths;
         viewNode.localPropertyNames.add(config.options.as);
         viewNode.localPropertyNames.add(config.options.indexAs);
-        // if (config.options.indexAs) {
-        //   viewNode.localPropertyNames.add(config.options.indexAs);
-        // }
-
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {
@@ -5908,23 +5910,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       //   config.trackMap = [];
       // }
 
-      View.destroyNodes(hasBeenRemoved.reverse());
+      View.destroyNodes(hasBeenRemoved.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
       finalChanges = newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(nodesToBeRemoved.reverse());
+      View.destroyNodes(nodesToBeRemoved.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
       finalChanges = Object.assign({}, changes);
       finalChanges.type = 'push';
     }
 
-    // viewNode.cache.repeatPushProcess = () => {
-    //   createPushProcess(viewNode, config, changes, config.scope);
-    // };
-
-    // repeatPushProcess can change on the fly therefore we need to register a function
-    // that calls the latest repeatPushProcess
-    // viewNode.cache.repeatPushProcess.call();
     return finalChanges;
 
   }
@@ -6066,17 +6061,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       // Don't do anything if the node is an option tag
       if (viewNode.blueprint.tag === 'select') {
-        const bindings = G.View.getBindings(viewNode.blueprint.selected);
-        const id = bindings.propertyKeysPaths[0].split('.').pop();
-        const nativeNode = viewNode.node;
+        // const bindings = G.View.getBindings(viewNode.blueprint.selected);
+        // const id = bindings.propertyKeysPaths[0].split('.').pop();
+        // const nativeNode = viewNode.node;
 
-        const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {
-          if (scopeReactiveData.data[id] && !nativeNode.value) {
-            nativeNode.value = scopeReactiveData.data[id];
-          }
-        });
-
-        viewNode.destroyed.then(unsubscribe);
+        // const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {
+        //   if (scopeReactiveData.data[id] && !nativeNode.value) {
+        //     nativeNode.value = scopeReactiveData.data[id];
+        //   }
+        // });
+        //
+        // viewNode.destroyed.then(unsubscribe);
       }
     },
     value: function (viewNode, value) {
@@ -6110,30 +6105,35 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   };
 
   G.View.REACTIVE_BEHAVIORS['style'] = {
-    /**
-     *
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param {string} attr
-     * @param value
-     */
-    regex: null,
-    prepare: function (m, s) {
+    prepare: function (scope, value) {
       return {
-        scope: s
+        scope: scope,
+        subjects: value
       };
     },
-    install: function (data) {
+    install: function (config) {
+      if (this.virtual || config.subjects === null || config.subjects instanceof Array || typeof config.subjects !== 'object') {
+        return true;
+      }
+
+      const node = this.node;
+      const reactiveStyle = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
+      const observer = new G.Observer(reactiveStyle);
+      observer.onAll(() => {
+        setStyle(node, reactiveStyle);
+      });
+
       return true;
     },
     /**
      *
-     * @param data
+     * @param config
      * @param value
      * @param oldValue
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    apply: function (data, value, oldValue, expression) {
+    apply: function (config, value, oldValue, expression) {
       if (this.virtual) {
         return;
       }
@@ -6158,14 +6158,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return node.removeAttribute('style');
       }
 
-      const reactiveStyle = G.View.bindSubjectsToData(_this, value, data.scope, true);
+      if (config.subjects === value) {
+        return;
+      }
 
-      const observer = new G.Observer(reactiveStyle);
-      observer.onAll(function (key, value, oldValue) {
-        setStyle(node, reactiveStyle);
-      });
-
-      setStyle(node, reactiveStyle);
+      setStyle(node, value);
     }
   };
 
@@ -6288,7 +6285,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         throttleId: null,
       };
     },
-    install: function (config) {
+    install: function () {
       return true;
     },
     apply: function (config, value, oldValue, expression) {
