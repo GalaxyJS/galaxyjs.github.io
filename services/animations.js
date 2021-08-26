@@ -15,7 +15,7 @@ const animations = {
         }
       },
       to: {
-        ease: 'power1.out',
+        ease: 'Power1.easeOut',
         transformOrigin: 'top center',
         top: 0,
         scale: 1,
@@ -28,14 +28,14 @@ const animations = {
       sequence: 'card',
       from: {},
       to: {
-        ease: 'power1.in',
+        ease: 'Power1.easeIn',
         transformOrigin: 'top center',
         display: 'none',
         scale: .9,
         opacity: 0,
         delay: .2
       },
-      duration: .5
+      duration: .35
     }
   },
   itemInOut: {

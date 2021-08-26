@@ -15,12 +15,9 @@ view.init([
         on: {
           click: function () {
             Scope.data.boxes = [];
-            view.nextFrame(() => {
-              const card = view.getAnimation('card');
-              card.addOnComplete((event) => {
-                Scope.data.boxes = originalDataList.slice(0);
-              });
-            });
+            view.keyframe.action(() => {
+              Scope.data.boxes = originalDataList.slice(0);
+            }, 'card');
           }
         }
       }

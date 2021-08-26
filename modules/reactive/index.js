@@ -37,7 +37,7 @@ router.init([
     title: 'Inputs property',
     path: '/inputs-property'
   }
-]);
+])
 
 view.init({
   class: 'card big',

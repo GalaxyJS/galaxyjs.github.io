@@ -4,31 +4,6 @@ const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 const memory = Scope.import('services/memory.js');
 const router = Scope.import('galaxy/router');
-// const navService = Scope.import('services/navigation.js');
-
-// const items = [
-//   {
-//     title: 'Scope',
-//     href: '/api/scope'
-//   },
-//   {
-//     title: 'Module',
-//     href: '/api/module'
-//   },
-//   {
-//     title: 'Observer',
-//     href: '/api/observer'
-//   },
-//   {
-//     title: 'View',
-//     href: '/api/view'
-//   },
-//   {
-//     title: 'View.ViewNode',
-//     href: '/api/viewnode'
-//   }
-// ];
-// navService.setSubNavItems(items);
 
 memory.subscribe(function () {
   console.log(memory.getState());

@@ -228,21 +228,19 @@ p.important {
 
 .nav-item {
   display: block;
-  /*transition: background-color .2s ease-in-out;*/
   margin: 15px;
   border-radius: 7px;
   overflow: hidden;
-  border: 2px solid rgba(0, 0, 0, .1);
+  transition: box-shadow .3s;
+  box-shadow: 0 0 0 rgba(0, 0, 0, .15), 0 0 0 rgba(0, 0, 0, .05);
 }
 
 .nav-item:hover, .nav-item a:hover {
-  /*background-color: rgb(233, 243, 247);*/
-  color: #16a7e0;
+  font-weight: bold;
 }
 
 .nav-item.active {
-  background-color: rgb(233, 243, 247);
-  /*background-color: rgba(0, 0, 0, 0.06);*/
+  box-shadow: 0 5px 11px rgba(0, 0, 0, .15), 0 0 5px rgba(0, 0, 0, .05);
 }
 
 .nav-item > a {
@@ -254,6 +252,7 @@ p.important {
   cursor: pointer;
   padding: 15px 20px;
   font-size: 1em;
+  font-weight: normal;
 }
 
 .nav-item > a > i {
@@ -287,6 +286,7 @@ p.important {
   border-radius: 4px;
   text-decoration: none;
   color: inherit;
+  font-weight: normal;
 }
 
 .sub-nav-container > a.active {

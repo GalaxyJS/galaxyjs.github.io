@@ -3191,7 +3191,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
     }
@@ -3217,7 +3217,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -3251,7 +3251,6 @@ Galaxy.View = /** @class */(function (G) {
   function View(scope) {
     const _this = this;
     _this.scope = scope;
-    _this.dataRepos = {};
     _this.config = {
       cleanContainer: false
     };
@@ -3268,15 +3267,6 @@ Galaxy.View = /** @class */(function (G) {
   }
 
   View.prototype = {
-    setupRepos: function (repos) {
-      this.dataRepos = repos;
-    },
-    getAnimation: function (id) {
-      return new G.View.AnimationMeta(id);
-    },
-    nextFrame: function (callback) {
-      return window.requestAnimationFrame(callback);
-    },
     keyframe: {
       /**
        *
@@ -3321,6 +3311,13 @@ Galaxy.View = /** @class */(function (G) {
             }
           }
         };
+      },
+      action: function (action, sequence) {
+        if (!sequence) {
+          throw Error('keyframe.action need a sequence name');
+        }
+
+        (new G.View.AnimationMeta(sequence)).addOnComplete(action);
       }
     },
     init: function (blueprint) {
@@ -4686,9 +4683,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   }
 })(Galaxy);
 
-/* global Galaxy, gsap, TimelineLite */
+/* global Galaxy, gsap */
 (function (G) {
-  if (!window.gsap || !window.TimelineLite) {
+  if (!window.gsap /*|| !window.Timeline*/) {
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
@@ -4882,7 +4879,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({}, to);
+      to = Object.assign({duration: duration}, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
@@ -4899,10 +4896,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     let tween = null;
     if (from && to) {
-      tween = gsap.fromTo(node,
-        duration,
-        from,
-        to);
+      tween = gsap.fromTo(node, from, to);
     } else if (from) {
       from = Object.assign({}, from || {});
 
@@ -4916,13 +4910,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         from.onComplete = onComplete;
       }
 
-      tween = gsap.from(node,
-        duration,
-        from);
+      from.duration = duration;
+      tween = gsap.from(node, from);
     } else if (to) {
-      tween = gsap.to(node,
-        duration,
-        to);
+      tween = gsap.to(node, duration, to);
     } else {
       onComplete();
     }
@@ -5036,7 +5027,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -5132,7 +5123,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     const _this = this;
     _this.name = name;
-    _this.timeline = new TimelineLite({
+    _this.timeline = gsap.timeline({
       autoRemoveChildren: true,
       smoothChildTiming: false,
       paused: true,
@@ -5194,19 +5185,21 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       if (config.from && config.to) {
         const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
-        tween = gsap.fromTo(viewNode.node, duration || 0, config.from, to);
+        to.duration = duration || 0;
+        tween = gsap.fromTo(viewNode.node, config.from, to);
       } else if (config.from) {
         const from = AnimationMeta.createStep(config.from, config.onStart, onComplete, viewNode);
-        tween = gsap.from(viewNode.node, duration || 0, from);
+        from.duration = duration || 0;
+        tween = gsap.from(viewNode.node, from);
       } else {
         const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
-        tween = gsap.to(viewNode.node, duration || 0, to);
+        to.duration = duration || 0;
+        tween = gsap.to(viewNode.node, to);
       }
 
       if (_this.timeline.getChildren(false).length === 0) {
         _this.timeline.add(tween);
       } else {
-        // console.log(config.position,viewNode.node)
         _this.timeline.add(tween, config.position || '+=0');
       }
 
@@ -5852,23 +5845,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         config.throttleId = 0;
       }
       config.throttleId = window.requestAnimationFrame(() => {
-        prepare(node, config, changes).then(finalChanges => {
-          process(node, config, finalChanges);
+        prepareChanges(node, config, changes).then(finalChanges => {
+          processChages(node, config, finalChanges);
         });
       });
     }
   };
 
-  async function prepare(viewNode, config, changes) {
-    let finalChanges = changes;
-    let newTrackMap = null;
-    // if (config.trackBy instanceof Function && changes.type === 'reset') {
+  async function prepareChanges(viewNode, config, changes) {
+    const hasAnimation = viewNode.blueprint.animations && viewNode.blueprint.animations.leave;
+
     if (typeof config.trackBy === 'string' && changes.type === 'reset') {
-      // newTrackMap = changes.params.map(function (item, i) {
-      //   return config.trackBy.call(viewNode, item, i);
-      // });
       const trackByKey = config.trackBy;
-      newTrackMap = changes.params.map(item => {
+      const newTrackMap = changes.params.map(item => {
         return item[trackByKey];
       });
       // list of nodes that should be removed
@@ -5880,16 +5869,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
         return true;
       });
-
-      // const newParams = [];
-      // const positions = [];
-      // newTrackMap.forEach(function (id, i) {
-      //   if (config.trackMap.indexOf(id) === -1) {
-      //     newParams.push(changes.params[i]);
-      //     positions.push(i);
-      //   }
-      // });
-      // config.positions = positions;
 
       const newChanges = new G.View.ArrayChange();
       newChanges.init = changes.init;
@@ -5905,26 +5884,21 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return hasBeenRemoved.indexOf(node) === -1;
       });
 
-      // Map should be updated asap if the newChanges.type is reset
-      // if (changes.type === 'reset' && newChanges.params.length === 0) {
-      //   config.trackMap = [];
-      // }
-
-      View.destroyNodes(hasBeenRemoved.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
-      finalChanges = newChanges;
+      View.destroyNodes(hasBeenRemoved.reverse(), hasAnimation);
+      return newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(nodesToBeRemoved.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
-      finalChanges = Object.assign({}, changes);
-      finalChanges.type = 'push';
+      View.destroyNodes(nodesToBeRemoved.reverse(), hasAnimation);
+      const newChanges = Object.assign({}, changes);
+      newChanges.type = 'push';
+      return newChanges;
     }
 
-    return finalChanges;
-
+    return changes;
   }
 
-  function process(node, config, changes) {
+  function processChages(node, config, changes) {
     const parentNode = node.parent;
     const positions = config.positions;
     const nodeScopeData = config.scope;
@@ -6362,6 +6336,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.scope = scope;
     _this.module = module;
     _this.root = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+    _this.parentRoute = null;
 
     _this.oldURL = '';
     _this.resolvedRouteValue = null;
@@ -6395,6 +6370,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   SimpleRouter.prototype = {
     init: function (routeConfigs) {
       this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope);
+      if (this.scope.parentScope && this.scope.parentScope.router) {
+        this.parentRoute = this.scope.parentScope.router.activeRoute;
+      }
       this.data.routes = this.routes;
 
       this.listener = this.detect.bind(this);
@@ -6585,6 +6563,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     destroy: function () {
+      this.parentRoute.children = [];
       window.removeEventListener('popstate', this.listener);
     }
   };

@@ -27,7 +27,7 @@ router.init([
         return true;
       }
 
-      gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
+      gsap.to('#main-content', {scrollTo: {y: '#' + params.section, offsetY: 30}, duration: .3});
       return true;
     }
   },
@@ -44,20 +44,6 @@ router.init([
     title: 'UI Creation'
   }
 ]);
-// router.init(routes.concat([
-//   {
-//     title: 'Installation',
-//     route: '/guide/installation'
-//   },
-//   {
-//     title: 'Getting started',
-//     route: '/guide/getting-started'
-//   },
-//   {
-//     title: 'UI Creation',
-//     route: '/guide/ui-creation'
-//   }
-// ]));
 
 view.init([
   {
@@ -255,6 +241,7 @@ view.init([
     ]
   },
   view.keyframe.enter(PR.prettyPrint),
+
   view.keyframe.enter(() => router.start(), 'card')
 ]);
 

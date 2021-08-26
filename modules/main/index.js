@@ -64,14 +64,14 @@ router.init([
   //   title: 'List Rendering',
   //   icon: 'fas fa-list-ul',
   // },
-  // {
-  //   path: '/animations',
-  //   module: {
-  //     path: 'modules/animations/index.js'
-  //   },
-  //   title: 'Animations',
-  //   icon: 'fas fa-spinner',
-  // },
+  {
+    path: '/animations',
+    module: {
+      path: 'modules/animations/index.js'
+    },
+    title: 'Animations',
+    icon: 'fas fa-spinner',
+  },
   {
     path: '/api',
     module: {
@@ -107,7 +107,7 @@ router.init([
   //     }
   //   }
   // }
-]).start();
+]);
 
 router.notFound(function () {
   console.error('404, Not Found!');
@@ -149,17 +149,16 @@ view.init([
         $if: '<>!nav.hidden',
         animations: {
           enter: {
-            addTo:'card',
+            addTo: 'card',
             sequence: 'main-nav-items',
-            // sequence: 'card',
             from: {
               transition: 'none',
               autoAlpha: 0,
               x: '-25%',
-              ease: Elastic.easeOut.config(1, .4),
+              ease: Elastic.easeOut.config(1, .5),
               clearProps: 'all'
             },
-            position: '-=.5',
+            position: '-=.58',
             duration: .6
           }
         },
@@ -192,31 +191,27 @@ view.init([
             animations: {
               enter: {
                 withParent: true,
-                sequence: 'main-nav-items',
+                sequence: 'card',
                 from: {
                   height: 0
                 },
                 to: {
-                  height: function (value, node) {
-                    return node.scrollHeight;
-                  },
-                  ease: 'power1.inOut',
-                  delay: .1
+                  height: 'auto',
+                  // delay: .01
                 },
+                position: '-=.3',
                 duration: .3,
-                // position: '-=.2'
               },
               leave: {
-                sequence: 'main-nav-items',
+                sequence: 'card',
                 to: {
                   height: 0,
-                  ease: 'power1.inOut',
-                  delay: .1
+                  // delay: .01
                 },
                 duration: function () {
-                  return this.node.offsetHeight > 0 ? .5 : 0;
+                  return this.node.offsetHeight > 0 ? .3 : 0;
                 },
-                position: '-=.2'
+                position: '-=.3'
               }
             },
             $if: [
@@ -285,6 +280,9 @@ view.init([
         }
       }
     ]
-  }
+  },
+  view.keyframe.enter(() => {
+    router.start();
+  }, 'card')
 ]);
 console.log(router);

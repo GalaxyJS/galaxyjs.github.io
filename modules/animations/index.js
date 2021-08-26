@@ -10,8 +10,6 @@ Scope.data.dialog = {
 };
 
 view.init([
-  // dialogBlueprint,
-
   {
     class: 'card big anime',
     animations: {
