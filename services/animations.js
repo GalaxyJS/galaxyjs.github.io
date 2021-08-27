@@ -142,7 +142,7 @@ animations.mainNavItem = {
       transition: 'none',
       autoAlpha: 0,
       x: '-25%',
-      ease: Elastic.easeOut.config(1, .4),
+      ease: 'elastic.easeOut.config(1, .5)',
       clearProps: 'all'
     },
     position: '-=.5',
