@@ -48,22 +48,22 @@ router.init([
     title: 'Reactive',
     icon: 'fas fa-exchange-alt',
   },
-  // {
-  //   path: '/conditional-rendering',
-  //   module: {
-  //     path: 'modules/conditional-rendering/index.js'
-  //   },
-  //   title: 'Conditional Rendering',
-  //   icon: 'fas fa-exclamation-triangle',
-  // },
-  // {
-  //   path: '/list-rendering',
-  //   module: {
-  //     path: 'modules/list-rendering/index.js'
-  //   },
-  //   title: 'List Rendering',
-  //   icon: 'fas fa-list-ul',
-  // },
+  {
+    path: '/conditional-rendering',
+    module: {
+      path: 'modules/conditional-rendering/index.js'
+    },
+    title: 'Conditional Rendering',
+    icon: 'fas fa-exclamation-triangle',
+  },
+  {
+    path: '/list-rendering',
+    module: {
+      path: 'modules/list-rendering/index.js'
+    },
+    title: 'List Rendering',
+    icon: 'fas fa-list-ul',
+  },
   {
     path: '/animations',
     module: {
@@ -80,33 +80,20 @@ router.init([
     title: 'API',
     icon: 'fas fa-code',
   },
-  // {
-  //   path: '/todo-demo',
-  //   module: {
-  //     path: 'modules/todo/index.js'
-  //   },
-  //   title: 'ToDo - Demo',
-  // },
-  // {
-  //   path: '/vuejs-replica-demo',
-  //   module: {
-  //     path: 'modules/vuejs-replica/index.js'
-  //   },
-  //   title: 'VueJS Replica - Demo',
-  // }
-  // {
-  //   route: '/:moduleId',
-  //   handle: (params) => {
-  //     const nav = Scope.data.routes.filter(function (item) {
-  //       return item.module.id === params.moduleId;
-  //     })[0];
-  //
-  //     if (nav) {
-  //       navService.setSubNavItems([]);
-  //       Scope.data.activeModule = nav.module;
-  //     }
-  //   }
-  // }
+  {
+    path: '/todo-demo',
+    module: {
+      path: 'modules/todo/index.js'
+    },
+    title: 'ToDo - Demo',
+  },
+  {
+    path: '/vuejs-replica-demo',
+    module: {
+      path: 'modules/vuejs-replica/index.js'
+    },
+    title: 'VueJS Replica - Demo',
+  }
 ]);
 
 router.notFound(function () {
@@ -155,10 +142,10 @@ view.init([
               transition: 'none',
               autoAlpha: 0,
               x: '-25%',
-              ease: 'elastic.easeOut.config(1, .5)',
+              ease: 'elastic.out(1.15, .5)',
               clearProps: 'all'
             },
-            position: '-=.58',
+            position: '-=.57',
             duration: .6
           }
         },

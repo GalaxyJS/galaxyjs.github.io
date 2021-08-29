@@ -10,11 +10,6 @@ view.init({
   tag: 'div',
   class: 'card big',
   animations: animations.cardInOut,
-  lifecycle: {
-    postChildrenInsert: function () {
-      PR.prettyPrint();
-    }
-  },
   children: [
     {
       tag: 'section',
@@ -94,6 +89,9 @@ view.init({
         'When condition is false, then the element will be detached from DOM and upon true ' +
         'the same element will be reattached to the DOM</p>'
       ]
-    }
-  ]
+    },
+    view.keyframe.enter(() => {
+      PR.prettyPrint();
+    }, 'card')
+  ],
 });

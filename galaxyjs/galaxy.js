@@ -2579,7 +2579,7 @@ Galaxy.View = /** @class */(function (G) {
    *
    * @typedef {Object} Galaxy.View.BlueprintProperty
    * @property {'attr'|'prop'|'reactive'} [type]
-   * @property {Function} [setup]
+   * @property {Function} [install]
    * @property {Function} [createSetter]
    * @property {Function} [value]
    */
@@ -2587,7 +2587,7 @@ Galaxy.View = /** @class */(function (G) {
   View.NODE_BLUEPRINT_PROPERTY_MAP = {
     tag: {
       type: 'none'
-      // setup: function(viewNode, scopeReactiveData, property, expression) {}
+      // install: function(viewNode, scopeReactiveData, property, expression) {}
       // createSetter: function(viewNode, attrName, property, expression, scope) {}
       // value: function(viewNode, attr, value, oldValue) {}
     },
@@ -3192,8 +3192,8 @@ Galaxy.View = /** @class */(function (G) {
      * @type {Galaxy.View.BlueprintProperty}
      */
     const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
-    if (property.setup && scopeProperty) {
-      property.setup(viewNode, scopeProperty, key, expression);
+    if (property.install && scopeProperty) {
+      property.install(viewNode, scopeProperty, key, expression);
     }
 
     // if viewNode is virtual, then the expression should be ignored
@@ -3369,7 +3369,7 @@ Galaxy.View = /** @class */(function (G) {
           const behavior = View.REACTIVE_BEHAVIORS[attributeName];
           if (behavior) {
             const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
-            if (!needValueAssign) {
+            if (needValueAssign === false) {
               continue;
             }
           }
@@ -4606,7 +4606,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 (function (G) {
   G.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
     const valueFn = property.value || G.View.setAttr;
-    const setter = function (value, oldValue) {
+    const setter = function A(value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
           valueFn(viewNode, asyncValue, oldValue, attrName);
@@ -4641,7 +4641,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     const valueFn = property.value || G.View.setProp;
-    const setter = function (value, oldValue) {
+    const setter = function P(value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
           valueFn(viewNode, asyncValue, oldValue, property.name);
@@ -4677,7 +4677,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   };
 
   function createReactiveFunction(behavior, vn, data, expression, scope) {
-    return function (value, oldValue) {
+    return function R(value, oldValue) {
       return behavior.apply.call(vn, data, value, oldValue, expression, scope);
     };
   }
@@ -5228,7 +5228,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    setup: function (viewNode, scopeReactiveData, prop, expression) {
+    install: function (viewNode, scopeReactiveData, prop, expression) {
       if (expression && viewNode.blueprint.tag === 'input') {
         throw new Error('input.checked property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -5301,7 +5301,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     prepare: function (scope, value) {
       return {
         scope,
-        subjects: value
+        subjects: value,
+        reactiveClasses: null
       };
     },
     install: function (config) {
@@ -5311,19 +5312,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       const viewNode = this;
       // when value is an object
-      const reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
+      const reactiveClasses = config.reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
       const observer = new G.Observer(reactiveClasses);
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
-        const items = Object.getOwnPropertyDescriptors(reactiveClasses);
-        const staticClasses = {};
-        for (let key in items) {
-          const item = items[key];
-          if (item.enumerable && !item.hasOwnProperty('get')) {
-            staticClasses[key] = reactiveClasses[key];
-          }
-        }
-
-        applyClasses(viewNode, staticClasses);
         viewNode.rendered.then(function () {
           applyClasses(viewNode, reactiveClasses);
           observer.onAll((key, value, oldValue) => {
@@ -5331,7 +5322,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           });
         });
       } else {
-        applyClasses(viewNode, reactiveClasses);
         observer.onAll((key, value, oldValue) => {
           applyClasses(viewNode, reactiveClasses);
         });
@@ -5369,7 +5359,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (config.subjects === value) {
-        return;
+        value = config.reactiveClasses;
       }
 
       // when value is an object
@@ -5753,12 +5743,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           throw new Error('`data` is an invalid value for repeat.as property. Please choose a different value.`');
         }
         config.options.indexAs = config.options.indexAs || '__index__';
-
-        const bindings = View.getBindings(config.options.data);
-
-        config.watch = bindings.propertyKeysPaths;
         viewNode.localPropertyNames.add(config.options.as);
         viewNode.localPropertyNames.add(config.options.indexAs);
+
+        const bindings = View.getBindings(config.options.data);
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {
@@ -6035,7 +6023,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    setup: function (viewNode, scopeReactiveData, prop, expression) {
+    install: function (viewNode, scopeReactiveData, prop, expression) {
       if (expression && viewNode.blueprint.tag === 'select') {
         throw new Error('select.selected property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -6091,7 +6079,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     prepare: function (scope, value) {
       return {
         scope: scope,
-        subjects: value
+        subjects: value,
+        reactiveStyle: null
       };
     },
     install: function (config) {
@@ -6100,7 +6089,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       const node = this.node;
-      const reactiveStyle = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
+      const reactiveStyle = config.reactiveStyle = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
       const observer = new G.Observer(reactiveStyle);
       observer.onAll(() => {
         setStyle(node, reactiveStyle);
@@ -6133,6 +6122,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else if (value instanceof Array) {
         return node.setAttribute('style', value.join(';'));
       }
+
       if (value instanceof Promise) {
         value.then(function (_value) {
           setStyle(node, _value);
@@ -6142,7 +6132,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (config.subjects === value) {
-        return;
+        // return setStyle(node, config.reactiveStyle);
+        value = config.reactiveStyle;
       }
 
       setStyle(node, value);
@@ -6216,7 +6207,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    setup: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+    install: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
       if (expression) {
         throw new Error('input.value property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -6490,7 +6481,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
         if (_this.resolvedRouteValue === routeValue) {
-          return _this.clearParams();
+          // static routes don't have parameters
+          return Object.assign(_this.data.parameters, _this.createClearParameters());
         }
         _this.resolvedRouteValue = routeValue;
 
@@ -6499,7 +6491,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
         matchCount++;
 
-        return _this.callRoute(staticRoutes, normalizedHash, {}, parentParams);
+        return _this.callRoute(staticRoutes, normalizedHash, _this.createClearParameters(), parentParams);
       }
 
       if (matchCount === 0) {
@@ -6522,18 +6514,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
-        // this.data.parameters = params;
         Object.assign(this.data.parameters, params);
       }
 
       return false;
     },
 
-    clearParams: function () {
-      const newParams = {};
+    createClearParameters: function() {
+      const clearParams = {};
       const keys = Object.keys(this.data.parameters);
-      keys.forEach(k => newParams[k] = undefined);
-      Object.assign(this.data.parameters, newParams);
+      keys.forEach(k => clearParams[k] = undefined);
+      return clearParams;
     },
 
     extractDynamicRoutes: function (routesPath) {

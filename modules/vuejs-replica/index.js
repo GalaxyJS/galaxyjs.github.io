@@ -67,32 +67,14 @@ view.init({
                       fontSize: '.85em',
                       fontWeight: 'bold',
                       marginLeft: 'auto',
-                      color: [
-                        'product.quantity',
-                        function (q) {
-                          return q < 1 ? '#aaa' : '#3a0';
-                        }
-                      ],
+                      color: ['<>product.quantity'].createComputable((q) => {
+                        return q < 1 ? '#aaa' : '#3a0';
+                      }),
                     },
-                    // class: {
-                    //   'default': true,
-                    //   '=> data.activeProduct.title === product.title': 'active',
-                    //   '=> data.activeProduct.title !== product.title': 'inactive'
-                    // },
                     tag: 'span',
-                    // text: 'out of stock',
-                    text: [
-                      'product.quantity',
-                      function (q) {
-                        return q < 1 ? 'out of stock' : 'in stock';
-                      }
-                    ]
-                    // text: {
-                    //   'product.quantity < 1': 'Out of Stock',
-                    //   'product.quantity >= 1': 'In Stock',
-                    //   'success': 'The data has been saved!',
-                    //   'alert': 'Something went wrong!'
-                    // }
+                    text: ['<>product.quantity'].createComputable((q) => {
+                      return q < 1 ? ' out of stock' : ' in stock';
+                    }),
                   }
                 },
                 {

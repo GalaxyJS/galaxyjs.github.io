@@ -132,7 +132,8 @@ view.init({
                 sequence: 'todo-items',
                 from: {
                   opacity: 0,
-                  x: 25,
+                  y: -15,
+                  x: -15,
                   clearProps: 'all'
                 },
                 position: '-=.1',
@@ -143,7 +144,8 @@ view.init({
                 sequence: 'card',
                 to: {
                   opacity: 0,
-                  x: 25
+                  y: -15,
+                  x: -15
                 },
                 position: '-=.1',
                 duration: .15

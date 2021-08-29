@@ -152,7 +152,11 @@ view.init({
                   tag: 'ul',
                   children: [
                     {
+                      _create() {
+                        console.log(this.setters, this.virtual)
+                      },
                       tag: 'li',
+                      checked: '<>item2',
                       animations: itemAnimations,
                       class: 'flex-row',
                       repeat: {

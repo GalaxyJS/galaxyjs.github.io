@@ -32,11 +32,17 @@ view.init([
   {
     $if: '<>data.conditionForList',
     animations: {
+      enter: {
+        to: {
+          opacity: 1,
+          x: 0
+        },
+        duration: 0
+      },
       leave: {
         to: {
           opacity: 0,
           x: 20,
-          clearProps: 'all'
         },
         duration: .3
       }
