@@ -64,11 +64,6 @@ view.init({
   tag: 'div',
   class: 'card big',
   animations: animations.cardInOut,
-  lifecycle: {
-    postChildrenInsert: function () {
-      PR.prettyPrint();
-    }
-  },
   children: [
     {
       tag: 'section',
@@ -152,9 +147,6 @@ view.init({
                   tag: 'ul',
                   children: [
                     {
-                      _create() {
-                        console.log(this.setters, this.virtual)
-                      },
                       tag: 'li',
                       checked: '<>item2',
                       animations: itemAnimations,
@@ -171,6 +163,9 @@ view.init({
           ]
         }
       ]
-    }
+    },
+    view.keyframe.enter(() => {
+      PR.prettyPrint();
+    })
   ]
 });

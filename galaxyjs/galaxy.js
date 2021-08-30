@@ -2580,15 +2580,18 @@ Galaxy.View = /** @class */(function (G) {
    * @typedef {Object} Galaxy.View.BlueprintProperty
    * @property {'attr'|'prop'|'reactive'} [type]
    * @property {Function} [install]
-   * @property {Function} [createSetter]
+   * @property {Function} [beforeAssign]
+   * @property {Function} [setter]
    * @property {Function} [value]
    */
 
   View.NODE_BLUEPRINT_PROPERTY_MAP = {
     tag: {
       type: 'none'
+      // prepare:
       // install: function(viewNode, scopeReactiveData, property, expression) {}
-      // createSetter: function(viewNode, attrName, property, expression, scope) {}
+      // beforeAssign
+      // setter: function(viewNode, attrName, property, expression, scope) {}
       // value: function(viewNode, attr, value, oldValue) {}
     },
     children: {
@@ -2634,13 +2637,7 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.REACTIVE_BEHAVIORS = {
-    // example: {
-    //   prepare: function (matches, scope) {},
-    //   install: function (config) {},
-    //   apply: function (config, value, oldValue, expressionFn) {}
-    // }
-  };
+  View.REACTIVE_BEHAVIORS = {};
 
   View.PROPERTY_SETTERS = {
     'none': function () {
@@ -2651,6 +2648,7 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
+   * @param {boolean} hasAnimation
    * @memberOf Galaxy.View
    * @static
    */
@@ -2720,7 +2718,8 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const target = View.TO_BE_CREATED[index] || [];
-    target.push(action);
+    const c = { a: action };
+    target.push(c);
     View.TO_BE_CREATED[index] = target;
 
     View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
@@ -2731,11 +2730,15 @@ Galaxy.View = /** @class */(function (G) {
           return;
         }
         while (batch.length) {
-          const action = batch.shift();
-          action();
+          const c = batch.shift();
+          c.a();
         }
       });
     });
+
+    return () => {
+      c.a = View.EMPTY_CALL;
+    };
   };
 
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
@@ -3172,28 +3175,29 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @param {any} behavior
+   * @param {string} blueprintKey
    * @param {Galaxy.View.ViewNode} node
    * @param {string} key
    * @param scopeData
    */
-  View.installReactiveBehavior = function (behavior, node, key, scopeData) {
-    const data = behavior.prepare.call(node, scopeData, node.blueprint[key]);
+  View.installReactiveBehavior = function (blueprintKey, node, key, scopeData) {
+    const reactiveProperty = View.NODE_BLUEPRINT_PROPERTY_MAP[blueprintKey];
+    const data = reactiveProperty.prepare.call(node, scopeData, node.blueprint[key]);
     if (data !== undefined) {
       node.cache[key] = data;
     }
 
-    return behavior.install.call(node, data);
+    return reactiveProperty.install.call(node, data);
   };
 
-  View.createSetter = function (viewNode, key, scopeProperty, expression) {
+  View.assignSetter = function (viewNode, key, scopeProperty, expression) {
     /**
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
-    if (property.install && scopeProperty) {
-      property.install(viewNode, scopeProperty, key, expression);
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    if (property.beforeAssign && scopeProperty) {
+      property.beforeAssign(viewNode, scopeProperty, key, expression);
     }
 
     // if viewNode is virtual, then the expression should be ignored
@@ -3203,8 +3207,8 @@ Galaxy.View = /** @class */(function (G) {
 
     // This is the lowest level where the developer can modify the property setter behavior
     // By defining 'createSetter' for the property you can implement your custom functionality for setter
-    if (property.createSetter) {
-      return property.createSetter(viewNode, key, property, expression);
+    if (property.setter) {
+      return property.setter(viewNode, key, property, expression);
     }
 
     return View.PROPERTY_SETTERS[property.type](viewNode, key, property, expression);
@@ -3217,19 +3221,19 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
       case 'prop':
-        View.createSetter(viewNode, attributeName, null, null)(value, null);
+        View.assignSetter(viewNode, attributeName, null, null)(value, null);
         break;
 
       case 'reactive': {
         if (viewNode.setters[property.name]) {
           return;
         }
-        const reactiveApply = View.createSetter(viewNode, attributeName, null, null);
+        const reactiveApply = View.assignSetter(viewNode, attributeName, null, null);
         viewNode.setters[property.name] = reactiveApply;
 
         reactiveApply(value, null);
@@ -3366,9 +3370,8 @@ Galaxy.View = /** @class */(function (G) {
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
           attributeName = keys[i];
-          const behavior = View.REACTIVE_BEHAVIORS[attributeName];
-          if (behavior) {
-            const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
+          if (attributeName in View.REACTIVE_BEHAVIORS) {
+            const needValueAssign = View.installReactiveBehavior(attributeName, viewNode, attributeName, scopeData);
             if (needValueAssign === false) {
               continue;
             }
@@ -3674,6 +3677,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       const initialChanges = new G.View.ArrayChange();
+
       initialChanges.original = arr;
       initialChanges.type = 'reset';
       initialChanges.params = arr;
@@ -4084,6 +4088,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const commentNode = document.createComment('');
   const defProp = Object.defineProperty;
   const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
+  const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
+  const DESTROY_IN_NEXT_FRAME = G.View.DESTROY_IN_NEXT_FRAME;
 
   function createComment(t) {
     const n = commentNode.cloneNode();
@@ -4141,13 +4147,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
     name: '_create',
-    createSetter: () => EMPTY_CALL
+    setter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
     type: 'prop',
     name: '_finalize',
-    createSetter: () => EMPTY_CALL
+    setter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
@@ -4287,10 +4293,18 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     });
 
     _this.rendered = new Promise(function (done) {
-      _this.hasBeenRendered = function () {
-        _this.rendered.resolved = true;
-        done();
-      };
+      if (_this.node.style) {
+        _this.hasBeenRendered = function () {
+          _this.rendered.resolved = true;
+          _this.node.style.removeProperty('display');
+          done();
+        };
+      } else {
+        _this.hasBeenRendered = function () {
+          _this.rendered.resolved = true;
+          done();
+        };
+      }
     });
     _this.rendered.resolved = false;
 
@@ -4389,7 +4403,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const _this = this;
       if (_this.blueprint.renderConfig.renderDetached) {
         _this.blueprint.renderConfig.renderDetached = false;
-        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, () => {
           _this.hasBeenRendered();
         });
         return;
@@ -4410,24 +4424,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         _this.hasBeenInserted();
-
-        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, () => {
           _this.hasBeenRendered();
-          if (_this.node.style) {
-            _this.node.style.removeProperty('display');
-          }
           _this.populateEnterSequence();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        const defPLS = _this.populateLeaveSequence;
+        const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
         _this.prepareLeaveSequence(_this.hasAnimation());
-        GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
-          _this.populateLeaveSequence = defPLS;
+          _this.populateLeaveSequence = defaultPopulateLeaveSequence;
         });
       }
     },
@@ -4437,14 +4447,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.visible = flag;
 
       if (flag && !_this.virtual) {
-        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, () => {
           _this.node.style.display = null;
           _this.populateEnterSequence();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateHideSequence();
           _this.origin = false;
           _this.transitory = false;
@@ -4474,7 +4484,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const _this = this;
       _this.properties.add(reactiveData);
 
-      _this.setters[propertyName] = GV.createSetter(_this, propertyName, reactiveData, expression);
+      _this.setters[propertyName] = GV.assignSetter(_this, propertyName, reactiveData, expression);
       if (!_this.setters[propertyName]) {
         _this.setters[propertyName] = function () {
           console.error('No setter for property :', propertyName, '\nNode:', _this);
@@ -4541,7 +4551,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       _this.finalize.forEach(act => act.call(_this));
 
-      GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
+      DESTROY_IN_NEXT_FRAME(_this.index, () => {
         if (_this.inDOM) {
           _this.populateLeaveSequence(_this.onLeaveComplete);
         }
@@ -4579,9 +4589,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     get index() {
       if (this.parent) {
         const childNodes = this.parent.node.childNodes;
-        let i = arrIndexOf.call(childNodes, this.placeholder);
+        let i = -1;
+        for (let counter = 0, len = childNodes.length; counter < len; counter++) {
+          if (childNodes[counter] === this.node) {
+            i = counter;
+            break;
+          }
+        }
         if (i === -1) {
-          i = arrIndexOf.call(childNodes, this.node);
+          i = arrIndexOf.call(childNodes, this.placeholder);
         }
         return this.parent.index + '.' + ViewNode.createIndex(i);
       }
@@ -4669,8 +4685,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
+  const NODE_BLUEPRINT_PROPERTY_MAP = G.View.NODE_BLUEPRINT_PROPERTY_MAP;
   G.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = G.View.REACTIVE_BEHAVIORS[property.name];
+    const behavior = NODE_BLUEPRINT_PROPERTY_MAP[property.name];
     const cache = viewNode.cache[attrName];
 
     return createReactiveFunction(behavior, viewNode, cache, expression, scope);
@@ -5228,7 +5245,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    install: function (viewNode, scopeReactiveData, prop, expression) {
+    beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
       if (expression && viewNode.blueprint.tag === 'input') {
         throw new Error('input.checked property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -5292,12 +5309,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['class'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['class'] = {
     type: 'reactive',
-    name: 'class'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['class'] = {
+    name: 'class',
     prepare: function (scope, value) {
       return {
         scope,
@@ -5405,12 +5420,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['content'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['content'] = {
     type: 'reactive',
-    name: 'content'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['content'] = {
+    name: 'content',
     prepare: function () {
       this.virtualize();
       return {
@@ -5471,12 +5484,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['$if'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['$if'] = {
     type: 'reactive',
-    name: '$if'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['$if'] = {
+    name: '$if',
     prepare: function () {
       return {
         throttleId: null,
@@ -5511,24 +5522,22 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       config.throttleId = window.requestAnimationFrame(() => {
         viewNode.rendered.then(() => {
           if (viewNode.inDOM !== value) {
-            // debugger
             viewNode.setInDOM(value);
           }
         });
       });
     }
   };
+
 })(Galaxy);
 
 
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['inputs'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['inputs'] = {
     type: 'reactive',
-    name: 'inputs'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['inputs'] = {
+    name: 'inputs',
     /**
      *
      * @this {Galaxy.View.ViewNode}
@@ -5566,29 +5575,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
-  function cleanModuleContent(viewNode) {
-    const children = viewNode.getChildNodes();
-    children.forEach(vn => {
-      if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
-        vn.populateLeaveSequence = function (onComplete) {
-          G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
-            sequence: 'DESTROY',
-            duration: .000001
-          }, {}, onComplete);
-        };
-      }
-    });
-    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
-    viewNode.clean(true);
-    // });
-  }
-
+  G.View.REACTIVE_BEHAVIORS['module'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
-    name: 'module'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['module'] = {
+    name: 'module',
     prepare: function (scope) {
       return {
         module: null,
@@ -5631,6 +5621,23 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       config.moduleMeta = moduleMeta;
     }
   };
+
+  function cleanModuleContent(viewNode) {
+    const children = viewNode.getChildNodes();
+    children.forEach(vn => {
+      if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
+        vn.populateLeaveSequence = function (onComplete) {
+          G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
+            sequence: 'DESTROY',
+            duration: .000001
+          }, {}, onComplete);
+        };
+      }
+    });
+    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
+    viewNode.clean(true);
+    // });
+  }
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
     return function () {
@@ -5707,22 +5714,24 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 /* global Galaxy */
 (function (G) {
   const View = G.View;
-  const gClone = G.clone;
+  const CLONE = G.clone;
+  const DESTROY_NODES = G.View.destroyNodes;
+  const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
 
+  View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
     type: 'reactive',
-    name: 'repeat'
-  };
-
-  View.REACTIVE_BEHAVIORS['repeat'] = {
+    name: 'repeat',
     prepare: function (scope, value) {
       this.virtualize();
 
       return {
         changeId: null,
-        throttleId: null,
+        previousActionId: null,
         nodes: [],
-        options: value,
+        data: value.data,
+        as: value.as,
+        indexAs: value.indexAs || '_index',
         oldChanges: {},
         positions: [],
         trackMap: [],
@@ -5738,15 +5747,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     install: function (config) {
       const viewNode = this;
 
-      if (config.options) {
-        if (config.options.as === 'data') {
+      if (config.data) {
+        if (config.as === 'data') {
           throw new Error('`data` is an invalid value for repeat.as property. Please choose a different value.`');
         }
-        config.options.indexAs = config.options.indexAs || '__index__';
-        viewNode.localPropertyNames.add(config.options.as);
-        viewNode.localPropertyNames.add(config.options.indexAs);
+        viewNode.localPropertyNames.add(config.as);
+        viewNode.localPropertyNames.add(config.indexAs);
 
-        const bindings = View.getBindings(config.options.data);
+        const bindings = View.getBindings(config.data);
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {
@@ -5759,12 +5767,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
               console.error('Could not find: ' + path + '\n', error);
             }
           });
-        } else if (config.options.data instanceof Array) {
-          const setter = viewNode.setters['repeat'] = View.createSetter(viewNode, 'repeat', config.options.data, null, config.scope);
+        } else if (config.data instanceof Array) {
+          const setter = viewNode.setters['repeat'] = View.assignSetter(viewNode, 'repeat', config.data, null, config.scope);
           const value = new G.View.ArrayChange();
-          value.params = config.options.data;
-          config.options.data.changes = value;
-          setter(config.options.data);
+          value.params = config.data;
+          config.data.changes = value;
+          setter(config.data);
         }
       }
 
@@ -5816,8 +5824,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       if (changes && !(changes instanceof G.View.ArrayChange)) {
         return console.warn('%crepeat %cdata is not a type of ArrayChange' +
-          '\ndata: ' + config.options.data +
-          '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
+          '\ndata: ' + config.data +
+          '\n%ctry \'' + config.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
 
       if (!changes || typeof changes === 'string') {
@@ -5833,19 +5841,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return;
       }
 
-      config.changeId = changes.id;
-
-      /** @type {Galaxy.View.ViewNode} */
-      config.oldChanges = changes;
-      if (config.throttleId) {
-        window.cancelAnimationFrame(config.throttleId);
-        config.throttleId = 0;
+      // Only cancel previous action if the type of new and old changes is reset
+      if (changes.type === 'reset' && changes.type === config.oldChanges.type && config.previousActionId) {
+        cancelAnimationFrame(config.previousActionId);
       }
-      config.throttleId = window.requestAnimationFrame(() => {
+
+      config.changeId = changes.id;
+      config.oldChanges = changes;
+      config.previousActionId = requestAnimationFrame(() => {
         prepareChanges(node, config, changes).then(finalChanges => {
           processChages(node, config, finalChanges);
         });
       });
+
     }
   };
 
@@ -5881,12 +5889,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return hasBeenRemoved.indexOf(node) === -1;
       });
 
-      View.destroyNodes(hasBeenRemoved.reverse(), hasAnimation);
+      DESTROY_NODES(hasBeenRemoved.reverse(), hasAnimation);
       return newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(nodesToBeRemoved.reverse(), hasAnimation);
+      DESTROY_NODES(nodesToBeRemoved.reverse(), hasAnimation);
       const newChanges = Object.assign({}, changes);
       newChanges.type = 'push';
       return newChanges;
@@ -5901,8 +5909,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const nodeScopeData = config.scope;
     const trackMap = config.trackMap;
     const placeholdersPositions = [];
-    const as = config.options.as;
-    const indexAs = config.options.indexAs;
+    const as = config.as;
+    const indexAs = config.indexAs;
     const nodes = config.nodes;
     const trackByKey = config.trackBy;
     const templateBlueprint = node.cloneBlueprint();
@@ -5977,13 +5985,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           const newItemCopy = newItemsCopy[i];
           const index = trackMap.indexOf(newItemCopy[trackByKey]);
           if (index !== -1) {
-            // console.log(as, config.nodes[index], index);
-            config.nodes[index].data.__index__ = index;
+            config.nodes[index].data._index = index;
             continue;
           }
 
           const itemDataScope = createItemDataScope(nodeScopeData, as, newItemCopy);
-          const cns = gClone(templateBlueprint);
+          const cns = CLONE(templateBlueprint);
           itemDataScope[indexAs] = trackMap.length;
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
@@ -5992,7 +5999,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else {
         for (let i = 0, len = newItems.length; i < len; i++) {
           const itemDataScope = createItemDataScope(nodeScopeData, as, newItemsCopy[i]);
-          let cns = gClone(templateBlueprint);
+          let cns = CLONE(templateBlueprint);
           itemDataScope[indexAs] = i;
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
@@ -6023,7 +6030,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    install: function (viewNode, scopeReactiveData, prop, expression) {
+    beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
       if (expression && viewNode.blueprint.tag === 'select') {
         throw new Error('select.selected property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -6066,16 +6073,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['style.config'] = {
-    type: 'none'
-  };
-
+  G.View.REACTIVE_BEHAVIORS['style'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['style'] = {
     type: 'reactive',
-    name: 'style'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['style'] = {
+    name: 'style',
     prepare: function (scope, value) {
       return {
         scope: scope,
@@ -6248,12 +6249,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['visible'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['visible'] = {
     type: 'reactive',
-    name: 'visible'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['visible'] = {
+    name: 'visible',
     prepare: function () {
       return {
         throttleId: null,

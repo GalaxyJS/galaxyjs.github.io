@@ -1,11 +1,11 @@
 const view = Scope.import('galaxy/view');
 
 Scope.data.list = [];
-for (let i = 0; i < 1000; i++) {
-  Scope.data.list.push({
-    title: 'index: ' + i
-  });
-}
+// for (let i = 0; i < 1000; i++) {
+//   Scope.data.list.push({
+//     title: 'index: ' + i
+//   });
+// }
 
 view.config.cleanContainer = true;
 view.init([
@@ -16,8 +16,14 @@ view.init([
       on: {
         click() {
           const t0 = performance.now();
-          for (let i = 0; i < Scope.data.list.length; i++) {
-            Object.assign(Scope.data.list[i], { title: 'new-' + i });
+          // for (let i = 0; i < Scope.data.list.length; i++) {
+          //   Object.assign(Scope.data.list[i], { title: 'new-' + i });
+          // }
+
+          for (let i = 0; i < 5000; i++) {
+            Scope.data.list.push({
+              title: 'index: ' + i
+            });
           }
 
           const t1 = performance.now();
@@ -27,6 +33,7 @@ view.init([
     }
   },
   {
+    class: 'main-content',
     children: {
       tag: 'p',
       repeat: {
