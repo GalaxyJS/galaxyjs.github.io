@@ -1,5 +1,4 @@
 const view = Scope.import('galaxy/view');
-const effects = Scope.import('services/effects.js');
 const exapndable = Scope.import('services/expandable.js');
 
 const firstAnimationExample = Scope.importAsText('./first-animation.example.js');
@@ -34,11 +33,6 @@ view.init([
         duration: .5
       }
     },
-    lifecycle: {
-      postChildrenInsert: function () {
-        PR.prettyPrint();
-      }
-    },
     children: [
       {
         tag: 'img',
@@ -67,7 +61,8 @@ view.init([
             expandable: exapndable
           }
         ]
-      }
+      },
+      view.keyframe.enter(() => PR.prettyPrint(), 'card'),
     ]
   }
 ]);

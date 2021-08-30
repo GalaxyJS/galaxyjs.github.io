@@ -37,16 +37,11 @@ router.init([
     title: 'Inputs property',
     path: '/inputs-property'
   }
-])
+]);
 
 view.init({
   class: 'card big',
   animations: animations.cardInOut,
-  lifecycle: {
-    postChildrenInsert: function () {
-      PR.prettyPrint();
-    }
-  },
   children: [
     {
       tag: 'img',
@@ -250,7 +245,7 @@ view.init({
         '<p>A computed bind is basically a function that watches the properties you specify for it and gets called anytime any of those properties changes.</p>',
         {
           module: {
-            url: './inline-computed-bind.example.js'
+            path: './inline-computed-bind.example.js'
           }
         },
         {
@@ -260,11 +255,11 @@ view.init({
           text: inlineComputedBindExample
         },
 
-        '<h4>Array.prototype.compute</h4>',
-        '<p>For higher code quality we suggest that instead of using inline compute syntax, you use <code class="prettyprint lang-js">Array.prototype.compute</code> function. Here is an example:</p>',
+        '<h4>Array.prototype.createComputable</h4>',
+        '<p>For higher code quality we suggest that instead of using inline compute syntax, you use <code class="prettyprint lang-js">Array.prototype.createComputable</code> function. Here is an example:</p>',
         {
           module: {
-            url: './array-computed-bind.example.js'
+            path: './array-computed-bind.example.js'
           }
         },
         {
@@ -282,7 +277,7 @@ view.init({
         '<p>The <code class="prettyprint lang-js">class</code> and <code class="prettyprint lang-js">style</code> property support variety of types like string, array, object and literal object.</p>',
         {
           module: {
-            url: './class-and-style.example.js'
+            path: './class-and-style.example.js'
           }
         },
         {
@@ -310,7 +305,7 @@ view.init({
             fromParent: 'This is a message from parent module!'
           },
           module: {
-            url: './view-node-inputs.example.js'
+            path: './view-node-inputs.example.js'
           }
         },
         {
@@ -321,7 +316,10 @@ view.init({
         },
       ]
     },
-    view.keyframe.enter(() => router.start(), 'card')
+    view.keyframe.enter(() => {
+      router.start();
+      PR.prettyPrint();
+    }, 'card')
   ]
 });
 

@@ -1,9 +1,9 @@
 const view = Scope.import('galaxy/view');
 
 const fullNameComputed = [
-  'data.firstName',
-  'data.lastName'
-].compute((fn, ln) => (fn || '...') + ' ' + (ln || '...'));
+  '<>data.firstName',
+  '<>data.lastName'
+].createComputable((fn, ln) => (fn || '...') + ' ' + (ln || '...'));
 
 view.init({
   class: 'example-box',

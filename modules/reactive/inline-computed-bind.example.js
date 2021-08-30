@@ -14,10 +14,9 @@ view.init({
         {
           tag: 'strong',
           text: [
-            'data.firstName',
-            'data.lastName',
-            (fn, ln) => (fn || '...') + ' ' + (ln || '...')
-          ]
+            '<>data.firstName',
+            '<>data.lastName',
+          ].createComputable((fn, ln) => (fn || '...') + ' ' + (ln || '...'))
         }
       ]
     },
@@ -33,6 +32,5 @@ view.init({
       placeholder: 'Last Name',
       value: '<>data.lastName'
     },
-
   ]
 });

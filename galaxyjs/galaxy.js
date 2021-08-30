@@ -2585,14 +2585,15 @@ Galaxy.View = /** @class */(function (G) {
    * @property {Function} [value]
    */
 
+  View.REACTIVE_BEHAVIORS = {};
+
+  /**
+   *
+   * @type {{[property: string]: Galaxy.View.BlueprintProperty}}
+   */
   View.NODE_BLUEPRINT_PROPERTY_MAP = {
     tag: {
       type: 'none'
-      // prepare:
-      // install: function(viewNode, scopeReactiveData, property, expression) {}
-      // beforeAssign
-      // setter: function(viewNode, attrName, property, expression, scope) {}
-      // value: function(viewNode, attr, value, oldValue) {}
     },
     children: {
       type: 'none'
@@ -2636,8 +2637,6 @@ Galaxy.View = /** @class */(function (G) {
       name: 'disabled'
     }
   };
-
-  View.REACTIVE_BEHAVIORS = {};
 
   View.PROPERTY_SETTERS = {
     'none': function () {
@@ -2718,7 +2717,7 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const target = View.TO_BE_CREATED[index] || [];
-    const c = { a: action };
+    const c = {a: action};
     target.push(c);
     View.TO_BE_CREATED[index] = target;
 
@@ -3195,7 +3194,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
     if (property.beforeAssign && scopeProperty) {
       property.beforeAssign(viewNode, scopeProperty, key, expression);
     }
@@ -3221,7 +3220,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -3269,6 +3268,46 @@ Galaxy.View = /** @class */(function (G) {
       _this.container.hasBeenRendered();
     }
   }
+
+  function Keyframe(action) {
+    this.sequence = null;
+    this.duration = 0;
+    this.action = action;
+  }
+
+  Keyframe.prototype.addTo = function (sequence, duration) {
+    this.sequence = sequence;
+    this.duration = duration || 0;
+    return this;
+  };
+
+  Keyframe.prototype.asBlueprint = function (type) {
+    const _keyframe = this;
+    const animations = {};
+    animations[type] = {
+      sequence: _keyframe.sequence,
+      duration: _keyframe.duration,
+      onComplete: _keyframe.action
+    };
+
+    return {
+      tag: 'comment',
+      nodeValue: 'keyframe:' + type,
+      animations: animations
+    };
+  };
+
+  Keyframe.prototype.asEnterBlueprint = function () {
+    return this.asBlueprint('enter');
+  };
+
+  Keyframe.prototype.asLeaveBlueprint = function () {
+    return this.asBlueprint('leave');
+  };
+
+  Keyframe.prototype.play = function () {
+    (new G.View.AnimationMeta(this.sequence)).addOnComplete(this.action);
+  };
 
   View.prototype = {
     keyframe: {
@@ -3331,7 +3370,7 @@ Galaxy.View = /** @class */(function (G) {
         _this.container.node.innerHTML = '';
       }
 
-      return this.createNode(blueprint, _this.container, _this.scope, null);
+      return this.createNode(blueprint, _this.container, _this.scope, null, null);
     },
     broadcast: function (event) {
       this.container.broadcast(event);
@@ -3343,7 +3382,7 @@ Galaxy.View = /** @class */(function (G) {
      * @param {Object} scopeData
      * @param {Node|Element|null} position
      * @param {Node|Element|null} refNode
-     * @return {Galaxy.View.ViewNode}
+     * @return {Galaxy.View.ViewNode|Array<any>}
      */
     createNode: function (blueprint, parent, scopeData, position, refNode) {
       const _this = this;
@@ -3355,12 +3394,17 @@ Galaxy.View = /** @class */(function (G) {
         nodes.forEach(function (node) {
           parent.node.appendChild(node);
         });
+
+        return nodes;
       } else if (typeof blueprint === 'function') {
-        blueprint();
+        return blueprint();
       } else if (blueprint instanceof Array) {
+        const result = [];
         for (i = 0, len = blueprint.length; i < len; i++) {
-          _this.createNode(blueprint[i], parent, scopeData, null, refNode);
+          result.push(_this.createNode(blueprint[i], parent, scopeData, null, refNode));
         }
+
+        return result;
       } else if (blueprint instanceof Object) {
         let attributeValue, attributeName;
         const keys = Object.keys(blueprint);
@@ -3396,10 +3440,14 @@ Galaxy.View = /** @class */(function (G) {
 
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
-          _this.createNode(blueprint.children, viewNode, scopeData, null, refNode);
+          if (blueprint.children) {
+            _this.createNode(blueprint.children, viewNode, scopeData, null, refNode);
+          }
         }
 
         return viewNode;
+      } else {
+        throw Error('blueprint can not be null');
       }
     }
   };
@@ -5716,7 +5764,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const View = G.View;
   const CLONE = G.clone;
   const DESTROY_NODES = G.View.destroyNodes;
-  const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
 
   View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
@@ -5853,7 +5900,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           processChages(node, config, finalChanges);
         });
       });
-
     }
   };
 
@@ -5999,7 +6045,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else {
         for (let i = 0, len = newItems.length; i < len; i++) {
           const itemDataScope = createItemDataScope(nodeScopeData, as, newItemsCopy[i]);
-          let cns = CLONE(templateBlueprint);
+          const cns = CLONE(templateBlueprint);
           itemDataScope[indexAs] = i;
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
@@ -6208,7 +6254,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    install: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+    beforeAssign: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
       if (expression) {
         throw new Error('input.value property does not support binding expressions ' +
           'because it must be able to change its data.\n' +

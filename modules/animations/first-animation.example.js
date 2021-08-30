@@ -18,6 +18,10 @@ view.init([
             view.keyframe.action(() => {
               Scope.data.boxes = originalDataList.slice(0);
             }, 'card');
+
+            // view.keyframe(() => {
+            //   Scope.data.boxes = originalDataList.slice(0);
+            // }).addTo('card');
           }
         }
       }
