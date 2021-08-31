@@ -14,10 +14,10 @@ view.init([
         text: 'Replay',
         on: {
           click: function () {
-            Scope.data.boxes = [];
-            view.keyframe.action(() => {
-              Scope.data.boxes = originalDataList.slice(0);
-            }, 'card');
+            // Scope.data.boxes = [];
+            // view.keyframe.action(() => {
+            Scope.data.boxes = originalDataList.slice(0);
+            // }, 'card');
 
             // view.keyframe(() => {
             //   Scope.data.boxes = originalDataList.slice(0);
@@ -32,14 +32,22 @@ view.init([
     class: 'box-container',
     children: {
       style: {
-        width: 'calc(100% / ' + Scope.data.boxes.length + ')',
+        width: '100px',
       },
       animations: {
         enter: {
-          sequence: 'card',
+          addTo: 'card',
+          sequence: 'boxes',
+          // positionInParent: '+=.1',
           from: {
+            display: 'none',
             scale: 0,
-            opacity: 1
+            opacity: 1,
+          },
+          to: {
+            scale: 1,
+            display: null,
+            clearProps: ''
           },
           duration: .35,
           position: '-=.25'
@@ -50,8 +58,8 @@ view.init([
             scale: 0,
             opacity: 0
           },
-          duration: .15,
-          position: '-=0.08'
+          duration: .25,
+          position: '-=0.15'
         }
       },
       class: 'box',

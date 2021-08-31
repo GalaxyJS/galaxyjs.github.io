@@ -270,6 +270,6 @@ view.init([
   },
   view.keyframe.enter(() => {
     router.start();
-  }, 'card')
+  }, 'card'),
 ]);
 console.log(router);

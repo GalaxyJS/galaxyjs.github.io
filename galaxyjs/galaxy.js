@@ -2717,7 +2717,7 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const target = View.TO_BE_CREATED[index] || [];
-    const c = {a: action};
+    const c = { a: action };
     target.push(c);
     View.TO_BE_CREATED[index] = target;
 
@@ -3194,8 +3194,8 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
-    if (property.beforeAssign && scopeProperty) {
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    if (property.beforeAssign) {
       property.beforeAssign(viewNode, scopeProperty, key, expression);
     }
 
@@ -3220,7 +3220,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
@@ -3281,7 +3281,7 @@ Galaxy.View = /** @class */(function (G) {
     return this;
   };
 
-  Keyframe.prototype.asBlueprint = function (type) {
+  Keyframe.prototype.asNode = function (type) {
     const _keyframe = this;
     const animations = {};
     animations[type] = {
@@ -3297,16 +3297,12 @@ Galaxy.View = /** @class */(function (G) {
     };
   };
 
-  Keyframe.prototype.asEnterBlueprint = function () {
-    return this.asBlueprint('enter');
+  Keyframe.prototype.asEnterNode = function () {
+    return this.asNode('enter');
   };
 
-  Keyframe.prototype.asLeaveBlueprint = function () {
-    return this.asBlueprint('leave');
-  };
-
-  Keyframe.prototype.play = function () {
-    (new G.View.AnimationMeta(this.sequence)).addOnComplete(this.action);
+  Keyframe.prototype.asLeaveNode = function () {
+    return this.asNode('leave');
   };
 
   View.prototype = {
@@ -3354,13 +3350,6 @@ Galaxy.View = /** @class */(function (G) {
             }
           }
         };
-      },
-      action: function (action, sequence) {
-        if (!sequence) {
-          throw Error('keyframe.action need a sequence name');
-        }
-
-        (new G.View.AnimationMeta(sequence)).addOnComplete(action);
       }
     },
     init: function (blueprint) {
@@ -4878,44 +4867,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           }, {}, onComplete);
         };
       }
-
-      const classAnimationsHandler = function () {
-        viewNode.observer.on('classList', function (classes, oldClasses) {
-          oldClasses = oldClasses || [];
-
-          try {
-            classes.forEach(function (item) {
-              // Class has been added
-              if (item && oldClasses.indexOf(item) === -1) {
-                const classEvent = value['add:' + item];
-                if (classEvent) {
-                  viewNode.node.classList.remove(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-                    viewNode.node.classList.add(item);
-                  });
-                }
-              }
-            });
-
-            oldClasses.forEach(function (item) {
-              if (item && classes.indexOf(item) === -1) {
-                // Class has been removed
-                const classEvent = value['remove:' + item];
-                if (classEvent) {
-                  viewNode.node.classList.add(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-                    viewNode.node.classList.remove(item);
-                  });
-                }
-              }
-            });
-          } catch (exception) {
-            console.warn(exception);
-          }
-        });
-      };
-
-      // viewNode.rendered.then(classAnimationsHandler);
     }
   };
 
@@ -4949,7 +4900,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({duration: duration}, to);
+      to = Object.assign({ duration: duration }, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
@@ -5086,7 +5037,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param {AnimationConfig} descriptions
    * @param config
-   * @param {callback} onComplete
+   * @param {Function} onComplete
    */
   AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
@@ -5097,7 +5048,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -5160,12 +5111,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         animationMeta.awaits.push(newConfig.await);
       }
 
-      // add node with it's animation to the 'animationMeta.timeline'
-      if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
-        animationMeta.add(viewNode, newConfig, onComplete);
-      } else {
-        animationMeta.add(viewNode, newConfig, onComplete);
-      }
+      animationMeta.add(viewNode, newConfig, onComplete);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
       // its only child and we have to resume it if it's not playing
@@ -5246,7 +5192,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     add: function (viewNode, config, onComplete) {
       const _this = this;
-
       let tween = null;
       let duration = config.duration;
       if (duration instanceof Function) {
@@ -5294,6 +5239,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param {Function} expression
      */
     beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
+      if (!scopeReactiveData) {
+        return;
+      }
+
       if (expression && viewNode.blueprint.tag === 'input') {
         throw new Error('input.checked property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -6077,6 +6026,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param {Function} expression
      */
     beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
+      if (!scopeReactiveData) {
+        return;
+      }
+
       if (expression && viewNode.blueprint.tag === 'select') {
         throw new Error('select.selected property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -6085,6 +6038,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       // Don't do anything if the node is an option tag
       if (viewNode.blueprint.tag === 'select') {
+        const bindings = G.View.getBindings(viewNode.blueprint.selected);
+        const id = bindings.propertyKeysPaths[0].split('.').pop();
+        const nativeNode = viewNode.node;
+        nativeNode.addEventListener('change', (event) => {
+          // if (scopeReactiveData.data[id] && !nativeNode.value) {
+          //   nativeNode.value = scopeReactiveData.data[id];
+          // }
+        });
         // const bindings = G.View.getBindings(viewNode.blueprint.selected);
         // const id = bindings.propertyKeysPaths[0].split('.').pop();
         // const nativeNode = viewNode.node;
@@ -6255,6 +6216,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param {Function} expression
      */
     beforeAssign: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+      const nativeNode = viewNode.node;
+      if (!scopeReactiveData) {
+        return;
+      }
+
       if (expression) {
         throw new Error('input.value property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -6263,8 +6229,22 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       const bindings = G.View.getBindings(viewNode.blueprint.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
-      const nativeNode = viewNode.node;
-      if (nativeNode.type === 'number') {
+      if (nativeNode.tagName === 'SELECT') {
+        const observer = new MutationObserver((data) => {
+          viewNode.rendered.then(() => {
+            // if (!scopeReactiveData.data[id]) {
+            //   scopeReactiveData.data[id] = nativeNode.value;
+            // } else {
+            nativeNode.value = scopeReactiveData.data[id];
+            // }
+          });
+        });
+        observer.observe(nativeNode, { childList: true });
+        viewNode.finalize.push(() => {
+          observer.disconnect();
+        });
+        nativeNode.addEventListener('change', createHandler(scopeReactiveData, id));
+      } else if (nativeNode.type === 'number') {
         nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
       } else {
         nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));

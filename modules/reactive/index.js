@@ -13,6 +13,7 @@ const arrayComputedBindExample = Scope.importAsText('./array-computed-bind.examp
 const moduleWithInputsExample = Scope.importAsText('./module-with-inputs.example.text');
 const classAndStyleExample = Scope.importAsText('./class-and-style.example.js');
 const viewNodeInputsExample = Scope.importAsText('./view-node-inputs.example.js');
+const valuePropertyExample = Scope.importAsText('./value-property.example.js');
 Scope.data.list = ['Amsterdam', 'Paris'];
 
 router.init([
@@ -36,6 +37,10 @@ router.init([
   {
     title: 'Inputs property',
     path: '/inputs-property'
+  },
+  {
+    title: 'Value property',
+    path: '/value-property'
   }
 ]);
 
@@ -313,6 +318,20 @@ view.init({
           exapndable: exapndable,
           class: 'prettyprint lang-js',
           text: viewNodeInputsExample
+        },
+
+        '<h2 id="value-property">Value property</h2>',
+        '<p>sadasdsadasd</p>',
+        {
+          tag: 'pre',
+          exapndable: exapndable,
+          class: 'prettyprint lang-js',
+          text: valuePropertyExample
+        },
+        {
+          module: {
+            path: './value-property.example.js'
+          }
         },
       ]
     },
