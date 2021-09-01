@@ -268,7 +268,7 @@ view.init([
       }
     ]
   },
-  view.keyframe.enter(() => {
+  view.enterKeyframe(() => {
     router.start();
   }, 'card'),
 ]);

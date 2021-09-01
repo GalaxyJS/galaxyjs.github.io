@@ -27,7 +27,7 @@ router.init([
         return true;
       }
 
-      gsap.to('#main-content', {scrollTo: {y: '#' + params.section, offsetY: 30}, duration: .3});
+      gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
       return true;
     }
   },
@@ -240,9 +240,10 @@ view.init([
       }
     ]
   },
-  view.keyframe.enter(PR.prettyPrint),
-
-  view.keyframe.enter(() => router.start(), 'card')
+  view.enterKeyframe(() => {
+    PR.prettyPrint();
+    router.start();
+  }, 'card')
 ]);
 
 

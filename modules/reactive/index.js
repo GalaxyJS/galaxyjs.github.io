@@ -14,7 +14,7 @@ const moduleWithInputsExample = Scope.importAsText('./module-with-inputs.example
 const classAndStyleExample = Scope.importAsText('./class-and-style.example.js');
 const viewNodeInputsExample = Scope.importAsText('./view-node-inputs.example.js');
 const valuePropertyExample = Scope.importAsText('./value-property.example.js');
-Scope.data.list = ['Amsterdam', 'Paris'];
+Scope.data.citiesList = ['Amsterdam', 'Paris'];
 
 router.init([
   {
@@ -153,12 +153,12 @@ view.init({
           children: [
             {
               tag: 'li',
-              html: '<p>- Setting an item with index directly, e.g.</p><pre class="prettyprint lang-js">Scope.data.list[index] =' +
+              html: '<p>- Setting an item with index directly, e.g.</p><pre class="prettyprint lang-js">Scope.data.citiesList[index] =' +
                 ' newValue</pre>'
             },
             {
               tag: 'li',
-              html: '<p>- Setting array length, e.g.</p><pre class="prettyprint lang-js">Scope.data.list.length =' +
+              html: '<p>- Setting array length, e.g.</p><pre class="prettyprint lang-js">Scope.data.citiesList.length =' +
                 ' newLength</pre>'
             }
           ]
@@ -167,10 +167,10 @@ view.init({
         '<h4>Galaxy.View.ArrayChange</h4>' +
         '<p>An ArrayChange object represents the changes that has been made to an reactive array, consider the following code</p>' +
         '<pre class="prettyprint lang-js">' +
-        'Scope.data.list = [\'Amsterdam\',\'Paris\']; \n' +
+        'Scope.data.citiesList = [\'Amsterdam\',\'Paris\']; \n' +
         '\n' +
         '// push will result in creation of a new ArrayChange object that will be used to update view\n' +
-        'Scope.data.list.push(\'Budapest\');\n' +
+        'Scope.data.citiesList.push(\'Budapest\');\n' +
         '// ["Amsterdam", "Paris", "Budapest"]' +
         '</pre>' +
         '<p>The ArrayChange instance would look like this</p>' +
@@ -183,13 +183,10 @@ view.init({
           class: 'circle',
           children: {
             repeat: {
-              data: [
-                'data.list.changes',
-                function (array) {
-                  console.info('\n%O \nType of change is %c%s%c \nparameters: %o \n', array, 'color: orange', array.type, 'color: unset', array.params);
-                  return array;
-                }
-              ],
+              data: ['<>data.citiesList.changes'].createComputable(function (array) {
+                console.info('\n%O \nType of change is %c%s%c \nparameters: %o \n', array, 'color: orange', array.type, 'color: unset', array.params);
+                return array;
+              }),
               as: 'city'
             },
             tag: 'li',
@@ -204,16 +201,12 @@ view.init({
             {
               tag: 'button',
               text: 'Add \'Budapest\' to the list',
-              disabled: [
-                'data.list',
-                function (list) {
-                  return list.indexOf('Budapest') !== -1;
-                }
-              ],
+              disabled: ['<>data.citiesList'].createComputable(function (list) {
+                return list.indexOf('Budapest') !== -1;
+              }),
               on: {
                 click: function () {
-                  // Scope.data.ps.color = 'green';
-                  Scope.data.list.push('Budapest');
+                  Scope.data.citiesList.push('Budapest');
                 }
               }
             }
@@ -227,17 +220,14 @@ view.init({
             {
               tag: 'button',
               text: 'Remove \'Budapest\' from the list',
-              disabled: [
-                'data.list',
-                function (list) {
-                  return list.indexOf('Budapest') === -1;
-                }
-              ],
+              disabled: ['<>data.citiesList'].createComputable(function (list) {
+                return list.indexOf('Budapest') === -1;
+              }),
               on: {
                 click: function () {
-                  const index = Scope.data.list.indexOf('Budapest');
+                  const index = Scope.data.citiesList.indexOf('Budapest');
                   if (index !== -1) {
-                    Scope.data.list.splice(index, 1);
+                    Scope.data.citiesList.splice(index, 1);
                   }
                 }
               }
@@ -335,7 +325,7 @@ view.init({
         },
       ]
     },
-    view.keyframe.enter(() => {
+    view.enterKeyframe(() => {
       router.start();
       PR.prettyPrint();
     }, 'card')

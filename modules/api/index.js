@@ -178,7 +178,9 @@ view.init({
         }
       }
     },
-    view.keyframe.enter(PR.prettyPrint),
-    view.keyframe.enter(() => router.start(), 'card')
+    view.enterKeyframe(() => {
+      PR.prettyPrint();
+      router.start();
+    }, 'card')
   ]
 });

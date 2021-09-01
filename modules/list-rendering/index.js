@@ -164,7 +164,7 @@ view.init({
         }
       ]
     },
-    view.keyframe.enter(() => {
+    view.enterKeyframe(() => {
       PR.prettyPrint();
     })
   ]

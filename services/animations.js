@@ -6,7 +6,7 @@ const animations = {
       sequence: 'card',
       from: {
         transformOrigin: 'top center',
-        scale: 1.12,
+        scale: 1.04,
         opacity: 0,
         position: 'absolute',
         top: 0,
@@ -31,11 +31,11 @@ const animations = {
         ease: 'Power1.easeIn',
         transformOrigin: 'top center',
         display: 'none',
-        scale: .9,
+        scale: .96,
         opacity: 0,
-        delay: .2
+        delay: .1
       },
-      duration: .35
+      duration: .25
     }
   },
   itemInOut: {

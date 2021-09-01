@@ -62,8 +62,7 @@ view.init([
           }
         ]
       },
-      view.keyframe.enter(() => PR.prettyPrint(), 'card'),
-      // view.keyframe(() => PR.prettyPrint()).addTo('card').asEnterNode()
+      view.enterKeyframe(() => PR.prettyPrint(), 'card'),
     ]
   }
 ]);

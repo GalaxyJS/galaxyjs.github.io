@@ -90,7 +90,7 @@ view.init({
         'the same element will be reattached to the DOM</p>'
       ]
     },
-    view.keyframe.enter(() => {
+    view.enterKeyframe(() => {
       PR.prettyPrint();
     }, 'card')
   ],
