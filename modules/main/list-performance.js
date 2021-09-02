@@ -20,11 +20,18 @@ view.init([
           //   Object.assign(Scope.data.list[i], { title: 'new-' + i });
           // }
 
-          for (let i = 0; i < 5000; i++) {
+          for (let i = 0; i < 10000; i++) {
             Scope.data.list.push({
               title: 'index: ' + i
             });
           }
+
+          // const main = document.getElementById('main');
+          // for (let i = 0; i < 10000; i++) {
+          //   const p = document.createElement('p');
+          //   p.innerText = 'index: ' + i;
+          //   main.appendChild(p);
+          // }
 
           const t1 = performance.now();
           console.log('Call to doSomething took ' + (t1 - t0) + ' milliseconds.');
@@ -33,6 +40,7 @@ view.init([
     }
   },
   {
+    id: 'main',
     class: 'main-content',
     children: {
       tag: 'p',

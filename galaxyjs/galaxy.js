@@ -2578,11 +2578,13 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @typedef {Object} Galaxy.View.BlueprintProperty
+   * @property {string} [key]
    * @property {'attr'|'prop'|'reactive'} [type]
+   * @property {Function} [getConfig]
    * @property {Function} [install]
-   * @property {Function} [beforeAssign]
+   * @property {Function} [beforeActivate]
    * @property {Function} [setter]
-   * @property {Function} [value]
+   * @property {Function} [update]
    */
 
   View.REACTIVE_BEHAVIORS = {};
@@ -2619,23 +2621,19 @@ Galaxy.View = /** @class */(function (G) {
     },
     html: {
       type: 'prop',
-      name: 'innerHTML'
+      key: 'innerHTML'
     },
     nodeValue: {
       type: 'prop',
-      name: 'nodeValue'
     },
     scrollTop: {
       type: 'prop',
-      name: 'scrollTop'
     },
     scrollLeft: {
       type: 'prop',
-      name: 'scrollLeft'
     },
     disabled: {
       type: 'attr',
-      name: 'disabled'
     }
   };
 
@@ -2741,8 +2739,14 @@ Galaxy.View = /** @class */(function (G) {
     };
   };
 
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param value
+   * @param oldValue
+   * @param name
+   */
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
-    // viewNode.notifyObserver(name, value, oldValue);
     if (value !== null && value !== undefined && value !== false) {
       viewNode.node.setAttribute(name, value === true ? '' : value);
     } else {
@@ -3180,68 +3184,83 @@ Galaxy.View = /** @class */(function (G) {
    * @param {string} key
    * @param scopeData
    */
-  View.installReactiveBehavior = function (blueprintKey, node, key, scopeData) {
-    const reactiveProperty = View.NODE_BLUEPRINT_PROPERTY_MAP[blueprintKey];
-    const data = reactiveProperty.prepare.call(node, scopeData, node.blueprint[key]);
-    if (data !== undefined) {
-      node.cache[key] = data;
+  View.installPropertyForNode = function (blueprintKey, node, key, scopeData) {
+    if (blueprintKey in View.REACTIVE_BEHAVIORS) {
+      const reactiveProperty = View.NODE_BLUEPRINT_PROPERTY_MAP[blueprintKey];
+      const data = reactiveProperty.getConfig.call(node, scopeData, node.blueprint[key]);
+      if (data !== undefined) {
+        node.cache[key] = data;
+      }
+
+      return reactiveProperty.install.call(node, data);
     }
 
-    return reactiveProperty.install.call(node, data);
+    return true;
   };
 
-  View.assignSetter = function (viewNode, key, scopeProperty, expression) {
+  /**
+   *
+   * @param viewNode
+   * @param {string} propertyKey
+   * @param {Galaxy.View.ReactiveData} scopeProperty
+   * @param expression
+   */
+  View.activatePropertyForNode = function (viewNode, propertyKey, scopeProperty, expression) {
     /**
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
-    if (property.beforeAssign) {
-      property.beforeAssign(viewNode, scopeProperty, key, expression);
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    property.key = property.key || propertyKey;
+    if (property.beforeActivate) {
+      property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
     }
 
+    viewNode.setters[propertyKey] = View.getPropertySetterForNode(property, viewNode, scopeProperty, expression);
+  };
+
+  /**
+   *
+   * @param {Galaxy.View.BlueprintProperty} blueprintProperty
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param [scopeProperty]
+   * @param [expression]
+   * @returns {Galaxy.View.EMPTY_CALL|(function())|*}
+   */
+  View.getPropertySetterForNode = function (blueprintProperty, viewNode, scopeProperty, expression) {
     // if viewNode is virtual, then the expression should be ignored
-    if (property.type !== 'reactive' && viewNode.virtual) {
+    if (blueprintProperty.type !== 'reactive' && viewNode.virtual) {
       return View.EMPTY_CALL;
     }
 
     // This is the lowest level where the developer can modify the property setter behavior
     // By defining 'createSetter' for the property you can implement your custom functionality for setter
-    if (property.setter) {
-      return property.setter(viewNode, key, property, expression);
+    if (blueprintProperty.setter) {
+      return blueprintProperty.setter(viewNode, blueprintProperty, blueprintProperty, expression);
     }
 
-    return View.PROPERTY_SETTERS[property.type](viewNode, key, property, expression);
+    return View.PROPERTY_SETTERS[blueprintProperty.type](viewNode, blueprintProperty, expression);
   };
 
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
-   * @param {string} attributeName
+   * @param {string} propertyKey
    * @param {*} value
    */
-  View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+  View.setPropertyForNode = function (viewNode, propertyKey, value) {
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    property.key = property.key || propertyKey;
 
     switch (property.type) {
       case 'attr':
       case 'prop':
-        View.assignSetter(viewNode, attributeName, null, null)(value, null);
+      case 'reactive':
+        View.getPropertySetterForNode(property, viewNode)(value, null);
         break;
-
-      case 'reactive': {
-        if (viewNode.setters[property.name]) {
-          return;
-        }
-        const reactiveApply = View.assignSetter(viewNode, attributeName, null, null);
-        viewNode.setters[property.name] = reactiveApply;
-
-        reactiveApply(value, null);
-        break;
-      }
 
       case 'event':
-        viewNode.node.addEventListener(attributeName, value.bind(viewNode), false);
+        viewNode.node.addEventListener(propertyKey, value.bind(viewNode), false);
         break;
     }
   };
@@ -3404,7 +3423,7 @@ Galaxy.View = /** @class */(function (G) {
         return result;
       } else if (blueprint instanceof Object) {
         // blueprint = View.getComponent(blueprint.tag, blueprint, scopeData, _this, refNode);
-        let attributeValue, attributeName;
+        let propertyValue, propertyKey;
         const keys = Object.keys(blueprint);
         const needInitKeys = [];
         const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, scopeData);
@@ -3412,28 +3431,26 @@ Galaxy.View = /** @class */(function (G) {
 
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
-          attributeName = keys[i];
-          if (attributeName in View.REACTIVE_BEHAVIORS) {
-            const needValueAssign = View.installReactiveBehavior(attributeName, viewNode, attributeName, scopeData);
-            if (needValueAssign === false) {
-              continue;
-            }
+          propertyKey = keys[i];
+          const needValueAssign = View.installPropertyForNode(propertyKey, viewNode, propertyKey, scopeData);
+          if (needValueAssign === false) {
+            continue;
           }
 
-          needInitKeys.push(attributeName);
+          needInitKeys.push(propertyKey);
         }
 
         // Value assignment stage
         for (i = 0, len = needInitKeys.length; i < len; i++) {
-          attributeName = needInitKeys[i];
-          if (attributeName === 'children') continue;
+          propertyKey = needInitKeys[i];
+          if (propertyKey === 'children') continue;
 
-          attributeValue = blueprint[attributeName];
-          const bindings = View.getBindings(attributeValue);
+          propertyValue = blueprint[propertyKey];
+          const bindings = View.getBindings(propertyValue);
           if (bindings.propertyKeysPaths) {
-            View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
+            View.makeBinding(viewNode, propertyKey, null, scopeData, bindings, viewNode);
           } else {
-            View.setPropertyForNode(viewNode, attributeName, attributeValue);
+            View.setPropertyForNode(viewNode, propertyKey, propertyValue);
           }
         }
 
@@ -3983,7 +4000,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       if (index === -1 || map.keys[index] !== nodeKey) {
         this.nodeCount++;
         if (node instanceof G.View.ViewNode && !node.setters[nodeKey]) {
-          node.installSetter(this, nodeKey, expression);
+          node.registerActiveProperty(nodeKey, this, expression);
         }
 
         map.keys.push(nodeKey);
@@ -4193,19 +4210,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
-    name: '_create',
+    key: '_create',
     setter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
     type: 'prop',
-    name: '_finalize',
+    key: '_finalize',
     setter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
     type: 'prop',
-    name: 'renderConfig'
+    key: 'renderConfig'
   };
 
   /**
@@ -4523,20 +4540,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     /**
+     * @param {string} propertyKey
      * @param {Galaxy.View.ReactiveData} reactiveData
-     * @param {string} propertyName
      * @param {Function} expression
      */
-    installSetter: function (reactiveData, propertyName, expression) {
-      const _this = this;
-      _this.properties.add(reactiveData);
-
-      _this.setters[propertyName] = GV.assignSetter(_this, propertyName, reactiveData, expression);
-      if (!_this.setters[propertyName]) {
-        _this.setters[propertyName] = function () {
-          console.error('No setter for property :', propertyName, '\nNode:', _this);
-        };
-      }
+    registerActiveProperty: function (propertyKey, reactiveData, expression) {
+      this.properties.add(reactiveData);
+      GV.activatePropertyForNode(this, propertyKey, reactiveData, expression);
     },
 
     hasAnimation: function () {
@@ -4637,8 +4647,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (this.parent) {
         const childNodes = this.parent.node.childNodes;
         let i = -1;
+        const node = this.node;
         for (let counter = 0, len = childNodes.length; counter < len; counter++) {
-          if (childNodes[counter] === this.node) {
+          if (childNodes[counter] === node) {
             i = counter;
             break;
           }
@@ -4667,20 +4678,21 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
-  G.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
-    const valueFn = property.value || G.View.setAttr;
+  G.View.PROPERTY_SETTERS.attr = function (viewNode, property, expression) {
+    const attrName = property.key;
+    const updateFn = property.update || G.View.setAttr;
     const setter = function A(value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
-          valueFn(viewNode, asyncValue, oldValue, attrName);
+          updateFn(viewNode, asyncValue, oldValue, attrName);
         };
         value.then(asyncCall).catch(asyncCall);
       } else if (value instanceof Function) {
         const result = value.call(viewNode, viewNode.data);
-        valueFn(viewNode, result, value.oldResult, attrName);
+        updateFn(viewNode, result, value.oldResult, attrName);
         value.oldResult = value;
       } else {
-        valueFn(viewNode, value, oldValue, attrName);
+        updateFn(viewNode, value, oldValue, attrName);
       }
     };
 
@@ -4697,25 +4709,26 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
-  G.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
-    if (!property.name) {
+  G.View.PROPERTY_SETTERS.prop = function (viewNode, property, expression) {
+    const propName = property.key;
+    if (!propName) {
       console.error(property);
       throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
     }
 
-    const valueFn = property.value || G.View.setProp;
+    const updateFn = property.update || G.View.setProp;
     const setter = function P(value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
-          valueFn(viewNode, asyncValue, oldValue, property.name);
+          updateFn(viewNode, asyncValue, oldValue, propName);
         };
         value.then(asyncCall).catch(asyncCall);
       } else if (value instanceof Function) {
         const result = value.call(viewNode, viewNode.data);
-        valueFn(viewNode, result, oldValue, property.name);
+        updateFn(viewNode, result, oldValue, propName);
         value.oldResult = value;
       } else {
-        valueFn(viewNode, value, oldValue, property.name);
+        updateFn(viewNode, value, oldValue, propName);
       }
     };
 
@@ -4732,17 +4745,18 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
-  const NODE_BLUEPRINT_PROPERTY_MAP = G.View.NODE_BLUEPRINT_PROPERTY_MAP;
-  G.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = NODE_BLUEPRINT_PROPERTY_MAP[property.name];
-    const cache = viewNode.cache[attrName];
+  G.View.PROPERTY_SETTERS.reactive = function (viewNode, property, expression, scope) {
+    const propertyName = property.key;
+    const updateFn = property.update;
+    const config = viewNode.cache[propertyName];
 
-    return createReactiveFunction(behavior, viewNode, cache, expression, scope);
+    return createReactiveFunction(updateFn, viewNode, config, expression, scope);
   };
 
-  function createReactiveFunction(behavior, vn, data, expression, scope) {
+  function createReactiveFunction(updateFn, vn, config, expression, scope) {
+    const nodeUpdateFn = updateFn.bind(vn);
     return function R(value, oldValue) {
-      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
+      return nodeUpdateFn(config, value, oldValue, expression, scope);
     };
   }
 })(Galaxy);
@@ -4752,7 +4766,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   if (!window.gsap) {
     G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
       type: 'prop',
-      name: 'animations',
+      key: 'animations',
     };
 
     return console.warn('please load GSAP - GreenSock in order to activate animations');
@@ -4771,13 +4785,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
     type: 'prop',
-    name: 'animations',
+    key: 'animations',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
      * @param value
      */
-    value: function (viewNode, value) {
+    update: function (viewNode, value) {
       if (viewNode.virtual || !value) {
         return;
       }
@@ -5240,7 +5254,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 (function (G) {
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['checked'] = {
     type: 'prop',
-    name: 'checked',
+    key: 'checked',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -5248,7 +5262,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate : function (viewNode, scopeReactiveData, prop, expression) {
       if (!scopeReactiveData) {
         return;
       }
@@ -5288,7 +5302,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       });
     },
-    value: function (viewNode, value) {
+    update: function (viewNode, value) {
       const nativeNode = viewNode.node;
       viewNode.rendered.then(function () {
         if (/\[\]$/.test(nativeNode.name)) {
@@ -5319,8 +5333,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   G.View.REACTIVE_BEHAVIORS['class'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['class'] = {
     type: 'reactive',
-    name: 'class',
-    prepare: function (scope, value) {
+    key: 'class',
+    getConfig: function (scope, value) {
       return {
         scope,
         subjects: value,
@@ -5359,7 +5373,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    apply: function (config, value, oldValue, expression) {
+    update: function (config, value, oldValue, expression) {
       if (this.virtual) {
         return;
       }
@@ -5430,8 +5444,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   G.View.REACTIVE_BEHAVIORS['content'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['content'] = {
     type: 'reactive',
-    name: 'content',
-    prepare: function () {
+    key: 'content',
+    getConfig: function () {
       this.virtualize();
       return {
         module: null
@@ -5440,7 +5454,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     install: function (data) {
       return false;
     },
-    apply: function (cache, selector, oldSelector, expression) {
+    update: function (cache, selector, oldSelector, expression) {
       // if (scope.element.blueprint.children && scope.element.blueprint.hasOwnProperty('module')) {
       //   // this.domManipulationSequence.next(function (done) {
       //   let allContent = scope.element.blueprint.children;
@@ -5469,8 +5483,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    */
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['disabled'] = {
     type: 'attr',
-    name: 'disabled',
-    value: function (viewNode, value, oldValue, attr) {
+    key: 'disabled',
+    update: function (viewNode, value, oldValue, attr) {
       viewNode.rendered.then(() => {
         if (viewNode.blueprint.tag.toLowerCase() === 'form') {
           const children = viewNode.node.querySelectorAll('input, textarea, select, button');
@@ -5494,8 +5508,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   G.View.REACTIVE_BEHAVIORS['$if'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['$if'] = {
     type: 'reactive',
-    name: '$if',
-    prepare: function () {
+    key: '$if',
+    getConfig: function () {
       return {
         throttleId: null,
       };
@@ -5511,7 +5525,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param oldValue
      * @param expression
      */
-    apply: function (config, value, oldValue, expression) {
+    update: function (config, value, oldValue, expression) {
       if (config.throttleId) {
         window.cancelAnimationFrame(config.throttleId);
         config.throttleId = 0;
@@ -5544,14 +5558,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   G.View.REACTIVE_BEHAVIORS['inputs'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['inputs'] = {
     type: 'reactive',
-    name: 'inputs',
+    key: 'inputs',
     /**
      *
      * @this {Galaxy.View.ViewNode}
      * @param value
      * @param scope
      */
-    prepare: function (scope, value) {
+    getConfig: function (scope, value) {
       if (value !== null && typeof value !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.blueprint, null, '  '));
       }
@@ -5576,7 +5590,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       return false;
     },
-    apply: function (cache, value, oldValue, context) { }
+    update: function (cache, value, oldValue, context) { }
   };
 })(Galaxy);
 
@@ -5585,8 +5599,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   G.View.REACTIVE_BEHAVIORS['module'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
-    name: 'module',
-    prepare: function (scope) {
+    key: 'module',
+    getConfig: function (scope) {
       return {
         module: null,
         moduleMeta: null,
@@ -5596,7 +5610,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     install: function () {
       return true;
     },
-    apply: function handleModule(config, moduleMeta, oldModuleMeta, expression) {
+    update: function handleModule(config, moduleMeta, oldModuleMeta, expression) {
       const _this = this;
 
       if (expression) {
@@ -5694,13 +5708,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 (function (G) {
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['on'] = {
     type: 'prop',
-    name: 'on',
+    key: 'on',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
      * @param events
      */
-    value: function (viewNode, events) {
+    update: function (viewNode, events) {
       if (events !== null && typeof events === 'object') {
         for (let name in events) {
           if (events.hasOwnProperty(name)) {
@@ -5727,8 +5741,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
     type: 'reactive',
-    name: 'repeat',
-    prepare: function (scope, value) {
+    key: 'repeat',
+    getConfig: function (scope, value) {
       this.virtualize();
 
       return {
@@ -5748,7 +5762,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     /**
      *
-     * @param config Return of prepare method
+     * @param config Value return by getConfig
      */
     install: function (config) {
       const viewNode = this;
@@ -5774,7 +5788,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             }
           });
         } else if (config.data instanceof Array) {
-          const setter = viewNode.setters['repeat'] = View.assignSetter(viewNode, 'repeat', config.data, null, config.scope);
+          const setter = viewNode.setters['repeat'] = View.getPropertySetterForNode(viewNode, 'repeat', config.data, null, config.scope);
           const value = new G.View.ArrayChange();
           value.params = config.data;
           config.data.changes = value;
@@ -5788,12 +5802,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     /**
      *
      * @this {Galaxy.View.ViewNode}
-     * @param config The return of prepare
+     * @param config The value returned by getConfig
      * @param array
      * @param oldChanges
      * @param {Function} expression
      */
-    apply: function (config, array, oldChanges, expression) {
+    update: function (config, array, oldChanges, expression) {
       let changes = null;
       if (expression) {
         array = expression();
@@ -6027,7 +6041,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 (function (G) {
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['selected'] = {
     type: 'prop',
-    name: 'selected',
+    key: 'selected',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -6035,7 +6049,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate : function (viewNode, scopeReactiveData, prop, expression) {
       if (!scopeReactiveData) {
         return;
       }
@@ -6069,7 +6083,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         // viewNode.destroyed.then(unsubscribe);
       }
     },
-    value: function (viewNode, value) {
+    update: function (viewNode, value) {
       const nativeNode = viewNode.node;
 
       viewNode.rendered.then(function () {
@@ -6093,8 +6107,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   G.View.REACTIVE_BEHAVIORS['style'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['style'] = {
     type: 'reactive',
-    name: 'style',
-    prepare: function (scope, value) {
+    key: 'style',
+    getConfig: function (scope, value) {
       return {
         scope: scope,
         subjects: value,
@@ -6123,7 +6137,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    apply: function (config, value, oldValue, expression) {
+    update: function (config, value, oldValue, expression) {
       if (this.virtual) {
         return;
       }
@@ -6183,14 +6197,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 (function (G) {
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['text'] = {
     type: 'prop',
-    name: 'text',
+    key: 'text',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
      * @param value
      */
-    value: function (viewNode, value) {
-      const textNode = viewNode.node['<>text'];
+    update: function (viewNode, value) {
+      const nativeNode = viewNode.node;
+      const textNode = nativeNode['<>text'];
       let textValue = typeof value === 'undefined' || value === null ? '' : value;
 
       if (textValue instanceof Function) {
@@ -6202,8 +6217,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (textNode) {
         textNode.textContent = textValue;
       } else {
-        viewNode.node['<>text'] = document.createTextNode(textValue);
-        viewNode.node.insertBefore(viewNode.node['<>text'], viewNode.node.firstChild);
+        nativeNode['<>text'] = document.createTextNode(textValue);
+        nativeNode.insertBefore(nativeNode['<>text'], nativeNode.firstChild);
       }
     }
   };
@@ -6217,7 +6232,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['value'] = {
     type: 'prop',
-    name: 'value',
+    key: 'value',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -6225,7 +6240,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param prop
      * @param {Function} expression
      */
-    beforeAssign: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate : function valueUtil(viewNode, scopeReactiveData, prop, expression) {
       const nativeNode = viewNode.node;
       if (!scopeReactiveData) {
         return;
@@ -6260,7 +6275,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));
       }
     },
-    value: function (viewNode, value) {
+    update: function (viewNode, value) {
       // input field parse the value which has been passed to it into a string
       // that's why we need to parse undefined and null into an empty string
       if (value !== viewNode.node.value || !viewNode.node.value) {
@@ -6288,8 +6303,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   G.View.REACTIVE_BEHAVIORS['visible'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['visible'] = {
     type: 'reactive',
-    name: 'visible',
-    prepare: function () {
+    key: 'visible',
+    getConfig: function () {
       return {
         throttleId: null,
       };
@@ -6297,7 +6312,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     install: function () {
       return true;
     },
-    apply: function (config, value, oldValue, expression) {
+    update: function (config, value, oldValue, expression) {
       if (config.throttleId) {
         window.cancelAnimationFrame(config.throttleId);
         config.throttleId = 0;
