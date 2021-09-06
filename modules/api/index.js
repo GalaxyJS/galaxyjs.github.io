@@ -84,6 +84,7 @@ view.init({
     test,
     {
       tag: 'img',
+      id: 'scope',
       class: 'banner',
       src: 'assets/images/tools.jpg',
       height: '410',
@@ -99,7 +100,6 @@ view.init({
 
         {
           tag: 'h2',
-          id: 'scope',
           text: 'Scope'
         },
         {

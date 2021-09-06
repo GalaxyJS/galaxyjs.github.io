@@ -1,5 +1,3 @@
-/* globals Scope, gsap */
-
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
 
@@ -15,7 +13,6 @@ view.init({
       src: 'assets/images/galaxy.jpeg',
       height: '420',
       alt: 'Galaxy',
-      // blurCaption: effects.getBlurCaption()
     },
     '<h1>Welcome To GalaxyJS</h1>',
     {

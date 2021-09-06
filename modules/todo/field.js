@@ -24,7 +24,7 @@ view.init({
         keyup: function (event) {
           if (event.keyCode === 13) {
             const event = new CustomEvent('confirm');
-            view.broadcast(event);
+            view.dispatchEvent(event);
           }
         }
       }
