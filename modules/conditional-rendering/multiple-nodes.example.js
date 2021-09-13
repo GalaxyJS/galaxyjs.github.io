@@ -4,7 +4,6 @@ const itemAnimations = {
   enter: {
     withParent: true,
     sequence: 'if-sequence',
-    addTo: 'card',
     from: {
       opacity: 0,
       x: 20
