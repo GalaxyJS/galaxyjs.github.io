@@ -34,7 +34,6 @@ const itemAnimations = {
     duration: .5
   },
   leave: {
-    addTo: 'card',
     sequence: 'ok',
     withParent: true,
     to: {

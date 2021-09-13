@@ -145,7 +145,7 @@ view.init([
               ease: 'elastic.out(1.15, .5)',
               clearProps: 'all'
             },
-            position: '-=.57',
+            position: '-=.56',
             duration: .6
           }
         },

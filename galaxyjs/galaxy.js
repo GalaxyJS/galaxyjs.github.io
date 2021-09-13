@@ -4875,20 +4875,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
                 gsap.killTweensOf(_node);
               }
 
-              if (leave.addTo) {
-                // debugger
-
-                const addToAnimation = AnimationMeta.ANIMATIONS[leave.addTo];
-                if (addToAnimation && !addToAnimation.ha) {
-                  addToAnimation.ha = true;
-                  console.log(addToAnimation.ha)
-                  // addToAnimation.timeline.add(() => {
-                  // });
-                  // addToAnimation.addOnComplete()
-                  // addToAnimation.timeline.invalidate()
-                }
-              }
-
               // We dump this _viewNode so it gets removed when the leave animation origin node is detached.
               // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a $if
               return this.dump();
@@ -4920,9 +4906,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         });
       } else {
         viewNode.populateLeaveSequence = function (onComplete) {
+          if (gsap.getTweensOf(this.node).length) {
+            gsap.killTweensOf(this.node);
+          }
+
           AnimationMeta.installGSAPAnimation(this, 'leave', {
             sequence: 'DESTROY',
-            duration: .000001
+            duration: 0
           }, {}, onComplete);
         };
       }
@@ -4959,7 +4949,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({duration: duration}, to);
+      to = Object.assign({ duration: duration }, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
@@ -5001,11 +4991,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return tween;
   };
 
-  AnimationMeta.calculateDuration = function (duration, position) {
-    let po = position.replace('=', '');
-    return ((duration * 10) + (Number(po) * 10)) / 10;
-  };
-
   AnimationMeta.createStep = function (stepDescription, onStart, onComplete, viewNode) {
     const step = Object.assign({}, stepDescription);
     step.callbackScope = viewNode;
@@ -5042,56 +5027,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   /**
    *
-   * @param {galaxy.View.ViewNode} viewNode
-   * @return {*}
-   */
-  AnimationMeta.getParentTimeline = function (viewNode) {
-    /** @type {galaxy.View.ViewNode}  */
-    let node = viewNode;
-    let animations = null;
-
-    while (!animations) {
-      if (node.parent) {
-        animations = node.parent.cache.animations;
-      } else {
-        return null;
-      }
-
-      node = node.parent;
-    }
-
-    return animations.timeline;
-  };
-
-  /**
-   *
-   * @param {galaxy.View.ViewNode} viewNode
-   * @param {string} sequenceName
-   * @return {*}
-   */
-  AnimationMeta.getParentAnimationByName = function (viewNode, sequenceName) {
-    let node = viewNode.parent;
-    let animation = node.cache.animations;
-    let sequence = null;
-
-    while (!sequence) {
-      animation = node.cache.animations;
-      if (animation && animation.timeline.data && animation.timeline.data.am.name === sequenceName) {
-        sequence = animation;
-      } else {
-        node = node.parent;
-
-        if (!node) {
-          return null;
-        }
-      }
-    }
-
-    return sequence.timeline;
-  };
-
-  /**
-   *
    * @param {Galaxy.View.ViewNode} viewNode
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param {AnimationConfig} descriptions
@@ -5107,7 +5042,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -5119,15 +5054,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       sequenceName = newConfig.sequence.call(viewNode);
     }
 
+    let parentAnimationMeta = null;
     if (sequenceName) {
       const animationMeta = new AnimationMeta(sequenceName);
 
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
-        const addToAnimationMeta = new AnimationMeta(newConfig.addTo);
-        const children = addToAnimationMeta.timeline.getChildren(false);
+        parentAnimationMeta = new AnimationMeta(newConfig.addTo);
+        const children = parentAnimationMeta.timeline.getChildren(false);
         if (children.indexOf(animationMeta.timeline) === -1) {
-          addToAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
+          parentAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
         }
       }
 
@@ -5174,11 +5110,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
       // its only child and we have to resume it if it's not playing
-      if (newConfig.addTo) {
-        const addToAnimationMeta = new AnimationMeta(newConfig.addTo);
-        if (!addToAnimationMeta.started) {
-          addToAnimationMeta.started = true;
-          addToAnimationMeta.timeline.resume();
+      if (newConfig.addTo && parentAnimationMeta) {
+        // const addToAnimationMeta = new AnimationMeta(newConfig.addTo);
+        if (!parentAnimationMeta.started) {
+          parentAnimationMeta.started = true;
+          parentAnimationMeta.timeline.resume();
         }
       }
     } else {
@@ -5203,20 +5139,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       smoothChildTiming: false,
       paused: true,
       onComplete: function () {
-        if (_this.parent) {
-          _this.parent.timeline.remove(_this.timeline);
-        }
-        _this.onCompletesActions.forEach(function (action) {
+        _this.onCompletesActions.forEach((action) => {
           action(_this.timeline);
         });
         _this.nodes = [];
         _this.awaits = [];
         _this.children = [];
         _this.onCompletesActions = [];
-        _this.timeline.invalidate();
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });
+    _this.timeline.data = { name };
     _this.onCompletesActions = [];
     _this.started = false;
     _this.configs = {};
@@ -5228,10 +5161,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     AnimationMeta.ANIMATIONS[name] = this;
   }
 
-  /**
-   *
-   * @param {callback} action
-   */
   AnimationMeta.prototype = {
     addOnComplete: function (action) {
       this.onCompletesActions.push(action);
@@ -5272,8 +5201,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         tween = gsap.to(viewNode.node, to);
       }
 
-      if (_this.timeline.getChildren(false).length === 0) {
+      const tChildren = _this.timeline.getChildren(false);
+      if (tChildren.length === 0) {
         _this.timeline.add(tween);
+      }
+      // This fix a bug where if the enter animation has addTo, then the leave animation is ignored
+      else if (tChildren.length === 1 && !tChildren[0].hasOwnProperty('timeline')) {
+        _this.timeline.clear();
+        _this.timeline.add(tween, config.position || '+=0');
       } else {
         _this.timeline.add(tween, config.position || '+=0');
       }
