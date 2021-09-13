@@ -1,16 +1,15 @@
 /* global Scope, PR */
-const test = Scope.import('./style.css');
+const style = Scope.import('./style.css');
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
-const memory = Scope.import('services/memory.js');
 const router = Scope.import('galaxy/router');
 
-memory.subscribe(function () {
-  console.log(memory.getState());
-
-});
 Scope.data.api = {
   scope: [
+    {
+      title: 'data',
+      description: 'The host object for all the properties that are bound to view.'
+    },
     {
       title: 'systemId',
       description: 'The id of this module'
@@ -25,7 +24,11 @@ Scope.data.api = {
     },
     {
       title: 'uri',
-      description: 'Path to the module'
+      description: 'Path to the host module'
+    },
+    {
+      title: 'import(path)',
+      description: 'Import module from the specified path.'
     },
     {
       title: 'on(event, handler)',
@@ -49,6 +52,14 @@ Scope.data.api = {
       description: 'init method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
         ' following code will create a pharagraph tag with `Hello World!` text inside it.' +
         '<code class="prettyprint lang-js">view.init({ tag: \'p\', text: \'Hello World!\' });</code>'
+    },
+    {
+      title: 'enterKeyframe(onComplete, sequence, duration)',
+      description: 'Create a enter keyframe node which invokes onComplete with respect to active animations.'
+    },
+    {
+      title: 'leaveKeyframe(onComplete, sequence, duration)',
+      description: 'Create a leave keyframe node which invokes onComplete with respect to active animations.'
     }
   ]
 };
@@ -81,7 +92,7 @@ view.init({
   class: 'card big',
   animations: animations.cardInOut,
   children: [
-    test,
+    style,
     {
       tag: 'img',
       id: 'scope',
@@ -138,7 +149,7 @@ view.init({
           text: 'View'
         },
         '<p>View provide functionality for creating rich UI blocks. ' +
-        'It is available as a plugin and can be retrieved by: <br/>' +
+        'It is available as a addon and can be retrieved by: <br/>' +
         '<code class="prettyprint lang-js">const view = Scope.import(\'galaxy/view\');</code></p>',
         {
           tag: 'ul',
@@ -168,15 +179,6 @@ view.init({
           text: 'View.ViewNode'
         }
       ]
-    },
-    {
-      tag: 'button',
-      text: 'Click Me!',
-      on: {
-        click: () => {
-          memory.dispatch({ type: 'do' });
-        }
-      }
     },
     view.enterKeyframe(() => {
       PR.prettyPrint();

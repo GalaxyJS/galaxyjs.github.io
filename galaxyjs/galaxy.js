@@ -2207,9 +2207,10 @@ Galaxy.Module.Content = /** @class */ (function () {
           type: 'text/css',
           id: Scope.systemId,
           text: parsedCSSText,
-          _apply() {
-            this.parent.node.setAttribute(ids.host, '');
-            const children = this.parent.blueprint.children || [];
+          _create() {
+            const parent = this.parent;
+            parent.node.setAttribute(ids.host, '');
+            const children = parent.blueprint.children || [];
             applyContentAttr(children, ids);
           }
         };
@@ -4425,9 +4426,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     defProp(_this.blueprint, 'node', __node__);
 
     referenceToThis.value = this;
-    if (!_this.node._gvn) {
-      defProp(_this.node, '_gvn', referenceToThis);
-      defProp(_this.placeholder, '_gvn', referenceToThis);
+    if (!_this.node.__vn__) {
+      defProp(_this.node, '__vn__', referenceToThis);
+      defProp(_this.placeholder, '__vn__', referenceToThis);
     }
 
     if (_this.blueprint._create) {
@@ -4656,8 +4657,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       for (let i = cn.length - 1; i >= 0; i--) {
         // All the nodes that are ViewNode
         const node = cn[i];
-        if ('_gvn' in cn[i]) {
-          nodes.push(node['_gvn']);
+        if ('__vn__' in node) {
+          nodes.push(node['__vn__']);
         }
       }
 
@@ -4828,7 +4829,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (enter) {
         viewNode.populateEnterSequence = function () {
           value.config = value.config || {};
-          if (value.enter.withParent) {
+          if (enter.withParent) {
             // if parent has a enter animation, then ignore this node's animation
             // so this node enters with its parent
             if (hasParentEnterAnimation(this)) {
@@ -4865,13 +4866,27 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           const _node = this.node;
 
           value.config = value.config || {};
-          if (value.leave.withParent) {
+          if (leave.withParent) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
 
             if (parent.transitory) {
               if (gsap.getTweensOf(_node).length) {
                 gsap.killTweensOf(_node);
+              }
+
+              if (leave.addTo) {
+                // debugger
+
+                const addToAnimation = AnimationMeta.ANIMATIONS[leave.addTo];
+                if (addToAnimation && !addToAnimation.ha) {
+                  addToAnimation.ha = true;
+                  console.log(addToAnimation.ha)
+                  // addToAnimation.timeline.add(() => {
+                  // });
+                  // addToAnimation.addOnComplete()
+                  // addToAnimation.timeline.invalidate()
+                }
               }
 
               // We dump this _viewNode so it gets removed when the leave animation origin node is detached.
@@ -4944,7 +4959,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({ duration: duration }, to);
+      to = Object.assign({duration: duration}, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
@@ -5092,7 +5107,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -5198,6 +5213,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.awaits = [];
         _this.children = [];
         _this.onCompletesActions = [];
+        _this.timeline.invalidate();
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });

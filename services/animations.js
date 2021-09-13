@@ -26,7 +26,6 @@ const animations = {
     },
     leave: {
       sequence: 'card',
-      from: {},
       to: {
         ease: 'Power1.easeIn',
         transformOrigin: 'top center',

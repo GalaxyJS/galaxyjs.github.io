@@ -11,6 +11,6 @@
   min-height: 90px;
 }
 
-:host ul > li > h4 {
-  margin-bottom: 5px;
+:host ul > li > h5 {
+  color: #009688
 }

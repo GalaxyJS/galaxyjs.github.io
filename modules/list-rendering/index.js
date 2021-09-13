@@ -31,7 +31,7 @@ const itemAnimations = {
       }
     },
     position: '-=.25',
-    duration: .4
+    duration: .5
   },
   leave: {
     addTo: 'card',
