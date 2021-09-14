@@ -1,6 +1,6 @@
 const animations = Scope.import('services/animations.js');
 const view = Scope.import('galaxy/view');
-const exapndable = Scope.import('services/expandable.js');
+const expandable = Scope.import('services/expandable.js');
 
 const singleNodeExample = Scope.importAsText('./single-node.example.js');
 const multipleNodesExample = Scope.importAsText('./multiple-nodes.example.js');
@@ -33,7 +33,7 @@ view.init({
           tag: 'pre',
           class: 'prettyprint lang-js',
           text: singleNodeExample,
-          expandable: exapndable
+          expandable: expandable
         },
         // '<pre class="prettyprint lang-js">' + singleNodeExample + '</pre>',
         {
@@ -58,7 +58,7 @@ view.init({
           tag: 'pre',
           class: 'prettyprint lang-js',
           text: multipleNodesExample,
-          expandable: exapndable
+          expandable: expandable
         },
         // '<pre class="prettyprint lang-js">' + multipleNodesExample + '</pre>',
         {
@@ -75,7 +75,7 @@ view.init({
           tag: 'pre',
           class: 'prettyprint lang-js',
           text: listExample,
-          expandable: exapndable
+          expandable: expandable
         },
         {
           class: 'example-box',

@@ -1,5 +1,6 @@
 const view = Scope.import('galaxy/view');
 const animations = Scope.import('services/animations.js');
+const expandable = Scope.import('services/expandable.js');
 
 const simpleListExample = Scope.importAsText('./simple-list.example.js');
 
@@ -81,13 +82,13 @@ view.init({
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          text: simpleListExample
+          text: simpleListExample,
+          expandable
         },
         {
-          tag: 'section',
+          class: 'example-box',
           module: {
-            id: 'simple-list-example',
-            url: './simple-list.example.js'
+            path: './simple-list.example.js'
           },
         },
         {

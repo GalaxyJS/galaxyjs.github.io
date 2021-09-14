@@ -61,6 +61,12 @@ Scope.data.api = {
       title: 'leaveKeyframe(onComplete, sequence, duration)',
       description: 'Create a leave keyframe node which invokes onComplete with respect to active animations.'
     }
+  ],
+  viewNode: [
+    {
+      title: 'createNode()',
+      description: 'If set true, the view will empty its container upon initialization. Default is set to false.'
+    },
   ]
 };
 
