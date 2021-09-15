@@ -48,6 +48,15 @@ view.init([
             Scope.data.capitals.unshift('Rome');
           }
         }
+      },
+      {
+        tag: 'button',
+        text: 'Reset',
+        on: {
+          click: function () {
+            Scope.data.capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+          }
+        }
       }
     ]
   }

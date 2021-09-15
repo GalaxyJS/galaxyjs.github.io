@@ -4922,16 +4922,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           viewNode.node.style.display = 'none';
         });
       } else {
-        viewNode.populateLeaveSequence = function (onComplete) {
-          if (gsap.getTweensOf(this.node).length) {
-            gsap.killTweensOf(this.node);
-          }
-
-          AnimationMeta.installGSAPAnimation(this, 'leave', {
-            sequence: 'DESTROY',
-            duration: 0
-          }, {}, onComplete);
-        };
+        // it works and I don't know why
+        // viewNode.populateLeaveSequence = function (onComplete) {
+        //   if (gsap.getTweensOf(this.node).length) {
+        //     gsap.killTweensOf(this.node);
+        //   }
+        //
+        //   AnimationMeta.installGSAPAnimation(this, 'leave', {
+        //     // sequence: 'DESTROY',
+        //     duration: 0
+        //   }, {}, onComplete);
+        // };
       }
     }
   };
@@ -5005,7 +5006,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     } else if(finalize) {
       finalize();
     }
-
+// debugger
     return tween;
   };
 
@@ -5659,15 +5660,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
         vn.populateLeaveSequence = function (onComplete) {
           G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
-            sequence: 'DESTROY',
-            duration: .000001
+            // sequence: 'DESTROY',
+            duration: .0001
           }, {}, onComplete);
         };
       }
     });
-    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
+
     viewNode.clean(true);
-    // });
   }
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
