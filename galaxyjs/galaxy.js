@@ -497,8 +497,8 @@
   }
 })();
 
-(function (root) {
-  if (typeof root.CustomEvent === 'function') {
+(function (self) {
+  if (typeof self.CustomEvent === 'function') {
     return false;
   }
 
@@ -509,18 +509,18 @@
     return evt;
   }
 
-  CustomEvent.prototype = root.Event.prototype;
+  CustomEvent.prototype = self.Event.prototype;
 
-  root.CustomEvent = CustomEvent;
-})(this);
+  self.CustomEvent = CustomEvent;
+})(typeof self !== 'undefined' ? self : this);
 
-(function (root) {
-  root.Reflect = root.Reflect || {
+(function (self) {
+  self.Reflect = self.Reflect || {
     deleteProperty: function (target, propertyKey) {
       delete target[propertyKey];
     }
   };
-})(this);
+})(typeof self !== 'undefined' ? self : this);
 
 /*!
  * @overview es6-promise - a tiny implementation of Promises/A+.
@@ -534,7 +534,7 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
       (global.ES6Promise = factory());
-}(this, (function () { 'use strict';
+}(typeof self !== 'undefined' ? self : this, (function () { 'use strict';
 
   function objectOrFunction(x) {
     let type = typeof x;
@@ -1978,11 +1978,14 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
           }
 
+
           const source = module.source;
           const moduleSource = typeof source === 'function' ?
             source :
             new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.path, source].join('\n'));
-          moduleSource.call(null, module.scope).then(() => {
+          const output = moduleSource.call(null, module.scope);
+
+          const proceed = () => {
             Reflect.deleteProperty(module, 'source');
 
             module.addOnProviders.forEach(item => item.start());
@@ -2003,7 +2006,14 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             const currentModule = module;
             currentModule.init();
             return resolve(currentModule);
-          });
+          };
+
+          // if the function is not async, output would be undefined
+          if(output) {
+            output.then(proceed);
+          } else {
+            proceed();
+          }
         } catch (error) {
           console.error(error.message + ': ' + module.path);
           console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
@@ -4792,6 +4802,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
       type: 'prop',
       key: 'animations',
+      /**
+       *
+       * @param {Galaxy.View.ViewNode} viewNode
+       * @param value
+       */
+      update: function (viewNode, value) {
+        if (value.enter && value.enter.onComplete) {
+          viewNode.populateEnterSequence = value.enter.onComplete;
+        }
+        viewNode.populateLeaveSequence = (onComplete) => { onComplete();};
+      }
     };
 
     return console.warn('please load GSAP - GreenSock in order to activate animations');
@@ -4844,7 +4865,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             gsap.killTweensOf(_node);
           }
 
-          AnimationMeta.installGSAPAnimation(this, 'enter', enter, value.config, enter.onComplete);
+          AnimationMeta.installGSAPAnimation(this, 'enter', enter, value.config);
         };
       }
 
@@ -4858,7 +4879,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         viewNode.leaveWithParent = leave.withParent === true;
-        viewNode.populateLeaveSequence = function (onComplete) {
+        viewNode.populateLeaveSequence = function (finilize) {
           const _node = this.node;
 
           value.config = value.config || {};
@@ -4888,11 +4909,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             _node.style.opacity === '0' ||
             _node.style.visibility === 'hidden') {
             gsap.killTweensOf(_node);
-            return onComplete();
+            return finilize();
           }
 
-          AnimationMeta.setupOnComplete(leave, onComplete);
-          AnimationMeta.installGSAPAnimation(this, 'leave', leave, value.config, leave.onComplete);
+          // const onComplete = AnimationMeta.createOnComplete(leave, finilize);
+          AnimationMeta.installGSAPAnimation(this, 'leave', leave, value.config, finilize);
         };
 
         // Hide sequence is the same as leave sequence.
@@ -4929,6 +4950,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @property {object} [to]
    * @property {string} [addTo]
    * @property {Function} [onStart]
+   * @property {Function} [onComplete]
    */
 
   AnimationMeta.ANIMATIONS = {};
@@ -4938,25 +4960,25 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return sequence.split('/').filter(Boolean);
   };
 
-  AnimationMeta.createTween = function (viewNode, config, onComplete) {
+  AnimationMeta.createTween = function (viewNode, config, finalize) {
     const node = viewNode.node;
     let from = AnimationMeta.parseStep(viewNode, config.from);
     let to = AnimationMeta.parseStep(viewNode, config.to);
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({duration: duration}, to);
+      to = Object.assign({ duration: duration }, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
         to.onComplete = function () {
           userDefinedOnComplete();
-          if (onComplete) {
-            onComplete();
+          if (finalize) {
+            finalize();
           }
         };
       } else {
-        to.onComplete = onComplete;
+        to.onComplete = finalize;
       }
     }
 
@@ -4970,23 +4992,31 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         const userDefinedOnComplete = from.onComplete;
         from.onComplete = function () {
           userDefinedOnComplete();
-          onComplete();
+          finalize();
         };
       } else {
-        from.onComplete = onComplete;
+        from.onComplete = finalize;
       }
 
       from.duration = duration;
       tween = gsap.from(node, from);
     } else if (to) {
       tween = gsap.to(node, duration, to);
-    } else {
-      onComplete();
+    } else if(finalize) {
+      finalize();
     }
 
     return tween;
   };
 
+  /**
+   *
+   * @param stepDescription
+   * @param onStart
+   * @param onComplete
+   * @param viewNode
+   * @return {*}
+   */
   AnimationMeta.createStep = function (stepDescription, onStart, onComplete, viewNode) {
     const step = Object.assign({}, stepDescription);
     step.callbackScope = viewNode;
@@ -5009,15 +5039,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return step;
   };
 
-  AnimationMeta.setupOnComplete = function (step, onComplete) {
+  AnimationMeta.createOnComplete = function (step, onComplete) {
     if (step.onComplete) {
       const userDefinedOnComplete = step.onComplete;
-      step.onComplete = function () {
-        userDefinedOnComplete();
+      return function () {
+        userDefinedOnComplete.apply(this, arguments);
         onComplete();
       };
     } else {
-      step.onComplete = onComplete;
+      return onComplete;
     }
   };
 
@@ -5027,9 +5057,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param {AnimationConfig} descriptions
    * @param config
-   * @param {Function} onComplete
+   * @param {Function} [finalize]
    */
-  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
+  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, finalize) {
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
     let to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
@@ -5038,7 +5068,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -5102,7 +5132,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         animationMeta.awaits.push(newConfig.await);
       }
 
-      animationMeta.add(viewNode, newConfig, onComplete);
+      animationMeta.add(viewNode, newConfig, finalize);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
       // its only child and we have to resume it if it's not playing
@@ -5114,7 +5144,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       }
     } else {
-      AnimationMeta.createTween(viewNode, newConfig, onComplete);
+      AnimationMeta.createTween(viewNode, newConfig, finalize);
     }
   };
 
@@ -5145,7 +5175,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });
-    _this.timeline.data = {name};
+    _this.timeline.data = { name };
     _this.onCompletesActions = [];
     _this.started = false;
     _this.configs = {};
@@ -5173,9 +5203,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      *
      * @param viewNode
      * @param config {AnimationConfig}
-     * @param onComplete
+     * @param finalize
      */
-    add: function (viewNode, config, onComplete) {
+    add: function (viewNode, config, finalize) {
       const _this = this;
       let tween = null;
       let duration = config.duration;
@@ -5184,17 +5214,29 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (config.from && config.to) {
-        const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
+        const to = AnimationMeta.createStep(config.to, config.onStart, config.onComplete, viewNode);
         to.duration = duration || 0;
         tween = gsap.fromTo(viewNode.node, config.from, to);
       } else if (config.from) {
-        const from = AnimationMeta.createStep(config.from, config.onStart, onComplete, viewNode);
+        const from = AnimationMeta.createStep(config.from, config.onStart, config.onComplete, viewNode);
         from.duration = duration || 0;
         tween = gsap.from(viewNode.node, from);
       } else {
-        const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
+        const to = AnimationMeta.createStep(config.to, config.onStart, config.onComplete, viewNode);
         to.duration = duration || 0;
         tween = gsap.to(viewNode.node, to);
+      }
+
+      if(finalize) {
+        if (tween.vars.onComplete) {
+          const userDefinedOnComplete = tween.vars.onComplete;
+          return function () {
+            userDefinedOnComplete.apply(this, arguments);
+            finalize();
+          };
+        } else {
+          tween.vars.onComplete = finalize;
+        }
       }
 
       const tChildren = _this.timeline.getChildren(false);
@@ -5494,10 +5536,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param expression
      */
     update: function (config, value, oldValue, expression) {
-      if (config.throttleId) {
-        window.cancelAnimationFrame(config.throttleId);
-        config.throttleId = 0;
-      }
+      // if (config.throttleId) {
+      //   window.cancelAnimationFrame(config.throttleId);
+      //   config.throttleId = 0;
+      // }
 
       const viewNode = this;
       if (expression) {
@@ -5508,13 +5550,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         viewNode.blueprint.renderConfig.renderDetached = true;
       }
 
-      config.throttleId = window.requestAnimationFrame(() => {
-        viewNode.rendered.then(() => {
-          if (viewNode.inDOM !== value) {
-            viewNode.setInDOM(value);
-          }
-        });
+      // config.throttleId = window.requestAnimationFrame(() => {
+      viewNode.rendered.then(() => {
+        if (viewNode.inDOM !== value) {
+          viewNode.setInDOM(value);
+        }
       });
+      // });
     }
   };
 
@@ -5900,10 +5942,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   function processChages(viewNode, config, changes) {
     const parentNode = viewNode.parent;
-    const positions = config.positions;
+    // const positions = config.positions;
+    const positions = [];
+    const placeholders = [];
     const nodeScopeData = config.scope;
     const trackMap = config.trackMap;
-    const placeholdersPositions = [];
     const as = config.as;
     const indexAs = config.indexAs;
     const nodes = config.nodes;
@@ -5918,16 +5961,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       onEachAction = function (vn, p, d) {
         trackMap.push(d);
         this.push(vn);
-        positions.push(vn.anchor.nextSibling);
+        // positions.push(vn.anchor.nextSibling);
       };
     } else {
       onEachAction = function (vn, p, d) {
         trackMap.push(d[config.trackBy]);
         this.push(vn);
-        positions.push(vn.anchor.nextSibling);
+        // positions.push(vn.anchor.nextSibling);
       };
     }
-
 
     if (changes.type === 'push') {
       newItems = changes.params;
@@ -5939,34 +5981,38 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         onEachAction = function (vn, p, d) {
           trackMap.unshift(d);
           this.unshift(vn);
-          positions.unshift(vn.anchor.nextSibling);
         };
       } else {
         onEachAction = function (vn, p, d) {
           trackMap.unshift(d[trackByKey]);
           this.unshift(vn);
-          positions.unshift(vn.anchor.nextSibling);
         };
       }
     } else if (changes.type === 'splice') {
-      const removedItems = Array.prototype.splice.apply(nodes, changes.params.slice(0, 2));
+      const changeParams = changes.params.slice(0, 2);
+      const removedItems = Array.prototype.splice.apply(nodes, changeParams);
       DESTROY_NODES(removedItems.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
+      Array.prototype.splice.apply(trackMap, changeParams);
+
+      const startingIndex = changes.params[0];
       newItems = changes.params.slice(2);
+      for (let i = 0, len = newItems.length; i < len; i++) {
+        const index = i + startingIndex;
+        positions.push(index);
+        placeholders.push(nodes[index] ? nodes[index].anchor : defaultPosition);
+      }
+
       if (trackByKey === true) {
         onEachAction = function (vn, p, d) {
           trackMap.splice(p, 0, d);
           this.splice(p, 0, vn);
-          positions.splice(vn.anchor.nextSibling);
         };
       } else {
         onEachAction = function (vn, p, d) {
           trackMap.splice(p, 0, d[trackByKey]);
           this.splice(p, 0, vn);
-          positions.splice(vn.anchor.nextSibling);
         };
       }
-      debugger
-      // trackMap.splice(changes.params[0], changes.params[1]);
     } else if (changes.type === 'pop') {
       const lastItem = nodes.pop();
       lastItem && lastItem.destroy();
@@ -6006,7 +6052,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
             // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
 
-            createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholdersPositions[i] || defaultPosition, onEachAction, nodes, positions);
+            createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
           }
         } else {
           for (let i = 0, len = newItems.length; i < len; i++) {
@@ -6023,7 +6069,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             //
             // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
             // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
-            createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholdersPositions[i] || defaultPosition, onEachAction, nodes, positions);
+            createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
           }
         }
       } else {
@@ -6034,7 +6080,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           //
           // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
           // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
-          createNode(view, templateBlueprint, nodeScopeData, as, newItemsCopy[i], indexAs, i, parentNode, placeholdersPositions[i] || defaultPosition, onEachAction, nodes, positions);
+          createNode(view, templateBlueprint, nodeScopeData, as, newItemsCopy[i], indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
         }
       }
 

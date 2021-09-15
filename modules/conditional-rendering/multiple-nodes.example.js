@@ -6,11 +6,12 @@ const itemAnimations = {
     sequence: 'if-sequence',
     from: {
       opacity: 0,
-      x: 20
+      x: 25,
     },
     to: {
       opacity: 1,
-      x: 0
+      x: 0,
+      ease: 'sine.out',
     },
     position: '-=.2',
     duration: .3
@@ -19,10 +20,11 @@ const itemAnimations = {
     withParent: true,
     sequence: 'if-sequence',
     to: {
-      x: 25,
-      opacity: 0
+      x: 50,
+      opacity: 0,
+      ease: 'power1.in',
     },
-    position: '-=.18',
+    position: '-=.25',
     duration: .3
   }
 };
