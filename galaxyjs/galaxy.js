@@ -3371,7 +3371,7 @@ Galaxy.View = /** @class */(function (G) {
         nodeValue: 'keyframe:enter',
         animations: {
           enter: {
-            duration: duration || .01,
+            duration: duration || 0,
             sequence,
             onComplete
           }
@@ -3384,7 +3384,7 @@ Galaxy.View = /** @class */(function (G) {
         nodeValue: 'keyframe:leave',
         animations: {
           enter: {
-            duration: duration || .01,
+            duration: duration || 0,
             sequence,
             onComplete
           }
@@ -4250,9 +4250,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     getSetter: () => EMPTY_CALL
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
+  GV.NODE_BLUEPRINT_PROPERTY_MAP['_destroy'] = {
     type: 'prop',
-    key: '_finalize',
+    key: '_destroy',
     getSetter: () => EMPTY_CALL
   };
 
@@ -4273,7 +4273,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @property {RenderConfig} [renderConfig]
    * @property {string} [tag]
    * @property {function} [_create]
-   * @property {function} [_finalize]
+   * @property {function} [_destroy]
    */
 
   /**
@@ -4376,7 +4376,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.setters = {};
     /** @type {Galaxy.View.ViewNode} */
     _this.parent = parent;
-    _this.finalize = _this.blueprint._finalize ? [_this.blueprint._finalize] : [];
+    _this.finalize = _this.blueprint._destroy ? [_this.blueprint._destroy] : [];
     _this.origin = false;
     _this.transitory = false;
     _this.garbage = [];
@@ -4842,10 +4842,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return;
       }
 
+      const config = value.config || {};
       const enter = value.enter;
       if (enter) {
         viewNode.populateEnterSequence = function () {
-          value.config = value.config || {};
           if (enter.withParent) {
             // if parent has a enter animation, then ignore this node's animation
             // so this node enters with its parent
@@ -4865,7 +4865,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             gsap.killTweensOf(_node);
           }
 
-          AnimationMeta.installGSAPAnimation(this, 'enter', enter, value.config);
+          AnimationMeta.installGSAPAnimation(this, 'enter', enter);
         };
       }
 
@@ -4879,10 +4879,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         viewNode.leaveWithParent = leave.withParent === true;
-        viewNode.populateLeaveSequence = function (finilize) {
+        viewNode.populateLeaveSequence = function (finalize) {
           const _node = this.node;
-
-          value.config = value.config || {};
           if (leave.withParent) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
@@ -4909,11 +4907,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             _node.style.opacity === '0' ||
             _node.style.visibility === 'hidden') {
             gsap.killTweensOf(_node);
-            return finilize();
+            return finalize();
           }
 
-          // const onComplete = AnimationMeta.createOnComplete(leave, finilize);
-          AnimationMeta.installGSAPAnimation(this, 'leave', leave, value.config, finilize);
+          AnimationMeta.installGSAPAnimation(this, 'leave', leave, finalize);
         };
 
         // Hide sequence is the same as leave sequence.
@@ -4933,6 +4930,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         //     duration: 0
         //   }, {}, onComplete);
         // };
+      }
+
+      if (viewNode.cache.class && viewNode.cache.class.observer) {
+        viewNode.rendered.then(function () {
+          viewNode.cache.class.observer.onAll((key) => {
+
+          });
+        });
       }
     }
   };
@@ -4957,56 +4962,64 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   AnimationMeta.ANIMATIONS = {};
   AnimationMeta.TIMELINES = {};
 
-  AnimationMeta.parseSequence = function (sequence) {
-    return sequence.split('/').filter(Boolean);
-  };
-
-  AnimationMeta.createTween = function (viewNode, config, finalize) {
+  AnimationMeta.createSimpleAnimation = function (viewNode, config, finalize) {
+    finalize = finalize || G.View.EMPTY_CALL;
     const node = viewNode.node;
     let from = AnimationMeta.parseStep(viewNode, config.from);
     let to = AnimationMeta.parseStep(viewNode, config.to);
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({ duration: duration }, to);
+      to = Object.assign({}, to);
+      to.duration = duration;
+      to.onComplete = finalize;
 
-      if (to.onComplete) {
-        const userDefinedOnComplete = to.onComplete;
+      if (config.onComplete) {
+        const userDefinedOnComplete = config.onComplete;
         to.onComplete = function () {
           userDefinedOnComplete();
-          if (finalize) {
-            finalize();
-          }
+          finalize();
         };
-      } else {
-        to.onComplete = finalize;
       }
     }
 
-    let tween = null;
+    let tween;
     if (from && to) {
       tween = gsap.fromTo(node, from, to);
     } else if (from) {
-      from = Object.assign({}, from || {});
+      from = Object.assign({}, from);
+      from.duration = duration;
+      from.onComplete = finalize;
 
-      if (from.onComplete) {
-        const userDefinedOnComplete = from.onComplete;
+      if (config.onComplete) {
+        const userDefinedOnComplete = config.onComplete;
         from.onComplete = function () {
           userDefinedOnComplete();
           finalize();
         };
-      } else {
-        from.onComplete = finalize;
       }
 
-      from.duration = duration;
       tween = gsap.from(node, from);
     } else if (to) {
-      tween = gsap.to(node, duration, to);
-    } else if(finalize) {
-      finalize();
+      tween = gsap.to(node, to);
+    } else if (config.onComplete) {
+      const userDefinedOnComplete = config.onComplete;
+      const onComplete = function () {
+        userDefinedOnComplete();
+        finalize();
+      };
+
+      tween = gsap.to(node, {
+        duration: duration,
+        onComplete: onComplete
+      });
+    } else {
+      tween = gsap.to(node, {
+        duration: duration,
+        onComplete: finalize
+      });
     }
-// debugger
+
     return tween;
   };
 
@@ -5040,27 +5053,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return step;
   };
 
-  AnimationMeta.createOnComplete = function (step, onComplete) {
-    if (step.onComplete) {
-      const userDefinedOnComplete = step.onComplete;
-      return function () {
-        userDefinedOnComplete.apply(this, arguments);
-        onComplete();
-      };
-    } else {
-      return onComplete;
-    }
-  };
-
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param {AnimationConfig} descriptions
-   * @param config
    * @param {Function} [finalize]
    */
-  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, finalize) {
+  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, finalize) {
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
     let to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
@@ -5145,7 +5145,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       }
     } else {
-      AnimationMeta.createTween(viewNode, newConfig, finalize);
+      AnimationMeta.createSimpleAnimation(viewNode, newConfig, finalize);
     }
   };
 
@@ -5228,7 +5228,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         tween = gsap.to(viewNode.node, to);
       }
 
-      if(finalize) {
+      if (finalize) {
         if (tween.vars.onComplete) {
           const userDefinedOnComplete = tween.vars.onComplete;
           return function () {
@@ -5349,7 +5349,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return {
         scope,
         subjects: value,
-        reactiveClasses: null
+        reactiveClasses: null,
+        observer: null,
       };
     },
     install: function (config) {
@@ -5360,7 +5361,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const viewNode = this;
       // when value is an object
       const reactiveClasses = config.reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
-      const observer = new G.Observer(reactiveClasses);
+      const observer = config.observer = new G.Observer(reactiveClasses);
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         viewNode.rendered.then(function () {
           applyClasses(viewNode, reactiveClasses);
@@ -5658,11 +5659,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const children = viewNode.getChildNodes();
     children.forEach(vn => {
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
-        vn.populateLeaveSequence = function (onComplete) {
-          G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
-            // sequence: 'DESTROY',
-            duration: .0001
-          }, {}, onComplete);
+        vn.populateLeaveSequence = function (finalize) {
+          // G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
+          //   // sequence: 'DESTROY',
+          //   onComplete: finalize,
+          //   duration: 0
+          // }, finalize);
+          finalize();
         };
       }
     });
@@ -6464,6 +6467,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.data = {
       routes: [],
       activeRoute: null,
+      activePath: null,
       activeModule: null,
       parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
     };
@@ -6626,11 +6630,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       this.data.activeRoute = route;
+      this.data.activePath = route.path;
 
       if (typeof route.handle === 'function') {
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
+        this.data.activePath = route.path;
         Object.assign(this.data.parameters, params);
       }
 
