@@ -2760,34 +2760,49 @@ Galaxy.View = /** @class */(function (G) {
   View.TO_BE_CREATED = {};
   View.LAST_CREATE_FRAME_ID = null;
 
+  let NEW_KEYS = [];
+  let done = true;
   let to_be_created_dirty = false;
   const _next = function (_jump) {
+    if (to_be_created_dirty) {
+      return _jump();
+    }
+
     if (this.length) {
       this.shift().$(_next.bind(this, _jump));
     } else {
-      _jump.call();
+      _jump();
     }
   };
 
-  let NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
-  let done = true;
-  const _jump = function () {
-    if (this.length) {
-      if (to_be_created_dirty) {
-        to_be_created_dirty = false;
-        // console.log('dirty', NEW_KEYS);
-        return _jump.call(NEW_KEYS);
-      }
-      // const batch = View.TO_BE_CREATED[key];
 
+  const _jump = function (prevKey) {
+    if (to_be_created_dirty) {
+      // NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
+      let index = NEW_KEYS.indexOf(prevKey || this[0]);
+      to_be_created_dirty = false;
+      // if (index > 0)
+      //   index--;
+      // console.log('dirty');
+      console.log('dirty', index, prevKey);
+      // Start the new sequence from where we left
+      // steps that are added before this index will be executed in the next cycle;
+      // return requestAnimationFrame(() => {
+      //   _jump.call(newKeys);
+      // });
+
+      // debugger
+      return _jump.call(NEW_KEYS.slice(index));
+    }
+
+    if (this.length) {
       let key = this.shift();
-      // console.log(key);
       let batch = View.TO_BE_CREATED[key];
       if (!batch || !batch.length) {
-        return _jump.call(this);
+        return _jump.call(this,key);
       }
-
-      _next.call(batch, _jump.bind(this));
+      console.log(key);
+      _next.call(batch, _jump.bind(this,key));
     } else {
       done = true;
       // console.log('done!');
@@ -2802,33 +2817,29 @@ Galaxy.View = /** @class */(function (G) {
   // });
 
   View.CREATE_IN_NEXT_FRAME = function (index, action) {
-    // if (View.LAST_CREATE_FRAME_ID) {
-    //   cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
-    //   View.LAST_CREATE_FRAME_ID = null;
-    // }
+    if (View.LAST_CREATE_FRAME_ID) {
+      cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
+      View.LAST_CREATE_FRAME_ID = null;
+    }
 
+    // if(index === '0,2,0')debugger;
     const target = View.TO_BE_CREATED[index] || [];
     const c = { $: action };
     target.push(c);
     View.TO_BE_CREATED[index] = target;
     NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
+
+    // View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
     to_be_created_dirty = true;
-
-    // if (done) {
-    //   done = false;
-    //   _jump.call(NEW_KEYS);
-    // }
-
     View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
       if (done) {
         done = false;
-        _jump.call(NEW_KEYS);
+        // debugger
+        // to_be_created_dirty = false;
+        // NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
+        _jump.call(Object.keys(View.TO_BE_CREATED).sort());
       }
     });
-    //
-    // return () => {
-    //   c.$ = View.EMPTY_CALL;
-    // };
   };
   /**
    *
@@ -4761,6 +4772,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       GV.destroyNodes(this.getChildNodes(), hasAnimation);
     },
 
+    createNext: function (act) {
+      CREATE_IN_NEXT_FRAME(this.index, act);
+    },
+
     get index() {
       if (this.parent) {
         const childNodes = this.parent.node.childNodes;
@@ -5240,7 +5255,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         // parent.add(() => {-
+        // debugger
         parentTimeline.addPause(newConfig.position, () => {
+          // debugger
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
@@ -5252,6 +5269,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             if (index !== -1) {
               animationMeta.awaits.splice(index, 1);
             }
+            // debugger
+            // parentTimeline.removePause()
             parentTimeline.resume();
           };
           // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
@@ -5774,6 +5793,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
+        // debugger;
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           // _this.rendered.then(function () {
           cleanModuleContent(_this);
