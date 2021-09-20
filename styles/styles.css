@@ -367,8 +367,12 @@ p.important {
   margin-top: 45px;
 }
 
-.content > h2 + h3, .content > h2 + h4 {
+.content > h2 + h3 {
   margin-top: 0;
+}
+
+.content > h2 + h4 {
+  margin-top: -10px;
 }
 
 .content > h2:first-child {
@@ -827,6 +831,7 @@ button {
   user-select: none;
   display: inline-block;
   text-transform: uppercase;
+  letter-spacing: .5px;
 }
 
 button:first-of-type {
@@ -984,16 +989,34 @@ p.example {
   border-radius: 0 10px 10px;
   background-color: #d05e77;
   line-height: 1;
-  font-size: 3em;
+  font-size: 2em;
   text-align: center;
   text-transform: uppercase;
   font-weight: bold;
   position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
+  top: 5%;
+  left: 5%;
+  right: 5%;
+  bottom: 5%;
 
+}
+
+.dots-animation {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.dots-animation > .dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background-color: lightblue;
+  margin-right: 1px;
+}
+
+.dots-animation > p {
+  margin: 0;
 }
 
 .dialog {

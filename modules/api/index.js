@@ -83,14 +83,26 @@ router.init([
         return true;
       }
 
-      gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
+      gsap.to('#main-content', {scrollTo: {y: '#' + params.section, offsetY: 30}, duration: .3});
       return true;
     }
   },
   {
     path: '/scope',
     title: 'Scope'
-  }
+  },
+  {
+    path: '/module',
+    title: 'Module'
+  },
+  {
+    path: '/view',
+    title: 'View'
+  },
+  {
+    path: '/viewnode',
+    title: 'ViewNode'
+  },
 ]);
 
 view.init({
@@ -114,7 +126,6 @@ view.init({
       tag: 'section',
       class: 'content',
       children: [
-
         {
           tag: 'h2',
           text: 'Scope'
@@ -182,7 +193,11 @@ view.init({
         {
           tag: 'h2',
           id: 'viewnode',
-          text: 'View.ViewNode'
+          text: 'ViewNode'
+        },
+        {
+          tag: 'h4',
+          text: 'Galaxy.view.ViewNode'
         }
       ]
     },

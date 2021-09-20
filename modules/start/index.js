@@ -31,6 +31,10 @@ view.init({
           html: 'GalaxyJS is a opinionated framework for building visually rich web application. Its main key feature is utilizing utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a>'
         },
         {
+          tag: 'h4',
+          text: 'Don\'t runway from the DOM(Document Object Model), slay it like a dragon.'
+        },
+        {
           tag: 'ul',
           children: [
             '<li><strong>Animations</strong> are built in, utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a></li>' +

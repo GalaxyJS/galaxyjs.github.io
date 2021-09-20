@@ -3,11 +3,23 @@ const exapndable = Scope.import('services/expandable.js');
 
 const firstAnimationExample = Scope.importAsText('./first-animation.example.js');
 
+Scope.data.dots = [];
+for (let i = 0, len = 10; i < len; i++) {
+  Scope.data.dots.push('');
+}
+
 Scope.data.dialog = {
   originNode: null,
   targetNode: null,
 };
+let resolve1, resolve2;
+const promise1 = new Promise((resolve) => {
+  resolve1 = resolve;
+});
 
+const promise2 = new Promise((resolve) => {
+  resolve2 = resolve;
+});
 view.init([
   {
     class: 'card big anime',
@@ -49,6 +61,7 @@ view.init([
         class: 'content',
         children: [
           {
+            class: 'example-box',
             module: {
               path: './first-animation.example.js'
             }
@@ -59,6 +72,151 @@ view.init([
             class: 'prettyprint lang-js',
             html: firstAnimationExample,
             expandable: exapndable
+          }
+        ]
+      },
+      {
+        tag: 'section',
+        class: 'content',
+        children: [
+          {
+            tag: 'button',
+            text: 'Resolve first promise',
+            on: {
+              click: function () {
+                resolve1();
+              }
+            }
+          },
+          {
+            tag: 'button',
+            text: 'Resolve second promise',
+            on: {
+              click: function () {
+                resolve2();
+              }
+            }
+          }
+        ]
+      },
+      {
+        tag: 'section',
+        class: 'content dots-animation',
+        children: [
+          {
+            animations: {
+              enter: {
+                sequence: 'dots',
+                from: {
+                  scale: 0
+                },
+                to: {
+                  scale: 1,
+                },
+                duration: .2
+              }
+            },
+            tag: 'p',
+            text: 'First Promise'
+          },
+          view.enterKeyframe('dots', .2),
+          {
+            animations: {
+              enter: {
+                await: promise1,
+                sequence: 'dots',
+                from: {
+                  scale: 0
+                },
+                to: {
+                  scale: 1,
+                },
+                position: '-=.1',
+                duration: .2
+              }
+            },
+            tag: 'p',
+            text: ':Resolved'
+          },
+          {
+            animations: {
+              enter: {
+                sequence: 'dots',
+                from: {
+                  scale: 0
+                },
+                to: {
+                  scale: 1,
+                },
+                position: '-=.1',
+                duration: .2
+              }
+            },
+            class: 'dot',
+            repeat: {
+              data: '<>data.dots'
+            }
+          },
+          {
+            animations: {
+              enter: {
+                sequence: 'dots',
+                from: {
+                  scale: 0
+                },
+                to: {
+                  scale: 1,
+                },
+                position: '-=.1',
+                duration: .2
+              }
+            },
+            tag: 'p',
+            text: 'Second Promise'
+          },
+          view.enterKeyframe('dots', .1),
+          {
+            animations: {
+              enter: {
+                await: promise2,
+                sequence: 'dots',
+                from: {
+                  scale: 0
+                },
+                to: {
+                  scale: 1,
+                },
+                position: '-=.1',
+                duration: .2
+              }
+            },
+            tag: 'p',
+            text: ':Resolved'
+          },
+          {
+            animations: {
+              enter: {
+                sequence: 'dots',
+                from: {
+                  scale: 0
+                },
+                to: {
+                  scale: 1
+                },
+                position: '-=.1',
+                duration: .2
+              }
+            },
+            style: {
+              width: '20px',
+              height: '20px',
+              borderRadius: '10px',
+              backgroundColor: 'lightblue'
+            },
+            class: 'dot',
+            repeat: {
+              data: '<>data.dots'
+            }
           }
         ]
       },

@@ -1,7 +1,7 @@
 const view = Scope.import('galaxy/view');
 
 const originalDataList = [
-  'a', 'b', 'c', 'd', 'e', 'f', 'g'
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'
 ];
 Scope.data.boxes = originalDataList.slice(0);
 
@@ -25,13 +25,12 @@ view.init([
     class: 'box-container',
     children: {
       style: {
-        width: '100px',
+        width: '67px',
       },
       animations: {
         enter: {
           addTo: 'card',
           sequence: 'boxes',
-          // positionInParent: '+=.1',
           from: {
             display: 'none',
             scale: 0,
@@ -40,10 +39,11 @@ view.init([
           to: {
             scale: 1,
             display: null,
-            clearProps: ''
+            clearProps: '',
+            ease: 'elastic.out(1,.5)'
           },
-          duration: .35,
-          position: '-=.25'
+          duration: .9,
+          position: '-=.8'
         },
         leave: {
           sequence: 'card',
@@ -52,7 +52,7 @@ view.init([
             opacity: 0
           },
           duration: .25,
-          position: '-=0.15'
+          position: '-=0.22'
         }
       },
       class: 'box',
