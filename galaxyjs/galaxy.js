@@ -2712,7 +2712,7 @@ Galaxy.View = /** @class */(function (G) {
    * @memberOf Galaxy.View
    * @static
    */
-  View.destroyNodes = function (toBeRemoved, hasAnimation) {
+  View.DESTROY_NODES = function (toBeRemoved, hasAnimation) {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
@@ -2721,8 +2721,49 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.TO_BE_DESTROYED = {};
   View.LAST_FRAME_ID = null;
+  View.TO_BE_DESTROYED = {};
+  View.TO_BE_CREATED = {};
+  View.DOM_MANIPULATION_TABLE = {};
+
+  const _next = function (_jump, dirty) {
+    if (dirty) {
+      return _jump();
+    }
+
+    if (this.length) {
+      this.shift()(_next.bind(this, _jump));
+    } else {
+      _jump();
+    }
+  };
+
+  let DOM_MANIPULATIONS = [];
+  let manipulation_done = true;
+  let dom_manipulations_dirty = false;
+  const _jump = function () {
+    if (dom_manipulations_dirty) {
+      dom_manipulations_dirty = false;
+      return _jump.call(DOM_MANIPULATIONS);
+    }
+
+    if (this.length) {
+      let key = this.shift();
+      let batch = View.TO_BE_CREATED[key];
+      if (key.indexOf('!') === 0) {
+        batch = View.TO_BE_DESTROYED[key];
+      }
+
+      if (!batch || !batch.length) {
+        return _jump.call(this);
+      }
+
+      _next.call(batch, _jump.bind(this), dom_manipulations_dirty);
+    } else {
+      manipulation_done = true;
+    }
+  };
+
   /**
    *
    * @param {string} index
@@ -2731,116 +2772,12 @@ Galaxy.View = /** @class */(function (G) {
    * @static
    */
   View.DESTROY_IN_NEXT_FRAME = function (index, action) {
-    if (View.LAST_FRAME_ID) {
-      cancelAnimationFrame(View.LAST_FRAME_ID);
-      View.LAST_FRAME_ID = null;
-    }
-
-    const target = View.TO_BE_DESTROYED[index] || [];
+    const target = View.TO_BE_DESTROYED['!' + index] || [];
     target.push(action);
-    View.TO_BE_DESTROYED[index] = target;
-
-    View.LAST_FRAME_ID = requestAnimationFrame(() => {
-      const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
-      keys.forEach((key) => {
-        const batch = View.TO_BE_DESTROYED[key];
-        if (!batch) {
-          return;
-        }
-
-        let action;
-        while (batch.length) {
-          action = batch.shift();
-          action();
-        }
-      });
-    });
+    View.TO_BE_DESTROYED['!' + index] = target;
+    UPDATE_DOM_MANIPULATION_SEQUENCE();
   };
 
-  View.TO_BE_CREATED = {};
-  View.LAST_CREATE_FRAME_ID = null;
-
-  let NEW_KEYS = [];
-  let done = true;
-  let to_be_created_dirty = false;
-  const _next = function (_jump) {
-    if (to_be_created_dirty) {
-      return _jump();
-    }
-
-    if (this.length) {
-      this.shift().$(_next.bind(this, _jump));
-    } else {
-      _jump();
-    }
-  };
-
-
-  const _jump = function (prevKey) {
-    if (to_be_created_dirty) {
-      // NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
-      let index = NEW_KEYS.indexOf(prevKey || this[0]);
-      to_be_created_dirty = false;
-      // if (index > 0)
-      //   index--;
-      // console.log('dirty');
-      console.log('dirty', index, prevKey);
-      // Start the new sequence from where we left
-      // steps that are added before this index will be executed in the next cycle;
-      // return requestAnimationFrame(() => {
-      //   _jump.call(newKeys);
-      // });
-
-      // debugger
-      return _jump.call(NEW_KEYS.slice(index));
-    }
-
-    if (this.length) {
-      let key = this.shift();
-      let batch = View.TO_BE_CREATED[key];
-      if (!batch || !batch.length) {
-        return _jump.call(this,key);
-      }
-      console.log(key);
-      _next.call(batch, _jump.bind(this,key));
-    } else {
-      done = true;
-      // console.log('done!');
-      // requestAnimationFrame(() => {
-      //   _jump.call(NEW_KEYS);
-      // });
-    }
-  };
-
-  // requestAnimationFrame(() => {
-  //   _jump.call(NEW_KEYS);
-  // });
-
-  View.CREATE_IN_NEXT_FRAME = function (index, action) {
-    if (View.LAST_CREATE_FRAME_ID) {
-      cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
-      View.LAST_CREATE_FRAME_ID = null;
-    }
-
-    // if(index === '0,2,0')debugger;
-    const target = View.TO_BE_CREATED[index] || [];
-    const c = { $: action };
-    target.push(c);
-    View.TO_BE_CREATED[index] = target;
-    NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
-
-    // View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-    to_be_created_dirty = true;
-    View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-      if (done) {
-        done = false;
-        // debugger
-        // to_be_created_dirty = false;
-        // NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
-        _jump.call(Object.keys(View.TO_BE_CREATED).sort());
-      }
-    });
-  };
   /**
    *
    * @param {string} index
@@ -2848,36 +2785,31 @@ Galaxy.View = /** @class */(function (G) {
    * @memberOf Galaxy.View
    * @static
    */
-  // View.CREATE_IN_NEXT_FRAME = function (index, action) {
-  //   if (View.LAST_CREATE_FRAME_ID) {
-  //     cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
-  //     View.LAST_CREATE_FRAME_ID = null;
-  //   }
-  //
-  //   const target = View.TO_BE_CREATED[index] || [];
-  //   const c = { $: action };
-  //   target.push(c);
-  //   View.TO_BE_CREATED[index] = target;
-  //
-  //   View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-  //     const keys = Object.keys(View.TO_BE_CREATED).sort();
-  //     keys.forEach((key) => {
-  //       const batch = View.TO_BE_CREATED[key];
-  //       if (!batch || !batch.length) {
-  //         return;
-  //       }
-  //       // _next.call(batch);
-  //
-  //       while (batch.length) {
-  //         batch.shift().$();
-  //       }
-  //     });
-  //   });
-  //
-  //   return () => {
-  //     c.$ = View.EMPTY_CALL;
-  //   };
-  // };
+  View.CREATE_IN_NEXT_FRAME = function (index, action) {
+    const target = View.TO_BE_CREATED[index] || [];
+    target.push(action);
+    View.TO_BE_CREATED[index] = target;
+    UPDATE_DOM_MANIPULATION_SEQUENCE();
+  };
+
+  const UPDATE_DOM_MANIPULATION_SEQUENCE = function () {
+    dom_manipulations_dirty = true;
+    if (View.LAST_FRAME_ID) {
+      cancelAnimationFrame(View.LAST_FRAME_ID);
+      View.LAST_FRAME_ID = null;
+    }
+
+    const destroy = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
+    const create = Object.keys(View.TO_BE_CREATED).sort();
+    DOM_MANIPULATIONS = destroy.concat(create);
+    View.LAST_FRAME_ID = requestAnimationFrame(() => {
+      if (manipulation_done) {
+        manipulation_done = false;
+        _jump.call(DOM_MANIPULATIONS);
+      }
+    });
+  };
+
 
   /**
    *
@@ -3351,7 +3283,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3390,7 +3322,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
@@ -4625,11 +4557,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.transitory = true;
         const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
         _this.prepareLeaveSequence(_this.hasAnimation());
-        DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
           _this.populateLeaveSequence = defaultPopulateLeaveSequence;
+          _next();
         });
       }
     },
@@ -4647,10 +4580,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.populateHideSequence();
           _this.origin = false;
           _this.transitory = false;
+          _next();
         });
       }
     },
@@ -4704,6 +4638,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (hasAnimation) {
         if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
           _this.populateLeaveSequence = function () {
+            // console.log('aaaaaaaa')
             ViewNode.REMOVE_SELF.call(_this, false);
           };
         } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
@@ -4737,11 +4672,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       _this.finalize.forEach(act => act.call(_this));
 
-      DESTROY_IN_NEXT_FRAME(_this.index, () => {
+      DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
         if (_this.inDOM) {
           _this.populateLeaveSequence(_this.onLeaveComplete);
         }
-
+        _next();
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
@@ -4769,7 +4704,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      *
      */
     clean: function (hasAnimation) {
-      GV.destroyNodes(this.getChildNodes(), hasAnimation);
+      GV.DESTROY_NODES(this.getChildNodes(), hasAnimation);
     },
 
     createNext: function (act) {
@@ -5025,23 +4960,18 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         viewNode.leaveWithParent = leave.withParent === true;
         viewNode.populateLeaveSequence = function (finalize) {
           const _node = this.node;
+          if (gsap.getTweensOf(_node).length) {
+            gsap.killTweensOf(_node);
+          }
+
           if (leave.withParent) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
-
             if (parent.transitory) {
-              if (gsap.getTweensOf(_node).length) {
-                gsap.killTweensOf(_node);
-              }
-
-              // We dump this _viewNode so it gets removed when the leave animation origin node is detached.
+              // We dump this _viewNode so it gets removed when the leave's animation's origin node is detached.
               // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a $if
               return this.dump();
             }
-          }
-
-          if (gsap.getTweensOf(_node).length) {
-            gsap.killTweensOf(_node);
           }
 
           // in the case which the _viewNode is not visible, then ignore its animation
@@ -5063,21 +4993,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           viewNode.node.style.display = 'none';
         });
       } else {
-        // it works and I don't know why
+        // By default, imitate leave with parent behavior
         viewNode.populateLeaveSequence = function (finalize) {
           if (gsap.getTweensOf(this.node).length) {
             gsap.killTweensOf(this.node);
           }
-          // console.log(this.blueprint.$if,finalize)
-          if (this.blueprint.hasOwnProperty('$if')) {
+
+          if (this.parent.transitory) {
+            return this.dump();
+          } else {
             finalize();
           }
-
-
-          // AnimationMeta.installGSAPAnimation(this, 'leave', {
-          //   // sequence: 'DESTROY',
-          //   duration: 0
-          // }, onComplete);
         };
       }
 
@@ -5239,6 +5165,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
         parentAnimationMeta = new AnimationMeta(newConfig.addTo);
+
         const children = parentAnimationMeta.timeline.getChildren(false);
         if (children.indexOf(animationMeta.timeline) === -1) {
           parentAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
@@ -5248,14 +5175,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parentTimeline = animationMeta.timeline;
-
         while (parentTimeline.parent !== gsap.globalTimeline) {
           if (!parentTimeline.parent) return;
           parentTimeline = parentTimeline.parent;
         }
 
         // parent.add(() => {-
-        // debugger
+
         parentTimeline.addPause(newConfig.position, () => {
           // debugger
           if (viewNode.transitory || viewNode.destroyed.resolved) {
@@ -5269,6 +5195,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             if (index !== -1) {
               animationMeta.awaits.splice(index, 1);
             }
+            const c = parentTimeline.getChildren(false);
+            console.log(c)
             // debugger
             // parentTimeline.removePause()
             parentTimeline.resume();
@@ -5306,8 +5234,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @class
    */
   function AnimationMeta(name) {
-    if (AnimationMeta.ANIMATIONS[name]) {
-      return AnimationMeta.ANIMATIONS[name];
+    const exist = AnimationMeta.ANIMATIONS[name];
+    if (exist) {
+      if (!exist.timeline.getChildren().length && !exist.timeline.isActive()) {
+        exist.timeline.clear();
+        exist.timeline.invalidate();
+      }
+      return exist;
     }
 
     const _this = this;
@@ -5792,16 +5725,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return;
       }
 
-      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
-        // debugger;
-        G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
-          // _this.rendered.then(function () {
+      if (!moduleMeta || moduleMeta !== config.moduleMeta) {
+        G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           cleanModuleContent(_this);
-          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
-          // });
+          _next();
         });
-      } else if (!moduleMeta) {
-        cleanModuleContent(_this);
+      }
+
+      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
+        // _this.rendered.then(() => {
+        G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+        });
+        // })
       }
       config.moduleMeta = moduleMeta;
     }
@@ -5812,12 +5748,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     children.forEach(vn => {
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
         vn.populateLeaveSequence = function (finalize) {
-          // G.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
-          // G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
-          //   // sequence: 'DESTROY',
-          //   onComplete: finalize,
-          //   duration: 0
-          // }, finalize);
           finalize();
         };
       }
@@ -5904,7 +5834,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 (function (G) {
   const View = G.View;
   const CLONE = G.clone;
-  const DESTROY_NODES = G.View.destroyNodes;
+  const DESTROY_NODES = G.View.DESTROY_NODES;
 
   View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
