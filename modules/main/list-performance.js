@@ -20,7 +20,7 @@ view.init([
           //   Object.assign(Scope.data.list[i], { title: 'new-' + i });
           // }
 
-          for (let i = 0; i < 10000; i++) {
+          for (let i = 0; i < 2500; i++) {
             Scope.data.list.push({
               title: 'index: ' + i
             });
