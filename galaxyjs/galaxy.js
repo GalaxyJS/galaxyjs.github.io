@@ -2563,6 +2563,7 @@ Galaxy.Observer = /** @class */ (function () {
 /* global Galaxy */
 Galaxy.View = /** @class */(function (G) {
   const defProp = Object.defineProperty;
+  const objKeys = Object.keys;
 
   //------------------------------
 
@@ -2721,10 +2722,35 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.LAST_FRAME_ID = null;
-  View.TO_BE_DESTROYED = {};
-  View.TO_BE_CREATED = {};
-  View.DOM_MANIPULATION_TABLE = {};
+  // let opt_count = 0;
+  // const _next_batch = function (_jump, dirty) {
+  //   if (dirty) {
+  //     return _jump();
+  //   }
+  //
+  //   if (opt_count > 233) {
+  //     opt_count = 0;
+  //     // console.log(performance.now());
+  //     return requestAnimationFrame(() => {
+  //       if (dirty) {
+  //         return _jump();
+  //       }
+  //
+  //       if (this.length) {
+  //         this.shift()(_next_batch.bind(this, _jump));
+  //       } else {
+  //         _jump();
+  //       }
+  //     });
+  //   }
+  //
+  //   opt_count++;
+  //   if (this.length) {
+  //     this.shift()(_next_batch.bind(this, _jump));
+  //   } else {
+  //     _jump();
+  //   }
+  // };
 
   const _next = function (_jump, dirty) {
     if (dirty) {
@@ -2738,15 +2764,13 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  let DOM_MANIPULATIONS = [];
-  let manipulation_done = true;
-  let dom_manipulations_dirty = false;
-  const _jump = function () {
-    if (dom_manipulations_dirty) {
-      dom_manipulations_dirty = false;
-      return _jump.call(DOM_MANIPULATIONS);
-    }
+  let DOM_MANIPULATION_ORDER = [], CREATE_ORDER = [], DESTROY_ORDER = [];
+  let manipulation_done = true, dom_manipulations_dirty = false;
 
+  let diff = 0;
+  let preTS = 0;
+  let too_many_jumps;
+  const _jump_body = function () {
     if (this.length) {
       let key = this.shift();
       let batch = View.TO_BE_CREATED[key];
@@ -2754,16 +2778,102 @@ Galaxy.View = /** @class */(function (G) {
         batch = View.TO_BE_DESTROYED[key];
       }
 
-      if (!batch || !batch.length) {
+      if (!batch.length) {
         return _jump.call(this);
       }
 
       _next.call(batch, _jump.bind(this), dom_manipulations_dirty);
     } else {
       manipulation_done = true;
+      preTS = 0;
+      diff = 0;
     }
   };
 
+  const _jump = function () {
+    if (dom_manipulations_dirty) {
+      dom_manipulations_dirty = false;
+      diff = 0;
+      return _jump.call(DOM_MANIPULATION_ORDER);
+    }
+
+    const now = performance.now();
+    preTS = preTS || now;
+    diff = diff + (now - preTS);
+    preTS = now;
+
+    if (diff > 3) {
+      diff = 0;
+      if (too_many_jumps) {
+        clearTimeout(too_many_jumps);
+        too_many_jumps = null;
+      }
+
+      too_many_jumps = setTimeout((ts) => {
+        preTS = ts;
+        _jump_body.call(this);
+      });
+    } else {
+      _jump_body.call(this);
+    }
+  };
+
+  function _asc(a, b) {
+    return a > b;
+  }
+
+  function _desc(a, b) {
+    return a < b;
+  }
+
+  function _binary_search(array, key, _fn) {
+    let start = 0;
+    let end = array.length - 1;
+    let index = 0;
+
+    while (start <= end) {
+      let middle = Math.floor((start + end) / 2);
+      let midVal = array[middle];
+
+      if (_fn(key, midVal)) {
+        // continue searching to the right
+        index = start = middle + 1;
+      } else {
+        // search searching to the left
+        index = middle;
+        end = middle - 1;
+      }
+    }
+
+    return index;
+  }
+
+  function _search_asc(array, el) {
+    if (el < array[0]) {
+      return 0;
+    }
+
+    if (el > array[array.length - 1]) {
+      return array.length;
+    }
+
+    return _binary_search(array, el, _asc);
+  }
+
+  function _search_desc(array, el) {
+    if (el > array[0]) {
+      return 0;
+    }
+
+    if (el < array[array.length - 1]) {
+      return array.length;
+    }
+
+    return _binary_search(array, el, _desc);
+  }
+
+  View.TO_BE_DESTROYED = {};
+  View.TO_BE_CREATED = {};
   /**
    *
    * @param {string} index
@@ -2772,10 +2882,16 @@ Galaxy.View = /** @class */(function (G) {
    * @static
    */
   View.DESTROY_IN_NEXT_FRAME = function (index, action) {
-    const target = View.TO_BE_DESTROYED['!' + index] || [];
-    target.push(action);
-    View.TO_BE_DESTROYED['!' + index] = target;
-    UPDATE_DOM_MANIPULATION_SEQUENCE();
+    dom_manipulations_dirty = true;
+    index = '!' + index;
+    if (index in View.TO_BE_DESTROYED) {
+      View.TO_BE_DESTROYED[index].push(action);
+    } else {
+      View.TO_BE_DESTROYED[index] = [action];
+      DESTROY_ORDER.splice(_search_desc(DESTROY_ORDER, index), 0, index);
+    }
+
+    update_dom_manipulation_order();
   };
 
   /**
@@ -2786,30 +2902,33 @@ Galaxy.View = /** @class */(function (G) {
    * @static
    */
   View.CREATE_IN_NEXT_FRAME = function (index, action) {
-    const target = View.TO_BE_CREATED[index] || [];
-    target.push(action);
-    View.TO_BE_CREATED[index] = target;
-    UPDATE_DOM_MANIPULATION_SEQUENCE();
-  };
-
-  const UPDATE_DOM_MANIPULATION_SEQUENCE = function () {
     dom_manipulations_dirty = true;
-    if (View.LAST_FRAME_ID) {
-      cancelAnimationFrame(View.LAST_FRAME_ID);
-      View.LAST_FRAME_ID = null;
+    if (View.TO_BE_CREATED.hasOwnProperty(index)) {
+      View.TO_BE_CREATED[index].push(action);
+    } else {
+      View.TO_BE_CREATED[index] = [action];
+      CREATE_ORDER.splice(_search_asc(CREATE_ORDER, index), 0, index);
     }
 
-    const destroy = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
-    const create = Object.keys(View.TO_BE_CREATED).sort();
-    DOM_MANIPULATIONS = destroy.concat(create);
-    View.LAST_FRAME_ID = requestAnimationFrame(() => {
-      if (manipulation_done) {
-        manipulation_done = false;
-        _jump.call(DOM_MANIPULATIONS);
-      }
-    });
+    update_dom_manipulation_order();
   };
 
+  let last_dom_manipulation_id;
+
+  function update_dom_manipulation_order() {
+    if (last_dom_manipulation_id) {
+      clearTimeout(last_dom_manipulation_id);
+      last_dom_manipulation_id = null;
+    }
+
+    DOM_MANIPULATION_ORDER = [].concat(DESTROY_ORDER, CREATE_ORDER);
+    last_dom_manipulation_id = setTimeout(() => {
+      if (manipulation_done) {
+        manipulation_done = false;
+        _jump.call(DOM_MANIPULATION_ORDER);
+      }
+    });
+  }
 
   /**
    *
@@ -3211,7 +3330,7 @@ Galaxy.View = /** @class */(function (G) {
    * @returns {*}
    */
   View.bindSubjectsToData = function (viewNode, subjects, data, cloneSubject) {
-    const keys = Object.keys(subjects);
+    const keys = objKeys(subjects);
     let attributeName;
     let attributeValue;
     const subjectsClone = cloneSubject ? G.clone(subjects)/*Object.assign({}, subjects)*/ : subjects;
@@ -3283,7 +3402,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3322,7 +3441,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
@@ -3456,7 +3575,7 @@ Galaxy.View = /** @class */(function (G) {
       } else if (blueprint instanceof Object) {
         // blueprint = View.getComponent(blueprint.tag, blueprint, scopeData, _this);
         let propertyValue, propertyKey;
-        const keys = Object.keys(blueprint);
+        const keys = objKeys(blueprint);
         const needInitKeys = [];
         const viewNode = new G.View.ViewNode(blueprint, parent, _this, scopeData);
         parent.registerChild(viewNode, position);
@@ -4713,17 +4832,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     get index() {
       if (this.parent) {
-        const childNodes = this.parent.node.childNodes;
-        let i = -1;
-        const node = this.node;
-        for (let counter = 0, len = childNodes.length; counter < len; counter++) {
-          if (childNodes[counter] === node) {
-            i = counter;
-            break;
-          }
-        }
-        if (i === -1) {
-          i = arrIndexOf.call(childNodes, this.placeholder);
+        let i = 0;
+        let node = this.node;
+        while ((node = node.previousSibling) !== null) ++i;
+
+        if (i === 0 && this.placeholder.parentNode) {
+          i = arrIndexOf.call(this.parent.node.childNodes, this.placeholder);
         }
         return this.parent.index + ',' + ViewNode.createIndex(i);
       }
@@ -5180,36 +5294,27 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           parentTimeline = parentTimeline.parent;
         }
 
-        // parent.add(() => {-
 
+        const removeAwait = () => {
+          const index = animationMeta.awaits.indexOf(newConfig.await);
+          if (index !== -1) {
+            animationMeta.awaits.splice(index, 1);
+            parentTimeline.resume();
+          }
+        };
+        // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
+        // to be resolved. Therefore, we need to remove await.
+        viewNode.finalize.push(removeAwait);
+// debugger
         parentTimeline.addPause(newConfig.position, () => {
           // debugger
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
 
-          // parent.pause();
           animationMeta.awaits.push(newConfig.await);
-          const removeAwait = () => {
-            const index = animationMeta.awaits.indexOf(newConfig.await);
-            if (index !== -1) {
-              animationMeta.awaits.splice(index, 1);
-            }
-            const c = parentTimeline.getChildren(false);
-            console.log(c)
-            // debugger
-            // parentTimeline.removePause()
-            parentTimeline.resume();
-          };
-          // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
-          // to be resolved. Therefore, we need to remove await.
-          viewNode.finalize.push(removeAwait);
-
           newConfig.await.then(removeAwait);
-          // }, newConfig.position);
         });
-
-
       }
 
       animationMeta.add(viewNode, newConfig, finalize);

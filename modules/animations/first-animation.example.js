@@ -42,7 +42,7 @@ view.init([
             clearProps: '',
             ease: 'elastic.out(1,.5)'
           },
-          duration: .9,
+          duration: 1,
           position: '-=.87'
         },
         leave: {

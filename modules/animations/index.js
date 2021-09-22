@@ -179,11 +179,11 @@ view.init([
             tag: 'p',
             text: 'Second Promise'
           },
-          view.enterKeyframe('dots', .1),
+          view.enterKeyframe('dots', .2),
           {
             animations: {
               enter: {
-                // await: promise2,
+                await: promise2,
                 sequence: 'dots',
                 from: {
                   scale: 0
