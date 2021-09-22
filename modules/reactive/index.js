@@ -19,7 +19,7 @@ Scope.data.citiesList = ['Amsterdam', 'Paris'];
 router.init([
   {
     path: '/',
-    redirectTo: 'fundamentals'
+    redirectTo: '/fundamentals'
   },
   scrollToRouter,
   {

@@ -66,7 +66,11 @@ view.init([
               path: './first-animation.example.js'
             }
           },
-          '<p>This is the code that results in the above animation.</p>',
+          // '<p>This is the code that results in the above animation.</p>',
+          {
+            tag: 'p',
+            text: 'This is the code that results in the above animation.'
+          },
           {
             tag: 'pre',
             class: 'prettyprint lang-js',
@@ -106,6 +110,7 @@ view.init([
           {
             animations: {
               enter: {
+                addTo: 'card',
                 sequence: 'dots',
                 from: {
                   scale: 0
@@ -174,7 +179,7 @@ view.init([
             tag: 'p',
             text: 'Second Promise'
           },
-          view.enterKeyframe('dots', .1),
+          view.enterKeyframe('dots', .2),
           {
             animations: {
               enter: {

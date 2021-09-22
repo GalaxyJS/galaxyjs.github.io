@@ -2,7 +2,7 @@ function blurEffectGenerator() {
   const viewNode = this;
   const node = viewNode.node;
 
-  viewNode.rendered.then(function () {
+  viewNode.createNext(function () {
     if (node.complete) {
       load();
     } else {

@@ -42,8 +42,8 @@ view.init([
             clearProps: '',
             ease: 'elastic.out(1,.5)'
           },
-          duration: .9,
-          position: '-=.8'
+          duration: 1,
+          position: '-=.87'
         },
         leave: {
           sequence: 'card',
@@ -51,7 +51,7 @@ view.init([
             scale: 0,
             opacity: 0
           },
-          duration: .25,
+          duration: .26,
           position: '-=0.22'
         }
       },
