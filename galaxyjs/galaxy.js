@@ -2564,6 +2564,7 @@ Galaxy.Observer = /** @class */ (function () {
 Galaxy.View = /** @class */(function (G) {
   const defProp = Object.defineProperty;
   const objKeys = Object.keys;
+  const arrConcat = Array.prototype.concat.bind([]);
 
   //------------------------------
 
@@ -2752,37 +2753,33 @@ Galaxy.View = /** @class */(function (G) {
   //   }
   // };
 
-  const _next = function (_jump, dirty) {
+  const dom_manipulation_table = View.DOM_MANIPLATION = {};
+  const create_order = [], destroy_order = [];
+  let dom_manipulation_order = [];
+  let manipulation_done = true, dom_manipulations_dirty = false;
+  let diff = 0, preTS = 0, too_many_jumps;
+
+  const next_action = function (_jump, dirty) {
     if (dirty) {
       return _jump();
     }
 
     if (this.length) {
-      this.shift()(_next.bind(this, _jump));
+      this.shift()(next_action.bind(this, _jump));
     } else {
       _jump();
     }
   };
 
-  let DOM_MANIPULATION_ORDER = [], CREATE_ORDER = [], DESTROY_ORDER = [];
-  let manipulation_done = true, dom_manipulations_dirty = false;
-
-  let diff = 0;
-  let preTS = 0;
-  let too_many_jumps;
-  const _jump_body = function () {
+  const next_batch_body = function () {
     if (this.length) {
       let key = this.shift();
-      let batch = View.TO_BE_CREATED[key];
-      if (key.indexOf('!') === 0) {
-        batch = View.TO_BE_DESTROYED[key];
-      }
-
+      let batch = dom_manipulation_table[key];
       if (!batch.length) {
-        return _jump.call(this);
+        return next_batch.call(this);
       }
 
-      _next.call(batch, _jump.bind(this), dom_manipulations_dirty);
+      next_action.call(batch, next_batch.bind(this), dom_manipulations_dirty);
     } else {
       manipulation_done = true;
       preTS = 0;
@@ -2790,11 +2787,11 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  const _jump = function () {
+  const next_batch = function () {
     if (dom_manipulations_dirty) {
       dom_manipulations_dirty = false;
       diff = 0;
-      return _jump.call(DOM_MANIPULATION_ORDER);
+      return next_batch.call(dom_manipulation_order);
     }
 
     const now = performance.now();
@@ -2811,22 +2808,22 @@ Galaxy.View = /** @class */(function (G) {
 
       too_many_jumps = setTimeout((ts) => {
         preTS = ts;
-        _jump_body.call(this);
+        next_batch_body.call(this);
       });
     } else {
-      _jump_body.call(this);
+      next_batch_body.call(this);
     }
   };
 
-  function _asc(a, b) {
+  function comp_asc(a, b) {
     return a > b;
   }
 
-  function _desc(a, b) {
+  function comp_desc(a, b) {
     return a < b;
   }
 
-  function _binary_search(array, key, _fn) {
+  function binary_search(array, key, _fn) {
     let start = 0;
     let end = array.length - 1;
     let index = 0;
@@ -2848,7 +2845,7 @@ Galaxy.View = /** @class */(function (G) {
     return index;
   }
 
-  function _search_asc(array, el) {
+  function pos_asc(array, el) {
     if (el < array[0]) {
       return 0;
     }
@@ -2857,10 +2854,10 @@ Galaxy.View = /** @class */(function (G) {
       return array.length;
     }
 
-    return _binary_search(array, el, _asc);
+    return binary_search(array, el, comp_asc);
   }
 
-  function _search_desc(array, el) {
+  function pos_desc(array, el) {
     if (el > array[0]) {
       return 0;
     }
@@ -2869,11 +2866,22 @@ Galaxy.View = /** @class */(function (G) {
       return array.length;
     }
 
-    return _binary_search(array, el, _desc);
+    return binary_search(array, el, comp_desc);
   }
 
-  View.TO_BE_DESTROYED = {};
-  View.TO_BE_CREATED = {};
+  // View.TO_BE_DESTROYED = {};
+  // View.TO_BE_CREATED = {};
+
+
+  function add_dom_manipulation(index, act, order, search) {
+    if (dom_manipulation_table.hasOwnProperty(index)) {
+      dom_manipulation_table[index].push(act);
+    } else {
+      dom_manipulation_table[index] = [act];
+      order.splice(search(order, index), 0, index);
+    }
+  }
+
   /**
    *
    * @param {string} index
@@ -2883,14 +2891,7 @@ Galaxy.View = /** @class */(function (G) {
    */
   View.DESTROY_IN_NEXT_FRAME = function (index, action) {
     dom_manipulations_dirty = true;
-    index = '!' + index;
-    if (index in View.TO_BE_DESTROYED) {
-      View.TO_BE_DESTROYED[index].push(action);
-    } else {
-      View.TO_BE_DESTROYED[index] = [action];
-      DESTROY_ORDER.splice(_search_desc(DESTROY_ORDER, index), 0, index);
-    }
-
+    add_dom_manipulation('!' + index, action, destroy_order, pos_desc);
     update_dom_manipulation_order();
   };
 
@@ -2903,13 +2904,7 @@ Galaxy.View = /** @class */(function (G) {
    */
   View.CREATE_IN_NEXT_FRAME = function (index, action) {
     dom_manipulations_dirty = true;
-    if (View.TO_BE_CREATED.hasOwnProperty(index)) {
-      View.TO_BE_CREATED[index].push(action);
-    } else {
-      View.TO_BE_CREATED[index] = [action];
-      CREATE_ORDER.splice(_search_asc(CREATE_ORDER, index), 0, index);
-    }
-
+    add_dom_manipulation(index, action, create_order, pos_asc);
     update_dom_manipulation_order();
   };
 
@@ -2921,11 +2916,11 @@ Galaxy.View = /** @class */(function (G) {
       last_dom_manipulation_id = null;
     }
 
-    DOM_MANIPULATION_ORDER = [].concat(DESTROY_ORDER, CREATE_ORDER);
+    dom_manipulation_order = arrConcat(destroy_order, create_order);
     last_dom_manipulation_id = setTimeout(() => {
       if (manipulation_done) {
         manipulation_done = false;
-        _jump.call(DOM_MANIPULATION_ORDER);
+        next_batch.call(dom_manipulation_order);
       }
     });
   }
@@ -3402,7 +3397,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3441,7 +3436,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
@@ -3511,7 +3506,7 @@ Galaxy.View = /** @class */(function (G) {
         nodeValue: 'keyframe:enter',
         _animations: {
           enter: {
-            duration: duration || 0,
+            duration: duration !== undefined ? duration : .01,
             sequence,
             onComplete
           }
@@ -3524,7 +3519,7 @@ Galaxy.View = /** @class */(function (G) {
         nodeValue: 'keyframe:leave',
         _animations: {
           enter: {
-            duration: duration || 0,
+            duration: duration !== undefined ? duration : .01,
             sequence,
             onComplete
           }
@@ -5289,30 +5284,35 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parentTimeline = animationMeta.timeline;
+        console.log(parentTimeline.getChildren(false))
         while (parentTimeline.parent !== gsap.globalTimeline) {
           if (!parentTimeline.parent) return;
           parentTimeline = parentTimeline.parent;
         }
 
-
+        const awaitIndex = animationMeta.awaits.push(newConfig.await);
+        const label = newConfig.sequence + '_await' + awaitIndex;
+        const labelPos = label + newConfig.position;
         const removeAwait = () => {
           const index = animationMeta.awaits.indexOf(newConfig.await);
           if (index !== -1) {
             animationMeta.awaits.splice(index, 1);
+            parentTimeline.removePause(labelPos);
+            console.log(label, parentTimeline.labels[label])
+            debugger
             parentTimeline.resume();
           }
         };
         // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
         // to be resolved. Therefore, we need to remove await.
         viewNode.finalize.push(removeAwait);
-// debugger
-        parentTimeline.addPause(newConfig.position, () => {
-          // debugger
+        console.log('a', label, parentTimeline.currentLabel())
+        parentTimeline.addPause(labelPos, () => {
+          console.log(label, parentTimeline.getChildren(false))
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
 
-          animationMeta.awaits.push(newConfig.await);
           newConfig.await.then(removeAwait);
         });
       }
@@ -5838,11 +5838,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
-        // _this.rendered.then(() => {
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
-          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+          // setTimeout(() => {
+            moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+          // }, 3000)
         });
-        // })
       }
       config.moduleMeta = moduleMeta;
     }

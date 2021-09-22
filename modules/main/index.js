@@ -224,7 +224,8 @@ view.init([
 
                     return null;
                   }
-                ]
+                ],
+                trackBy: 'path'
               },
               _animations: {
                 leave: {

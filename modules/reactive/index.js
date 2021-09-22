@@ -328,7 +328,7 @@ view.init({
     view.enterKeyframe(() => {
       router.start();
       PR.prettyPrint();
-    }, 'card', .1)
+    }, 'card')
   ]
 });
 
