@@ -66,7 +66,7 @@ console.log(checkAllButton, Scope);
 view.init({
   tag: 'div',
   class: 'card',
-  animations: animations.cardInOut,
+  _animations: animations.cardInOut,
   children: [
     style,
     {
@@ -122,11 +122,11 @@ view.init({
           tag: 'ul',
           children: {
             tag: 'li',
-            repeat: {
+            _repeat: {
               data: '<>inputs.items',
               as: 'titem'
             },
-            animations: {
+            _animations: {
               enter: {
                 addTo: 'card',
                 sequence: 'todo-items',
@@ -174,10 +174,10 @@ view.init({
           }
         },
         {
-          module: {
+          _module: {
             path: './field.js'
           },
-          inputs: {
+          _inputs: {
             entry: '<>data.newItem'
           },
           on: {

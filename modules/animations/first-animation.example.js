@@ -27,7 +27,7 @@ view.init([
       style: {
         width: '67px',
       },
-      animations: {
+      _animations: {
         enter: {
           addTo: 'card',
           sequence: 'boxes',
@@ -56,7 +56,7 @@ view.init([
         }
       },
       class: 'box',
-      repeat: {
+      _repeat: {
         data: '<>data.boxes',
         as: 'item'
       },

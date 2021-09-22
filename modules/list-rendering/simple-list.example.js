@@ -3,7 +3,7 @@ Scope.data.capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vi
 
 view.init([
   {
-    animations: {
+    _animations: {
       enter: {
         withParent: true,
         from: {
@@ -16,7 +16,7 @@ view.init([
       }
     },
     tag: 'p',
-    repeat: {
+    _repeat: {
       data: '<>data.capitals', // You can also use '<>data.list.changes' if you wish to bind to ArrayChange property
       as: 'item',
       trackBy: true

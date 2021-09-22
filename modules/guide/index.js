@@ -48,7 +48,7 @@ router.init([
 view.init([
   {
     class: 'card big',
-    animations: animations.cardInOut,
+    _animations: animations.cardInOut,
     children: [
       {
         tag: 'img',
@@ -168,7 +168,7 @@ view.init([
           'our UI block. In this case a <strong>p</strong> tag with <strong>Hello World!</strong> as its text.</p>',
           {
             class: 'example-box',
-            module: {
+            _module: {
               path: './hello-world.example.js'
             }
           },
@@ -181,7 +181,7 @@ view.init([
           '<p>With <code class="prettyprint">children</code> property we can add nodes to the elements that can have children.</p>',
           {
             class: 'example-box',
-            module: {
+            _module: {
               path: './div.example.js'
             }
           },
@@ -191,7 +191,7 @@ view.init([
 
           '<h3>List Rendering</h3>',
           '<p style="font-size: .87em">To learn more go to <a href="/list-rendering">List Rendering</a></p>',
-          '<p>GalaxyJS provide <strong>repeat</strong> property for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
+          '<p>GalaxyJS provide <strong>_repeat</strong> property for list rendering. <strong>_repeat</strong> reacts to <code class="prettyprint' +
           ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',
           {
             tag: 'pre',
@@ -220,7 +220,7 @@ view.init([
               '         view.init({\n' +
               '           tag: \'ul\',\n' +
               '           children: {\n' +
-              '             repeat: {\n' +
+              '             _repeat: {\n' +
               '                // Bind to data.list property\n' +
               '                data: \'<>data.list\',\n' +
               '                // An alias for each list item\n' +

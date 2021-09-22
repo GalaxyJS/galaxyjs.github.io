@@ -28,9 +28,9 @@ view.init([
   },
   {
     tag: 'p',
-    text: 'This paragraph has $if',
-    $if: '<>data.condition',
-    animations: {
+    text: 'This paragraph has _if',
+    _if: '<>data.condition',
+    _animations: {
       enter: {
         from: {
           opacity: 0,

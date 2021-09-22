@@ -46,7 +46,7 @@ router.init([
 
 view.init({
   class: 'card big',
-  animations: animations.cardInOut,
+  _animations: animations.cardInOut,
   children: [
     {
       tag: 'img',
@@ -182,7 +182,7 @@ view.init({
           tag: 'ul',
           class: 'circle',
           children: {
-            repeat: {
+            _repeat: {
               data: ['<>data.citiesList.changes'].createComputable(function (array) {
                 console.info('\n%O \nType of change is %c%s%c \nparameters: %o \n', array, 'color: orange', array.type, 'color: unset', array.params);
                 return array;
@@ -239,7 +239,7 @@ view.init({
         '<p>Sometimes you might want to manipulate a bound value before it\'s rendered. To do this you need a computed bind.</p>',
         '<p>A computed bind is basically a function that watches the properties you specify for it and gets called anytime any of those properties changes.</p>',
         {
-          module: {
+          _module: {
             path: './inline-computed-bind.example.js'
           }
         },
@@ -253,7 +253,7 @@ view.init({
         '<h4>Array.prototype.createComputable</h4>',
         '<p>For higher code quality we suggest that instead of using inline compute syntax, you use <code class="prettyprint lang-js">Array.prototype.createComputable</code> function. Here is an example:</p>',
         {
-          module: {
+          _module: {
             path: './array-computed-bind.example.js'
           }
         },
@@ -271,7 +271,7 @@ view.init({
         },
         '<p>The <code class="prettyprint lang-js">class</code> and <code class="prettyprint lang-js">style</code> property support variety of types like string, array, object and literal object.</p>',
         {
-          module: {
+          _module: {
             path: './class-and-style.example.js'
           }
         },
@@ -287,19 +287,19 @@ view.init({
           id: 'inputs-property',
           text: 'Inputs property'
         },
-        '<p>The <code class="prettyprint lang-js">inputs</code> property can be used to send data to a module. This property only accepts a literal object as input.</p>',
+        '<p>The <code class="prettyprint lang-js">_inputs</code> property can be used to send data to a module. This property only accepts a literal object as input.</p>',
         {
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
           text: moduleWithInputsExample
         },
-        '<p>You can access the inputs data from within the context of a the module via <code class="prettyprint lang-js">Scope.inputs</code></p>',
+        '<p>You can access the _inputs properties from within the context of a module via <code class="prettyprint lang-js">Scope.inputs</code></p>',
         {
-          inputs: {
+          _inputs: {
             fromParent: 'This is a message from parent module!'
           },
-          module: {
+          _module: {
             path: './view-node-inputs.example.js'
           }
         },
@@ -319,7 +319,7 @@ view.init({
           text: valuePropertyExample
         },
         {
-          module: {
+          _module: {
             path: './value-property.example.js'
           }
         },
@@ -328,7 +328,7 @@ view.init({
     view.enterKeyframe(() => {
       router.start();
       PR.prettyPrint();
-    }, 'card')
+    }, 'card', .1)
   ]
 });
 

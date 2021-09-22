@@ -63,7 +63,7 @@ const emptyButton = {
 view.init({
   tag: 'div',
   class: 'card big',
-  animations: animations.cardInOut,
+  _animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -73,8 +73,8 @@ view.init({
           tag: 'h1',
           text: 'List Rendering'
         },
-        '<p>We can use the <strong>repeat</strong> property to render a list of items based on an array.</p>',
-        '<p><strong>repeat</strong> uses the <code class="prettyprint lang-js">changes</code> property of the bound array to render the' +
+        '<p>We can use the <strong>_repeat</strong> property to render a list of items based on an array.</p>',
+        '<p><strong>_repeat</strong> uses the <code class="prettyprint lang-js">changes</code> property of the bound array to render the' +
         ' content.</p>',
         '<p><code class="prettyprint lang-js">changes</code> is reactive property that is being added to arrays by GalaxyJS' +
         ' and it\'s instance of ArrayChange. </p>',
@@ -87,7 +87,7 @@ view.init({
         },
         {
           class: 'example-box',
-          module: {
+          _module: {
             path: './simple-list.example.js'
           },
         },
@@ -127,9 +127,9 @@ view.init({
                   children: [
                     {
                       tag: 'li',
-                      animations: itemAnimations,
+                      _animations: itemAnimations,
                       class: 'flex-row',
-                      repeat: {
+                      _repeat: {
                         data: '<>data.capitals',
                         as: 'item'
                       },
@@ -149,9 +149,9 @@ view.init({
                     {
                       tag: 'li',
                       checked: '<>item2',
-                      animations: itemAnimations,
+                      _animations: itemAnimations,
                       class: 'flex-row',
-                      repeat: {
+                      _repeat: {
                         data: '<>data.countries',
                         as: 'item2'
                       },

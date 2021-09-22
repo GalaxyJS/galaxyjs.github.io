@@ -108,7 +108,7 @@ router.init([
 view.init({
   tag: 'div',
   class: 'card big',
-  animations: animations.cardInOut,
+  _animations: animations.cardInOut,
   children: [
     style,
     {
@@ -135,7 +135,7 @@ view.init({
           children: [
             {
               tag: 'li',
-              repeat: {
+              _repeat: {
                 as: 'doc',
                 data: '<>data.api.scope'
               },
@@ -173,7 +173,7 @@ view.init({
           children: [
             {
               tag: 'li',
-              repeat: {
+              _repeat: {
                 as: 'doc',
                 data: '<>data.api.view'
               },

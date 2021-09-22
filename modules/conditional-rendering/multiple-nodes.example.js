@@ -58,33 +58,33 @@ view.init([
   {
     tag: 'p',
     text: 'Item 1',
-    animations: itemAnimations,
-    $if: '<>data.conditionForMultiple'
+    _animations: itemAnimations,
+    _if: '<>data.conditionForMultiple'
 
   },
   {
     tag: 'p',
     text: 'Item 2',
-    animations: itemAnimations,
-    $if: '<>data.conditionForMultiple'
+    _animations: itemAnimations,
+    _if: '<>data.conditionForMultiple'
 
   },
   {
     tag: 'p',
     text: 'Item 3',
-    animations: itemAnimations,
-    $if: '<>data.conditionForMultiple'
+    _animations: itemAnimations,
+    _if: '<>data.conditionForMultiple'
   },
   {
     tag: 'p',
     text: 'Item 4',
-    animations: itemAnimations,
-    $if: '<>data.conditionForMultiple'
+    _animations: itemAnimations,
+    _if: '<>data.conditionForMultiple'
   },
   {
     tag: 'p',
     text: 'Item 5',
-    animations: itemAnimations,
-    $if: '<>data.conditionForMultiple'
+    _animations: itemAnimations,
+    _if: '<>data.conditionForMultiple'
   }
 ]);

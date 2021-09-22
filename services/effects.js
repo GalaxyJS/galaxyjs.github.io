@@ -2,7 +2,7 @@ function blurEffectGenerator() {
   const viewNode = this;
   const node = viewNode.node;
 
-  viewNode.createNext(function () {
+  viewNode.rendered.then(() => {
     if (node.complete) {
       load();
     } else {
@@ -63,7 +63,6 @@ function blurEffectGenerator() {
 Scope.export = {
   getBlurCaption: function () {
     // action.watch = ['data.none'];
-
 
     return blurEffectGenerator;
   }

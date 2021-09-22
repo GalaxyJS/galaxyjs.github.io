@@ -5,7 +5,7 @@ Scope.data.myValue = 10;
 
 view.init({
   class: 'card big',
-  animations: animations.cardInOut,
+  _animations: animations.cardInOut,
   children: [
     {
       tag: 'img',

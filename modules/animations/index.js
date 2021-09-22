@@ -23,7 +23,7 @@ const promise2 = new Promise((resolve) => {
 view.init([
   {
     class: 'card big anime',
-    animations: {
+    _animations: {
       enter: {
         sequence: 'card',
         from: {
@@ -62,7 +62,7 @@ view.init([
         children: [
           {
             class: 'example-box',
-            module: {
+            _module: {
               path: './first-animation.example.js'
             }
           },
@@ -108,7 +108,7 @@ view.init([
         class: 'content dots-animation',
         children: [
           {
-            animations: {
+            _animations: {
               enter: {
                 addTo: 'card',
                 sequence: 'dots',
@@ -126,7 +126,7 @@ view.init([
           },
           view.enterKeyframe('dots', .2),
           {
-            animations: {
+            _animations: {
               enter: {
                 await: promise1,
                 sequence: 'dots',
@@ -144,7 +144,7 @@ view.init([
             text: ':Resolved'
           },
           {
-            animations: {
+            _animations: {
               enter: {
                 sequence: 'dots',
                 from: {
@@ -158,12 +158,12 @@ view.init([
               }
             },
             class: 'dot',
-            repeat: {
+            _repeat: {
               data: '<>data.dots'
             }
           },
           {
-            animations: {
+            _animations: {
               enter: {
                 sequence: 'dots',
                 from: {
@@ -181,7 +181,7 @@ view.init([
           },
           view.enterKeyframe('dots', .2),
           {
-            animations: {
+            _animations: {
               enter: {
                 await: promise2,
                 sequence: 'dots',
@@ -199,7 +199,7 @@ view.init([
             text: ':Resolved'
           },
           {
-            animations: {
+            _animations: {
               enter: {
                 sequence: 'dots',
                 from: {
@@ -219,7 +219,7 @@ view.init([
               backgroundColor: 'lightblue'
             },
             class: 'dot',
-            repeat: {
+            _repeat: {
               data: '<>data.dots'
             }
           }

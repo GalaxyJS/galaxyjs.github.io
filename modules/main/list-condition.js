@@ -30,12 +30,12 @@ view.init([
   {
     children: {
       tag: 'p',
-      repeat: {
+      _repeat: {
         data: '<>data.list',
         as: 'iitem'
       },
       text: '<>iitem.title',
-      $if: '<>data.con'
+      _if: '<>data.con'
     }
   }
 ]);

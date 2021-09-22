@@ -19,14 +19,14 @@ view.init([
             }
 
             const t1 = performance.now();
-            console.log('$if took ' + (t1 - t0) + ' milliseconds.');
+            console.log('_if took ' + (t1 - t0) + ' milliseconds.');
           }
         }
       },
       {
         tag: 'p',
-        text: 'This is $if',
-        $if: '<>data.cond'
+        text: 'This is _if',
+        _if: '<>data.cond'
       }
     ]
   },

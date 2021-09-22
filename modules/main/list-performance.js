@@ -46,7 +46,7 @@ view.init([
       },
       {
         tag: 'p',
-        repeat: {
+        _repeat: {
           data: '<>data.list',
           as: 'iitem'
         },

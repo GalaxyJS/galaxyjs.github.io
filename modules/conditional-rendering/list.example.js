@@ -30,8 +30,8 @@ view.init([
     ]
   },
   {
-    $if: '<>data.conditionForList',
-    animations: {
+    _if: '<>data.conditionForList',
+    _animations: {
       enter: {
         to: {
           opacity: 1,
@@ -50,7 +50,7 @@ view.init([
     children: [
       {
         tag: 'p',
-        animations: {
+        _animations: {
           enter: {
             from: {
               opacity: 0,
@@ -72,7 +72,7 @@ view.init([
             duration: .3
           }
         },
-        repeat: {
+        _repeat: {
           data: ['first', 'Second', 'third'],
           as: 'item'
         },

@@ -14,7 +14,7 @@ console.log(data);
 view.init({
   tag: 'div',
   class: 'card',
-  animations: animations.cardInOut,
+  _animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -36,7 +36,7 @@ view.init({
             {
               tag: 'li',
               class: 'flex-row',
-              repeat: {
+              _repeat: {
                 data: '<>data.products',
                 as: 'product'
               },
@@ -53,7 +53,7 @@ view.init({
                   class: 'flex-item-50',
                   text: '<>product.title',
                   children: {
-                    animations: {
+                    _animations: {
                       leave: {
                         sequence: 'DESTROY',
                         to: {
@@ -81,7 +81,7 @@ view.init({
                   tag: 'button',
                   class: 'flex-item-al',
                   text: 'Add',
-                  inputs: {
+                  _inputs: {
                     product: '<>product'
                   },
                   on: {

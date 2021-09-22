@@ -109,7 +109,7 @@ view.init([
       'main-nav': true,
       'expand': '<>data.expandNav'
     },
-    animations: animations.mainNav,
+    _animations: animations.mainNav,
     on: {
       click(vn) {
         if (window.innerWidth < 768) {
@@ -129,12 +129,12 @@ view.init([
       },
       {
         tag: 'div',
-        repeat: {
+        _repeat: {
           data: '<>router.routes',
           as: 'nav'
         },
-        $if: '<>!nav.hidden',
-        animations: {
+        _if: '<>!nav.hidden',
+        _animations: {
           enter: {
             addTo: 'card',
             sequence: 'main-nav-items',
@@ -175,7 +175,7 @@ view.init([
             ]
           },
           {
-            animations: {
+            _animations: {
               enter: {
                 withParent: true,
                 sequence: 'card',
@@ -201,7 +201,7 @@ view.init([
                 position: '-=.3'
               }
             },
-            $if: [
+            _if: [
               '<>nav.path',
               '<>router.activeRoute.path',
               '<>router.activeRoute.children.length',
@@ -211,7 +211,7 @@ view.init([
             ],
             class: 'sub-nav-container',
             children: {
-              repeat: {
+              _repeat: {
                 as: 'subNav',
                 data: [
                   '<>nav.path',
@@ -226,7 +226,7 @@ view.init([
                   }
                 ]
               },
-              animations: {
+              _animations: {
                 leave: {
                   withParent: true
                 }
@@ -256,7 +256,7 @@ view.init([
     children: [
       {
         ...router.viewport,
-        inputs: {
+        _inputs: {
           content: 'This is the default content',
           items: '<>data.todos'
         },

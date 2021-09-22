@@ -12,7 +12,7 @@ view.init([
   },
   {
 
-    module: {
+    _module: {
       path: './mod-c.js'
     }
   },

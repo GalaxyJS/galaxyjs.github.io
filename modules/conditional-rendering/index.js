@@ -9,7 +9,7 @@ const listExample = Scope.importAsText('./list.example.js');
 view.init({
   tag: 'div',
   class: 'card big',
-  animations: animations.cardInOut,
+  _animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -38,7 +38,7 @@ view.init({
         // '<pre class="prettyprint lang-js">' + singleNodeExample + '</pre>',
         {
           class: 'example-box',
-          module: {
+          _module: {
             id: 'single-node-example',
             path: './single-node.example.js'
           },
@@ -63,7 +63,7 @@ view.init({
         // '<pre class="prettyprint lang-js">' + multipleNodesExample + '</pre>',
         {
           class: 'example-box',
-          module: {
+          _module: {
             id: 'multiple-nodes-example',
             path: './multiple-nodes.example.js'
           },
@@ -79,7 +79,7 @@ view.init({
         },
         {
           class: 'example-box',
-          module: {
+          _module: {
             id: 'list-example',
             path: './list.example.js'
           },
