@@ -3,7 +3,7 @@ const view = Scope.import('galaxy/view');
 const itemAnimations = {
   enter: {
     withParent: true,
-    sequence: 'if-sequence',
+    timeline: 'if-timeline',
     from: {
       opacity: 0,
       x: 25,
@@ -18,7 +18,7 @@ const itemAnimations = {
   },
   leave: {
     withParent: true,
-    sequence: 'if-sequence',
+    timeline: 'if-timeline',
     to: {
       x: 50,
       opacity: 0,

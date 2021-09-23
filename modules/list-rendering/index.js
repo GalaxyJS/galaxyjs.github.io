@@ -13,7 +13,7 @@ Scope.data.capitals = capitals;
 const itemAnimations = {
   enter: {
     addTo: 'card',
-    sequence: 'ok',
+    timeline: 'ok',
     from: {
       opacity: 0,
       height: 0,
@@ -35,7 +35,7 @@ const itemAnimations = {
     duration: .5
   },
   leave: {
-    sequence: 'ok',
+    timeline: 'ok',
     withParent: true,
     to: {
       overflow: 'hidden',

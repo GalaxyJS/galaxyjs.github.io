@@ -55,7 +55,7 @@ view.init({
                   children: {
                     _animations: {
                       leave: {
-                        sequence: 'DESTROY',
+                        timeline: 'DESTROY',
                         to: {
                           opacity: 0
                         },

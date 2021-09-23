@@ -30,7 +30,7 @@ view.init([
       _animations: {
         enter: {
           addTo: 'card',
-          sequence: 'boxes',
+          timeline: 'boxes',
           from: {
             display: 'none',
             scale: 0,
@@ -46,7 +46,7 @@ view.init([
           position: '-=.87'
         },
         leave: {
-          sequence: 'card',
+          timeline: 'card',
           to: {
             scale: 0,
             opacity: 0

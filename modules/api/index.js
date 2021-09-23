@@ -54,11 +54,11 @@ Scope.data.api = {
         '<code class="prettyprint lang-js">view.init({ tag: \'p\', text: \'Hello World!\' });</code>'
     },
     {
-      title: 'enterKeyframe(onComplete, sequence, duration)',
+      title: 'enterKeyframe(onComplete, timeline, duration)',
       description: 'Create a enter keyframe node which invokes onComplete with respect to active animations.'
     },
     {
-      title: 'leaveKeyframe(onComplete, sequence, duration)',
+      title: 'leaveKeyframe(onComplete, timeline, duration)',
       description: 'Create a leave keyframe node which invokes onComplete with respect to active animations.'
     }
   ],

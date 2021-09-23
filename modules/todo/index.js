@@ -129,7 +129,7 @@ view.init({
             _animations: {
               enter: {
                 addTo: 'card',
-                sequence: 'todo-items',
+                timeline: 'todo-items',
                 from: {
                   opacity: 0,
                   y: -15,
@@ -141,7 +141,7 @@ view.init({
               },
               leave: {
                 withParent: true,
-                sequence: 'card',
+                timeline: 'card',
                 to: {
                   opacity: 0,
                   y: -15,

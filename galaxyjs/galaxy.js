@@ -2872,7 +2872,6 @@ Galaxy.View = /** @class */(function (G) {
   // View.TO_BE_DESTROYED = {};
   // View.TO_BE_CREATED = {};
 
-
   function add_dom_manipulation(index, act, order, search) {
     if (dom_manipulation_table.hasOwnProperty(index)) {
       dom_manipulation_table[index].push(act);
@@ -3272,12 +3271,18 @@ Galaxy.View = /** @class */(function (G) {
 
       if (childPropertyKeyPath === null) {
         if (!(target instanceof G.View.ViewNode)) {
+
           defProp(target, targetKeyName, {
-            // set: function (newValue) {
-            // console.warn('It is not allowed', parentReactiveData.id, targetKeyName);
-            // value[propertyKeyPath] = newValue;
-            // },
-            get: function ref() {
+            set: function ref_set(newValue) {
+              // console.warn('It is not allowed', hostReactiveData.id, targetKeyName);
+              // Not sure about this part
+              if (hostReactiveData.data[propertyKey] === newValue) {
+                return;
+              }
+
+              hostReactiveData.data[propertyKey] = newValue;
+            },
+            get: function ref_get() {
               if (expressionFn) {
                 return expressionFn();
               }
@@ -3397,7 +3402,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3436,7 +3441,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
@@ -3494,10 +3499,10 @@ Galaxy.View = /** @class */(function (G) {
   }
 
   View.prototype = {
-    enterKeyframe: function (onComplete, sequence, duration) {
+    enterKeyframe: function (onComplete, timeline, duration) {
       if (typeof onComplete === 'string') {
-        duration = sequence;
-        sequence = onComplete;
+        duration = timeline;
+        timeline = onComplete;
         onComplete = View.EMPTY_CALL;
       }
 
@@ -3507,20 +3512,20 @@ Galaxy.View = /** @class */(function (G) {
         _animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
-            sequence,
+            timeline,
             onComplete
           }
         }
       };
     },
-    leaveKeyframe: function (onComplete, sequence, duration) {
+    leaveKeyframe: function (onComplete, timeline, duration) {
       return {
         tag: 'comment',
         nodeValue: 'keyframe:leave',
         _animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
-            sequence,
+            timeline,
             onComplete
           }
         }
@@ -3774,8 +3779,8 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         this.refs = this.data.__rd__.refs;
 
         if (this.data instanceof Array) {
-          this.sync('length');
-          this.sync('changes');
+          this.sync('length', this.data.length);
+          this.sync('changes', this.data.changes);
         } else {
           this.syncAll();
         }
@@ -3828,7 +3833,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           if (value === val) {
             // If value is array, then sync should be called so nodes that are listening to array itself get updated
             if (val instanceof Array) {
-              thisRD.sync(key);
+              thisRD.sync(key, val);
             } else if (val instanceof Object) {
               thisRD.notifyDown(key);
             }
@@ -3863,7 +3868,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
       // Update the ui for this key
       // This is for when the makeReactive method has been called by setData
-      this.sync(key);
+      this.sync(key, value);
       this.oldValue[key] = value;
     },
     /**
@@ -3895,7 +3900,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         }
       }
 
-      _this.sync('length');
+      _this.sync('length', arr.length);
       initialChanges.init = initialChanges;
       defProp(arr, 'changes', {
         enumerable: false,
@@ -3977,7 +3982,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
             });
             thisRD.notifyDown('length');
             thisRD.notifyDown('changes');
-            thisRD.notify(thisRD.keyInParent);
+            thisRD.notify(thisRD.keyInParent, this);
 
             return returnValue;
           },
@@ -4014,7 +4019,9 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       _this.sync(key, value);
       for (let i = 0, len = _this.refs.length; i < len; i++) {
         const ref = _this.refs[i];
-        ref.parent.notify(ref.keyInParent, null, value);
+        const keyInParent = ref.keyInParent;
+        const refParent = ref.parent;
+        ref.parent.notify(keyInParent, refParent.data[keyInParent], refParent.refs);
       }
     },
 
@@ -4030,18 +4037,19 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         ref.notify(key, _this.refs);
       }
 
-      _this.sync(key);
+      _this.sync(key, _this.data[key]);
     },
     /**
      *
      * @param {string} propertyKey
+     * @param {*} value
      */
-    sync: function (propertyKey) {
+    sync: function (propertyKey, value) {
       const _this = this;
 
       const map = _this.nodesMap[propertyKey];
       const oldValue = _this.oldValue[propertyKey];
-      const value = _this.data[propertyKey];
+      // const value = _this.data[propertyKey];
 
       // notify the observers on the data
       G.Observer.notify(_this.data, propertyKey, value, oldValue);
@@ -4061,7 +4069,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       const _this = this;
       const keys = objKeys(_this.data);
       for (let i = 0, len = keys.length; i < len; i++) {
-        _this.sync(keys[i]);
+        _this.sync(keys[i], _this.data[keys[i]]);
       }
     },
     /**
@@ -4709,7 +4717,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param position
      */
     registerChild: function (childNode, position) {
-      this.node.insertBefore(childNode.placeholder, position);
+      if (this.virtual) {
+        this.parent.node.insertBefore(childNode.placeholder, position);
+      } else {
+        this.node.insertBefore(childNode.placeholder, position);
+      }
     },
 
     createNode: function (blueprint, localScope) {
@@ -4998,7 +5010,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       },
     };
 
-
     console.info('%cPlease load GSAP - GreenSock in order to activate animations', 'color: yellowgreen; font-weight: bold;');
     console.info('%cYou can implement most common animations by loading the following resources', 'color: yellowgreen;');
     console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js');
@@ -5096,8 +5107,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           AnimationMeta.installGSAPAnimation(this, 'leave', leave, finalize);
         };
 
-        // Hide sequence is the same as leave sequence.
-        // The only difference is that hide sequence will add `display: 'none'` to the node at the end
+        // Hide timeline is the same as leave timeline.
+        // The only difference is that hide timeline will add `display: 'none'` to the node at the end
         viewNode.populateHideSequence = viewNode.populateLeaveSequence.bind(viewNode, () => {
           viewNode.node.style.display = 'none';
         });
@@ -5131,7 +5142,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   /**
    *
    * @typedef {Object} AnimationConfig
-   * @property {string} [sequence]
+   * @property {string} [timeline]
    * @property {Promise} [await]
    * @property {string|number} [positionInParent]
    * @property {string|number} [position]
@@ -5253,21 +5264,21 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
     newConfig.from = from;
     newConfig.to = to;
-    let sequenceName = newConfig.sequence;
+    let timelineName = newConfig.timeline;
 
-    if (newConfig.sequence instanceof Function) {
-      sequenceName = newConfig.sequence.call(viewNode);
+    if (newConfig.timeline instanceof Function) {
+      timelineName = newConfig.timeline.call(viewNode);
     }
 
     let parentAnimationMeta = null;
-    if (sequenceName) {
-      const animationMeta = new AnimationMeta(sequenceName);
+    if (timelineName) {
+      const animationMeta = new AnimationMeta(timelineName);
 
       // if(sequenceName === 'dots')debugger;
       // viewNode.index;
@@ -5284,37 +5295,41 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parentTimeline = animationMeta.timeline;
-        console.log(parentTimeline.getChildren(false))
+        // console.log(parentTimeline.getChildren(false));
         while (parentTimeline.parent !== gsap.globalTimeline) {
           if (!parentTimeline.parent) return;
           parentTimeline = parentTimeline.parent;
         }
 
-        const awaitIndex = animationMeta.awaits.push(newConfig.await);
-        const label = newConfig.sequence + '_await' + awaitIndex;
-        const labelPos = label + newConfig.position;
-        const removeAwait = () => {
-          const index = animationMeta.awaits.indexOf(newConfig.await);
-          if (index !== -1) {
-            animationMeta.awaits.splice(index, 1);
-            parentTimeline.removePause(labelPos);
-            console.log(label, parentTimeline.labels[label])
-            debugger
-            parentTimeline.resume();
-          }
-        };
-        // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
-        // to be resolved. Therefore, we need to remove await.
-        viewNode.finalize.push(removeAwait);
-        console.log('a', label, parentTimeline.currentLabel())
-        parentTimeline.addPause(labelPos, () => {
-          console.log(label, parentTimeline.getChildren(false))
+        animationMeta.awaits.push(newConfig.await);
+
+        // The pauseTween will be removed from the parentTimeline by GSAP the moment the pause is hit
+        const pauseTween = parentTimeline.addPause(newConfig.position, () => {
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
 
           newConfig.await.then(removeAwait);
-        });
+        }).recent();
+
+        const removeAwait = ((_pause) => {
+          const index = animationMeta.awaits.indexOf(newConfig.await);
+          if (index !== -1) {
+            animationMeta.awaits.splice(index, 1);
+            // Do not remove the pause if it is already executed
+            if (_pause._initted) {
+              parentTimeline.resume();
+            } else {
+              const children = parentTimeline.getChildren(false);
+              if (children.indexOf(_pause) !== -1) {
+                parentTimeline.remove(_pause);
+              }
+            }
+          }
+        }).bind(null, pauseTween);
+        // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
+        // to be resolved. Therefore, we need to remove await.
+        viewNode.finalize.push(removeAwait);
       }
 
       animationMeta.add(viewNode, newConfig, finalize);
@@ -5365,7 +5380,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });
-    _this.timeline.data = {name};
+    _this.timeline.data = { name };
     _this.onCompletesActions = [];
     _this.started = false;
     _this.configs = {};
@@ -5840,7 +5855,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           // setTimeout(() => {
-            moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
           // }, 3000)
         });
       }
@@ -6071,7 +6086,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       config.changeId = changes.id;
       config.oldChanges = changes;
-      // if(node.blueprint._animations && node.blueprint._animations.enter && node.blueprint._animations.enter.sequence === 'dots')debugger;
+      // if(node.blueprint._animations && node.blueprint._animations.enter && node.blueprint._animations.enter.timeline === 'dots')debugger;
       // node.index;
       //  config.previousActionId = requestAnimationFrame(() => {
       //   prepareChanges(node, config, changes).then(finalChanges => {

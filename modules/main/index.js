@@ -137,7 +137,7 @@ view.init([
         _animations: {
           enter: {
             addTo: 'card',
-            sequence: 'main-nav-items',
+            timeline: 'main-nav-items',
             from: {
               transition: 'none',
               autoAlpha: 0,
@@ -178,7 +178,7 @@ view.init([
             _animations: {
               enter: {
                 withParent: true,
-                sequence: 'card',
+                timeline: 'card',
                 from: {
                   height: 0
                 },
@@ -190,7 +190,7 @@ view.init([
                 duration: .3,
               },
               leave: {
-                sequence: 'card',
+                timeline: 'card',
                 to: {
                   height: 0,
                   // delay: .01

@@ -63,7 +63,7 @@ view.init([
             duration: .5
           },
           leave: {
-            sequence: 'if-items',
+            timeline: 'if-items',
             to: {
               opacity: 0,
               x: 20,

@@ -25,7 +25,7 @@ view.init([
     class: 'card big anime',
     _animations: {
       enter: {
-        sequence: 'card',
+        timeline: 'card',
         from: {
           x: 80,
           y: 150,
@@ -36,7 +36,7 @@ view.init([
         duration: .5
       },
       leave: {
-        sequence: 'card',
+        timeline: 'card',
         to: {
           y: 150,
           opacity: 0
@@ -111,7 +111,7 @@ view.init([
             _animations: {
               enter: {
                 addTo: 'card',
-                sequence: 'dots',
+                timeline: 'dots',
                 from: {
                   scale: 0
                 },
@@ -129,7 +129,7 @@ view.init([
             _animations: {
               enter: {
                 await: promise1,
-                sequence: 'dots',
+                timeline: 'dots',
                 from: {
                   scale: 0
                 },
@@ -146,7 +146,7 @@ view.init([
           {
             _animations: {
               enter: {
-                sequence: 'dots',
+                timeline: 'dots',
                 from: {
                   scale: 0
                 },
@@ -165,7 +165,7 @@ view.init([
           {
             _animations: {
               enter: {
-                sequence: 'dots',
+                timeline: 'dots',
                 from: {
                   scale: 0
                 },
@@ -184,7 +184,7 @@ view.init([
             _animations: {
               enter: {
                 await: promise2,
-                sequence: 'dots',
+                timeline: 'dots',
                 from: {
                   scale: 0
                 },
@@ -201,7 +201,7 @@ view.init([
           {
             _animations: {
               enter: {
-                sequence: 'dots',
+                timeline: 'dots',
                 from: {
                   scale: 0
                 },
@@ -224,8 +224,8 @@ view.init([
             }
           }
         ]
-      },
-      view.enterKeyframe(() => PR.prettyPrint(), 'card'),
+      }
     ]
-  }
+  },
+  view.enterKeyframe(() => PR.prettyPrint()),
 ]);

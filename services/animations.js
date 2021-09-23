@@ -3,7 +3,7 @@
 const animations = {
   cardInOut: {
     enter: {
-      sequence: 'card',
+      timeline: 'card',
       from: {
         transformOrigin: 'top center',
         scale: 1.04,
@@ -25,7 +25,7 @@ const animations = {
       duration: .25,
     },
     leave: {
-      sequence: 'card',
+      timeline: 'card',
       to: {
         ease: 'Power1.easeIn',
         transformOrigin: 'top center',
@@ -39,7 +39,7 @@ const animations = {
   },
   itemInOut: {
     enter: {
-      sequence: 'item',
+      timeline: 'item',
       addTo: 'card',
       from: {
         x: 100,
@@ -49,7 +49,7 @@ const animations = {
       duration: .5
     },
     leave: {
-      sequence: 'item',
+      timeline: 'item',
       addTo: 'card',
       order: 5,
       to: {
@@ -60,11 +60,11 @@ const animations = {
       duration: .5
     }
   },
-  createSlideInOut: function (sequence, parent, lSeq) {
+  createSlideInOut: function (timeline, parent, lSeq) {
     return {
       enter: {
         parent: parent || null,
-        sequence: sequence,
+        timeline: timeline,
         from: {
           x: 100,
           opacity: 0
@@ -77,7 +77,7 @@ const animations = {
         duration: .3
       },
       leave: {
-        sequence: lSeq,
+        timeline: lSeq,
         to: {
           x: 150,
           opacity: 0
@@ -87,11 +87,11 @@ const animations = {
       }
     };
   },
-  createPopInOut: function (sequence, parent, lSequence, lParent) {
+  createPopInOut: function (timeline, parent, lSequence, lParent) {
     return {
       enter: {
         parent: parent || null,
-        sequence: sequence,
+        timeline: timeline,
         from: {
           scale: 0
         },
@@ -104,7 +104,7 @@ const animations = {
 
 animations.mainNav = {
   enter: {
-    sequence: 'card',
+    timeline: 'card',
     from: {
       ease: 'elastic.inOut(1.2, .8)',
       x: '-100%'
@@ -133,7 +133,7 @@ animations.mainNav = {
 
 animations.mainNavItem = {
   enter: {
-    sequence: 'main-nav-items',
+    timeline: 'main-nav-items',
     appendTo: 'side-bar',
     positionInParent: '-=.3',
 
@@ -150,7 +150,7 @@ animations.mainNavItem = {
 };
 
 animations.navSubItem = {
-  sequence: 'sub-nav-items',
+  timeline: 'sub-nav-items',
   attachTo: 'main-nav-items',
   positionInParent: '+=.2',
 
