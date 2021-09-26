@@ -9,7 +9,7 @@ const scrollToRouter = Scope.import('services/scroll-to-router.js');
 
 const arrayInstanceExample = Scope.importAsText('./array-instance.example.text');
 const inlineComputedBindExample = Scope.importAsText('./inline-computed-bind.example.js');
-const arrayComputedBindExample = Scope.importAsText('./array-computed-bind.example.js');
+const variableComputedBindExample = Scope.importAsText('./variable-computed-bind.example.js');
 const moduleWithInputsExample = Scope.importAsText('./module-with-inputs.example.text');
 const classAndStyleExample = Scope.importAsText('./class-and-style.example.js');
 const viewNodeInputsExample = Scope.importAsText('./view-node-inputs.example.js');
@@ -25,6 +25,10 @@ router.init([
   {
     title: 'Fundamentals',
     path: '/fundamentals'
+  },
+  {
+    title: 'Binding Syntax',
+    path: '/binding-syntax'
   },
   {
     title: 'Computed binds',
@@ -77,9 +81,16 @@ view.init({
           text: 'The properties that can be bound to UI are:'
         },
         '<ul>' +
-        '<li><code class="prettyprint lang-js">Scope.data</code> which refers to the module\'s data.</li>' +
+        '<li><code class="prettyprint lang-js">data</code> which refers to the module\'s <code class="prettyprint lang-js">Scope.data</code></li>' +
         '<li><code class="prettyprint lang-js">this</code> which refers to the corresponding node.</li>' +
         '</ul>',
+        {
+          tag: 'h2',
+          id: 'binding-syntax',
+          text: 'Binding Syntax'
+        },
+        '<p>The binding syntax is a string which starts with <code class="prettyprint lang-js">\'<>\'</code>, then followed with the path to the property in Scope\'s <code class="prettyprint lang-js">data</code></p>',
+        '<p>For example: <code class="prettyprint lang-js">\'<>data.path.to.myProperty\'</code></p>',
         {
           class: 'example-box',
           children: [
@@ -183,10 +194,10 @@ view.init({
           class: 'circle',
           children: {
             _repeat: {
-              data: ['<>data.citiesList.changes'].createComputable(function (array) {
+              data: (array = '<>data.citiesList.changes') => {
                 console.info('\n%O \nType of change is %c%s%c \nparameters: %o \n', array, 'color: orange', array.type, 'color: unset', array.params);
                 return array;
-              }),
+              },
               as: 'city'
             },
             tag: 'li',
@@ -201,9 +212,9 @@ view.init({
             {
               tag: 'button',
               text: 'Add \'Budapest\' to the list',
-              disabled: ['<>data.citiesList'].createComputable(function (list) {
+              disabled: (list = '<>data.citiesList') => {
                 return list.indexOf('Budapest') !== -1;
-              }),
+              },
               on: {
                 click: function () {
                   Scope.data.citiesList.push('Budapest');
@@ -220,9 +231,9 @@ view.init({
             {
               tag: 'button',
               text: 'Remove \'Budapest\' from the list',
-              disabled: ['<>data.citiesList'].createComputable(function (list) {
+              disabled: (list = '<>data.citiesList') => {
                 return list.indexOf('Budapest') === -1;
-              }),
+              },
               on: {
                 click: function () {
                   const index = Scope.data.citiesList.indexOf('Budapest');
@@ -250,18 +261,17 @@ view.init({
           text: inlineComputedBindExample
         },
 
-        '<h4>Array.prototype.createComputable</h4>',
-        '<p>For higher code quality we suggest that instead of using inline compute syntax, you use <code class="prettyprint lang-js">Array.prototype.createComputable</code> function. Here is an example:</p>',
+        '<p>For higher code quality we suggest that instead of using inline compute syntax, you use function variable. Here is an example:</p>',
         {
           _module: {
-            path: './array-computed-bind.example.js'
+            path: './variable-computed-bind.example.js'
           }
         },
         {
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: arrayComputedBindExample
+          text: variableComputedBindExample
         },
 
         {

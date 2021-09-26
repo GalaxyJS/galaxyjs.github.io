@@ -21,7 +21,7 @@ view.init({
         },
         {
           tag: 'p',
-          html: 'With <strong>$if</strong> you can specify presence of the element inside dom based on a condition.'
+          html: 'With <strong>_if</strong> you can specify presence of the element inside dom based on a condition.'
         },
         {
           tag: 'p',
@@ -84,8 +84,8 @@ view.init({
             path: './list.example.js'
           },
         },
-        '<h2>Rendering Strategy</h2>' +
-        '<p>The way <strong>$if</strong> handles DOM manipulation is important to be understood. ' +
+        '<h2>Rendering Bahvior</h2>' +
+        '<p>The way <strong>_if</strong> handles DOM manipulation is important to be understood. ' +
         'When condition is false, then the element will be detached from DOM and upon true ' +
         'the same element will be reattached to the DOM</p>'
       ]

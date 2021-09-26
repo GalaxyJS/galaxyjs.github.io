@@ -147,14 +147,14 @@ view.init({
                   tag: 'ul',
                   children: [
                     {
-                      tag: 'li',
-                      checked: '<>item2',
                       _animations: itemAnimations,
-                      class: 'flex-row',
                       _repeat: {
                         data: '<>data.countries',
                         as: 'item2'
                       },
+                      checked: '<>item2',
+                      class: 'flex-row',
+                      tag: 'li',
                       text: '<>item2'
                     }
                   ]

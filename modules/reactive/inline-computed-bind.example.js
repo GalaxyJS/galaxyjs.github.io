@@ -13,10 +13,7 @@ view.init({
         'Full Name: ',
         {
           tag: 'strong',
-          text: [
-            '<>data.firstName',
-            '<>data.lastName',
-          ].createComputable((fn, ln) => (fn || '...') + ' ' + (ln || '...'))
+          text: (fn = '<>data.firstName', ln = '<>data.lastName') => (fn || '...') + ' ' + (ln || '...')
         }
       ]
     },

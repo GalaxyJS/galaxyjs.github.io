@@ -26,9 +26,9 @@ view.init({
         },
         {
           tag: 'h1',
-          text: ['<>data.products.length', (len) => {
+          text: (len = '<>data.products.length') => {
             return 'No of product type: ' + len;
-          }]
+          }
         },
         {
           tag: 'ul',
@@ -67,14 +67,14 @@ view.init({
                       fontSize: '.85em',
                       fontWeight: 'bold',
                       marginLeft: 'auto',
-                      color: ['<>product.quantity'].createComputable((q) => {
+                      color: (q = '<>product.quantity') => {
                         return q < 1 ? '#aaa' : '#3a0';
-                      }),
+                      },
                     },
                     tag: 'span',
-                    text: ['<>product.quantity'].createComputable((q) => {
+                    text: (q = '<>product.quantity') => {
                       return q < 1 ? ' out of stock' : ' in stock';
-                    }),
+                    },
                   }
                 },
                 {
@@ -97,15 +97,12 @@ view.init({
               children: [
                 {
                   tag: 'h3',
-                  text: [
-                    'data.test',
-                    function (products) {
-                      console.log('products', products);
-                      return 'Total: ' + products.reduce(function (sum, item) {
-                        return sum + item.quantity;
-                      }, 0);
-                    }
-                  ]
+                  text: (products = '<>data.test') => {
+                    console.log('products', products);
+                    return 'Total: ' + products.reduce(function (sum, item) {
+                      return sum + item.quantity;
+                    }, 0);
+                  }
                 }
               ]
             },

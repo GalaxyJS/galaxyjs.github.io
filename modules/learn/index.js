@@ -54,10 +54,10 @@ view.init([
         tag: 'img',
         id: 'installation',
         class: 'banner',
-        src: 'assets/images/guide.jpg',
+        src: 'assets/images/learn.jpg',
         height: '410',
       },
-      '<h1>Guide Page</h1>',
+      '<h1>Learn</h1>',
       {
         class: 'content',
         tag: 'section',
@@ -71,7 +71,7 @@ view.init([
           },
           '<h3>Recommended project file & folder structure</h3>' +
           '<p>You can have whatever directory structure you like as long as you know how to the load modules. The following structure is' +
-          ' recommended and we are using this structure though out our guide.</p>',
+          ' recommended and we are using this structure though out our learn.</p>',
           {
             tag: 'pre',
             class: 'prettyprint lang-js',
@@ -95,7 +95,7 @@ view.init([
             text: '-- GALAXYJS BOILERPLATE PROJECT URL --'
           },
           '<h2 id="getting-started">Getting started</h2>' +
-          '<p class="important">This guide assumes intermediate level knowledge of JavaScript, CSS and HTML.</p>' +
+          '<p class="important">This learn assumes intermediate level knowledge of JavaScript, CSS and HTML.</p>' +
           '<p>There are 2 ways to use GalaxyJS</p>' +
           '<ol><li><strong>1 - </strong>Start a project with GalaxyJS from scratch.</li>' +
           '<li><strong>2 - </strong>Add GalaxyJS to an existing webpage.</li></ol>' +

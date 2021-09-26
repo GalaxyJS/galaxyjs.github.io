@@ -33,11 +33,11 @@ router.init([
     icon: 'fas fa-play',
   },
   {
-    path: '/guide',
+    path: '/learn',
     module: {
-      path: 'modules/guide/index.js'
+      path: 'modules/learn/index.js'
     },
-    title: 'Guide',
+    title: 'Learn',
     icon: 'fas fa-map',
   },
   {
@@ -133,7 +133,7 @@ view.init([
           data: '<>router.routes',
           as: 'nav'
         },
-        _if: '<>!nav.hidden',
+        _if: (hidden = '<>nav.hidden') => !hidden,
         _animations: {
           enter: {
             addTo: 'card',
@@ -201,30 +201,21 @@ view.init([
                 position: '-=.3'
               }
             },
-            _if: [
-              '<>nav.path',
-              '<>router.activeRoute.path',
-              '<>router.activeRoute.children.length',
-              function (navPath, activeRoutePath, length) {
-                return navPath === activeRoutePath && length;
-              }
-            ],
+            _if: function (navPath = '<>nav.path', activeRoutePath = '<>router.activeRoute.path', length = '<>router.activeRoute.children.length') {
+              // console.log(navPath, activeRoutePath, length)
+              return navPath === activeRoutePath && length;
+            },
             class: 'sub-nav-container',
             children: {
               _repeat: {
                 as: 'subNav',
-                data: [
-                  '<>nav.path',
-                  '<>router.activeRoute.path',
-                  '<>router.activeRoute.children',
-                  function (navPath, activeRoutePath, childRoutes) {
-                    if (navPath === activeRoutePath) {
-                      return childRoutes.filter(i => !i.hidden);
-                    }
-
-                    return null;
+                data: function (navPath = '<>nav.path', activeRoutePath = '<>router.activeRoute.path', childRoutes = '<>router.activeRoute.children') {
+                  if (navPath === activeRoutePath) {
+                    return childRoutes.filter(i => !i.hidden);
                   }
-                ],
+
+                  return null;
+                },
                 trackBy: 'path'
               },
               _animations: {

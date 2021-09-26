@@ -75,12 +75,9 @@ view.init({
       children: [
         {
           tag: 'h1',
-          text: [
-            'inputs.items.length',
-            function (len) {
-              return 'ToDos, Count: ' + len;
-            }
-          ]
+          text: (len = '<>inputs.items.length') => {
+            return 'ToDos, Count: ' + len;
+          },
         },
         {
           class: 'fa-end',
@@ -89,14 +86,11 @@ view.init({
             {
               tag: 'button',
               text: 'Un-Check All',
-              disabled: [
-                'inputs.items',
-                function (items) {
-                  return items.filter(function (item) {
-                    return item.done;
-                  }).length === 0;
-                }
-              ],
+              disabled: (items = '<>inputs.items') => {
+                return items.filter(function (item) {
+                  return item.done;
+                }).length === 0;
+              },
               on: {
                 click: function () {
                   inputs.items.forEach(function (item) {
