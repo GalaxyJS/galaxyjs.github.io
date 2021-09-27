@@ -3302,7 +3302,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath !== null) {
-        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, {propertyKeys: [childPropertyKeyPath]}), root);
+        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
       }
     }
 
@@ -3389,7 +3389,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3428,7 +3428,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
@@ -3440,7 +3440,9 @@ Galaxy.View = /** @class */(function (G) {
         break;
 
       case 'event':
-        viewNode.node[propertyKey] = value.bind(viewNode);
+        viewNode.node[propertyKey] = function (event) {
+          value.call(viewNode, event, viewNode.data);
+        };
         break;
     }
   };
@@ -3481,7 +3483,7 @@ Galaxy.View = /** @class */(function (G) {
         tag: scope.element
       }, null, _this);
 
-      _this.container.hasBeenRendered();
+      _this.container.setInDOM(true);
     }
   }
 
@@ -3984,25 +3986,23 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param refs
      */
     notify: function (key, value, refs) {
-      const _this = this;
-
       if (this.refs === refs) {
-        _this.sync(key, value);
+        this.sync(key, value);
         return;
       }
 
-      for (let i = 0, len = _this.refs.length; i < len; i++) {
-        const ref = _this.refs[i];
-        if (_this === ref) {
+      for (let i = 0, len = this.refs.length; i < len; i++) {
+        const ref = this.refs[i];
+        if (this === ref) {
           continue;
         }
 
-        ref.notify(key, value, _this.refs);
+        ref.notify(key, value, this.refs);
       }
 
-      _this.sync(key, value);
-      for (let i = 0, len = _this.refs.length; i < len; i++) {
-        const ref = _this.refs[i];
+      this.sync(key, value);
+      for (let i = 0, len = this.refs.length; i < len; i++) {
+        const ref = this.refs[i];
         const keyInParent = ref.keyInParent;
         const refParent = ref.parent;
         ref.parent.notify(keyInParent, refParent.data[keyInParent], refParent.refs);
@@ -4010,18 +4010,18 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     },
 
     notifyDown: function (key) {
-      const _this = this;
+      const value = this.data[key];
 
-      for (let i = 0, len = _this.refs.length; i < len; i++) {
-        const ref = _this.refs[i];
-        if (_this === ref) {
+      for (let i = 0, len = this.refs.length; i < len; i++) {
+        const ref = this.refs[i];
+        if (this === ref) {
           continue;
         }
 
-        ref.notify(key, _this.refs);
+        ref.notify(key, value, this.refs);
       }
 
-      _this.sync(key, _this.data[key]);
+      this.sync(key, this.data[key]);
     },
     /**
      *
@@ -4439,6 +4439,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   ViewNode.REMOVE_SELF = function (destroy) {
     const viewNode = this;
+
     if (destroy) {
       // Destroy
       viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
@@ -4738,10 +4739,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     prepareLeaveSequence: function (hasAnimation) {
       const _this = this;
+
       if (hasAnimation) {
         if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
           _this.populateLeaveSequence = function () {
-            // console.log('aaaaaaaa')
             ViewNode.REMOVE_SELF.call(_this, false);
           };
         } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
@@ -6637,7 +6638,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.resolvedDynamicRouteValue = null;
 
     _this.routesMap = null;
-    _this.resolvedRouteHash = {};
     _this.data = {
       routes: [],
       activeRoute: null,
@@ -6690,7 +6690,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       const currentPath = window.location.pathname;
-      if (currentPath === path) {
+      if (currentPath === path /*&& this.resolvedRouteValue === path*/) {
         return;
       }
 
@@ -6733,7 +6733,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       }
 
-      normalizedHash = normalizedHash.replace(this.config.baseURL, '/');
+      if (this.config.baseURL !== '/') {
+        normalizedHash = normalizedHash.replace(this.config.baseURL, '');
+      }
       return normalizedHash.replace(this.root, '/').replace('//', '/') || '/';
     },
 
@@ -6761,6 +6763,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           return Object.assign(_this.data.parameters, params);
         }
         _this.resolvedDynamicRouteValue = hash;
+        _this.resolvedRouteValue = null;
 
         const routeIndex = routesPath.indexOf(dynamicRoute.id);
         const pathParameterPlaceholder = dynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
@@ -6779,6 +6782,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           // static routes don't have parameters
           return Object.assign(_this.data.parameters, _this.createClearParameters());
         }
+        _this.resolvedDynamicRouteValue = null;
         _this.resolvedRouteValue = routeValue;
 
         if (staticRoutes.redirectTo) {
@@ -6817,7 +6821,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return false;
     },
 
-    createClearParameters: function() {
+    createClearParameters: function () {
       const clearParams = {};
       const keys = Object.keys(this.data.parameters);
       keys.forEach(k => clearParams[k] = undefined);
@@ -6858,7 +6862,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     detect: function () {
       const hash = window.location.pathname || '/';
-      if (hash.indexOf(this.root) === 0) {
+      const path = this.config.baseURL === '/' ? this.root : this.config.baseURL + this.root;
+
+      if (hash.indexOf(path) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
           this.callMatchRoute(this.routes, hash, {});
