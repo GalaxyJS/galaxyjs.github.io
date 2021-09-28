@@ -2304,6 +2304,8 @@ Galaxy.Module.Content = /** @class */ (function () {
       return 'Scope.import(\'' + pathURL + '\')';
     });
 
+    parsedContent = parsedContent.replace(/Scope\.kill\(.*\)/gm, 'return');
+
     return {
       imports: imports,
       source: parsedContent
@@ -2381,6 +2383,10 @@ Galaxy.Scope = /** @class */ (function () {
       this.observers.forEach(function (observer) {
         observer.remove();
       });
+    },
+
+    kill: function() {
+      throw Error('Scope.kill() should not be invoked at the runtime');
     },
     /**
      *
@@ -2585,6 +2591,11 @@ Galaxy.View = /** @class */(function (G) {
 
   View.EMPTY_CALL = function () {
   };
+
+  View.GET_MAX_INDEX = function () {
+    return '@' + performance.now();
+  };
+
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$|^=\\s*([^\\[\\]<>]*)\\s*$');
 
   /**
@@ -2933,7 +2944,7 @@ Galaxy.View = /** @class */(function (G) {
    */
   View.DESTROY_IN_NEXT_FRAME = function (index, action) {
     dom_manipulations_dirty = true;
-    add_dom_manipulation('!' + index, action, destroy_order, pos_desc);
+    add_dom_manipulation('<' + index, action, destroy_order, pos_desc);
     update_dom_manipulation_order();
   };
 
@@ -2946,7 +2957,7 @@ Galaxy.View = /** @class */(function (G) {
    */
   View.CREATE_IN_NEXT_FRAME = function (index, action) {
     dom_manipulations_dirty = true;
-    add_dom_manipulation(index, action, create_order, pos_asc);
+    add_dom_manipulation('>' + index, action, create_order, pos_asc);
     update_dom_manipulation_order();
   };
 
@@ -4770,23 +4781,23 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.clean(hasAnimation);
       }
 
-      _this.properties.forEach((reactiveData) => {
-        reactiveData.removeNode(_this);
-      });
+      _this.properties.forEach((reactiveData) => reactiveData.removeNode(_this));
 
-      _this.finalize.forEach(act => act.call(_this));
+      let len = _this.finalize.length;
+      for (let i = 0; i < len; i++) {
+        _this.finalize[i].call(_this);
+      }
+      // _this.finalize.forEach(act => act.call(_this));
 
       DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-        if (_this.inDOM) {
-          _this.populateLeaveSequence(_this.onLeaveComplete);
-        }
-        _next();
+        _this.populateLeaveSequence(_this.onLeaveComplete);
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
         _this.inDOM = false;
         _this.blueprint.node = undefined;
         _this.inputs = {};
+        _next();
       });
     },
 
@@ -5823,9 +5834,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== config.moduleMeta) {
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
-          // setTimeout(() => {
           moduleLoaderGenerator(_this, config, newModuleMeta, _next)();
-          // }, 3000)
         });
       }
       config.moduleMeta = newModuleMeta;
@@ -6630,7 +6639,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     };
     _this.scope = scope;
     _this.module = module;
-    _this.root = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+    _this.path = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+    _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
     _this.parentRoute = null;
 
     _this.oldURL = '';
@@ -6680,7 +6690,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       this.detect();
     },
 
-    navigateToPath: function (path) {
+    navigateToPath: function (path, replace) {
       if (path.indexOf('/') !== 0) {
         throw console.error('Path argument is not starting with a `/`\nplease use `/' + path + '` instead of `' + path + '`');
       }
@@ -6694,13 +6704,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return;
       }
 
-      history.pushState({}, '', path);
-      dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+      setTimeout(() => {
+        if (replace) {
+          history.replaceState({}, '', path);
+        } else {
+          history.pushState({}, '', path);
+        }
+
+        dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+      });
     },
 
     navigate: function (path) {
-      if (path.indexOf(this.root) !== 0) {
-        path = this.root + path;
+      if (path.indexOf(this.path) !== 0) {
+        path = this.path + path;
       }
 
       this.navigateToPath(path);
@@ -6733,10 +6750,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       }
 
-      if (this.config.baseURL !== '/') {
-        normalizedHash = normalizedHash.replace(this.config.baseURL, '');
-      }
-      return normalizedHash.replace(this.root, '/').replace('//', '/') || '/';
+      // if (this.config.baseURL !== '/') {
+      //   normalizedHash = normalizedHash.replace(this.config.baseURL, '');
+      // }
+      return normalizedHash.replace(this.fullPath, '/').replace('//', '/') || '/';
     },
 
     onProceed: function () {
@@ -6776,6 +6793,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
+      // debugger
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
         if (_this.resolvedRouteValue === routeValue) {
@@ -6814,8 +6832,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
-        this.data.activePath = route.path;
-        Object.assign(this.data.parameters, params);
+        G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (next) => {
+          Object.assign(this.data.parameters, params);
+          next();
+        });
       }
 
       return false;
@@ -6862,7 +6882,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     detect: function () {
       const hash = window.location.pathname || '/';
-      const path = this.config.baseURL === '/' ? this.root : this.config.baseURL + this.root;
+      const path = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
 
       if (hash.indexOf(path) === 0) {
         if (hash !== this.oldURL) {

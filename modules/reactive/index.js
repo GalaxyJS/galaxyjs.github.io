@@ -95,13 +95,20 @@ view.init({
           class: 'example-box',
           children: [
             {
+              tag: 'style',
+              text: (text = '<>data.text') => {
+                return 'body { color: ' + text + '}';
+              },
+            },
+            {
               tag: 'input',
+              placeholder: 'Type a color name',
               value: '<>data.text'
             },
             {
               tag: 'p',
               children: [
-                'Type something in the above field and see it show up here: ',
+                'Type a color in the above field and see it show up here and more! ',
                 {
                   tag: 'strong',
                   text: '<>data.text'
