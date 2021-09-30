@@ -4510,6 +4510,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.parent = parent;
     _this.finalize = _this.blueprint._destroy ? [_this.blueprint._destroy] : [];
     _this.origin = false;
+    _this.destroyOrigin = 0;
     _this.transitory = false;
     _this.garbage = [];
     _this.leaveWithParent = false;
@@ -4727,6 +4728,25 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       GV.activatePropertyForNode(this, propertyKey, reactiveData, expression);
     },
 
+    snapshot: function (_animations) {
+      const rect = this.node.getBoundingClientRect();
+      const node = this.node.cloneNode(true);
+      const style = {
+        margin: '0',
+        width: rect.width + 'px',
+        height: rect.height + ' px',
+        top: rect.top + 'px',
+        left: rect.left + 'px',
+        position: 'fixed',
+      };
+      Object.assign(node.style, style);
+
+      return {
+        tag: node,
+        style: style
+      };
+    },
+
     hasAnimation: function () {
       const children = this.getChildNodes();
 
@@ -4736,9 +4756,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       for (let i = 0, len = children.length; i < len; i++) {
         const node = children[i];
-        if (node.leaveWithParent) {
-          return true;
-        }
+        // TODO: seems obsolete
+        // if (node.leaveWithParent) {
+        //   return true;
+        // }
 
         if (node.hasAnimation()) {
           return true;
@@ -4775,6 +4796,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     destroy: function (hasAnimation) {
       const _this = this;
       _this.transitory = true;
+      if (_this.parent.destroyOrigin === 0) {
+        _this.destroyOrigin = 1;
+      } else {
+        _this.destroyOrigin = 2;
+      }
 
       if (_this.inDOM) {
         _this.prepareLeaveSequence(hasAnimation || _this.hasAnimation());
@@ -4787,10 +4813,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       for (let i = 0; i < len; i++) {
         _this.finalize[i].call(_this);
       }
-      // _this.finalize.forEach(act => act.call(_this));
 
       DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-        _this.populateLeaveSequence(_this.onLeaveComplete);
+        _this.populateLeaveSequence(_this.destroyOrigin === 2 ? EMPTY_CALL : _this.onLeaveComplete);
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
@@ -5059,14 +5084,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           console.warn(viewNode.node);
         }
 
-        viewNode.leaveWithParent = leave.withParent === true;
         viewNode.populateLeaveSequence = function (finalize) {
+          const active = AnimationMeta.parseStep(viewNode, leave.active);
+          if (active === false) {
+            return leave_with_parent.call(viewNode, finalize);
+          }
+
+          const withParentResult = AnimationMeta.parseStep(viewNode, leave.withParent);
+          viewNode.leaveWithParent = withParentResult === true;
           const _node = this.node;
           if (gsap.getTweensOf(_node).length) {
             gsap.killTweensOf(_node);
           }
 
-          if (leave.withParent) {
+          if (withParentResult) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
             if (parent.transitory) {
@@ -5096,17 +5127,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         });
       } else {
         // By default, imitate leave with parent behavior
-        viewNode.populateLeaveSequence = function (finalize) {
-          if (gsap.getTweensOf(this.node).length) {
-            gsap.killTweensOf(this.node);
-          }
-
-          if (this.parent.transitory) {
-            return this.dump();
-          } else {
-            finalize();
-          }
-        };
+        viewNode.populateLeaveSequence = leave_with_parent.bind(viewNode);
       }
 
       if (viewNode.cache.class && viewNode.cache.class.observer) {
@@ -5118,6 +5139,18 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
     }
   };
+
+  function leave_with_parent(finalize) {
+    if (gsap.getTweensOf(this.node).length) {
+      gsap.killTweensOf(this.node);
+    }
+
+    if (this.parent.transitory) {
+      this.dump();
+    } else {
+      finalize();
+    }
+  }
 
   G.View.AnimationMeta = AnimationMeta;
 
@@ -5224,7 +5257,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    */
   AnimationMeta.parseStep = function (node, step) {
     if (step instanceof Function) {
-      return step.call(node);
+      return step.call(node, node.data);
     }
 
     return step;
@@ -5826,8 +5859,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (!newModuleMeta || newModuleMeta !== config.moduleMeta) {
+        // _this.destroyOrigin = _this;
         G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           cleanModuleContent(_this);
+          // _this.destroyOrigin = 0;
           _next();
         });
       }
@@ -5841,9 +5876,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
   };
 
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   */
   function cleanModuleContent(viewNode) {
     const children = viewNode.getChildNodes();
     children.forEach(vn => {
+      // console.log(vn);
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
         vn.populateLeaveSequence = function (finalize) {
           finalize();
