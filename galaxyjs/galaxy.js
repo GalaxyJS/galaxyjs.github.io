@@ -3578,7 +3578,6 @@ Galaxy.View = /** @class */(function (G) {
         const keys = objKeys(blueprint);
         const needInitKeys = [];
         const viewNode = new G.View.ViewNode(blueprint, parent, _this, scopeData);
-        parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
@@ -3590,6 +3589,7 @@ Galaxy.View = /** @class */(function (G) {
 
           needInitKeys.push(propertyKey);
         }
+        parent.registerChild(viewNode, position);
 
         // Value assignment stage
         for (i = 0, len = needInitKeys.length; i < len; i++) {
@@ -4707,11 +4707,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param position
      */
     registerChild: function (childNode, position) {
-      if (this.virtual) {
-        this.parent.node.insertBefore(childNode.placeholder, position);
-      } else {
-        this.node.insertBefore(childNode.placeholder, position);
-      }
+      this.node.insertBefore(childNode.placeholder, position);
     },
 
     createNode: function (blueprint, localScope) {
@@ -5769,13 +5765,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         viewNode.blueprint.renderConfig.renderDetached = true;
       }
 
-      // config.throttleId = window.requestAnimationFrame(() => {
       viewNode.rendered.then(() => {
         if (viewNode.inDOM !== value) {
           viewNode.setInDOM(value);
         }
       });
-      // });
     }
   };
 
@@ -5811,12 +5805,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @return {boolean}
      */
     install: function (config) {
-      if (this.virtual) {
-        return false;
-      }
-
+      // if (this.virtual) {
+      //   return false;
+      // }
+// debugger
       this.inputs = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
-
+// debugger
       return false;
     },
     update: function (cache, value, expression) { }
@@ -5859,84 +5853,80 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (!newModuleMeta || newModuleMeta !== config.moduleMeta) {
-        // _this.destroyOrigin = _this;
         G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-          cleanModuleContent(_this);
-          // _this.destroyOrigin = 0;
+          clean_content(_this);
           _next();
         });
       }
 
       if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== config.moduleMeta) {
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
-          moduleLoaderGenerator(_this, config, newModuleMeta, _next)();
+          module_loader.call(null, _this, config, newModuleMeta, _next);
         });
       }
       config.moduleMeta = newModuleMeta;
     }
   };
 
+  const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
+
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
    */
-  function cleanModuleContent(viewNode) {
+  function clean_content(viewNode) {
     const children = viewNode.getChildNodes();
-    children.forEach(vn => {
-      // console.log(vn);
-      if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
+    for (let i = 0, len = children.length; i < len; i++) {
+      const vn = children[i];
+      if (vn.populateLeaveSequence === EMPTY_CALL) {
         vn.populateLeaveSequence = function (finalize) {
           finalize();
         };
       }
-    });
+    }
 
     viewNode.clean(true);
   }
 
-  const moduleLoaderGenerator = function (viewNode, cache, moduleMeta, _next) {
-    return function () {
-      if (cache.module) {
-        cache.module.destroy();
-      }
-      // Check for circular module loading
-      const tempURI = new G.GalaxyURI(moduleMeta.path);
-      let moduleScope = cache.scope;
-      let currentScope = cache.scope;
+  function module_loader(viewNode, cache, moduleMeta, _next) {
+    if (cache.module) {
+      cache.module.destroy();
+    }
+    // Check for circular module loading
+    const tempURI = new G.GalaxyURI(moduleMeta.path);
+    let moduleScope = cache.scope;
+    let currentScope = cache.scope;
 
-      while (moduleScope) {
-        // In the case where module is a part of _repeat, cache.scope will be NOT an instance of Scope
-        // but its __parent__ is
-        if (!(currentScope instanceof G.Scope)) {
-          currentScope = new G.Scope({
-            systemId: 'repeat-item',
-            path: cache.scope.__parent__.uri.parsedURL,
-            parentScope: cache.scope.__parent__
-          });
-        }
-
-        if (tempURI.parsedURL === currentScope.uri.parsedURL) {
-          return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.parsedURL + ' tries to load itself.');
-        }
-
-        moduleScope = moduleScope.parentScope;
+    while (moduleScope) {
+      // In the case where module is a part of _repeat, cache.scope will be NOT an instance of Scope
+      // but its __parent__ is
+      if (!(currentScope instanceof G.Scope)) {
+        currentScope = new G.Scope({
+          systemId: 'repeat-item',
+          path: cache.scope.__parent__.uri.parsedURL,
+          parentScope: cache.scope.__parent__
+        });
       }
 
-      // G.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
-      currentScope.load(moduleMeta, {
-        element: viewNode
-      }).then(function (module) {
-        cache.module = module;
-        viewNode.node.setAttribute('module', module.systemId);
-        module.start();
-        _next();
-      }).catch(function (response) {
-        console.error(response);
-        _next();
-      });
-      // });
-    };
-  };
+      if (tempURI.parsedURL === currentScope.uri.parsedURL) {
+        return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.parsedURL + ' tries to load itself.');
+      }
+
+      moduleScope = moduleScope.parentScope;
+    }
+
+    currentScope.load(moduleMeta, {
+      element: viewNode
+    }).then(function (module) {
+      cache.module = module;
+      viewNode.node.setAttribute('module', module.systemId);
+      module.start();
+      _next();
+    }).catch(function (response) {
+      console.error(response);
+      _next();
+    });
+  }
 })(Galaxy);
 
 
@@ -6869,9 +6859,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
-        G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (next) => {
+        G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
           Object.assign(this.data.parameters, params);
-          next();
+          _next();
         });
       }
 
