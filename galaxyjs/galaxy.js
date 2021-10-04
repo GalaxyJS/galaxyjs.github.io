@@ -6029,25 +6029,32 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      *
      * @this {Galaxy.View.ViewNode}
      * @param config The value returned by getConfig
-     * @param array
+     * @param value
      * @param {Function} expression
      */
-    update: function (config, array, expression) {
+    update: function (config, value, expression) {
       let changes = null;
       if (expression) {
-        array = expression();
-        if (array === null || array === undefined) {
+        value = expression();
+        if (value === null || value === undefined) {
           return;
         }
 
-        if (array instanceof G.View.ArrayChange) {
-          changes = array;
-        } else if (array instanceof Array) {
+        if (value instanceof G.View.ArrayChange) {
+          changes = value;
+        } else if (value instanceof Array) {
           const initialChanges = new G.View.ArrayChange();
-          initialChanges.original = array;
+          initialChanges.original = value;
           initialChanges.type = 'reset';
-          initialChanges.params = array;
-          changes = array.changes = initialChanges;
+          initialChanges.params = value;
+          changes = value.changes = initialChanges;
+        } else if (value instanceof Object) {
+          const output = Object.entries(value).map(([key, value]) => ({ key, value }));
+          const initialChanges = new G.View.ArrayChange();
+          initialChanges.original = output;
+          initialChanges.type = 'reset';
+          initialChanges.params = output;
+          changes = value.changes = initialChanges;
         } else {
           changes = {
             type: 'reset',
@@ -6060,10 +6067,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         //   throw new Error('_repeat: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         // }
       } else {
-        if (array instanceof G.View.ArrayChange) {
-          changes = array;
-        } else if (array instanceof Array) {
-          changes = array.changes;
+        if (value instanceof G.View.ArrayChange) {
+          changes = value;
+        } else if (value instanceof Array) {
+          changes = value.changes;
+        } else if (value instanceof Object) {
+          const output = Object.entries(value).map(([key, value]) => ({ key, value }));
+          changes = new G.View.ArrayChange();
+          changes.original = output;
+          changes.type = 'reset';
+          changes.params = output;
         }
       }
 
@@ -6651,7 +6664,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       ...routeConfig,
       active: false,
       hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
-      module: routeConfig.module || null,
+      viewports: routeConfig.viewports || {},
       parent: parentScope ? parentScope.router.activeRoute : null,
       children: routeConfig.children || []
     };
@@ -6680,11 +6693,21 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       activeRoute: null,
       activePath: null,
       activeModule: null,
+      viewports: {
+        main: null,
+      },
       parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
     };
-    _this.viewport = {
-      tag: 'main',
-      _module: '<>router.activeModule'
+    // _this.viewport = {
+    //   tag: 'main',
+    //   _module: '<>router.activeModule'
+    // };
+
+    _this.viewports = {
+      main: {
+        tag: 'main',
+        _module: '<>router.activeModule'
+      }
     };
 
     Object.defineProperty(this, 'urlParts', {
@@ -6705,8 +6728,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (this.scope.parentScope && this.scope.parentScope.router) {
         this.parentRoute = this.scope.parentScope.router.activeRoute;
       }
-      this.data.routes = this.routes;
 
+      this.routes.forEach(route => {
+        const viewportNames = route.viewports ? Object.keys(route.viewports) : [];
+        viewportNames.forEach(vp => {
+          if (vp === 'main' || this.viewports[vp]) return;
+
+          this.viewports[vp] = {
+            tag: 'div',
+            _module: '<>router.viewports.' + vp
+          };
+        });
+      });
+
+      this.data.routes = this.routes;
       this.listener = this.detect.bind(this);
       window.addEventListener('popstate', this.listener);
 
@@ -6787,7 +6822,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     },
 
-    callMatchRoute: function (routes, hash, parentParams) {
+    findMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
       let matchCount = 0;
       const normalizedHash = _this.normalizeHash(hash);
@@ -6844,6 +6879,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     callRoute: function (route, hash, params, parentParams) {
+      // if (route.module) {
+      //   const routeViewport = route.module.viewport;
+      //   if (routeViewport) {
+      //     this.data.viewports[routeViewport] = route.module;
+      //     return;
+      //   }
+      // }
+
       if (!route.redirectTo) {
         if (this.data.activeRoute) {
           this.data.activeRoute.active = false;
@@ -6858,7 +6901,28 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (typeof route.handle === 'function') {
         return route.handle.call(this, params, parentParams);
       } else {
-        this.data.activeModule = route.module;
+        for (const key in route.viewports) {
+          let value = route.viewports[key] || null;
+          if (typeof value === 'string') {
+            value = {
+              path: value
+            };
+          }
+
+          if (key === 'main') {
+            this.data.activeModule = value;
+          }
+
+          this.data.viewports[key] = value;
+        }
+        // if (typeof route.viewports.main === 'string') {
+        //   this.data.viewports.main = this.data.activeModule = {
+        //     path: route.viewports.main
+        //   };
+        // } else {
+        //   this.data.viewports.main = this.data.activeModule = route.viewports.main;
+        // }
+
         G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
           Object.assign(this.data.parameters, params);
           _next();
@@ -6914,7 +6978,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (hash.indexOf(path) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
-          this.callMatchRoute(this.routes, hash, {});
+          this.findMatchRoute(this.routes, hash, {});
         }
       }
     },
