@@ -25,8 +25,8 @@ router.init([
   },
   {
     path: '/start',
-    module: {
-      path: 'modules/start/index.js'
+    viewports: {
+      main: 'modules/start/index.js'
     },
     title: 'Start',
     description: '',
@@ -34,63 +34,63 @@ router.init([
   },
   {
     path: '/learn',
-    module: {
-      path: 'modules/learn/index.js'
+    viewports: {
+      main: 'modules/learn/index.js'
     },
     title: 'Learn',
     icon: 'fas fa-map',
   },
   {
     path: '/reactive',
-    module: {
-      path: 'modules/reactive/index.js'
+    viewports: {
+      main: 'modules/reactive/index.js'
     },
     title: 'Reactive',
     icon: 'fas fa-exchange-alt',
   },
   {
     path: '/conditional-rendering',
-    module: {
-      path: 'modules/conditional-rendering/index.js'
+    viewports: {
+      main: 'modules/conditional-rendering/index.js'
     },
     title: 'Conditional Rendering',
     icon: 'fas fa-exclamation-triangle',
   },
   {
     path: '/list-rendering',
-    module: {
-      path: 'modules/list-rendering/index.js'
+    viewports: {
+      main: 'modules/list-rendering/index.js'
     },
     title: 'List Rendering',
     icon: 'fas fa-list-ul',
   },
   {
     path: '/animations',
-    module: {
-      path: 'modules/animations/index.js'
+    viewports: {
+      main: 'modules/animations/index.js'
     },
     title: 'Animations',
     icon: 'fas fa-spinner',
   },
   {
     path: '/api',
-    module: {
-      path: 'modules/api/index.js'
+    viewports: {
+      main: 'modules/api/index.js'
     },
     title: 'API',
     icon: 'fas fa-code',
   },
   {
     path: '/todo-demo',
-    module: {
-      path: 'modules/todo/index.js'
+    viewports: {
+      main: 'modules/todo/index.js'
     },
     title: 'ToDo - Demo',
   },
   {
     path: '/vuejs-replica-demo',
-    module: {
-      path: 'modules/vuejs-replica/index.js'
+    viewports: {
+      main: 'modules/vuejs-replica/index.js'
     },
     title: 'VueJS Replica - Demo',
   }
@@ -247,7 +247,7 @@ view.init([
     class: 'main-content',
     children: [
       {
-        ...router.viewport,
+        ...router.viewports.main,
         _inputs: {
           content: 'This is the default content',
           items: '<>data.todos'
