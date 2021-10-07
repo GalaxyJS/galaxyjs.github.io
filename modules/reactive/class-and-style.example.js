@@ -37,7 +37,7 @@ view.init({
     },
     {
       tag: 'p',
-      style: '<>data.class',
+      class: '<>data.class',
       text: 'This paragraph is styled by a class property'
     }
   ]
