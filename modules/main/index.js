@@ -248,10 +248,9 @@ view.init([
     children: [
       {
         ...router.viewports.main,
-        // _inputs: {
-        //   content: 'This is the default content',
-        //   items: '<>data.todos'
-        // },
+        _inputs: {
+          items: Scope.data.todos
+        },
         on: {
           test: function (event) {
             console.info(event);

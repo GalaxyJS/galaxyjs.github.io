@@ -4,12 +4,10 @@
 const view = Scope.import('galaxy/view');
 const style = Scope.import('./style.css');
 const animations = Scope.import('services/animations.js');
-const inputs = Scope.inputs;
-Scope.data.inputsCopy = Galaxy.clone(Scope.inputs);
 Scope.data.fields = ['a', 'b'];
 
 const ToDoService = {
-  data: inputs.items,
+  data: Scope.data.items,
   add: function (newItem) {
     newItem.title = newItem.title.trim();
     if (newItem.title) {
@@ -27,7 +25,7 @@ function addToList() {
 }
 
 function calculateDuration() {
-  let listAnimationDuration = 1 / (inputs.items.length || 1);
+  let listAnimationDuration = 1 / (Scope.data.items.length || 1);
   if (listAnimationDuration < .12) {
     listAnimationDuration = .12;
   }
@@ -38,19 +36,16 @@ function calculateDuration() {
 const checkAllButton = {
   tag: 'button',
   text: 'Check All',
-  disabled: [
-    'inputs.items',
-    function (items) {
-      let res = items.filter(function (item) {
-        return !item.done;
-      });
+  disabled: function (items = '<>data.items') {
+    let res = items.filter(function (item) {
+      return !item.done;
+    });
 
-      return res.length === 0;
-    }
-  ],
+    return res.length === 0;
+  },
   on: {
     click: function () {
-      inputs.items.forEach(function (item) {
+      Scope.data.items.forEach(function (item) {
         item.done = true;
       });
     }
@@ -61,8 +56,7 @@ Scope.data.newItem = {
   title: '',
   done: false
 };
-// console.log(inputs.items);
-console.log(checkAllButton, Scope);
+
 view.init({
   tag: 'div',
   class: 'card',
@@ -75,7 +69,7 @@ view.init({
       children: [
         {
           tag: 'h1',
-          text: (len = '<>inputs.items.length') => {
+          text: (len = '<>data.items.length') => {
             return 'ToDos, Count: ' + len;
           },
         },
@@ -86,14 +80,14 @@ view.init({
             {
               tag: 'button',
               text: 'Un-Check All',
-              disabled: (items = '<>inputs.items') => {
+              disabled: (items = '<>data.items') => {
                 return items.filter(function (item) {
                   return item.done;
                 }).length === 0;
               },
               on: {
                 click: function () {
-                  inputs.items.forEach(function (item) {
+                  data.items.forEach(function (item) {
                     item.done = false;
                   });
                 }
@@ -104,7 +98,7 @@ view.init({
               text: 'Toggle',
               on: {
                 click: function () {
-                  inputs.items.forEach(function (item) {
+                  data.items.forEach(function (item) {
                     item.done = !item.done;
                   });
                 }
@@ -117,7 +111,7 @@ view.init({
           children: {
             tag: 'li',
             _repeat: {
-              data: '<>inputs.items',
+              data: '<>data.items',
               as: 'titem'
             },
             _animations: {
@@ -172,7 +166,7 @@ view.init({
             path: './field.js'
           },
           _inputs: {
-            entry: '<>data.newItem'
+            entry: Scope.data.newItem
           },
           on: {
             confirm: addToList

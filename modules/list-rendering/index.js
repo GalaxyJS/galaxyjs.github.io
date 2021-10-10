@@ -4,9 +4,11 @@ const expandable = Scope.import('services/expandable.js');
 
 const simpleListExample = Scope.importAsText('./simple-list.example.js');
 
-const countries = ['Netherlands', 'France', 'Hungary', 'Germany', 'Czech Republic', 'Austria'];
-const capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
-
+// const countries = ['Netherlands', 'France', 'Hungary', 'Germany', 'Czech Republic', 'Austria'];
+// const capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
+const countries = ['Netherlands', 'France'];
+const capitals = ['Amsterdam', 'Paris', 'Budapest'];
+// console.log(Scope);
 Scope.data.countries = countries;
 Scope.data.capitals = capitals;
 
@@ -133,7 +135,6 @@ view.init({
                         data: '<>data.capitals',
                         as: 'item'
                       },
-                      test: '<>this.stuff',
                       text: '<>item'
                     }
                   ]
@@ -158,7 +159,8 @@ view.init({
                       text: '<>item2'
                     }
                   ]
-                }]
+                }
+              ]
             }
           ]
         }
