@@ -15,7 +15,7 @@ view.init([
     _module: {
       path: './mod-c.js'
     },
-    _inputs: {
+    _data: {
       title: 'Mod C'
     }
   },

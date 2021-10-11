@@ -81,7 +81,7 @@ view.init({
                   tag: 'button',
                   class: 'flex-item-al',
                   text: 'Add',
-                  _inputs: {
+                  _data: {
                     product: '<>product'
                   },
                   on: {

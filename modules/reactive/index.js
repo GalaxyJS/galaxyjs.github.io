@@ -304,16 +304,16 @@ view.init({
           id: 'inputs-property',
           text: 'Inputs property'
         },
-        '<p>The <code class="prettyprint lang-js">_inputs</code> property can be used to send data to a module. This property only accepts a literal object as input.</p>',
+        '<p>The <code class="prettyprint lang-js">_data</code> property can be used to send data to a module. This property only accepts a literal object as input.</p>',
         {
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
           text: moduleWithInputsExample
         },
-        '<p>You can access the _inputs properties from within the context of a module via <code class="prettyprint lang-js">Scope.inputs</code></p>',
+        '<p>You can access the _data properties from within the context of a module via <code class="prettyprint lang-js">Scope.inputs</code></p>',
         {
-          _inputs: {
+          _data: {
             fromParent: 'This is a message from parent module!'
           },
           _module: {

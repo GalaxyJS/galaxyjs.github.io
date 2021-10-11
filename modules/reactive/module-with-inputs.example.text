@@ -1,7 +1,7 @@
 const view = Scope.import('galaxy/view');
 
 view.init({
-  _inputs: {
+  _data: {
     fromParent: 'This is a message from parent module!'
   },
   _module: {

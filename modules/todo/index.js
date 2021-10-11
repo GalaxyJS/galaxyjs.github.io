@@ -165,7 +165,7 @@ view.init({
           _module: {
             path: './field.js'
           },
-          _inputs: {
+          _data: {
             entry: Scope.data.newItem
           },
           on: {

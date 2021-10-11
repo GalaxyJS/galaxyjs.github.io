@@ -248,7 +248,7 @@ view.init([
     children: [
       {
         ...router.viewports.main,
-        _inputs: {
+        _data: {
           items: Scope.data.todos
         },
         on: {

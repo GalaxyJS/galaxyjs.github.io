@@ -2360,7 +2360,7 @@ Galaxy.Scope = /** @class */ (function () {
      * @param {Object} instance The assigned object to this id
      */
     inject: function (id, instance) {
-      this['__imports__'][id] = instance;
+      this.__imports__[id] = instance;
     },
     /**
      *
@@ -2373,7 +2373,7 @@ Galaxy.Scope = /** @class */ (function () {
         libId = libId.replace('./', this.uri.path);
       }
 
-      return this['__imports__'][libId];
+      return this.__imports__[libId];
     },
     /**
      *
@@ -2570,6 +2570,145 @@ Galaxy.View = /** @class */(function (G) {
   const defProp = Object.defineProperty;
   const objKeys = Object.keys;
   const arrConcat = Array.prototype.concat.bind([]);
+  // Extracted from MDN
+  const validTagNames = [
+    'a',
+    'abbr',
+    'acronym',
+    'address',
+    'applet',
+    'area',
+    'article',
+    'aside',
+    'audio',
+    'b',
+    'base',
+    'basefont',
+    'bdi',
+    'bdo',
+    'bgsound',
+    'big',
+    'blink',
+    'blockquote',
+    'body',
+    'br',
+    'button',
+    'canvas',
+    'caption',
+    'center',
+    'cite',
+    'code',
+    'col',
+    'colgroup',
+    'content',
+    'data',
+    'datalist',
+    'dd',
+    'decorator',
+    'del',
+    'details',
+    'dfn',
+    'dir',
+    'div',
+    'dl',
+    'dt',
+    'element',
+    'em',
+    'embed',
+    'fieldset',
+    'figcaption',
+    'figure',
+    'font',
+    'footer',
+    'form',
+    'frame',
+    'frameset',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'head',
+    'header',
+    'hgroup',
+    'hr',
+    'html',
+    'i',
+    'iframe',
+    'img',
+    'input',
+    'ins',
+    'isindex',
+    'kbd',
+    'keygen',
+    'label',
+    'legend',
+    'li',
+    'link',
+    'listing',
+    'main',
+    'map',
+    'mark',
+    'marquee',
+    'menu',
+    'menuitem',
+    'meta',
+    'meter',
+    'nav',
+    'nobr',
+    'noframes',
+    'noscript',
+    'object',
+    'ol',
+    'optgroup',
+    'option',
+    'output',
+    'p',
+    'param',
+    'plaintext',
+    'pre',
+    'progress',
+    'q',
+    'rp',
+    'rt',
+    'ruby',
+    's',
+    'samp',
+    'script',
+    'section',
+    'select',
+    'shadow',
+    'small',
+    'source',
+    'spacer',
+    'span',
+    'strike',
+    'strong',
+    'style',
+    'sub',
+    'summary',
+    'sup',
+    'table',
+    'tbody',
+    'td',
+    'template',
+    'textarea',
+    'tfoot',
+    'th',
+    'thead',
+    'time',
+    'title',
+    'tr',
+    'track',
+    'tt',
+    'u',
+    'ul',
+    'var',
+    'video',
+    'wbr',
+    'xmp'
+  ];
 
   //------------------------------
 
@@ -2590,13 +2729,13 @@ Galaxy.View = /** @class */(function (G) {
     return '@' + performance.now();
   };
 
-  View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$|^=\\s*([^\\[\\]<>]*)\\s*$');
+  View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]<>]*)>\\s*([^\\[\\]<>]*)\\s*$|^=\\s*([^\\[\\]<>]*)\\s*$');
 
   /**
    *
    * @typedef {Object} Galaxy.View.BlueprintProperty
    * @property {string} [key]
-   * @property {'attr'|'prop'|'reactive'} [type]
+   * @property {'attr'|'prop'|'reactive'|'event'} [type]
    * @property {Function} [getConfig]
    * @property {Function} [install]
    * @property {Function} [beforeActivate]
@@ -2604,7 +2743,9 @@ Galaxy.View = /** @class */(function (G) {
    * @property {Function} [update]
    */
 
-  View.REACTIVE_BEHAVIORS = {};
+  View.REACTIVE_BEHAVIORS = {
+    _data: true
+  };
 
   View.COMPONENTS = {};
   /**
@@ -2639,6 +2780,30 @@ Galaxy.View = /** @class */(function (G) {
     html: {
       type: 'prop',
       key: 'innerHTML'
+    },
+    _data: {
+      type: 'reactive',
+      key: '_data',
+      getConfig: function (scope, value) {
+        if (value !== null && (typeof value !== 'object' || value instanceof Array)) {
+          throw new Error('_data property should be an object with explicits keys:\n' + JSON.stringify(this.blueprint, null, '  '));
+        }
+
+        return {
+          subjects: value,
+          scope: scope
+        };
+      },
+      install: function (config) {
+        if (config.scope.data === config.subjects) {
+          throw new Error('It is not allowed to use Scope.data as _input value');
+        }
+
+        Object.assign(this.data, config.subjects);
+
+        return false;
+      },
+      update: View.EMPTY_CALL
     },
     onchange: {
       type: 'event'
@@ -3199,7 +3364,7 @@ Galaxy.View = /** @class */(function (G) {
     const propertyKeys = bindings.propertyKeys;
     const expressionFn = View.getExpressionFn(bindings, root, scopeData);
 
-    let value = scopeData;
+    let propertyScopeData = scopeData;
     let propertyKey = null;
     let childPropertyKeyPath = null;
     let initValue = null;
@@ -3228,8 +3393,8 @@ Galaxy.View = /** @class */(function (G) {
           hostReactiveData = new G.View.ReactiveData(null, scopeData, null);
         }
       }
-      // When the node belongs to a nested _repeat, the scopeData would refer to the for item data
-      // But developer should still be able to access root scopeData
+      // When the scopeData is a childScopeData
+      // But developer should still be able to access parent/root scopeData
       if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__scope__') &&
         propertyKey === 'data') {
         hostReactiveData = null;
@@ -3241,14 +3406,15 @@ Galaxy.View = /** @class */(function (G) {
         bindings.propertyKeys = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
         hostReactiveData = new G.View.ReactiveData('data', root.data);
-        value = View.propertyLookup(root.data, propertyKey);
-      } else if (value) {
-        value = View.propertyLookup(value, propertyKey);
+        propertyScopeData = View.propertyLookup(root.data, propertyKey);
+      } else if (propertyScopeData) {
+        // Look for the property host object in scopedata hierarchy
+        propertyScopeData = View.propertyLookup(propertyScopeData, propertyKey);
       }
 
-      initValue = value;
-      if (value !== null && typeof value === 'object') {
-        initValue = value[propertyKey];
+      initValue = propertyScopeData;
+      if (propertyScopeData !== null && typeof propertyScopeData === 'object') {
+        initValue = propertyScopeData[propertyKey];
       }
 
       let reactiveData;
@@ -3258,12 +3424,7 @@ Galaxy.View = /** @class */(function (G) {
         reactiveData = new G.View.ReactiveData(propertyKey, null, hostReactiveData);
       } else if (hostReactiveData) {
         // if the propertyKey is used for a _repeat reactive property, then we assume its type is Array.
-        // if (hostReactiveData.data.__parent__ === hostReactiveData.data.__scope__ && propertyKey === 'active') {
-        //   debugger
-        // }
-// else
         hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === '_repeat');
-
       }
 
       if (childPropertyKeyPath === null) {
@@ -3310,7 +3471,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath !== null) {
-        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, {propertyKeys: [childPropertyKeyPath]}), root);
+        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
       }
     }
 
@@ -3398,7 +3559,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3440,9 +3601,9 @@ Galaxy.View = /** @class */(function (G) {
     const bpKey = propertyKey + '_' + viewNode.node.nodeType;
     let property = View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
     if (!property) {
-      property = {type: 'prop'};
+      property = { type: 'prop' };
       if (!(propertyKey in viewNode.node) && 'setAttribute' in viewNode.node) {
-        property = {type: 'attr'};
+        property = { type: 'attr' };
       }
 
       View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] = property;
@@ -3474,11 +3635,27 @@ Galaxy.View = /** @class */(function (G) {
    * @returns {*}
    */
   View.getComponent = function (key, blueprint, scopeData, view) {
-    if (key && key in View.COMPONENTS) {
-      return View.COMPONENTS[key](blueprint, scopeData, view);
+    if (key) {
+      if (key in View.COMPONENTS) {
+        scopeData = View.createChildScope(scopeData);
+        if (blueprint._data) {
+          Object.assign(scopeData, blueprint._data);
+        }
+
+        blueprint = View.COMPONENTS[key].call(null, blueprint, scopeData, view);
+
+        if (blueprint instanceof Array) {
+          throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
+        }
+      } else if (validTagNames.indexOf(key) === -1) {
+        console.warn('Invalid component/tag: ' + key);
+      }
     }
 
-    return blueprint;
+    return {
+      blueprint,
+      scopeData
+    };
   };
 
   /**
@@ -3583,16 +3760,16 @@ Galaxy.View = /** @class */(function (G) {
 
         return result;
       } else if (blueprint instanceof Object) {
-        // blueprint = View.getComponent(blueprint.tag, blueprint, scopeData, _this);
+        const component = View.getComponent(blueprint.tag, blueprint, scopeData, _this);
         let propertyValue, propertyKey;
-        const keys = objKeys(blueprint);
+        const keys = objKeys(component.blueprint);
         const needInitKeys = [];
-        const viewNode = new G.View.ViewNode(blueprint, parent, _this, scopeData);
+        const viewNode = new G.View.ViewNode(component.blueprint, parent, _this, component.scopeData);
 
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
           propertyKey = keys[i];
-          const needValueAssign = View.installPropertyForNode(propertyKey, viewNode, propertyKey, scopeData);
+          const needValueAssign = View.installPropertyForNode(propertyKey, viewNode, propertyKey, component.scopeData);
           if (needValueAssign === false) {
             continue;
           }
@@ -3606,10 +3783,10 @@ Galaxy.View = /** @class */(function (G) {
           propertyKey = needInitKeys[i];
           if (propertyKey === 'children') continue;
 
-          propertyValue = blueprint[propertyKey];
+          propertyValue = component.blueprint[propertyKey];
           const bindings = View.getBindings(propertyValue);
           if (bindings.propertyKeys.length) {
-            View.makeBinding(viewNode, propertyKey, null, scopeData, bindings, viewNode);
+            View.makeBinding(viewNode, propertyKey, null, component.scopeData, bindings, viewNode);
           } else {
             View.setPropertyForNode(viewNode, propertyKey, propertyValue);
           }
@@ -3617,8 +3794,8 @@ Galaxy.View = /** @class */(function (G) {
 
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
-          if (blueprint.children) {
-            _this.createNode(blueprint.children, scopeData, viewNode, null);
+          if (component.blueprint.children) {
+            _this.createNode(component.blueprint.children, component.scopeData, viewNode, null);
           }
         }
 
@@ -5795,52 +5972,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 })(Galaxy);
 
-
-/* global Galaxy */
-(function (G) {
-  G.View.REACTIVE_BEHAVIORS['_inputs'] = true;
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['_inputs'] = {
-    type: 'reactive',
-    key: '_inputs',
-    /**
-     *
-     * @this {Galaxy.View.ViewNode}
-     * @param value
-     * @param scope
-     */
-    getConfig: function (scope, value) {
-      if (value !== null && typeof value !== 'object') {
-        throw console.error('_inputs property should be an object with explicits keys:\n', JSON.stringify(this.blueprint, null, '  '));
-      }
-
-      return {
-        subjects: value,
-        scope: scope
-      };
-    },
-    /**
-     *
-     * @this {Galaxy.View.ViewNode}
-     * @param config
-     * @return {boolean}
-     */
-    install: function (config) {
-      // if (this.virtual) {
-      //   return false;
-      // }
-
-      if (config.scope.data === config.subjects) {
-        throw new Error('It is not allowed to use Scope.data as _input value');
-      }
-// debugger
-//       this.inputs = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
-      Object.assign(this.data, config.subjects);
-// debugger
-      return false;
-    },
-    update: function (cache, value, expression) { }
-  };
-})(Galaxy);
 
 /* global Galaxy */
 (function (G) {
