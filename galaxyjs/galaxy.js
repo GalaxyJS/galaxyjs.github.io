@@ -1732,6 +1732,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     this.moduleContents = {};
     this.addOnProviders = [];
     this.rootElement = null;
+    this.bootModule = null;
   }
 
   Core.prototype = {
@@ -1792,7 +1793,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
       bootModule.id = 'system';
 
-      if (!bootModule.element) {
+      if (!_this.rootElement) {
         throw new Error('element property is mandatory');
       }
 
@@ -2270,7 +2271,7 @@ Galaxy.Module.Content = /** @class */ (function () {
   function parser(content) {
     const imports = [];
     const unique = [];
-    let parsedContent = content.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
+    let parsedContent = content.replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
       let pathURL = query[query.length - 1];
       if (unique.indexOf(pathURL) !== -1) {
@@ -2287,7 +2288,7 @@ Galaxy.Module.Content = /** @class */ (function () {
       return 'Scope.import(\'' + pathURL + '\')';
     });
 
-    parsedContent = parsedContent.replace(/Scope\.importAsText\(['|"](.*)['|"]\);/gm, function (match, path) {
+    parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
       let pathURL = query[query.length - 1];
       if (unique.indexOf(pathURL) !== -1) {
@@ -2333,7 +2334,7 @@ Galaxy.Scope = /** @class */ (function () {
     _this.uri = new Galaxy.GalaxyURI(module.path);
     _this.eventHandlers = {};
     _this.observers = [];
-    _this.data = _this.element.data || {};
+    _this.data = _this.element ? _this.element.data || {} : {};
 
     defProp(_this, '__imports__', {
       value: {},
@@ -2341,14 +2342,6 @@ Galaxy.Scope = /** @class */ (function () {
       enumerable: false,
       configurable: false
     });
-
-    // defProp(_this, 'inputs', {
-    //   enumerable: true,
-    //   configurable: false,
-    //   get: function () {
-    //     return _this.element.data;
-    //   }
-    // });
 
     _this.on('module.destroy', this.destroy.bind(this));
   }
@@ -2385,7 +2378,7 @@ Galaxy.Scope = /** @class */ (function () {
       });
     },
 
-    kill: function() {
+    kill: function () {
       throw Error('Scope.kill() should not be invoked at the runtime');
     },
     /**
@@ -3628,38 +3621,6 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @param {string} key
-   * @param blueprint
-   * @param {Galaxy.Scope|Object} scopeData
-   * @param {Galaxy.View} view
-   * @returns {*}
-   */
-  View.getComponent = function (key, blueprint, scopeData, view) {
-    if (key) {
-      if (key in View.COMPONENTS) {
-        scopeData = View.createChildScope(scopeData);
-        if (blueprint._data) {
-          Object.assign(scopeData, blueprint._data);
-        }
-
-        blueprint = View.COMPONENTS[key].call(null, blueprint, scopeData, view);
-
-        if (blueprint instanceof Array) {
-          throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
-        }
-      } else if (validTagNames.indexOf(key) === -1) {
-        console.warn('Invalid component/tag: ' + key);
-      }
-    }
-
-    return {
-      blueprint,
-      scopeData
-    };
-  };
-
-  /**
-   *
    * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
@@ -3667,12 +3628,15 @@ Galaxy.View = /** @class */(function (G) {
   function View(scope) {
     const _this = this;
     _this.scope = scope;
+
     _this.config = {
       cleanContainer: false
     };
 
     if (scope.element instanceof G.View.ViewNode) {
       _this.container = scope.element;
+      // Nested views should inherit components from their parent view
+      _this._components = Object.assign({}, scope.element.view._components);
     } else {
       _this.container = new G.View.ViewNode({
         tag: scope.element
@@ -3683,6 +3647,48 @@ Galaxy.View = /** @class */(function (G) {
   }
 
   View.prototype = {
+    _components: {},
+    components: function (map) {
+      for (const key in map) {
+        const comp = map[key];
+        if (typeof comp !== 'function') {
+          throw new Error('Component must be type of function: ' + key);
+        }
+
+        this._components[key] = comp;
+      }
+    },
+
+    /**
+     *
+     * @param {string} key
+     * @param blueprint
+     * @param {Galaxy.Scope|Object} scopeData
+     * @returns {*}
+     */
+    getComponent: function (key, blueprint, scopeData) {
+      if (key) {
+        if (key in this._components) {
+          scopeData = View.createChildScope(scopeData);
+          if (blueprint._data) {
+            Object.assign(scopeData, blueprint._data);
+          }
+
+          blueprint = this._components[key].call(null, blueprint, scopeData, this);
+          if (blueprint instanceof Array) {
+            throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
+          }
+        } else if (validTagNames.indexOf(key) === -1) {
+          console.warn('Invalid component/tag: ' + key);
+        }
+      }
+
+      return {
+        blueprint,
+        scopeData
+      };
+    },
+
     enterKeyframe: function (onComplete, timeline, duration) {
       if (typeof onComplete === 'string') {
         duration = timeline;
@@ -3727,6 +3733,20 @@ Galaxy.View = /** @class */(function (G) {
 
       return this.createNode(blueprint, _this.scope, _this.container, null);
     },
+    /**
+     *
+     * @param {Blueprint|Blueprint[]} blueprint
+     * @return {Galaxy.View.ViewNode|Array<Galaxy.View.ViewNode>}
+     */
+    blueprint: function (blueprint) {
+      const _this = this;
+
+      if (_this.config.cleanContainer) {
+        _this.container.node.innerHTML = '';
+      }
+
+      return this.createNode(blueprint, _this.scope, _this.container, null);
+    },
     dispatchEvent: function (event) {
       this.container.dispatchEvent(event);
     },
@@ -3760,7 +3780,7 @@ Galaxy.View = /** @class */(function (G) {
 
         return result;
       } else if (blueprint instanceof Object) {
-        const component = View.getComponent(blueprint.tag, blueprint, scopeData, _this);
+        const component = _this.getComponent(blueprint.tag, blueprint, scopeData);
         let propertyValue, propertyKey;
         const keys = objKeys(component.blueprint);
         const needInitKeys = [];
@@ -6803,7 +6823,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 (function (G) {
   SimpleRouter.PARAMETER_REGEXP = new RegExp(/[:*](\w+)/g);
-  SimpleRouter.REPLACE_VARIABLE_REGEXP = '([^\/]+)';
+  SimpleRouter.REPLACE_VARIABLE_REGEXP = /([^/]+)/;
   SimpleRouter.BASE_URL = '/';
   SimpleRouter.currentPath = {
     handlers: [],
@@ -6822,11 +6842,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     SimpleRouter.currentPath.update();
   };
 
-  SimpleRouter.prepareRoute = function (routeConfig, parentScope) {
+  SimpleRouter.prepareRoute = function (routeConfig, parentScopeRouter) {
     if (routeConfig instanceof Array) {
-      const routes = routeConfig.map((r) => SimpleRouter.prepareRoute(r, parentScope));
-      if (parentScope && parentScope.router) {
-        parentScope.router.activeRoute.children = routes;
+      const routes = routeConfig.map((r) => SimpleRouter.prepareRoute(r, parentScopeRouter));
+      if (parentScopeRouter) {
+        parentScopeRouter.activeRoute.children = routes;
       }
 
       return routes;
@@ -6837,7 +6857,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       active: false,
       hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
       viewports: routeConfig.viewports || {},
-      parent: parentScope ? parentScope.router.activeRoute : null,
+      parent: parentScopeRouter ? parentScopeRouter.activeRoute : null,
       children: routeConfig.children || []
     };
   };
@@ -6851,7 +6871,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     };
     _this.scope = scope;
     _this.module = module;
-    _this.path = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+
+    // _this.path = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+    _this.path = scope.parentScope && scope.parentScope.router ? scope.parentScope.router.activeRoute.path : '/';
     _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
     _this.parentRoute = null;
 
@@ -6870,10 +6892,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       },
       parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
     };
-    // _this.viewport = {
-    //   tag: 'main',
-    //   _module: '<>router.activeModule'
-    // };
 
     _this.viewports = {
       main: {
@@ -6896,7 +6914,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   SimpleRouter.prototype = {
     init: function (routeConfigs) {
-      this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope);
+      this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope.router);
       if (this.scope.parentScope && this.scope.parentScope.router) {
         this.parentRoute = this.scope.parentScope.router.activeRoute;
       }
@@ -7051,14 +7069,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     callRoute: function (route, hash, params, parentParams) {
-      // if (route.module) {
-      //   const routeViewport = route.module.viewport;
-      //   if (routeViewport) {
-      //     this.data.viewports[routeViewport] = route.module;
-      //     return;
-      //   }
-      // }
-
       if (!route.redirectTo) {
         if (this.data.activeRoute) {
           this.data.activeRoute.active = false;
