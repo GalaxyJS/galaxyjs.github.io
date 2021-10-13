@@ -247,7 +247,7 @@ view.blueprint([
       {
         ...router.viewports.main,
         _data: {
-          items: Scope.data.todos
+          items: '<>data.todos'
         },
         on: {
           test: function (event) {

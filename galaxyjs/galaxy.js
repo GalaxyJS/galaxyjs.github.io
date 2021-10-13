@@ -3274,7 +3274,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param absoluteKey
    * @returns {Galaxy.View.ReactiveData}
    */
-  View.propertyScopeLookup = function (data, absoluteKey) {
+  View.propertyRDLookup = function (data, absoluteKey) {
     const keys = absoluteKey.split('.');
     const li = keys.length - 1;
     let target = data;
@@ -3479,7 +3479,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath !== null) {
-        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
+        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, {propertyKeys: [childPropertyKeyPath]}), root);
       }
     }
 
@@ -3503,26 +3503,25 @@ Galaxy.View = /** @class */(function (G) {
     if (!(data instanceof G.Scope)) {
       parentReactiveData = new G.View.ReactiveData(null, data);
     }
-    // console.log(viewNode.node, parentReactiveData);
 
     for (let i = 0, len = keys.length; i < len; i++) {
       attributeName = keys[i];
       attributeValue = subjectsClone[attributeName];
-
       const bindings = View.getBindings(attributeValue);
-
       if (bindings.propertyKeys.length) {
         View.makeBinding(subjectsClone, attributeName, parentReactiveData, data, bindings, viewNode);
-        bindings.propertyKeys.forEach(function (path) {
-          try {
-            const rd = View.propertyScopeLookup(data, path);
-            viewNode.finalize.push(() => {
-              rd.removeNode(subjectsClone);
-            });
-          } catch (error) {
-            console.error('bindSubjectsToData -> Could not find: ' + path + '\n in', data, error);
-          }
-        });
+        if (viewNode) {
+          bindings.propertyKeys.forEach(function (path) {
+            try {
+              const rd = View.propertyRDLookup(data, path);
+              viewNode.finalize.push(() => {
+                rd.removeNode(subjectsClone);
+              });
+            } catch (error) {
+              console.error('bindSubjectsToData -> Could not find: ' + path + '\n in', data, error);
+            }
+          });
+        }
       }
 
       if (attributeValue && typeof attributeValue === 'object' && !(attributeValue instanceof Array)) {
@@ -3567,7 +3566,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3609,9 +3608,9 @@ Galaxy.View = /** @class */(function (G) {
     const bpKey = propertyKey + '_' + viewNode.node.nodeType;
     let property = View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
     if (!property) {
-      property = { type: 'prop' };
+      property = {type: 'prop'};
       if (!(propertyKey in viewNode.node) && 'setAttribute' in viewNode.node) {
-        property = { type: 'attr' };
+        property = {type: 'attr'};
       }
 
       View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] = property;
@@ -3680,11 +3679,7 @@ Galaxy.View = /** @class */(function (G) {
     getComponent: function (key, blueprint, scopeData) {
       if (key) {
         if (key in this._components) {
-          scopeData = View.createChildScope(scopeData);
-          if (blueprint._props) {
-            Object.assign(scopeData, blueprint._props);
-          }
-
+          scopeData = View.bindSubjectsToData(null, blueprint._props || {}, scopeData, true);
           blueprint = this._components[key].call(null, blueprint, scopeData, this);
           if (blueprint instanceof Array) {
             throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
@@ -3710,9 +3705,6 @@ Galaxy.View = /** @class */(function (G) {
       return {
         tag: 'comment',
         text: 'keyframe:enter',
-        data: {
-          test: 'asd'
-        },
         _animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
@@ -3977,7 +3969,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         value: this
       });
 
-      if(this.data instanceof Galaxy.Scope || this.data.__scope__) {
+      if (this.data instanceof Galaxy.Scope || this.data.__scope__) {
         this.addKeyToShadow = G.View.EMPTY_CALL;
       }
 
@@ -4075,10 +4067,14 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param shadow
      */
     makeReactiveObject: function (data, key, shadow) {
+      let value = data[key];
+      if (typeof value === 'function') {
+        return;
+      }
+
       const property = Object.getOwnPropertyDescriptor(data, key);
       const getter = property && property.get;
       const setter = property && property.set;
-      let value = data[key];
 
       defProp(data, key, {
         get: function () {
@@ -4101,7 +4097,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
           // This means that the property suppose to be an object and there is probably an active binds to it
           // the active bind could be in one of the ref so we have to check all the ref shadows
-          if(!thisRD) debugger
+          if (!thisRD) debugger
           for (let i = 0, len = thisRD.refs.length; i < len; i++) {
             const ref = thisRD.refs[i];
             if (ref.shadow[key]) {
@@ -6147,7 +6143,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           View.makeBinding(viewNode, '_repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeys.forEach((path) => {
             try {
-              const rd = View.propertyScopeLookup(config.scope, path);
+              const rd = View.propertyRDLookup(config.scope, path);
               viewNode.finalize.push(() => {
                 rd.removeNode(viewNode);
               });

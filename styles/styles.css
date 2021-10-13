@@ -733,12 +733,29 @@ section > section {
   position: relative;
   font-weight: 500;
   margin-bottom: 15px;
+  padding: 10px;
+  margin-left: -10px;
+  margin-right: -10px;
+  border-radius: 10px;
+  transition: box-shadow .2s;
+}
+
+.field[focused] {
+  box-shadow: 0 5px 12px -2px rgba(0, 0, 0, .2);
+}
+
+.field[focused] > input, .field[focused] > select, input:focus {
+  border-color: #16a7e0;
+}
+
+.field[focused] > label {
+  color: #005b80;
 }
 
 .field > label {
   display: block;
   font-weight: 600;
-  color: #444;
+  color: #666;
   padding: 5px 0 10px;
 }
 
@@ -765,8 +782,9 @@ input, select {
   padding: 10px 8px;
   border: 2px solid #aaa;
   border-radius: 5px;
-  margin-bottom: 6px;
+  /*margin-bottom: 6px;*/
   outline: none;
+
 }
 
 .field:not([empty]) > .not-empty {
@@ -784,13 +802,7 @@ input, select {
 
 }
 
-.field[focus] > label {
-  color: #455a64;
-}
 
-.field[focused] > input, .field[focused] > select, input:focus {
-  border-color: #16a7e0;
-}
 
 input.w-50 {
   width: calc(50% - 3px);

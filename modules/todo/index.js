@@ -51,10 +51,15 @@ const checkAllButton = {
   }
 };
 
+view.components({
+  'todo-field': Scope.import('./todo-field.js')
+});
+
 Scope.data.newItem = {
   title: '',
   done: false
 };
+
 
 view.blueprint({
   tag: 'div',
@@ -86,7 +91,7 @@ view.blueprint({
               },
               on: {
                 click: function () {
-                  data.data.items.forEach(function (item) {
+                  Scope.data.items.forEach(function (item) {
                     item.done = false;
                   });
                 }
@@ -97,7 +102,7 @@ view.blueprint({
               text: 'Toggle',
               on: {
                 click: function () {
-                  data.data.items.forEach(function (item) {
+                  Scope.data.items.forEach(function (item) {
                     item.done = !item.done;
                   });
                 }
@@ -161,14 +166,11 @@ view.blueprint({
           }
         },
         {
-          _module: {
-            path: './field.js'
-          },
-          _data: {
-            entry: '<>data.newItem'
-          },
-          on: {
-            confirm: addToList
+          tag: 'todo-field',
+          _props: {
+            label: 'To Do Description',
+            value: '<>data.newItem',
+            onConfirm: addToList
           }
         },
         {
