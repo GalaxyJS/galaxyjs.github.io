@@ -2139,6 +2139,263 @@ Galaxy.Module.Content = /** @class */ (function () {
   return Content;
 })();
 
+/* global Galaxy */
+Galaxy.Observer = /** @class */ (function () {
+  const defProp = Object.defineProperty;
+
+  Observer.notify = function (obj, key, value) {
+    const observers = obj.__observers__;
+
+    if (observers !== undefined) {
+      observers.forEach(function (observer) {
+        observer.notify(key, value);
+      });
+    }
+  };
+
+  /**
+   *
+   * @param {Object} context
+   * @constructor
+   * @memberOf Galaxy
+   */
+  function Observer(context) {
+    this.context = context;
+    this.subjectsActions = {};
+    this.allSubjectAction = [];
+
+    const __observers__ = '__observers__';
+    if (!this.context.hasOwnProperty(__observers__)) {
+      defProp(context, __observers__, {
+        value: [],
+        writable: true,
+        configurable: true
+      });
+    }
+
+    this.context[__observers__].push(this);
+  }
+
+  Observer.prototype = {
+    remove: function () {
+      const observers = this.context.__observers__;
+      const index = observers.indexOf(this);
+      if (index !== -1) {
+        observers.splice(index, 1);
+      }
+    },
+    /**
+     *
+     * @param {string} key
+     * @param value
+     */
+    notify: function (key, value) {
+      const _this = this;
+
+      if (_this.subjectsActions.hasOwnProperty(key)) {
+        _this.subjectsActions[key].call(_this.context, value);
+      }
+
+      _this.allSubjectAction.forEach(function (action) {
+        action.call(_this.context, key, value);
+      });
+    },
+    /**
+     *
+     * @param subject
+     * @param action
+     */
+    on: function (subject, action) {
+      this.subjectsActions[subject] = action;
+    },
+    /**
+     *
+     * @param {Function} action
+     */
+    onAll: function (action) {
+      if (this.allSubjectAction.indexOf(action) === -1) {
+        this.allSubjectAction.push(action);
+      }
+    }
+  };
+
+  return Observer;
+})();
+
+/* global Galaxy */
+Galaxy.Scope = /** @class */ (function () {
+  const defProp = Object.defineProperty;
+
+  /**
+   *
+   * @param {Object} module
+   * @param element
+   * @constructor
+   * @memberOf Galaxy
+   */
+  function Scope(module, element) {
+    const _this = this;
+    _this.systemId = module.systemId;
+    _this.parentScope = module.parentScope || null;
+    _this.element = element || null;
+    _this.export = {};
+    _this.uri = new Galaxy.GalaxyURI(module.path);
+    _this.eventHandlers = {};
+    _this.observers = [];
+    // _this.data = _this.element ? _this.element.data ? Object.assign({}, _this.element.data) : {} : {};
+    // _this.data = _this.element ? _this.element.data || {} : {};
+    // _this.data = {};
+    let inputs = {};
+    if (_this.element.data) {
+      inputs = Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true);
+    }
+    defProp(_this, 'data', {
+      enumerable: true,
+      configurable: true,
+      get: function () {
+        return inputs;
+      }
+    });
+
+    defProp(_this, '__imports__', {
+      value: {},
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+
+    _this.on('module.destroy', this.destroy.bind(this));
+  }
+
+  Scope.prototype = {
+    /**
+     *
+     * @param {string} id ID string which is going to be used for importing
+     * @param {Object} instance The assigned object to this id
+     */
+    inject: function (id, instance) {
+      this.__imports__[id] = instance;
+    },
+    /**
+     *
+     * @param {string} libId Path or id of the addon you want to import
+     * @return {*}
+     */
+    import: function (libId) {
+      // if the id starts with `./` then we will replace it with the current scope path.
+      if (libId.indexOf('./') === 0) {
+        libId = libId.replace('./', this.uri.path);
+      }
+
+      return this.__imports__[libId];
+    },
+    /**
+     *
+     */
+    destroy: function () {
+      this.data = null;
+      this.observers.forEach(function (observer) {
+        observer.remove();
+      });
+    },
+
+    kill: function () {
+      throw Error('Scope.kill() should not be invoked at the runtime');
+    },
+    /**
+     *
+     * @param {*} moduleMeta
+     * @param {*} config
+     * @returns {*}
+     */
+    load: function (moduleMeta, config) {
+      const newModuleMetaData = Object.assign({}, moduleMeta, config || {});
+
+      if (newModuleMetaData.path.indexOf('./') === 0) {
+        newModuleMetaData.path = this.uri.path + moduleMeta.path.substr(2);
+      }
+
+      newModuleMetaData.parentScope = this;
+      return Galaxy.load(newModuleMetaData);
+    },
+    /**
+     *
+     * @param moduleMetaData
+     * @param viewNode
+     * @returns {*|PromiseLike<T>|Promise<T>}
+     */
+    loadModuleInto: function (moduleMetaData, viewNode) {
+      return this.load(moduleMetaData, {
+        element: viewNode
+      }).then(function (module) {
+        module.start();
+        return module;
+      });
+    },
+    /**
+     *
+     * @param {string} event
+     * @param {Function} handler
+     */
+    on: function (event, handler) {
+      if (!this.eventHandlers[event]) {
+        this.eventHandlers[event] = [];
+      }
+
+      if (this.eventHandlers[event].indexOf(handler) === -1) {
+        this.eventHandlers[event].push(handler);
+      }
+    },
+    /**
+     *
+     * @param {string} event
+     * @param {*} data
+     */
+    trigger: function (event, data) {
+      if (this.eventHandlers[event]) {
+        this.eventHandlers[event].forEach(function (handler) {
+          handler.call(null, data);
+        });
+      }
+    },
+    /**
+     *
+     * @param object
+     * @returns {Galaxy.Observer}
+     */
+    observe: function (object) {
+      const observer = new Galaxy.Observer(object);
+      this.observers.push(observer);
+
+      return observer;
+    }
+  };
+
+  return Scope;
+})();
+
+/* global Galaxy */
+Galaxy.GalaxyURI = /** @class */ (function () {
+  /**
+   *
+   * @param {string} url
+   * @constructor
+   */
+  function GalaxyURI(url) {
+    let urlParser = document.createElement('a');
+    urlParser.href = url;
+    let myRegexp = /([^\t\n]+)\//g;
+    let match = myRegexp.exec(urlParser.pathname);
+
+    this.parsedURL = urlParser.href;
+    this.path = match ? match[0] : '/';
+    this.base = window.location.pathname;
+    this.protocol = urlParser.protocol;
+  }
+
+  return GalaxyURI;
+})();
+
 (function (GMC) {
   GMC.registerParser('text/css', parser);
 
@@ -2315,256 +2572,15 @@ Galaxy.Module.Content = /** @class */ (function () {
 })(Galaxy.Module.Content);
 
 /* global Galaxy */
-Galaxy.Scope = /** @class */ (function () {
-  const defProp = Object.defineProperty;
-
-  /**
-   *
-   * @param {Object} module
-   * @param element
-   * @constructor
-   * @memberOf Galaxy
-   */
-  function Scope(module, element) {
-    const _this = this;
-    _this.systemId = module.systemId;
-    _this.parentScope = module.parentScope || null;
-    _this.element = element || null;
-    _this.export = {};
-    _this.uri = new Galaxy.GalaxyURI(module.path);
-    _this.eventHandlers = {};
-    _this.observers = [];
-    _this.data = _this.element ? _this.element.data || {} : {};
-
-    defProp(_this, '__imports__', {
-      value: {},
-      writable: false,
-      enumerable: false,
-      configurable: false
-    });
-
-    _this.on('module.destroy', this.destroy.bind(this));
-  }
-
-  Scope.prototype = {
-    /**
-     *
-     * @param {string} id ID string which is going to be used for importing
-     * @param {Object} instance The assigned object to this id
-     */
-    inject: function (id, instance) {
-      this.__imports__[id] = instance;
-    },
-    /**
-     *
-     * @param {string} libId Path or id of the addon you want to import
-     * @return {*}
-     */
-    import: function (libId) {
-      // if the id starts with `./` then we will replace it with the current scope path.
-      if (libId.indexOf('./') === 0) {
-        libId = libId.replace('./', this.uri.path);
-      }
-
-      return this.__imports__[libId];
-    },
-    /**
-     *
-     */
-    destroy: function () {
-      this.data = null;
-      this.observers.forEach(function (observer) {
-        observer.remove();
-      });
-    },
-
-    kill: function () {
-      throw Error('Scope.kill() should not be invoked at the runtime');
-    },
-    /**
-     *
-     * @param {*} moduleMeta
-     * @param {*} config
-     * @returns {*}
-     */
-    load: function (moduleMeta, config) {
-      const newModuleMetaData = Object.assign({}, moduleMeta, config || {});
-
-      if (newModuleMetaData.path.indexOf('./') === 0) {
-        newModuleMetaData.path = this.uri.path + moduleMeta.path.substr(2);
-      }
-
-      newModuleMetaData.parentScope = this;
-      return Galaxy.load(newModuleMetaData);
-    },
-    /**
-     *
-     * @param moduleMetaData
-     * @param viewNode
-     * @returns {*|PromiseLike<T>|Promise<T>}
-     */
-    loadModuleInto: function (moduleMetaData, viewNode) {
-      return this.load(moduleMetaData, {
-        element: viewNode
-      }).then(function (module) {
-        module.start();
-        return module;
-      });
-    },
-    /**
-     *
-     * @param {string} event
-     * @param {Function} handler
-     */
-    on: function (event, handler) {
-      if (!this.eventHandlers[event]) {
-        this.eventHandlers[event] = [];
-      }
-
-      if (this.eventHandlers[event].indexOf(handler) === -1) {
-        this.eventHandlers[event].push(handler);
-      }
-    },
-    /**
-     *
-     * @param {string} event
-     * @param {*} data
-     */
-    trigger: function (event, data) {
-      if (this.eventHandlers[event]) {
-        this.eventHandlers[event].forEach(function (handler) {
-          handler.call(null, data);
-        });
-      }
-    },
-    /**
-     *
-     * @param object
-     * @returns {Galaxy.Observer}
-     */
-    observe: function (object) {
-      const observer = new Galaxy.Observer(object);
-      this.observers.push(observer);
-
-      return observer;
-    }
-  };
-
-  return Scope;
-})();
-
-/* global Galaxy */
-Galaxy.GalaxyURI = /** @class */ (function () {
-  /**
-   *
-   * @param {string} url
-   * @constructor
-   */
-  function GalaxyURI(url) {
-    let urlParser = document.createElement('a');
-    urlParser.href = url;
-    let myRegexp = /([^\t\n]+)\//g;
-    let match = myRegexp.exec(urlParser.pathname);
-
-    this.parsedURL = urlParser.href;
-    this.path = match ? match[0] : '/';
-    this.base = window.location.pathname;
-    this.protocol = urlParser.protocol;
-  }
-
-  return GalaxyURI;
-})();
-
-/* global Galaxy */
-Galaxy.Observer = /** @class */ (function () {
-  const defProp = Object.defineProperty;
-
-  Observer.notify = function (obj, key, value) {
-    const observers = obj.__observers__;
-
-    if (observers !== undefined) {
-      observers.forEach(function (observer) {
-        observer.notify(key, value);
-      });
-    }
-  };
-
-  /**
-   *
-   * @param {Object} context
-   * @constructor
-   * @memberOf Galaxy
-   */
-  function Observer(context) {
-    this.context = context;
-    this.subjectsActions = {};
-    this.allSubjectAction = [];
-
-    const __observers__ = '__observers__';
-    if (!this.context.hasOwnProperty(__observers__)) {
-      defProp(context, __observers__, {
-        value: [],
-        writable: true,
-        configurable: true
-      });
-    }
-
-    this.context[__observers__].push(this);
-  }
-
-  Observer.prototype = {
-    remove: function () {
-      const observers = this.context.__observers__;
-      const index = observers.indexOf(this);
-      if (index !== -1) {
-        observers.splice(index, 1);
-      }
-    },
-    /**
-     *
-     * @param {string} key
-     * @param value
-     */
-    notify: function (key, value) {
-      const _this = this;
-
-      if (_this.subjectsActions.hasOwnProperty(key)) {
-        _this.subjectsActions[key].call(_this.context, value);
-      }
-
-      _this.allSubjectAction.forEach(function (action) {
-        action.call(_this.context, key, value);
-      });
-    },
-    /**
-     *
-     * @param subject
-     * @param action
-     */
-    on: function (subject, action) {
-      this.subjectsActions[subject] = action;
-    },
-    /**
-     *
-     * @param {Function} action
-     */
-    onAll: function (action) {
-      if (this.allSubjectAction.indexOf(action) === -1) {
-        this.allSubjectAction.push(action);
-      }
-    }
-  };
-
-  return Observer;
-})();
-
-/* global Galaxy */
 Galaxy.View = /** @class */(function (G) {
   const defProp = Object.defineProperty;
   const objKeys = Object.keys;
   const arrConcat = Array.prototype.concat.bind([]);
   // Extracted from MDN
   const validTagNames = [
+    'text',
+    'comment',
+    //
     'a',
     'abbr',
     'acronym',
@@ -2749,6 +2765,9 @@ Galaxy.View = /** @class */(function (G) {
     tag: {
       type: 'none'
     },
+    _props: {
+      type: 'none'
+    },
     children: {
       type: 'none'
     },
@@ -2792,6 +2811,9 @@ Galaxy.View = /** @class */(function (G) {
           throw new Error('It is not allowed to use Scope.data as _input value');
         }
 
+        // if ('items' in config.subjects)
+        //   debugger
+        // this.data = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
         Object.assign(this.data, config.subjects);
 
         return false;
@@ -3372,13 +3394,6 @@ Galaxy.View = /** @class */(function (G) {
         childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
 
-      // if (!hostReactiveData && scopeData && !(scopeData instanceof G.Scope)) {
-      //   if (scopeData.hasOwnProperty('__rd__')) {
-      //     hostReactiveData = scopeData.__rd__;
-      //   } else {
-      //     hostReactiveData = new G.View.ReactiveData(targetKeyName, scopeData, null);
-      //   }
-      // }
       if (!hostReactiveData && scopeData /*&& !(scopeData instanceof G.Scope)*/) {
         if ('__rd__' in scopeData) {
           hostReactiveData = scopeData.__rd__;
@@ -3422,16 +3437,16 @@ Galaxy.View = /** @class */(function (G) {
 
       if (childPropertyKeyPath === null) {
         if (!(target instanceof G.View.ViewNode)) {
-
           defProp(target, targetKeyName, {
             set: function ref_set(newValue) {
               // console.warn('It is not allowed', hostReactiveData, targetKeyName);
               // Not sure about this part
-              // if (hostReactiveData.data[propertyKey] === newValue) {
-              //   return;
-              // }
+              // This will provide binding to primitive data types as well.
+              if (hostReactiveData.data[propertyKey] === newValue) {
+                return;
+              }
               // console.log(newValue);
-              // hostReactiveData.data[propertyKey] = newValue;
+              hostReactiveData.data[propertyKey] = newValue;
             },
             get: function ref_get() {
               if (expressionFn) {
@@ -3505,7 +3520,7 @@ Galaxy.View = /** @class */(function (G) {
               rd.removeNode(subjectsClone);
             });
           } catch (error) {
-            console.error('Could not find: ' + path + '\n', error);
+            console.error('bindSubjectsToData -> Could not find: ' + path + '\n in', data, error);
           }
         });
       }
@@ -3629,10 +3644,6 @@ Galaxy.View = /** @class */(function (G) {
     const _this = this;
     _this.scope = scope;
 
-    _this.config = {
-      cleanContainer: false
-    };
-
     if (scope.element instanceof G.View.ViewNode) {
       _this.container = scope.element;
       // Nested views should inherit components from their parent view
@@ -3670,8 +3681,8 @@ Galaxy.View = /** @class */(function (G) {
       if (key) {
         if (key in this._components) {
           scopeData = View.createChildScope(scopeData);
-          if (blueprint._data) {
-            Object.assign(scopeData, blueprint._data);
+          if (blueprint._props) {
+            Object.assign(scopeData, blueprint._props);
           }
 
           blueprint = this._components[key].call(null, blueprint, scopeData, this);
@@ -3724,15 +3735,6 @@ Galaxy.View = /** @class */(function (G) {
         }
       };
     },
-    init: function (blueprint) {
-      const _this = this;
-
-      if (_this.config.cleanContainer) {
-        _this.container.node.innerHTML = '';
-      }
-
-      return this.createNode(blueprint, _this.scope, _this.container, null);
-    },
     /**
      *
      * @param {Blueprint|Blueprint[]} blueprint
@@ -3740,12 +3742,14 @@ Galaxy.View = /** @class */(function (G) {
      */
     blueprint: function (blueprint) {
       const _this = this;
-
-      if (_this.config.cleanContainer) {
-        _this.container.node.innerHTML = '';
-      }
-
       return this.createNode(blueprint, _this.scope, _this.container, null);
+    },
+    /**
+     *
+     * @param {boolean} [hasAnimation]
+     */
+    clean: function (hasAnimation) {
+      this.container.clean(hasAnimation);
     },
     dispatchEvent: function (event) {
       this.container.dispatchEvent(event);
@@ -3766,6 +3770,7 @@ Galaxy.View = /** @class */(function (G) {
         content.innerHTML = blueprint;
         const nodes = Array.prototype.slice.call(content.childNodes);
         nodes.forEach(function (node) {
+          // View.ViewNode.convertToSimpleNode(node);
           parent.node.appendChild(node);
         });
 
@@ -3827,6 +3832,40 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   return View;
+})(Galaxy);
+
+/* global Galaxy */
+Galaxy.View.ArrayChange = /** @class */ (function (G) {
+  let lastId = 0;
+
+  function ArrayChange() {
+    this.id = lastId++;
+    if (lastId > 100000000) {
+      lastId = 0;
+    }
+    this.init = null;
+    this.original = null;
+    // this.snapshot = [];
+    this.returnValue = null;
+    this.params = [];
+    this.type = 'reset';
+
+    Object.preventExtensions(this);
+  }
+
+  ArrayChange.prototype = {
+    getInstance: function () {
+      const instance = new G.View.ArrayChange();
+      instance.init = this.init;
+      instance.original = this.original;
+      instance.params = this.params.slice(0);
+      instance.type = this.type;
+
+      return instance;
+    }
+  };
+
+  return ArrayChange;
 })(Galaxy);
 
 /* global Galaxy */
@@ -4027,7 +4066,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     },
 
     walkOnScope: function (scope) {
-      this.makeReactiveObject(scope, 'data');
+      // this.makeReactiveObject(scope, 'data');
     },
     /**
      *
@@ -4062,6 +4101,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
           // This means that the property suppose to be an object and there is probably an active binds to it
           // the active bind could be in one of the ref so we have to check all the ref shadows
+          if(!thisRD) debugger
           for (let i = 0, len = thisRD.refs.length; i < len; i++) {
             const ref = thisRD.refs[i];
             if (ref.shadow[key]) {
@@ -4337,9 +4377,10 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // if I am the original reference and the only one, then remove the __rd__
       else if (this.refs.length === 1) {
         // TODO: Should be tested as much as possible to make sure it works with no bug
-        delete this.data.__rd__;
+        // debugger
+        // delete this.data.__rd__;
         if (this.data instanceof Array) {
-          delete this.data.live;
+          // delete this.data.live;
           delete this.data.changes;
         }
       }
@@ -4498,40 +4539,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
 })(Galaxy);
 
-/* global Galaxy */
-Galaxy.View.ArrayChange = /** @class */ (function (G) {
-  let lastId = 0;
-
-  function ArrayChange() {
-    this.id = lastId++;
-    if (lastId > 100000000) {
-      lastId = 0;
-    }
-    this.init = null;
-    this.original = null;
-    // this.snapshot = [];
-    this.returnValue = null;
-    this.params = [];
-    this.type = 'reset';
-
-    Object.preventExtensions(this);
-  }
-
-  ArrayChange.prototype = {
-    getInstance: function () {
-      const instance = new G.View.ArrayChange();
-      instance.init = this.init;
-      instance.original = this.original;
-      instance.params = this.params.slice(0);
-      instance.type = this.type;
-
-      return instance;
-    }
-  };
-
-  return ArrayChange;
-})(Galaxy);
-
 /* global Galaxy, Promise */
 Galaxy.View.ViewNode = /** @class */ (function (G) {
   const GV = G.View;
@@ -4541,7 +4548,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
   const DESTROY_IN_NEXT_FRAME = G.View.DESTROY_IN_NEXT_FRAME;
 
-  function createComment(t) {
+  function create_comment(t) {
     const n = commentNode.cloneNode();
     n.textContent = t;
     return n;
@@ -4553,7 +4560,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @param {Galaxy.View.ViewNode} parentViewNode
    * @returns {HTMLElement|Comment}
    */
-  function createElem(tagName, parentViewNode) {
+  function create_elem(tagName, parentViewNode) {
     if (tagName === 'svg' || (parentViewNode && parentViewNode.blueprint.tag === 'svg')) {
       return document.createElementNS('http://www.w3.org/2000/svg', tagName);
     }
@@ -4565,11 +4572,57 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return document.createElement(tagName);
   }
 
-  function insertBefore(parentNode, newNode, referenceNode) {
+  function generate_index(vn) {
+    if (vn.parent) {
+      let i = 0;
+      let node = vn.node;
+      while ((node = node.previousSibling) !== null) ++i;
+
+      if (i === 0 && vn.placeholder.parentNode) {
+        i = arrIndexOf.call(vn.parent.node.childNodes, vn.placeholder);
+      }
+      return vn.parent.index + ',' + ViewNode.createIndex(i);
+    }
+
+    return '0';
+  }
+
+  // const view_node_template = {
+  //   blueprint: {},
+  //   destroyOrigin: 0,
+  //   localPropertyNames: new Set(),
+  //   properties: new Set(),
+  //   finalize: [],
+  //   placeholder: {},
+  //   populateLeaveSequence: EMPTY_CALL,
+  //   hasBeenDestroyed: EMPTY_CALL,
+  //   inDOM: true,
+  //   parent: null,
+  //   node: null,
+  // };
+  //
+  // function convert_to_simple_view_node(node, index) {
+  //   const vn = Object.assign({}, view_node_template, {
+  //     // parent: node.parent ? node.parent : node.parentNode ? convert_to_simple_view_node(node.parentNode) : {},
+  //     parent: node.parent ? node.parent : { destroyOrigin: 0 },
+  //     node: node,
+  //     index: index
+  //   });
+  //
+  //   vn.clean = ViewNode.prototype.clean.bind(vn);
+  //   vn.prepareLeaveSequence = ViewNode.prototype.prepareLeaveSequence.bind(vn);
+  //   vn.getChildNodes = ViewNode.prototype.getChildNodes.bind(vn);
+  //   vn.hasAnimation = ViewNode.prototype.hasAnimation.bind(vn);
+  //   vn.destroy = ViewNode.prototype.destroy.bind(vn);
+  //   node.__vn__ = vn;
+  //   return vn;
+  // }
+
+  function insert_before(parentNode, newNode, referenceNode) {
     parentNode.insertBefore(newNode, referenceNode);
   }
 
-  function removeChild(node, child) {
+  function remove_child(node, child) {
     node.removeChild(child);
   }
 
@@ -4672,17 +4725,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     if (destroy) {
       // Destroy
-      viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
-      viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
+      viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
+      viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
       viewNode.hasBeenDestroyed();
     } else {
       // Detach
       if (!viewNode.placeholder.parentNode) {
-        insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
+        insert_before(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
       }
 
       if (viewNode.node.parentNode) {
-        removeChild(viewNode.node.parentNode, viewNode.node);
+        remove_child(viewNode.node.parentNode, viewNode.node);
       }
 
       viewNode.garbage.forEach(function (node) {
@@ -4708,7 +4761,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     if (blueprint.tag instanceof Node) {
       _this.node = blueprint.tag;
     } else {
-      _this.node = createElem(blueprint.tag || 'div', parent);
+      _this.node = create_elem(blueprint.tag || 'div', parent);
     }
 
     /**
@@ -4721,7 +4774,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.inputs = {};
     _this.virtual = false;
     _this.visible = true;
-    _this.placeholder = createComment(blueprint.tag || 'div');
+    _this.placeholder = create_comment(blueprint.tag || 'div');
     _this.properties = new Set();
     _this.inDOM = false;
     _this.setters = {};
@@ -4842,7 +4895,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     detach: function () {
       if (this.node.parentNode) {
-        removeChild(this.node.parentNode, this.node);
+        remove_child(this.node.parentNode, this.node);
       }
     },
 
@@ -4870,11 +4923,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         if (!_this.node.parentNode) {
-          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+          insert_before(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         }
 
         if (_this.placeholder.parentNode) {
-          removeChild(_this.placeholder.parentNode, _this.placeholder);
+          remove_child(_this.placeholder.parentNode, _this.placeholder);
         }
 
         _this.hasBeenInserted();
@@ -4887,7 +4940,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.origin = true;
         _this.transitory = true;
         const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
-        _this.prepareLeaveSequence(_this.hasAnimation());
+        const children = _this.getChildNodes();
+        _this.prepareLeaveSequence(_this.hasAnimation(children), children);
         DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
@@ -4962,9 +5016,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       };
     },
 
-    hasAnimation: function () {
-      const children = this.getChildNodes();
-
+    hasAnimation: function (children) {
       if (this.populateLeaveSequence && this.populateLeaveSequence !== EMPTY_CALL) {
         return true;
       }
@@ -4976,7 +5028,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         //   return true;
         // }
 
-        if (node.hasAnimation()) {
+        if (node.hasAnimation(node.getChildNodes())) {
           return true;
         }
       }
@@ -4984,7 +5036,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return false;
     },
 
-    prepareLeaveSequence: function (hasAnimation) {
+    prepareLeaveSequence: function (hasAnimation, children) {
       const _this = this;
 
       if (hasAnimation) {
@@ -4996,7 +5048,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           // Children with leave animation should not get removed from dom for visual purposes.
           // Since their this node already has a leave animation and eventually will be removed from dom.
           // this is not the case for when this node is being detached by _if
-          const children = _this.getChildNodes();
+          // const children = _this.getChildNodes();
           for (let i = 0, len = children.length; i < len; i++) {
             children[i].onLeaveComplete = EMPTY_CALL;
           }
@@ -5018,8 +5070,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (_this.inDOM) {
-        _this.prepareLeaveSequence(hasAnimation || _this.hasAnimation());
-        _this.clean(hasAnimation);
+        const children = _this.getChildNodes();
+        hasAnimation = hasAnimation || _this.hasAnimation(children);
+        _this.prepareLeaveSequence(hasAnimation, children);
+        _this.clean(hasAnimation, children);
       }
 
       _this.properties.forEach((reactiveData) => reactiveData.removeNode(_this));
@@ -5058,8 +5112,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     /**
      *
      */
-    clean: function (hasAnimation) {
-      GV.DESTROY_NODES(this.getChildNodes(), hasAnimation);
+    clean: function (hasAnimation, children) {
+      children = children || this.getChildNodes();
+      GV.DESTROY_NODES(children, hasAnimation);
     },
 
     createNext: function (act) {
@@ -5067,18 +5122,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     get index() {
-      if (this.parent) {
-        let i = 0;
-        let node = this.node;
-        while ((node = node.previousSibling) !== null) ++i;
-
-        if (i === 0 && this.placeholder.parentNode) {
-          i = arrIndexOf.call(this.parent.node.childNodes, this.placeholder);
-        }
-        return this.parent.index + ',' + ViewNode.createIndex(i);
-      }
-
-      return '0';
+      return generate_index(this);
     },
 
     get anchor() {
@@ -5092,84 +5136,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   return ViewNode;
 
-})(Galaxy);
-
-/* global Galaxy */
-(function (G) {
-  G.View.PROPERTY_SETTERS.attr = function (viewNode, property, expression) {
-    const attrName = property.key;
-    const updateFn = property.update || G.View.setAttr;
-    const setter = function A(value) {
-      if (value instanceof Promise) {
-        const asyncCall = function (asyncValue) {
-          updateFn(viewNode, asyncValue, attrName);
-        };
-        value.then(asyncCall).catch(asyncCall);
-      } else if (value instanceof Function) {
-        const result = value.call(viewNode, viewNode.data);
-        updateFn(viewNode, result, attrName);
-      } else {
-        updateFn(viewNode, value, attrName);
-      }
-    };
-
-    if (expression) {
-      return function A_EXP() {
-        const expressionValue = expression();
-        setter(expressionValue);
-      };
-    }
-
-    return setter;
-  };
-})(Galaxy);
-
-/* global Galaxy */
-(function (G) {
-  G.View.PROPERTY_SETTERS.prop = function (viewNode, property, expression) {
-    const propName = property.key;
-    const updateFn = property.update || G.View.setProp;
-    const setter = function P(value) {
-      if (value instanceof Promise) {
-        const asyncCall = function (asyncValue) {
-          updateFn(viewNode, asyncValue, propName);
-        };
-        value.then(asyncCall).catch(asyncCall);
-      } else if (value instanceof Function) {
-        const result = value.call(viewNode, viewNode.data);
-        updateFn(viewNode, result, propName);
-      } else {
-        updateFn(viewNode, value, propName);
-      }
-    };
-
-    if (expression) {
-      return function P_EXP() {
-        const expressionValue = expression();
-        setter(expressionValue);
-      };
-    }
-
-    return setter;
-  };
-})(Galaxy);
-
-/* global Galaxy */
-(function (G) {
-  G.View.PROPERTY_SETTERS.reactive = function (viewNode, property, expression, scope) {
-    const propertyName = property.key;
-    const updateFn = property.update;
-    const config = viewNode.cache[propertyName];
-
-    return createReactiveFunction(updateFn, viewNode, config, expression, scope);
-  };
-
-  function createReactiveFunction(updateFn, vn, config, expression, scope) {
-    const nodeUpdateFn = updateFn.bind(vn);
-    return function R(value) {
-      return nodeUpdateFn(config, value, expression, scope);
-    };
-  }
 })(Galaxy);
 
 /* global Galaxy, gsap */
@@ -6821,11 +6787,90 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 })(Galaxy);
 
 
+/* global Galaxy */
 (function (G) {
-  SimpleRouter.PARAMETER_REGEXP = new RegExp(/[:*](\w+)/g);
-  SimpleRouter.REPLACE_VARIABLE_REGEXP = /([^/]+)/;
-  SimpleRouter.BASE_URL = '/';
-  SimpleRouter.currentPath = {
+  G.View.PROPERTY_SETTERS.attr = function (viewNode, property, expression) {
+    const attrName = property.key;
+    const updateFn = property.update || G.View.setAttr;
+    const setter = function A(value) {
+      if (value instanceof Promise) {
+        const asyncCall = function (asyncValue) {
+          updateFn(viewNode, asyncValue, attrName);
+        };
+        value.then(asyncCall).catch(asyncCall);
+      } else if (value instanceof Function) {
+        const result = value.call(viewNode, viewNode.data);
+        updateFn(viewNode, result, attrName);
+      } else {
+        updateFn(viewNode, value, attrName);
+      }
+    };
+
+    if (expression) {
+      return function A_EXP() {
+        const expressionValue = expression();
+        setter(expressionValue);
+      };
+    }
+
+    return setter;
+  };
+})(Galaxy);
+
+/* global Galaxy */
+(function (G) {
+  G.View.PROPERTY_SETTERS.prop = function (viewNode, property, expression) {
+    const propName = property.key;
+    const updateFn = property.update || G.View.setProp;
+    const setter = function P(value) {
+      if (value instanceof Promise) {
+        const asyncCall = function (asyncValue) {
+          updateFn(viewNode, asyncValue, propName);
+        };
+        value.then(asyncCall).catch(asyncCall);
+      } else if (value instanceof Function) {
+        const result = value.call(viewNode, viewNode.data);
+        updateFn(viewNode, result, propName);
+      } else {
+        updateFn(viewNode, value, propName);
+      }
+    };
+
+    if (expression) {
+      return function P_EXP() {
+        const expressionValue = expression();
+        setter(expressionValue);
+      };
+    }
+
+    return setter;
+  };
+})(Galaxy);
+
+/* global Galaxy */
+(function (G) {
+  G.View.PROPERTY_SETTERS.reactive = function (viewNode, property, expression, scope) {
+    const propertyName = property.key;
+    const updateFn = property.update;
+    const config = viewNode.cache[propertyName];
+
+    return createReactiveFunction(updateFn, viewNode, config, expression, scope);
+  };
+
+  function createReactiveFunction(updateFn, vn, config, expression, scope) {
+    const nodeUpdateFn = updateFn.bind(vn);
+    return function R(value) {
+      return nodeUpdateFn(config, value, expression, scope);
+    };
+  }
+})(Galaxy);
+
+/* global Galaxy */
+Galaxy.Router = /** @class */ (function (G) {
+  Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
+  Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
+  Router.BASE_URL = '/';
+  Router.currentPath = {
     handlers: [],
     subscribe: function (handler) {
       this.handlers.push(handler);
@@ -6838,13 +6883,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
   };
 
-  SimpleRouter.mainListener = function (e) {
-    SimpleRouter.currentPath.update();
+  Router.mainListener = function (e) {
+    Router.currentPath.update();
   };
 
-  SimpleRouter.prepareRoute = function (routeConfig, parentScopeRouter) {
+  Router.prepareRoute = function (routeConfig, parentScopeRouter) {
     if (routeConfig instanceof Array) {
-      const routes = routeConfig.map((r) => SimpleRouter.prepareRoute(r, parentScopeRouter));
+      const routes = routeConfig.map((r) => Router.prepareRoute(r, parentScopeRouter));
       if (parentScopeRouter) {
         parentScopeRouter.activeRoute.children = routes;
       }
@@ -6862,12 +6907,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     };
   };
 
-  window.addEventListener('popstate', SimpleRouter.mainListener);
+  window.addEventListener('popstate', Router.mainListener);
 
-  function SimpleRouter(scope, module) {
+  /**
+   *
+   * @param {Galaxy.Scope} scope
+   * @param {Galaxy.Module} module
+   * @constructor
+   * @memberOf Galaxy
+   */
+  function Router(scope, module) {
     const _this = this;
     _this.config = {
-      baseURL: SimpleRouter.BASE_URL
+      baseURL: Router.BASE_URL
     };
     _this.scope = scope;
     _this.module = module;
@@ -6908,13 +6960,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     });
 
     if (module.id === 'system') {
-      SimpleRouter.currentPath.update();
+      Router.currentPath.update();
     }
   }
 
-  SimpleRouter.prototype = {
-    init: function (routeConfigs) {
-      this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope.router);
+  Router.prototype = {
+    setup: function (routeConfigs) {
+      this.routes = Router.prepareRoute(routeConfigs, this.scope.parentScope ? this.scope.parentScope.router : null);
       if (this.scope.parentScope && this.scope.parentScope.router) {
         this.parentRoute = this.scope.parentScope.router.activeRoute;
       }
@@ -6932,13 +6984,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       });
 
       this.data.routes = this.routes;
-      this.listener = this.detect.bind(this);
-      window.addEventListener('popstate', this.listener);
 
       return this;
     },
 
     start: function () {
+      this.listener = this.detect.bind(this);
+      window.addEventListener('popstate', this.listener);
       this.detect();
     },
 
@@ -7022,6 +7074,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
         const dynamicRoute = dynamicRoutes[i];
         const match = dynamicRoute.paramFinderExpression.exec(normalizedHash);
+
         if (!match) {
           continue;
         }
@@ -7039,6 +7092,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         const parts = hash.replace(pathParameterPlaceholder, '').split('/');
 
         const shouldContinue = _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
+
         if (!shouldContinue) {
           return;
         }
@@ -7126,17 +7180,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         const paramsNames = [];
 
         // Find all the parameters names in the route
-        let match = SimpleRouter.PARAMETER_REGEXP.exec(route);
+        let match = Router.PARAMETER_NAME_REGEX.exec(route);
         while (match) {
           paramsNames.push(match[1]);
-          match = SimpleRouter.PARAMETER_REGEXP.exec(route);
+          match = Router.PARAMETER_NAME_REGEX.exec(route);
         }
 
         if (paramsNames.length) {
           return {
             id: route,
             paramNames: paramsNames,
-            paramFinderExpression: new RegExp(route.replace(SimpleRouter.PARAMETER_REGEXP, SimpleRouter.REPLACE_VARIABLE_REGEXP))
+            paramFinderExpression: new RegExp(route.replace(Router.PARAMETER_NAME_REGEX, Router.PARAMETER_NAME_REPLACEMENT))
           };
         }
 
@@ -7177,39 +7231,37 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
   };
 
-  G.registerAddOnProvider('galaxy/router', function (scope, module) {
-    return {
-      create: function () {
-        const router = new SimpleRouter(scope, module);
-        if (module.systemId !== 'system') {
-          scope.on('module.destroy', () => router.destroy());
-        }
-
-        scope.router = router.data;
-
-        return router;
-      },
-      start: function () { }
-    };
-  });
-
-  G.Router = SimpleRouter;
-
+  return Router;
 })(Galaxy);
 
 /* global Galaxy */
-(function (G) {
-  G.registerAddOnProvider('galaxy/view', function (scope) {
-    return {
-      /**
-       *
-       * @return {Galaxy.View}
-       */
-      create: function () {
-        return new Galaxy.View(scope);
-      },
-      start: function () {
+Galaxy.registerAddOnProvider('galaxy/router', function (scope, module) {
+  return {
+    create: function () {
+      const router = new Galaxy.Router(scope, module);
+      if (module.systemId !== 'system') {
+        scope.on('module.destroy', () => router.destroy());
       }
-    };
-  });
-})(Galaxy);
+
+      scope.router = router.data;
+
+      return router;
+    },
+    start: function () { }
+  };
+});
+
+/* global Galaxy */
+Galaxy.registerAddOnProvider('galaxy/view', function (scope) {
+  return {
+    /**
+     *
+     * @return {Galaxy.View}
+     */
+    create: function () {
+      return new Galaxy.View(scope);
+    },
+    start: function () {
+    }
+  };
+});

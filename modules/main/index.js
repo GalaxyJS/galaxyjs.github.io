@@ -1,5 +1,3 @@
-/* global Scope */
-
 /** @type Galaxy.View */
 const view = Scope.import('galaxy/view');
 const router = Scope.import('galaxy/router');
@@ -18,7 +16,7 @@ Scope.data.todos = [
   }
 ];
 
-router.init([
+router.setup([
   {
     path: '/',
     redirectTo: '/start'
@@ -100,8 +98,8 @@ router.notFound(function () {
   console.error('404, Not Found!');
 });
 
-view.config.cleanContainer = true;
-view.init([
+view.container.node.innerHTML = '';
+view.blueprint([
   {
     tag: 'div',
     id: 'main-nav',

@@ -1,8 +1,8 @@
 const view = Scope.import('galaxy/view');
 
 
-view.config.cleanContainer = true;
-view.init([
+view.clean();
+view.blueprint([
   {
     tag: 'p',
     text: 'a'

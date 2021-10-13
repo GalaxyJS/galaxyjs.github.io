@@ -6,7 +6,7 @@ Scope.mod = {
   url: null
 };
 
-view.init([
+view.blueprint([
   {
     tag: 'label',
     text: '[inputs.label]'

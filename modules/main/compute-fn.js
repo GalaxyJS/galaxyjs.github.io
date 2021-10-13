@@ -4,7 +4,7 @@ Scope.data.first = 'First';
 Scope.data.last = 'Last';
 
 view.config.cleanContainer = true;
-view.init([
+view.blueprint([
   {
     text: function (f = '<>data.first', l = '<>data.last') {
       return 'function: ' + f + ' ' + l;

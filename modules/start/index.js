@@ -3,7 +3,7 @@ const animations = Scope.import('services/animations.js');
 
 Scope.data.myValue = 10;
 
-view.init({
+view.blueprint({
   class: 'card big',
   _animations: animations.cardInOut,
   children: [

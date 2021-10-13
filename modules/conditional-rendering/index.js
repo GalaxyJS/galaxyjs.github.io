@@ -6,7 +6,7 @@ const singleNodeExample = Scope.importAsText('./single-node.example.js');
 const multipleNodesExample = Scope.importAsText('./multiple-nodes.example.js');
 const listExample = Scope.importAsText('./list.example.js');
 
-view.init({
+view.blueprint({
   tag: 'div',
   class: 'card big',
   _animations: animations.cardInOut,

@@ -62,7 +62,7 @@ const emptyButton = {
   }
 };
 
-view.init({
+view.blueprint({
   tag: 'div',
   class: 'card big',
   _animations: animations.cardInOut,

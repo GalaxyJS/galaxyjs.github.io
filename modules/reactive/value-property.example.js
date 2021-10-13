@@ -1,7 +1,7 @@
 const view = Scope.import('galaxy/view');
 
 Scope.data.selectedOption = 'opt-2';
-view.init({
+view.blueprint({
   class: 'example-box',
   children: [
     {

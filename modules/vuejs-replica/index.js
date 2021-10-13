@@ -11,7 +11,7 @@ Scope.data = {
 
 console.log(data);
 
-view.init({
+view.blueprint({
   tag: 'div',
   class: 'card',
   _animations: animations.cardInOut,

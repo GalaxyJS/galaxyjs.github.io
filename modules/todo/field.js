@@ -3,7 +3,7 @@ const view = Scope.import('galaxy/view');
 
 Scope.data.focused = false;
 
-view.init({
+view.blueprint({
   class: 'field',
   focused: '<>data.focused',
   children: [

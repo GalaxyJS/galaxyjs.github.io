@@ -8,7 +8,7 @@ Scope.data.list = [];
 // }
 
 view.config.cleanContainer = true;
-view.init([
+view.blueprint([
 
   {
     id: 'main',

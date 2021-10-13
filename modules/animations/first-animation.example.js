@@ -5,7 +5,7 @@ const originalDataList = [
 ];
 Scope.data.boxes = originalDataList.slice(0);
 
-view.init([
+view.blueprint([
   {
     tag: 'p',
     children: [

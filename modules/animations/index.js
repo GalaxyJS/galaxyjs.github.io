@@ -20,7 +20,7 @@ const promise1 = new Promise((resolve) => {
 const promise2 = new Promise((resolve) => {
   resolve2 = resolve;
 });
-view.init([
+view.blueprint([
   {
     class: 'card big anime',
     _animations: {

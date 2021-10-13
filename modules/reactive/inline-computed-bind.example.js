@@ -1,6 +1,6 @@
 const view = Scope.import('galaxy/view');
 
-view.init({
+view.blueprint({
   class: 'example-box',
   children: [
     {

@@ -1,7 +1,7 @@
 const view = Scope.import('galaxy/view');
 
 console.log(Scope)
-view.init([
+view.blueprint([
   {
     tag: 'h3',
     text: '<>inputs.title'

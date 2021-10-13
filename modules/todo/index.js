@@ -5,7 +5,6 @@ const view = Scope.import('galaxy/view');
 const style = Scope.import('./style.css');
 const animations = Scope.import('services/animations.js');
 Scope.data.fields = ['a', 'b'];
-
 const ToDoService = {
   data: Scope.data.items,
   add: function (newItem) {
@@ -57,7 +56,7 @@ Scope.data.newItem = {
   done: false
 };
 
-view.init({
+view.blueprint({
   tag: 'div',
   class: 'card',
   _animations: animations.cardInOut,
@@ -87,7 +86,7 @@ view.init({
               },
               on: {
                 click: function () {
-                  data.items.forEach(function (item) {
+                  data.data.items.forEach(function (item) {
                     item.done = false;
                   });
                 }
@@ -98,7 +97,7 @@ view.init({
               text: 'Toggle',
               on: {
                 click: function () {
-                  data.items.forEach(function (item) {
+                  data.data.items.forEach(function (item) {
                     item.done = !item.done;
                   });
                 }
@@ -166,7 +165,7 @@ view.init({
             path: './field.js'
           },
           _data: {
-            entry: Scope.data.newItem
+            entry: '<>data.newItem'
           },
           on: {
             confirm: addToList
@@ -188,3 +187,4 @@ view.init({
     }
   ]
 });
+console.log(Scope);

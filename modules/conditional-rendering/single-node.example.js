@@ -1,7 +1,7 @@
 const view = Scope.import('galaxy/view');
 
 Scope.data.condition = true;
-view.init([
+view.blueprint([
   {
     tag: 'div',
     children: [

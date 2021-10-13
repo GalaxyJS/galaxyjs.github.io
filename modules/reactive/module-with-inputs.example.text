@@ -1,6 +1,6 @@
 const view = Scope.import('galaxy/view');
 
-view.init({
+view.blueprint({
   _data: {
     fromParent: 'This is a message from parent module!'
   },

@@ -2,7 +2,7 @@ const view = Scope.import('galaxy/view');
 
 const fullNameComputed = (fn = '<>data.firstName', ln = '<>data.lastName') => (fn || '...') + ' ' + (ln || '...');
 
-view.init({
+view.blueprint({
   class: 'example-box',
   children: [
     {

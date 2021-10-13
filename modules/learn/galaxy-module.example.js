@@ -6,7 +6,7 @@ const module = {
   constructor: function (Scope) {
     const view = Scope.import('galaxy/view');
     view.config.cleanContainer = true;
-    view.init({
+    view.blueprint({
       tag: 'h2',
       text: 'Hello World from GalaxyJS!'
     });

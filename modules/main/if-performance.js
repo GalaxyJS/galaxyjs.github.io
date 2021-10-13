@@ -4,7 +4,7 @@ Scope.data.cond = true;
 Scope.data.visibility = true;
 
 view.config.cleanContainer = true;
-view.init([
+view.blueprint([
   {
     children: [
       {

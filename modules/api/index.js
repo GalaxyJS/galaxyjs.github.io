@@ -51,7 +51,7 @@ Scope.data.api = {
       title: 'init(uiBlueprint)',
       description: 'init method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
         ' following code will create a pharagraph tag with `Hello World!` text inside it.' +
-        '<code class="prettyprint lang-js">view.init({ tag: \'p\', text: \'Hello World!\' });</code>'
+        '<code class="prettyprint lang-js">view.blueprint({ tag: \'p\', text: \'Hello World!\' });</code>'
     },
     {
       title: 'enterKeyframe(onComplete, timeline, duration)',
@@ -70,7 +70,7 @@ Scope.data.api = {
   ]
 };
 
-router.init([
+router.setup([
   {
     path: '/',
     redirectTo: '/scope'
@@ -105,7 +105,7 @@ router.init([
   },
 ]);
 
-view.init({
+view.blueprint({
   tag: 'div',
   class: 'card big',
   _animations: animations.cardInOut,

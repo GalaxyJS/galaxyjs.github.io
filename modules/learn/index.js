@@ -14,7 +14,7 @@ Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
 Scope.flag = true;
 
-router.init([
+router.setup([
   {
     path: '/',
     redirectTo: '/installation'
@@ -45,7 +45,7 @@ router.init([
   }
 ]);
 
-view.init([
+view.blueprint([
   {
     class: 'card big',
     _animations: animations.cardInOut,
@@ -116,7 +116,7 @@ view.init([
               'const view = Scope.import(\'galaxy/view\');\n\n' +
               '// This will remove all the contents of the parent element which in this case is body\n' +
               'view.config.cleanContainer = true;\n' +
-              'view.init({\n' +
+              'view.blueprint({\n' +
               '  tag: \'h1\',\n' +
               '  text: \'Hello World!\'\n' +
               '})'
@@ -139,7 +139,7 @@ view.init([
             tag: 'p',
             html: 'Then we initialize our view with a <strong>h1</strong> tag and <strong>\'Hello World!\'</strong> as its text content.'
           },
-          '<pre class="prettyprint inline lang-js">view.init({\n' +
+          '<pre class="prettyprint inline lang-js">view.blueprint({\n' +
           '  tag: \'h1\',\n' +
           '  text: \'Hello World!\'\n' +
           '});</pre>',
@@ -164,7 +164,7 @@ view.init([
             text: helloWorldExample
           },
           '<p>In the above code we started by importing <code class="prettyprint">\'galaxy/view\'</code> service which we can use to create UI blocks.</p>',
-          '<p><code class="prettyprint">view.init()</code> accepts an array or object which is the blueprint of ' +
+          '<p><code class="prettyprint">view.blueprint()</code> accepts an array or object which is the blueprint of ' +
           'our UI block. In this case a <strong>p</strong> tag with <strong>Hello World!</strong> as its text.</p>',
           {
             class: 'example-box',
@@ -217,7 +217,7 @@ view.init([
               '         ];\n' +
               '\n' +
               '         view.config.cleanContainer = true;\n' +
-              '         view.init({\n' +
+              '         view.blueprint({\n' +
               '           tag: \'ul\',\n' +
               '           children: {\n' +
               '             _repeat: {\n' +

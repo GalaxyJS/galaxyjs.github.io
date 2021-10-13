@@ -15,8 +15,9 @@ const classAndStyleExample = Scope.importAsText('./class-and-style.example.js');
 const viewNodeInputsExample = Scope.importAsText('./view-node-inputs.example.js');
 const valuePropertyExample = Scope.importAsText('./value-property.example.js');
 Scope.data.citiesList = ['Amsterdam', 'Paris'];
+console.log(Scope.data)
 
-router.init([
+router.setup([
   {
     path: '/',
     redirectTo: '/fundamentals'
@@ -48,7 +49,7 @@ router.init([
   }
 ]);
 
-view.init({
+view.blueprint({
   class: 'card big',
   _animations: animations.cardInOut,
   children: [

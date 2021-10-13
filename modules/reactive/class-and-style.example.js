@@ -9,7 +9,7 @@ Scope.data.arrrayAsStyle = ['color: red', 'text-decoration: underline'];
 Scope.data.class = 'bold';
 
 
-view.init({
+view.blueprint({
   class: 'example-box',
   children: [
     {

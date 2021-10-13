@@ -44,4 +44,4 @@ const form = {
     }
   ]
 };
-view.init(form);
+view.blueprint(form);

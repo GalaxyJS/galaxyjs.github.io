@@ -10,7 +10,7 @@ for (let i = 0; i < 20; i++) {
 }
 
 view.config.cleanContainer = true;
-view.init([
+view.blueprint([
   {
     children: {
       tag: 'button',

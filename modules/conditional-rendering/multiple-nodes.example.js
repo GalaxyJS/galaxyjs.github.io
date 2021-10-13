@@ -30,7 +30,7 @@ const itemAnimations = {
 };
 
 Scope.data.conditionForMultiple = true;
-view.init([
+view.blueprint([
   {
     tag: 'div',
     children: [
