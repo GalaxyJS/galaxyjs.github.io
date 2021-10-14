@@ -8,8 +8,8 @@ Scope.export = function (blueprint, props) {
     children: [
       {
         tag: 'label',
-        text: (l = '<>label') => {
-          return l;
+        text: (l = '<>label', v = '<>value.title') => {
+          return l + ` (${v ? v.length : 0} Char)`;
         }
       },
       {
@@ -24,8 +24,6 @@ Scope.export = function (blueprint, props) {
           },
           keyup: function (event) {
             if (event.keyCode === 13) {
-              // const event = new CustomEvent('confirm');
-              // this.dispatchEvent(event);
               props.onConfirm();
             }
           }

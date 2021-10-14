@@ -741,7 +741,7 @@ section > section {
 }
 
 .field[focused] {
-  box-shadow: 0 5px 12px -2px rgba(0, 0, 0, .2);
+  box-shadow: 0 6px 12px -2px rgba(0, 0, 0, .2), 0 0 3px rgba(0, 0, 0, .1);
 }
 
 .field[focused] > input, .field[focused] > select, input:focus {
@@ -801,7 +801,6 @@ input, select {
 .field[empty] > label {
 
 }
-
 
 
 input.w-50 {

@@ -3322,8 +3322,12 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createExpressionFunction = function (host, scope, handler, keys, values) {
-    if (!values[0] && host instanceof G.View.ViewNode) {
-      values[0] = host.data;
+    if (!values[0]) {
+      if (host instanceof G.View.ViewNode) {
+        values[0] = host.data;
+      } else {
+        values[0] = scope;
+      }
     }
 
     const getExpressionArguments = G.View.createArgumentsProviderFn(values);
@@ -3442,10 +3446,16 @@ Galaxy.View = /** @class */(function (G) {
               // console.warn('It is not allowed', hostReactiveData, targetKeyName);
               // Not sure about this part
               // This will provide binding to primitive data types as well.
+              if (expressionFn) {
+                // console.log(newValue, target[targetKeyName], targetKeyName, propertyKey);
+                // console.warn('It is not allowed to set value for an expression', targetKeyName, newValue);
+                return;
+              }
+
               if (hostReactiveData.data[propertyKey] === newValue) {
                 return;
               }
-              // console.log(newValue);
+
               hostReactiveData.data[propertyKey] = newValue;
             },
             get: function ref_get() {
@@ -3479,7 +3489,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath !== null) {
-        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, {propertyKeys: [childPropertyKeyPath]}), root);
+        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
       }
     }
 
@@ -3497,7 +3507,7 @@ Galaxy.View = /** @class */(function (G) {
     const keys = objKeys(subjects);
     let attributeName;
     let attributeValue;
-    const subjectsClone = cloneSubject ? G.clone(subjects)/*Object.assign({}, subjects)*/ : subjects;
+    const subjectsClone = cloneSubject ? G.clone(subjects) : subjects;
 
     let parentReactiveData;
     if (!(data instanceof G.Scope)) {
@@ -3566,7 +3576,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3608,9 +3618,9 @@ Galaxy.View = /** @class */(function (G) {
     const bpKey = propertyKey + '_' + viewNode.node.nodeType;
     let property = View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
     if (!property) {
-      property = {type: 'prop'};
+      property = { type: 'prop' };
       if (!(propertyKey in viewNode.node) && 'setAttribute' in viewNode.node) {
-        property = {type: 'attr'};
+        property = { type: 'attr' };
       }
 
       View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] = property;
@@ -3677,10 +3687,15 @@ Galaxy.View = /** @class */(function (G) {
      * @returns {*}
      */
     getComponent: function (key, blueprint, scopeData) {
+      let componentScope = scopeData;
+      let componentBlueprint = blueprint;
       if (key) {
         if (key in this._components) {
-          scopeData = View.bindSubjectsToData(null, blueprint._props || {}, scopeData, true);
-          blueprint = this._components[key].call(null, blueprint, scopeData, this);
+          componentScope = View.createChildScope(scopeData);
+          Object.assign(componentScope, blueprint._props || {});
+          // componentScope.props = View.bindSubjectsToData(null, blueprint._props || {}, scopeData, true);
+          View.bindSubjectsToData(null, componentScope, scopeData);
+          componentBlueprint = this._components[key].call(null, blueprint, componentScope, this);
           if (blueprint instanceof Array) {
             throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
           }
@@ -3690,8 +3705,8 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       return {
-        blueprint,
-        scopeData
+        blueprint: Object.assign(blueprint, componentBlueprint),
+        scopeData: componentScope
       };
     },
 
@@ -3782,6 +3797,7 @@ Galaxy.View = /** @class */(function (G) {
         const keys = objKeys(component.blueprint);
         const needInitKeys = [];
         const viewNode = new G.View.ViewNode(component.blueprint, parent, _this, component.scopeData);
+        parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
@@ -3793,7 +3809,6 @@ Galaxy.View = /** @class */(function (G) {
 
           needInitKeys.push(propertyKey);
         }
-        parent.registerChild(viewNode, position);
 
         // Value assignment stage
         for (i = 0, len = needInitKeys.length; i < len; i++) {
@@ -4807,13 +4822,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     });
     _this.rendered.resolved = false;
 
-    _this.inserted = new Promise(function (done) {
-      _this.hasBeenInserted = function () {
-        _this.inserted.resolved = true;
-        done();
-      };
-    });
-    _this.inserted.resolved = false;
+    // _this.inserted = new Promise(function (done) {
+    //   _this.hasBeenInserted = function () {
+    //     _this.inserted.resolved = true;
+    //     done();
+    //   };
+    // });
+    // _this.inserted.resolved = false;
 
     _this.destroyed = new Promise(function (done) {
       _this.hasBeenDestroyed = function () {
@@ -4874,7 +4889,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     virtualize: function () {
-      this.placeholder.nodeValue = JSON.stringify(this.blueprint, null, 2);
+      this.placeholder.nodeValue = JSON.stringify(this.blueprint, (k, v) => {
+        return k === 'children' ? '<children>' : v;
+      }, 2);
       this.virtual = true;
       this.setInDOM(false);
     },
@@ -4926,7 +4943,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           remove_child(_this.placeholder.parentNode, _this.placeholder);
         }
 
-        _this.hasBeenInserted();
+        // _this.hasBeenInserted();
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
           _this.populateEnterSequence();
@@ -5846,42 +5863,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
-  G.View.REACTIVE_BEHAVIORS['content'] = true;
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['content'] = {
-    type: 'reactive',
-    key: 'content',
-    getConfig: function () {
-      this.virtualize();
-      return {
-        module: null
-      };
-    },
-    install: function (data) {
-      return false;
-    },
-    update: function (cache, selector, expression) {
-      // if (scope.element.blueprint.children && scope.element.blueprint.hasOwnProperty('module')) {
-      //   // this.domManipulationSequence.next(function (done) {
-      //   let allContent = scope.element.blueprint.children;
-      //   let parentViewNode = this.parent;
-      //   allContent.forEach(function (content) {
-      //     if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
-      //       content.__node__.galaxyViewNode.refreshBinds(scope);
-      //       parentViewNode.registerChild(content.__node__.galaxyViewNode, this.placeholder);
-      //       content.__node__.galaxyViewNode.setInDOM(true);
-      //     }
-      //   });
-      //
-      //   // done();
-      //   // });
-      // }
-    }
-  };
-})(Galaxy);
-
-
-/* global Galaxy */
-(function (G) {
   /**
    *
    * @type {Galaxy.View.BlueprintProperty}
@@ -5930,11 +5911,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param expression
      */
     update: function (config, value, expression) {
-      // if (config.throttleId) {
-      //   window.cancelAnimationFrame(config.throttleId);
-      //   config.throttleId = 0;
-      // }
-
       const viewNode = this;
       if (expression) {
         value = expression();
