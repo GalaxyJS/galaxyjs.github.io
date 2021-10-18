@@ -28,9 +28,9 @@ view.blueprint([
   },
   {
     tag: 'p',
-    text: 'This paragraph has _if',
-    _if: '<>data.condition',
-    _animations: {
+    text: 'This paragraph has if',
+    if: '<>data.condition',
+    animations: {
       enter: {
         from: {
           opacity: 0,

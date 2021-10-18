@@ -23,7 +23,7 @@ const promise2 = new Promise((resolve) => {
 view.blueprint([
   {
     class: 'card big anime',
-    _animations: {
+    animations: {
       enter: {
         timeline: 'card',
         from: {
@@ -62,7 +62,7 @@ view.blueprint([
         children: [
           {
             class: 'example-box',
-            _module: {
+            module: {
               path: './first-animation.example.js'
             }
           },
@@ -108,7 +108,7 @@ view.blueprint([
         class: 'content dots-animation',
         children: [
           {
-            _animations: {
+            animations: {
               enter: {
                 addTo: 'card',
                 timeline: 'dots',
@@ -126,7 +126,7 @@ view.blueprint([
           },
           view.enterKeyframe('dots', .2),
           {
-            _animations: {
+            animations: {
               enter: {
                 await: promise1,
                 timeline: 'dots',
@@ -144,7 +144,7 @@ view.blueprint([
             text: ':Resolved'
           },
           {
-            _animations: {
+            animations: {
               enter: {
                 timeline: 'dots',
                 from: {
@@ -158,12 +158,12 @@ view.blueprint([
               }
             },
             class: 'dot',
-            _repeat: {
+            repeat: {
               data: '<>data.dots'
             }
           },
           {
-            _animations: {
+            animations: {
               enter: {
                 timeline: 'dots',
                 from: {
@@ -181,7 +181,7 @@ view.blueprint([
           },
           view.enterKeyframe('dots', .2),
           {
-            _animations: {
+            animations: {
               enter: {
                 await: promise2,
                 timeline: 'dots',
@@ -199,7 +199,7 @@ view.blueprint([
             text: ':Resolved'
           },
           {
-            _animations: {
+            animations: {
               enter: {
                 timeline: 'dots',
                 from: {
@@ -219,7 +219,7 @@ view.blueprint([
               backgroundColor: 'lightblue'
             },
             class: 'dot',
-            _repeat: {
+            repeat: {
               data: '<>data.dots'
             }
           }

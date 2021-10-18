@@ -12,10 +12,10 @@ view.blueprint([
     text: 'b'
   },
   {
-    _module: {
+    module: {
       path: './mod-c.js'
     },
-    _data: {
+    data: {
       title: 'Mod C'
     }
   },

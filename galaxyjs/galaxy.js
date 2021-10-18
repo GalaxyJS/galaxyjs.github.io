@@ -2242,18 +2242,12 @@ Galaxy.Scope = /** @class */ (function () {
     _this.uri = new Galaxy.GalaxyURI(module.path);
     _this.eventHandlers = {};
     _this.observers = [];
-    // _this.data = _this.element ? _this.element.data ? Object.assign({}, _this.element.data) : {} : {};
-    // _this.data = _this.element ? _this.element.data || {} : {};
-    // _this.data = {};
-    let inputs = {};
-    if (_this.element.data) {
-      inputs = Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true);
-    }
+    const _data = _this.element.data ? Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true) : {};
     defProp(_this, 'data', {
       enumerable: true,
       configurable: true,
       get: function () {
-        return inputs;
+        return _data;
       }
     });
 
@@ -2264,7 +2258,7 @@ Galaxy.Scope = /** @class */ (function () {
       configurable: false
     });
 
-    _this.on('module.destroy', this.destroy.bind(this));
+    _this.on('module.destroy', this.destroy.bind(_this));
   }
 
   Scope.prototype = {
@@ -2753,7 +2747,7 @@ Galaxy.View = /** @class */(function (G) {
    */
 
   View.REACTIVE_BEHAVIORS = {
-    _data: true
+    data: true
   };
 
   View.COMPONENTS = {};
@@ -2765,7 +2759,7 @@ Galaxy.View = /** @class */(function (G) {
     tag: {
       type: 'none'
     },
-    _props: {
+    props: {
       type: 'none'
     },
     children: {
@@ -2779,7 +2773,7 @@ Galaxy.View = /** @class */(function (G) {
       type: 'none',
       key: 'data',
     },
-    data: {
+    dataset: {
       type: 'prop',
       update: (vn, value) => {
         if (typeof value === 'object' && value !== null) {
@@ -2793,12 +2787,12 @@ Galaxy.View = /** @class */(function (G) {
       type: 'prop',
       key: 'innerHTML'
     },
-    _data: {
+    data: {
       type: 'reactive',
-      key: '_data',
+      key: 'data',
       getConfig: function (scope, value) {
         if (value !== null && (typeof value !== 'object' || value instanceof Array)) {
-          throw new Error('_data property should be an object with explicits keys:\n' + JSON.stringify(this.blueprint, null, '  '));
+          throw new Error('data property should be an object with explicits keys:\n' + JSON.stringify(this.blueprint, null, '  '));
         }
 
         return {
@@ -3435,8 +3429,8 @@ Galaxy.View = /** @class */(function (G) {
       } else if (childPropertyKeyPath) {
         reactiveData = new G.View.ReactiveData(propertyKey, null, hostReactiveData);
       } else if (hostReactiveData) {
-        // if the propertyKey is used for a _repeat reactive property, then we assume its type is Array.
-        hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === '_repeat');
+        // if the propertyKey is used for a repeat reactive property, then we assume its type is Array.
+        hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === 'repeat');
       }
 
       if (childPropertyKeyPath === null) {
@@ -3692,8 +3686,8 @@ Galaxy.View = /** @class */(function (G) {
       if (key) {
         if (key in this._components) {
           componentScope = View.createChildScope(scopeData);
-          Object.assign(componentScope, blueprint._props || {});
-          // componentScope.props = View.bindSubjectsToData(null, blueprint._props || {}, scopeData, true);
+          Object.assign(componentScope, blueprint.props || {});
+          // componentScope.props = View.bindSubjectsToData(null, blueprint.props || {}, scopeData, true);
           View.bindSubjectsToData(null, componentScope, scopeData);
           componentBlueprint = this._components[key].call(null, blueprint, componentScope, this);
           if (blueprint instanceof Array) {
@@ -3720,7 +3714,7 @@ Galaxy.View = /** @class */(function (G) {
       return {
         tag: 'comment',
         text: 'keyframe:enter',
-        _animations: {
+        animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
             timeline,
@@ -3733,7 +3727,7 @@ Galaxy.View = /** @class */(function (G) {
       return {
         tag: 'comment',
         text: 'keyframe:leave',
-        _animations: {
+        animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
             timeline,
@@ -5010,7 +5004,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       GV.activatePropertyForNode(this, propertyKey, reactiveData, expression);
     },
 
-    snapshot: function (_animations) {
+    snapshot: function (animations) {
       const rect = this.node.getBoundingClientRect();
       const node = this.node.cloneNode(true);
       const style = {
@@ -5060,7 +5054,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
           // Children with leave animation should not get removed from dom for visual purposes.
           // Since their this node already has a leave animation and eventually will be removed from dom.
-          // this is not the case for when this node is being detached by _if
+          // this is not the case for when this node is being detached by if
           // const children = _this.getChildNodes();
           for (let i = 0, len = children.length; i < len; i++) {
             children[i].onLeaveComplete = EMPTY_CALL;
@@ -5154,9 +5148,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 /* global Galaxy, gsap */
 (function (G) {
   if (!window.gsap) {
-    G.View.NODE_BLUEPRINT_PROPERTY_MAP['_animations'] = {
+    G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
       type: 'prop',
-      key: '_animations',
+      key: 'animations',
       /**
        *
        * @param {Galaxy.View.ViewNode} viewNode
@@ -5223,16 +5217,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     if (!viewNode.parent) return false;
 
     const parent = viewNode.parent;
-    if (parent.blueprint._animations && parent.blueprint._animations.enter && gsap.getTweensOf(parent.node).length) {
+    if (parent.blueprint.animations && parent.blueprint.animations.enter && gsap.getTweensOf(parent.node).length) {
       return true;
     }
 
     return hasParentEnterAnimation(viewNode.parent);
   }
 
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['_animations'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
     type: 'prop',
-    key: '_animations',
+    key: 'animations',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -5271,9 +5265,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       const leave = value.leave;
       if (leave) {
-        // We need an empty enter animation in order to have a proper behavior for _if
-        if (!enter && viewNode.blueprint._if) {
-          console.warn('The following node has `_if` and a `leave` animation but does NOT have a `enter` animation.' +
+        // We need an empty enter animation in order to have a proper behavior for if
+        if (!enter && viewNode.blueprint.if) {
+          console.warn('The following node has `if` and a `leave` animation but does NOT have a `enter` animation.' +
             '\nThis can result in unexpected UI behavior.\nTry to define a `enter` animation that negates the leave animation to prevent unexpected behavior\n\n');
           console.warn(viewNode.node);
         }
@@ -5296,7 +5290,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             const parent = this.parent;
             if (parent.transitory) {
               // We dump this _viewNode so it gets removed when the leave's animation's origin node is detached.
-              // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a _if
+              // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a if
               return this.dump();
             }
           }
@@ -5891,10 +5885,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
-  G.View.REACTIVE_BEHAVIORS['_if'] = true;
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['_if'] = {
+  G.View.REACTIVE_BEHAVIORS['if'] = true;
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['if'] = {
     type: 'reactive',
-    key: '_if',
+    key: 'if',
     getConfig: function () {
       return {
         throttleId: null,
@@ -5933,10 +5927,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 /* global Galaxy */
 (function (G) {
-  G.View.REACTIVE_BEHAVIORS['_module'] = true;
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['_module'] = {
+  G.View.REACTIVE_BEHAVIORS['module'] = true;
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
-    key: '_module',
+    key: 'module',
     getConfig: function (scope) {
       return {
         module: null,
@@ -5959,7 +5953,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (typeof newModuleMeta !== 'object') {
-        return console.error('_module property only accept objects as value', newModuleMeta);
+        return console.error('module property only accept objects as value', newModuleMeta);
       }
 
       if (newModuleMeta && config.moduleMeta && newModuleMeta.path === config.moduleMeta.path) {
@@ -6012,7 +6006,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     let currentScope = cache.scope;
 
     while (moduleScope) {
-      // In the case where module is a part of _repeat, cache.scope will be NOT an instance of Scope
+      // In the case where module is a part of repeat, cache.scope will be NOT an instance of Scope
       // but its __parent__ is
       if (!(currentScope instanceof G.Scope)) {
         currentScope = new G.Scope({
@@ -6078,10 +6072,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const CLONE = G.clone;
   const DESTROY_NODES = G.View.DESTROY_NODES;
 
-  View.REACTIVE_BEHAVIORS['_repeat'] = true;
-  View.NODE_BLUEPRINT_PROPERTY_MAP['_repeat'] = {
+  View.REACTIVE_BEHAVIORS['repeat'] = true;
+  View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
     type: 'reactive',
-    key: '_repeat',
+    key: 'repeat',
     getConfig: function (scope, value) {
       this.virtualize();
 
@@ -6109,14 +6103,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       if (config.data) {
         if (config.as === 'data') {
-          throw new Error('`data` is an invalid value for _repeat.as property. Please choose a different value.`');
+          throw new Error('`data` is an invalid value for repeat.as property. Please choose a different value.`');
         }
         viewNode.localPropertyNames.add(config.as);
         viewNode.localPropertyNames.add(config.indexAs);
 
         const bindings = View.getBindings(config.data);
         if (bindings.propertyKeys.length) {
-          View.makeBinding(viewNode, '_repeat', undefined, config.scope, bindings, viewNode);
+          View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeys.forEach((path) => {
             try {
               const rd = View.propertyRDLookup(config.scope, path);
@@ -6128,7 +6122,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
             }
           });
         } else if (config.data instanceof Array) {
-          const setter = viewNode.setters['_repeat'] = View.getPropertySetterForNode(G.View.NODE_BLUEPRINT_PROPERTY_MAP['_repeat'], viewNode, config.data, null, config.scope);
+          const setter = viewNode.setters['repeat'] = View.getPropertySetterForNode(G.View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'], viewNode, config.data, null, config.scope);
           const value = new G.View.ArrayChange();
           value.params = config.data;
           config.data.changes = value;
@@ -6178,7 +6172,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
         // if (!(changes instanceof Galaxy.View.ArrayChange)) {
         //   debugger;
-        //   throw new Error('_repeat: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
+        //   throw new Error('repeat: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         // }
       } else {
         if (value instanceof G.View.ArrayChange) {
@@ -6195,7 +6189,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (changes && !(changes instanceof G.View.ArrayChange)) {
-        return console.warn('%c_repeat %cdata is not a type of ArrayChange' +
+        return console.warn('%crepeat %cdata is not a type of ArrayChange' +
           '\ndata: ' + config.data +
           '\n%ctry \'' + config.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
@@ -6220,7 +6214,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       config.changeId = changes.id;
       config.oldChanges = changes;
-      // if(node.blueprint._animations && node.blueprint._animations.enter && node.blueprint._animations.enter.timeline === 'dots')debugger;
+      // if(node.blueprint.animations && node.blueprint.animations.enter && node.blueprint.animations.enter.timeline === 'dots')debugger;
       // node.index;
       //  config.previousActionId = requestAnimationFrame(() => {
       //   prepareChanges(node, config, changes).then(finalChanges => {
@@ -6232,7 +6226,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   };
 
   function prepareChanges(viewNode, config, changes) {
-    const hasAnimation = viewNode.blueprint._animations && viewNode.blueprint._animations.leave;
+    const hasAnimation = viewNode.blueprint.animations && viewNode.blueprint.animations.leave;
     const trackByKey = config.trackBy;
     if (trackByKey && changes.type === 'reset') {
       let newTrackMap;
@@ -6297,7 +6291,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const nodes = config.nodes;
     const trackByKey = config.trackBy;
     const templateBlueprint = viewNode.cloneBlueprint();
-    Reflect.deleteProperty(templateBlueprint, '_repeat');
+    Reflect.deleteProperty(templateBlueprint, 'repeat');
 
     let defaultPosition = nodes.length ? nodes[nodes.length - 1].anchor.nextSibling : viewNode.placeholder.nextSibling;
     let newItems = [];
@@ -6336,7 +6330,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     } else if (changes.type === 'splice') {
       const changeParams = changes.params.slice(0, 2);
       const removedItems = Array.prototype.splice.apply(nodes, changeParams);
-      DESTROY_NODES(removedItems.reverse(), viewNode.blueprint._animations && viewNode.blueprint._animations.leave);
+      DESTROY_NODES(removedItems.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
       Array.prototype.splice.apply(trackMap, changeParams);
 
       const startingIndex = changes.params[0];
@@ -6920,7 +6914,7 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.viewports = {
       main: {
         tag: 'main',
-        _module: '<>router.activeModule'
+        module: '<>router.activeModule'
       }
     };
 
@@ -6950,7 +6944,7 @@ Galaxy.Router = /** @class */ (function (G) {
 
           this.viewports[vp] = {
             tag: 'div',
-            _module: '<>router.viewports.' + vp
+            module: '<>router.viewports.' + vp
           };
         });
       });

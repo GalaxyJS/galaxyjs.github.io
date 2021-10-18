@@ -30,12 +30,12 @@ view.blueprint([
   {
     children: {
       tag: 'p',
-      _repeat: {
+      repeat: {
         data: '<>data.list',
         as: 'iitem'
       },
       text: '<>iitem.title',
-      _if: '<>data.con'
+      if: '<>data.con'
     }
   }
 ]);

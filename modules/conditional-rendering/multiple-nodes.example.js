@@ -58,33 +58,33 @@ view.blueprint([
   {
     tag: 'p',
     text: 'Item 1',
-    _animations: itemAnimations,
-    _if: '<>data.conditionForMultiple'
+    animations: itemAnimations,
+    if: '<>data.conditionForMultiple'
 
   },
   {
     tag: 'p',
     text: 'Item 2',
-    _animations: itemAnimations,
-    _if: '<>data.conditionForMultiple'
+    animations: itemAnimations,
+    if: '<>data.conditionForMultiple'
 
   },
   {
     tag: 'p',
     text: 'Item 3',
-    _animations: itemAnimations,
-    _if: '<>data.conditionForMultiple'
+    animations: itemAnimations,
+    if: '<>data.conditionForMultiple'
   },
   {
     tag: 'p',
     text: 'Item 4',
-    _animations: itemAnimations,
-    _if: '<>data.conditionForMultiple'
+    animations: itemAnimations,
+    if: '<>data.conditionForMultiple'
   },
   {
     tag: 'p',
     text: 'Item 5',
-    _animations: itemAnimations,
-    _if: '<>data.conditionForMultiple'
+    animations: itemAnimations,
+    if: '<>data.conditionForMultiple'
   }
 ]);

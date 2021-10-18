@@ -51,7 +51,7 @@ router.setup([
 
 view.blueprint({
   class: 'card big',
-  _animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'img',
@@ -201,7 +201,7 @@ view.blueprint({
           tag: 'ul',
           class: 'circle',
           children: {
-            _repeat: {
+            repeat: {
               data: (array = '<>data.citiesList.changes') => {
                 console.info('\n%O \nType of change is %c%s%c \nparameters: %o \n', array, 'color: orange', array.type, 'color: unset', array.params);
                 return array;
@@ -258,7 +258,7 @@ view.blueprint({
         '<p>Sometimes you might want to manipulate a bound value before it\'s rendered. To do this you need a computed bind.</p>',
         '<p>A computed bind is basically a function that watches the properties you specify for it and gets called anytime any of those properties changes.</p>',
         {
-          _module: {
+          module: {
             path: './inline-computed-bind.example.js'
           }
         },
@@ -271,7 +271,7 @@ view.blueprint({
 
         '<p>For higher code quality we suggest that instead of using inline compute syntax, you use function variable. Here is an example:</p>',
         {
-          _module: {
+          module: {
             path: './variable-computed-bind.example.js'
           }
         },
@@ -289,7 +289,7 @@ view.blueprint({
         },
         '<p>The <code class="prettyprint lang-js">class</code> and <code class="prettyprint lang-js">style</code> property support variety of types like string, array, object and literal object.</p>',
         {
-          _module: {
+          module: {
             path: './class-and-style.example.js'
           }
         },
@@ -305,19 +305,19 @@ view.blueprint({
           id: 'inputs-property',
           text: 'Inputs property'
         },
-        '<p>The <code class="prettyprint lang-js">_data</code> property can be used to send data to a module. This property only accepts a literal object as input.</p>',
+        '<p>The <code class="prettyprint lang-js">data</code> property can be used to send data to a module. This property only accepts a literal object as input.</p>',
         {
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
           text: moduleWithInputsExample
         },
-        '<p>You can access the _data properties from within the context of a module via <code class="prettyprint lang-js">Scope.inputs</code></p>',
+        '<p>You can access the data properties from within the context of a module via <code class="prettyprint lang-js">Scope.inputs</code></p>',
         {
-          _data: {
+          data: {
             fromParent: 'This is a message from parent module!'
           },
-          _module: {
+          module: {
             path: './view-node-inputs.example.js'
           }
         },
@@ -337,7 +337,7 @@ view.blueprint({
           text: valuePropertyExample
         },
         {
-          _module: {
+          module: {
             path: './value-property.example.js'
           }
         },

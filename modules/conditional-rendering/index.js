@@ -2,14 +2,10 @@ const animations = Scope.import('services/animations.js');
 const view = Scope.import('galaxy/view');
 const expandable = Scope.import('services/expandable.js');
 
-const singleNodeExample = Scope.importAsText('./single-node.example.js');
-const multipleNodesExample = Scope.importAsText('./multiple-nodes.example.js');
-const listExample = Scope.importAsText('./list.example.js');
-
 view.blueprint({
   tag: 'div',
   class: 'card big',
-  _animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -21,7 +17,7 @@ view.blueprint({
         },
         {
           tag: 'p',
-          html: 'With <strong>_if</strong> you can specify presence of the element inside dom based on a condition.'
+          html: 'With <strong>if</strong> you can specify presence of the element inside dom based on a condition.'
         },
         {
           tag: 'p',
@@ -32,13 +28,12 @@ view.blueprint({
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          text: singleNodeExample,
+          text: Scope.importAsText('./single-node.example.js'),
           expandable: expandable
         },
-        // '<pre class="prettyprint lang-js">' + singleNodeExample + '</pre>',
         {
           class: 'example-box',
-          _module: {
+          module: {
             id: 'single-node-example',
             path: './single-node.example.js'
           },
@@ -57,13 +52,12 @@ view.blueprint({
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          text: multipleNodesExample,
+          text: Scope.importAsText('./multiple-nodes.example.js'),
           expandable: expandable
         },
-        // '<pre class="prettyprint lang-js">' + multipleNodesExample + '</pre>',
         {
           class: 'example-box',
-          _module: {
+          module: {
             id: 'multiple-nodes-example',
             path: './multiple-nodes.example.js'
           },
@@ -74,18 +68,18 @@ view.blueprint({
         {
           tag: 'pre',
           class: 'prettyprint lang-js',
-          text: listExample,
+          text: Scope.importAsText('./list.example.js'),
           expandable: expandable
         },
         {
           class: 'example-box',
-          _module: {
+          module: {
             id: 'list-example',
             path: './list.example.js'
           },
         },
         '<h2>Rendering Bahvior</h2>' +
-        '<p>The way <strong>_if</strong> handles DOM manipulation is important to be understood. ' +
+        '<p>The way <strong>if</strong> handles DOM manipulation is important to be understood. ' +
         'When condition is false, then the element will be detached from DOM and upon true ' +
         'the same element will be reattached to the DOM</p>'
       ]

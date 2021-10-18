@@ -1,14 +1,6 @@
-/* globals Scope, Promise, PR */
 const view = Scope.import('galaxy/view');
 const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
-const navService = Scope.import('services/navigation.js');
-const scrollToRouter = Scope.import('services/scroll-to-router.js');
-
-const startFromScratchExample = Scope.importAsText('./start-from-scratch.example.html');
-const galaxyModuleExample = Scope.importAsText('./galaxy-module.example.js');
-const helloWorldExample = Scope.importAsText('./hello-world.example.js');
-const divExample = Scope.importAsText('./div.example.js');
 
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
@@ -48,7 +40,7 @@ router.setup([
 view.blueprint([
   {
     class: 'card big',
-    _animations: animations.cardInOut,
+    animations: animations.cardInOut,
     children: [
       {
         tag: 'img',
@@ -85,7 +77,7 @@ view.blueprint([
               '| |-services \n' +
               '| |-index.html\n' +
               '|\n' +
-              '|-node_modules\n' +
+              '|-nodemodules\n' +
               '|-package.json'
           },
           '<p>Too lazy to do it yourself!? Here... clone the following repository 😉</p>',
@@ -105,7 +97,7 @@ view.blueprint([
           {
             tag: 'pre',
             class: 'prettyprint lang-html',
-            text: startFromScratchExample
+            text: Scope.importAsText('./start-from-scratch.example.html')
           },
           '<h3>Main module</h3>' +
           '<p>Add this code into the <code class="prettyprint">app/modules/index.js</code></p>',
@@ -148,7 +140,7 @@ view.blueprint([
           {
             tag: 'pre',
             class: 'prettyprint lang-js',
-            text: galaxyModuleExample
+            text: Scope.importAsText('./galaxy-module.example.js')
           },
           '<h2 id="ui-creation">UI Creation</h2>',
           '<h3>Modules</h3>',
@@ -161,14 +153,14 @@ view.blueprint([
           {
             tag: 'pre',
             class: 'prettyprint lang-js',
-            text: helloWorldExample
+            text: Scope.importAsText('./hello-world.example.js')
           },
           '<p>In the above code we started by importing <code class="prettyprint">\'galaxy/view\'</code> service which we can use to create UI blocks.</p>',
           '<p><code class="prettyprint">view.blueprint()</code> accepts an array or object which is the blueprint of ' +
           'our UI block. In this case a <strong>p</strong> tag with <strong>Hello World!</strong> as its text.</p>',
           {
             class: 'example-box',
-            _module: {
+            module: {
               path: './hello-world.example.js'
             }
           },
@@ -176,12 +168,12 @@ view.blueprint([
           {
             tag: 'pre',
             class: 'prettyprint lang-js',
-            text: divExample
+            text: Scope.importAsText('./div.example.js')
           },
           '<p>With <code class="prettyprint">children</code> property we can add nodes to the elements that can have children.</p>',
           {
             class: 'example-box',
-            _module: {
+            module: {
               path: './div.example.js'
             }
           },
@@ -191,7 +183,7 @@ view.blueprint([
 
           '<h3>List Rendering</h3>',
           '<p style="font-size: .87em">To learn more go to <a href="/list-rendering">List Rendering</a></p>',
-          '<p>GalaxyJS provide <strong>_repeat</strong> property for list rendering. <strong>_repeat</strong> reacts to <code class="prettyprint' +
+          '<p>GalaxyJS provide <strong>repeat</strong> property for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
           ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',
           {
             tag: 'pre',
@@ -220,7 +212,7 @@ view.blueprint([
               '         view.blueprint({\n' +
               '           tag: \'ul\',\n' +
               '           children: {\n' +
-              '             _repeat: {\n' +
+              '             repeat: {\n' +
               '                // Bind to data.list property\n' +
               '                data: \'<>data.list\',\n' +
               '                // An alias for each list item\n' +

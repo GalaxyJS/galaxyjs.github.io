@@ -51,20 +51,20 @@ const checkAllButton = {
   }
 };
 
-view.components({
-  'todo-field': Scope.import('./todo-field.js')
-});
 
 Scope.data.newItem = {
   title: '',
   done: false
 };
 
+view.components({
+  'todo-field': Scope.import('./todo-field.js')
+});
 
 view.blueprint({
   tag: 'div',
   class: 'card',
-  _animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     style,
     {
@@ -114,11 +114,11 @@ view.blueprint({
           tag: 'ul',
           children: {
             tag: 'li',
-            _repeat: {
+            repeat: {
               data: '<>data.items',
               as: 'titem'
             },
-            _animations: {
+            animations: {
               enter: {
                 addTo: 'card',
                 timeline: 'todo-items',
@@ -167,11 +167,11 @@ view.blueprint({
         },
         {
           tag: 'todo-field',
-          _props: {
+          props: {
             label: 'To Do Description',
             value: '<>data.newItem',
             onConfirm: addToList
-          }
+          },
         },
         {
           class: 'fa-end',

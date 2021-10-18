@@ -107,7 +107,7 @@ view.blueprint([
       'main-nav': true,
       'expand': '<>data.expandNav'
     },
-    _animations: animations.mainNav,
+    animations: animations.mainNav,
     on: {
       click(vn) {
         if (window.innerWidth < 768) {
@@ -127,12 +127,12 @@ view.blueprint([
       },
       {
         tag: 'div',
-        _repeat: {
+        repeat: {
           data: '<>router.routes',
           as: 'nav'
         },
-        _if: (hidden = '<>nav.hidden') => !hidden,
-        _animations: {
+        if: (hidden = '<>nav.hidden') => !hidden,
+        animations: {
           enter: {
             addTo: 'card',
             timeline: 'main-nav-items',
@@ -173,7 +173,7 @@ view.blueprint([
             ]
           },
           {
-            _animations: {
+            animations: {
               enter: {
                 withParent: true,
                 timeline: 'card',
@@ -199,13 +199,13 @@ view.blueprint([
                 position: '-=.3'
               }
             },
-            _if: function (navPath = '<>nav.path', activeRoutePath = '<>router.activeRoute.path', length = '<>router.activeRoute.children.length') {
+            if: function (navPath = '<>nav.path', activeRoutePath = '<>router.activeRoute.path', length = '<>router.activeRoute.children.length') {
               // console.log(navPath, activeRoutePath, length)
               return navPath === activeRoutePath && length;
             },
             class: 'sub-nav-container',
             children: {
-              _repeat: {
+              repeat: {
                 as: 'subNav',
                 data: function (navPath = '<>nav.path', activeRoutePath = '<>router.activeRoute.path', childRoutes = '<>router.activeRoute.children') {
                   if (navPath === activeRoutePath) {
@@ -216,7 +216,7 @@ view.blueprint([
                 },
                 trackBy: 'path'
               },
-              _animations: {
+              animations: {
                 leave: {
                   withParent: true
                 }
@@ -246,7 +246,7 @@ view.blueprint([
     children: [
       {
         ...router.viewports.main,
-        _data: {
+        data: {
           items: '<>data.todos'
         },
         on: {

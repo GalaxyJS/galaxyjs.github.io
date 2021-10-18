@@ -14,7 +14,7 @@ view.clean();
 view.blueprint([
   {
     tag: 'app-article',
-    _props: {
+    props: {
       title: 'test',
       text: 'Wassuuuuuuuuduup!!!'
     }
@@ -24,7 +24,7 @@ view.blueprint([
     text: '<>data.scopeTitle'
   },
   // {
-  //   _module: {
+  //   module: {
   //     path: 'modules/learn/index.js'
   //   }
   // }

@@ -65,7 +65,7 @@ const emptyButton = {
 view.blueprint({
   tag: 'div',
   class: 'card big',
-  _animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -75,8 +75,8 @@ view.blueprint({
           tag: 'h1',
           text: 'List Rendering'
         },
-        '<p>We can use the <strong>_repeat</strong> property to render a list of items based on an array.</p>',
-        '<p><strong>_repeat</strong> uses the <code class="prettyprint lang-js">changes</code> property of the bound array to render the' +
+        '<p>We can use the <strong>repeat</strong> property to render a list of items based on an array.</p>',
+        '<p><strong>repeat</strong> uses the <code class="prettyprint lang-js">changes</code> property of the bound array to render the' +
         ' content.</p>',
         '<p><code class="prettyprint lang-js">changes</code> is reactive property that is being added to arrays by GalaxyJS' +
         ' and it\'s instance of ArrayChange. </p>',
@@ -89,7 +89,7 @@ view.blueprint({
         },
         {
           class: 'example-box',
-          _module: {
+          module: {
             path: './simple-list.example.js'
           },
         },
@@ -129,9 +129,9 @@ view.blueprint({
                   children: [
                     {
                       tag: 'li',
-                      _animations: itemAnimations,
+                      animations: itemAnimations,
                       class: 'flex-row',
-                      _repeat: {
+                      repeat: {
                         data: '<>data.capitals',
                         as: 'item'
                       },
@@ -148,8 +148,8 @@ view.blueprint({
                   tag: 'ul',
                   children: [
                     {
-                      _animations: itemAnimations,
-                      _repeat: {
+                      animations: itemAnimations,
+                      repeat: {
                         data: '<>data.countries',
                         as: 'item2'
                       },

@@ -7,7 +7,7 @@ view.blueprint([
   //   text: '<>data'
   // },
   {
-    _animations: {
+    animations: {
       enter: {
         withParent: true,
         from: {
@@ -20,7 +20,7 @@ view.blueprint([
       }
     },
     tag: 'p',
-    _repeat: {
+    repeat: {
       data: '<>data.capitals', // You can also use '<>data.list.changes' if you wish to bind to ArrayChange property
       as: 'item',
       trackBy: true

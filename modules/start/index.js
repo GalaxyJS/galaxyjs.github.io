@@ -5,7 +5,7 @@ Scope.data.myValue = 10;
 
 view.blueprint({
   class: 'card big',
-  _animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'img',

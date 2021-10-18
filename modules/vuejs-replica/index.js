@@ -14,7 +14,7 @@ console.log(data);
 view.blueprint({
   tag: 'div',
   class: 'card',
-  _animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     {
       tag: 'section',
@@ -36,7 +36,7 @@ view.blueprint({
             {
               tag: 'li',
               class: 'flex-row',
-              _repeat: {
+              repeat: {
                 data: '<>data.products',
                 as: 'product'
               },
@@ -53,7 +53,7 @@ view.blueprint({
                   class: 'flex-item-50',
                   text: '<>product.title',
                   children: {
-                    _animations: {
+                    animations: {
                       leave: {
                         timeline: 'DESTROY',
                         to: {
@@ -81,7 +81,7 @@ view.blueprint({
                   tag: 'button',
                   class: 'flex-item-al',
                   text: 'Add',
-                  _data: {
+                  data: {
                     product: '<>product'
                   },
                   on: {

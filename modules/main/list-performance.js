@@ -46,7 +46,7 @@ view.blueprint([
       },
       {
         tag: 'p',
-        _repeat: {
+        repeat: {
           data: '<>data.list',
           as: 'iitem'
         },

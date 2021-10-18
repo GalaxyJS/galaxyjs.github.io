@@ -30,8 +30,8 @@ view.blueprint([
     ]
   },
   {
-    _if: '<>data.conditionForList',
-    _animations: {
+    if: '<>data.conditionForList',
+    animations: {
       enter: {
         to: {
           opacity: 1,
@@ -50,7 +50,7 @@ view.blueprint([
     children: [
       {
         tag: 'p',
-        _animations: {
+        animations: {
           enter: {
             from: {
               opacity: 0,
@@ -72,7 +72,7 @@ view.blueprint([
             duration: .3
           }
         },
-        _repeat: {
+        repeat: {
           data: ['first', 'Second', 'third'],
           as: 'item'
         },

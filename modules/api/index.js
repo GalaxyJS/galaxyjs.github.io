@@ -108,7 +108,7 @@ router.setup([
 view.blueprint({
   tag: 'div',
   class: 'card big',
-  _animations: animations.cardInOut,
+  animations: animations.cardInOut,
   children: [
     style,
     {
@@ -135,7 +135,7 @@ view.blueprint({
           children: [
             {
               tag: 'li',
-              _repeat: {
+              repeat: {
                 as: 'doc',
                 data: '<>data.api.scope'
               },
@@ -173,7 +173,7 @@ view.blueprint({
           children: [
             {
               tag: 'li',
-              _repeat: {
+              repeat: {
                 as: 'doc',
                 data: '<>data.api.view'
               },

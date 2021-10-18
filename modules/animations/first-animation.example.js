@@ -27,7 +27,7 @@ view.blueprint([
       style: {
         width: '67px',
       },
-      _animations: {
+      animations: {
         enter: {
           addTo: 'card',
           timeline: 'boxes',
@@ -56,7 +56,7 @@ view.blueprint([
         }
       },
       class: 'box',
-      _repeat: {
+      repeat: {
         data: '<>data.boxes',
         as: 'item'
       },
