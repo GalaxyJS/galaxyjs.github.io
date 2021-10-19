@@ -12,6 +12,12 @@ const ToDoService = {
     if (newItem.title) {
       this.data.push(newItem);
     }
+  },
+  remove: function (item) {
+    const index = this.data.indexOf(item);
+    if (index !== -1) {
+      this.data.splice(index, 1);
+    }
   }
 };
 
@@ -21,6 +27,10 @@ function addToList() {
     title: '',
     done: false
   };
+}
+
+function removeFromList(item) {
+  ToDoService.remove(item);
 }
 
 function calculateDuration() {
@@ -116,7 +126,7 @@ view.blueprint({
             tag: 'li',
             repeat: {
               data: '<>data.items',
-              as: 'titem'
+              as: 'toDoItem'
             },
             animations: {
               enter: {
@@ -135,16 +145,18 @@ view.blueprint({
                 withParent: true,
                 timeline: 'card',
                 to: {
-                  opacity: 0,
-                  y: -15,
-                  x: -15
+                  height: 0,
+                  paddingTop: 0,
+                  paddingBottom: 0,
+                  marginTop: 0,
+                  marginBottom: 0
                 },
                 position: '-=.1',
-                duration: .15
+                duration: .25
               }
             },
             class: {
-              done: '<>titem.done',
+              done: '<>toDoItem.done',
               test: true
             },
 
@@ -155,11 +167,21 @@ view.blueprint({
                 {
                   tag: 'input',
                   type: 'checkbox',
-                  checked: '<>titem.done'
+                  checked: '<>toDoItem.done'
                 },
                 {
                   tag: 'span',
-                  text: '<>titem.title'
+                  text: '<>toDoItem.title'
+                },
+                {
+                  tag: 'button',
+                  class: 'red',
+                  html: '<span>Remove</span><i class="fas fa-trash-alt"></i>',
+                  on: {
+                    click() {
+                      removeFromList(this.data.toDoItem);
+                    }
+                  }
                 }
               ]
             }

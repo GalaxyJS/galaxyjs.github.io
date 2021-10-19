@@ -168,7 +168,9 @@ view.blueprint([
               },
               {
                 tag: 'span',
-                text: '<>nav.title'
+                html: (data, title = '<>nav.title') => {
+                  return title ? title.replaceAll('- Demo', '<strong>DEMO</strong>') : '';
+                }
               }
             ]
           },

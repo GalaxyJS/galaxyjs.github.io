@@ -266,6 +266,15 @@ p.important {
   display: inline-block;
 }
 
+.nav-item > a > span > strong {
+  background-color: #9bc;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 14px;
+  margin-left: 10px;
+  font-size: .85em;
+}
+
 .nav-item.active > a {
   color: #16a7e0;
   /*color: #333;*/
@@ -437,8 +446,8 @@ p.important {
 }
 
 ul {
-  padding: 0;
-  margin: 15px 0;
+  padding: 15px 0;
+  margin: 0 ;
 }
 
 ul > li {
@@ -475,6 +484,13 @@ label.checkbox {
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+
+label.checkbox > button {
+  margin-left: auto;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: bold;
 }
 
 ul.circle > li {
@@ -870,6 +886,23 @@ button:disabled {
 button:disabled:hover {
   color: #666;
   /*border-color: transparent;*/
+}
+
+button > i:last-child {
+  margin-left: 4px;
+}
+
+button > i:first-child {
+  margin-right: 4px;
+}
+
+button.red {
+  color: #b22;
+}
+
+button.red:active {
+  box-shadow: 0 0 6px #b22, inset 0 0 2px #b22;
+  transition-duration: 0ms;
 }
 
 .fa-end {

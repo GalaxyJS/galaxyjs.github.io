@@ -19,6 +19,10 @@ view.blueprint({
       class: 'content',
       children: [
         {
+          tag: 'p',
+          html: 'This is a replica(with improved styling) of the example app given in the <a href="https://www.youtube.com/watch?v=p1iLqZnZPdo" target="_blank"><strong>WHY VUE.JS</strong></a> video and meant for educational purposes.'
+        },
+        {
           tag: 'h1',
           text: 'VueJS Replica'
         },
@@ -66,7 +70,7 @@ view.blueprint({
                       fontWeight: 'bold',
                       marginLeft: 'auto',
                       color: (q = '<>product.quantity') => {
-                        return q < 1 ? '#aaa' : '#3a0';
+                        return q < 1 ? '#b55' : '#3a0';
                       },
                     },
                     tag: 'span',
