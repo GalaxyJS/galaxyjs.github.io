@@ -1791,7 +1791,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       _this.rootElement = bootModule.element;
 
-      bootModule.id = 'system';
+      bootModule.id = 'root';
 
       if (!_this.rootElement) {
         throw new Error('element property is mandatory');
@@ -1843,7 +1843,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           });
         }
 
-        module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+        if (!module.id) {
+          module.id = module.path.indexOf('/') === 0 ? module.path.substring(1) : module.path /*+ '-' + (new Date()).valueOf() + '-' + Math.round(performance.now())*/;
+        }
         module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
         let invokers = [module.path];
@@ -1979,7 +1981,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
           }
 
-
           const source = module.source;
           const moduleSource = typeof source === 'function' ?
             source :
@@ -2010,7 +2011,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           };
 
           // if the function is not async, output would be undefined
-          if(output) {
+          if (output) {
             output.then(proceed);
           } else {
             proceed();
@@ -2248,6 +2249,9 @@ Galaxy.Scope = /** @class */ (function () {
       configurable: true,
       get: function () {
         return _data;
+      },
+      set: function (value) {
+        Object.assign(_data, value);
       }
     });
 
@@ -2713,6 +2717,23 @@ Galaxy.View = /** @class */(function (G) {
     'xmp'
   ];
 
+  function apply_node_dataset(node, value) {
+    if (typeof value === 'object' && value !== null) {
+      const stringifyValue = {};
+      for (const key in value) {
+        const val = value[key];
+        if (typeof val === 'object') {
+          stringifyValue[key] = JSON.stringify(val);
+        } else {
+          stringifyValue[key] = val;
+        }
+      }
+      Object.assign(node.dataset, stringifyValue);
+    } else {
+      node.dataset = null;
+    }
+  }
+
   //------------------------------
 
   Array.prototype.createDataMap = function (keyPropertyName, valuePropertyName) {
@@ -2773,16 +2794,16 @@ Galaxy.View = /** @class */(function (G) {
       type: 'none',
       key: 'data',
     },
-    dataset: {
-      type: 'prop',
-      update: (vn, value) => {
-        if (typeof value === 'object' && value !== null) {
-          Object.assign(vn.node.dataset, value);
-        } else {
-          vn.node.dataset = null;
-        }
-      }
-    },
+    // dataset: {
+    //   type: 'prop',
+    //   update: (vn, value) => {
+    //     if (typeof value === 'object' && value !== null) {
+    //       Object.assign(vn.node.dataset, value);
+    //     } else {
+    //       vn.node.dataset = null;
+    //     }
+    //   }
+    // },
     html: {
       type: 'prop',
       key: 'innerHTML'
@@ -2796,23 +2817,41 @@ Galaxy.View = /** @class */(function (G) {
         }
 
         return {
+          reactiveData: null,
           subjects: value,
           scope: scope
         };
       },
       install: function (config) {
         if (config.scope.data === config.subjects) {
-          throw new Error('It is not allowed to use Scope.data as _input value');
+          throw new Error('It is not allowed to use Scope.data as data value');
         }
 
-        // if ('items' in config.subjects)
-        //   debugger
-        // this.data = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
-        Object.assign(this.data, config.subjects);
+        if (!this.blueprint.module) {
+          const node = this.node;
+          config.reactiveData = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
+          const observer = new G.Observer(config.reactiveData);
+          observer.onAll((key, value) => {
+            apply_node_dataset(node, config.reactiveData);
+          });
 
+          return;
+        }
+
+        Object.assign(this.data, config.subjects);
         return false;
       },
-      update: View.EMPTY_CALL
+      update: function (config, value, expression) {
+        if (expression) {
+          value = expression();
+        }
+
+        if (config.subjects === value) {
+          value = config.reactiveData;
+        }
+
+        apply_node_dataset(this.node, value);
+      }
     },
     onchange: {
       type: 'event'
@@ -3396,7 +3435,7 @@ Galaxy.View = /** @class */(function (G) {
         if ('__rd__' in scopeData) {
           hostReactiveData = scopeData.__rd__;
         } else {
-          hostReactiveData = new G.View.ReactiveData(null, scopeData, null);
+          hostReactiveData = new G.View.ReactiveData(null, scopeData, scopeData instanceof Galaxy.Scope ? scopeData.systemId : 'child');
         }
       }
       // When the scopeData is a childScopeData
@@ -3411,10 +3450,10 @@ Galaxy.View = /** @class */(function (G) {
         propertyKey = propertyKeyPathItems[1];
         bindings.propertyKeys = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
-        hostReactiveData = new G.View.ReactiveData('data', root.data);
+        hostReactiveData = new G.View.ReactiveData('data', root.data, 'this');
         propertyScopeData = View.propertyLookup(root.data, propertyKey);
       } else if (propertyScopeData) {
-        // Look for the property host object in scopedata hierarchy
+        // Look for the property host object in scopeData hierarchy
         propertyScopeData = View.propertyLookup(propertyScopeData, propertyKey);
       }
 
@@ -3425,7 +3464,7 @@ Galaxy.View = /** @class */(function (G) {
 
       let reactiveData;
       if (initValue instanceof Object) {
-        reactiveData = new G.View.ReactiveData(propertyKey, initValue, hostReactiveData);
+        reactiveData = new G.View.ReactiveData(propertyKey, initValue, hostReactiveData || scopeData.__scope__.__rd__);
       } else if (childPropertyKeyPath) {
         reactiveData = new G.View.ReactiveData(propertyKey, null, hostReactiveData);
       } else if (hostReactiveData) {
@@ -3505,7 +3544,7 @@ Galaxy.View = /** @class */(function (G) {
 
     let parentReactiveData;
     if (!(data instanceof G.Scope)) {
-      parentReactiveData = new G.View.ReactiveData(null, data);
+      parentReactiveData = new G.View.ReactiveData(null, data, 'BSTD');
     }
 
     for (let i = 0, len = keys.length; i < len; i++) {
@@ -3885,7 +3924,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
   const defProp = Object.defineProperty;
   const scopeBuilder = function (id) {
     return {
-      id: 'Scope',
+      id: id || 'Scope',
       shadow: {},
       data: {},
       notify: function () {
@@ -3924,9 +3963,9 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
    * @memberOf Galaxy.View
    */
   function ReactiveData(id, data, p) {
-    const parent = p || scopeBuilder();
+    const parent = p instanceof ReactiveData ? p : scopeBuilder(p);
     this.data = data;
-    this.id = parent.id + (id ? '.' + id : '.{}');
+    this.id = parent.id + (id ? '.' + id : '|Scope');
     this.keyInParent = id;
     this.nodesMap = {};
     this.parent = parent;
@@ -3936,7 +3975,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
     if (this.data && this.data.hasOwnProperty('__rd__')) {
       this.refs = this.data.__rd__.refs;
-      // if (this.id === '{Scope}.data.products') debugger;
       const refExist = this.getRefById(this.id);
       if (refExist) {
         // Sometimes an object is already reactive, but its parent is dead, meaning all references to it are lost
@@ -3960,8 +3998,8 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         }
 
         this.data = {};
-        // TODO: Don't know if this is a proper fix
         if (this.parent.data[id]) {
+          // debugger
           new ReactiveData(id, this.parent.data[id], this.parent);
         } else {
           this.parent.makeReactiveObject(this.parent.data, id, true);
@@ -4112,6 +4150,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
             if (ref.shadow[key]) {
               ref.makeKeyEnum(key);
               // setData provide downward data flow
+              // debugger
               ref.shadow[key].setData(val);
             }
           }
@@ -4382,12 +4421,14 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // if I am the original reference and the only one, then remove the __rd__
       else if (this.refs.length === 1) {
         // TODO: Should be tested as much as possible to make sure it works with no bug
+        // TODO: We either need to return the object to its original state or do nothing
         // debugger
         // delete this.data.__rd__;
-        if (this.data instanceof Array) {
-          // delete this.data.live;
-          delete this.data.changes;
-        }
+        // if (this.data instanceof Array) {
+        // delete this.data.live;
+        // delete this.data.changes;
+        // debugger
+        // }
       }
       // if I am the original reference and not the only one
       else {
@@ -4577,20 +4618,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return document.createElement(tagName);
   }
 
-  function generate_index(vn) {
-    if (vn.parent) {
-      let i = 0;
-      let node = vn.node;
-      while ((node = node.previousSibling) !== null) ++i;
-
-      if (i === 0 && vn.placeholder.parentNode) {
-        i = arrIndexOf.call(vn.parent.node.childNodes, vn.placeholder);
-      }
-      return vn.parent.index + ',' + ViewNode.createIndex(i);
-    }
-
-    return '0';
-  }
+  // function generate_index(vn) {
+  //   if (vn.parent) {
+  //     let i = 0;
+  //     let node = vn.node;
+  //     while ((node = node.previousSibling) !== null) ++i;
+  //
+  //     if (i === 0 && vn.placeholder.parentNode) {
+  //       i = arrIndexOf.call(vn.parent.node.childNodes, vn.placeholder);
+  //     }
+  //     return vn.parent.index + ',' + ViewNode.createIndex(i);
+  //   }
+  //
+  //   return '0';
+  // }
 
   // const view_node_template = {
   //   blueprint: {},
@@ -5129,7 +5170,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     get index() {
-      return generate_index(this);
+      const parent = this.parent;
+      if (parent) {
+        let i = 0;
+        let node = this.node;
+        while ((node = node.previousSibling) !== null) ++i;
+        // i = arrIndexOf.call(parent.node.childNodes, node);
+
+        if (i === 0 && this.placeholder.parentNode) {
+          i = arrIndexOf.call(parent.node.childNodes, this.placeholder);
+        }
+        return parent.index + ',' + ViewNode.createIndex(i);
+      }
+
+      return '0';
     },
 
     get anchor() {
@@ -6235,7 +6289,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           return item;
         });
       } else if (typeof trackByKey === 'string') {
-
         newTrackMap = changes.params.map(item => {
           return item[trackByKey];
         });
@@ -6890,7 +6943,6 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.scope = scope;
     _this.module = module;
 
-    // _this.path = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
     _this.path = scope.parentScope && scope.parentScope.router ? scope.parentScope.router.activeRoute.path : '/';
     _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
     _this.parentRoute = null;
@@ -6925,7 +6977,7 @@ Galaxy.Router = /** @class */ (function (G) {
       enumerable: true
     });
 
-    if (module.id === 'system') {
+    if (module.id === 'root') {
       Router.currentPath.update();
     }
   }
@@ -7205,7 +7257,7 @@ Galaxy.registerAddOnProvider('galaxy/router', function (scope, module) {
   return {
     create: function () {
       const router = new Galaxy.Router(scope, module);
-      if (module.systemId !== 'system') {
+      if (module.systemId !== 'root') {
         scope.on('module.destroy', () => router.destroy());
       }
 

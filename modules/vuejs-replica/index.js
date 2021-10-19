@@ -1,5 +1,3 @@
-/* global Scope */
-
 const animations = Scope.import('services/animations.js');
 const view = Scope.import('galaxy/view');
 const data = Scope.import('data/products.js');
@@ -9,7 +7,7 @@ Scope.data = {
   test: data
 };
 
-console.log(data);
+console.log(Scope.data);
 
 view.blueprint({
   tag: 'div',
@@ -81,12 +79,9 @@ view.blueprint({
                   tag: 'button',
                   class: 'flex-item-al',
                   text: 'Add',
-                  data: {
-                    product: '<>product'
-                  },
                   on: {
                     click: function () {
-                      this.inputs.product.quantity += 1;
+                      this.data.product.quantity += 1;
                     }
                   }
                 }
@@ -98,7 +93,6 @@ view.blueprint({
                 {
                   tag: 'h3',
                   text: (products = '<>data.test') => {
-                    console.log('products', products);
                     return 'Total: ' + products.reduce(function (sum, item) {
                       return sum + item.quantity;
                     }, 0);

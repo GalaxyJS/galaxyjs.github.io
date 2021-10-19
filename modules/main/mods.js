@@ -1,7 +1,6 @@
 const view = Scope.import('galaxy/view');
 
-
-view.clean();
+view.container.node.innerHTML = '';
 view.blueprint([
   {
     tag: 'p',
@@ -35,3 +34,4 @@ view.blueprint([
     ]
   }
 ]);
+console.log(Scope)

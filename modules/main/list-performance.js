@@ -7,7 +7,7 @@ Scope.data.list = [];
 //   });
 // }
 
-view.config.cleanContainer = true;
+view.container.node.innerHTML = '';
 view.blueprint([
 
   {
