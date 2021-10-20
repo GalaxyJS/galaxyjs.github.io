@@ -139,7 +139,7 @@ view.blueprint({
                   clearProps: 'all'
                 },
                 position: '-=.1',
-                duration: calculateDuration
+                duration: .15
               },
               leave: {
                 withParent: true,

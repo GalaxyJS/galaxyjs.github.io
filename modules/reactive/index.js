@@ -7,15 +7,7 @@ const animations = Scope.import('services/animations.js');
 const exapndable = Scope.import('services/expandable.js');
 const scrollToRouter = Scope.import('services/scroll-to-router.js');
 
-const arrayInstanceExample = Scope.importAsText('./array-instance.example.text');
-const inlineComputedBindExample = Scope.importAsText('./inline-computed-bind.example.js');
-const variableComputedBindExample = Scope.importAsText('./variable-computed-bind.example.js');
-const moduleWithInputsExample = Scope.importAsText('./module-with-inputs.example.text');
-const classAndStyleExample = Scope.importAsText('./class-and-style.example.js');
-const viewNodeInputsExample = Scope.importAsText('./view-node-inputs.example.js');
-const valuePropertyExample = Scope.importAsText('./value-property.example.js');
 Scope.data.citiesList = ['Amsterdam', 'Paris'];
-console.log(Scope.data)
 
 router.setup([
   {
@@ -41,7 +33,7 @@ router.setup([
   },
   {
     title: 'Inputs property',
-    path: '/inputs-property'
+    path: '/data-property'
   },
   {
     title: 'Value property',
@@ -192,8 +184,11 @@ view.blueprint({
         'Scope.data.citiesList.push(\'Budapest\');\n' +
         '// ["Amsterdam", "Paris", "Budapest"]' +
         '</pre>' +
-        '<p>The ArrayChange instance would look like this</p>' +
-        '<pre class="prettyprint lang-js">' + arrayInstanceExample + '</pre>',
+        '<p>The ArrayChange instance would look like this</p>',
+        {
+          tag: 'pre',
+          text: Scope.importAsText('./array-instance.example.text')
+        },
         '<p class="example">Example</p>' +
         '<p>Open your developer tools and see the console. </p>' +
         '<p>You should see an ArrayChange object with type <strong>reset</strong> and initial array items as params.</p>',
@@ -266,7 +261,7 @@ view.blueprint({
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: inlineComputedBindExample
+          text: Scope.importAsText('./inline-computed-bind.example.js')
         },
 
         '<p>For higher code quality we suggest that instead of using inline compute syntax, you use function variable. Here is an example:</p>',
@@ -279,7 +274,7 @@ view.blueprint({
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: variableComputedBindExample
+          text: Scope.importAsText('./variable-computed-bind.example.js')
         },
 
         {
@@ -297,20 +292,20 @@ view.blueprint({
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: classAndStyleExample
+          text: Scope.importAsText('./class-and-style.example.js')
         },
 
         {
           tag: 'h2',
-          id: 'inputs-property',
-          text: 'Inputs property'
+          id: 'data-property',
+          text: 'Data property'
         },
         '<p>The <code class="prettyprint lang-js">data</code> property can be used to send data to a module. This property only accepts a literal object as input.</p>',
         {
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: moduleWithInputsExample
+          text: Scope.importAsText('./module-with-inputs.example.text')
         },
         '<p>You can access the data properties from within the context of a module via <code class="prettyprint lang-js">Scope.inputs</code></p>',
         {
@@ -325,16 +320,16 @@ view.blueprint({
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: viewNodeInputsExample
+          text: Scope.importAsText('./view-node-inputs.example.js')
         },
 
         '<h2 id="value-property">Value property</h2>',
-        '<p>sadasdsadasd</p>',
+        '<p>When it comes to read & write data from & to inputs elements, you need the <code class="prettyprint lang-js">value</code> property.</p>',
         {
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: valuePropertyExample
+          text: Scope.importAsText('./value-property.example.js')
         },
         {
           module: {

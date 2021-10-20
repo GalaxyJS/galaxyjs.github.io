@@ -67,7 +67,8 @@ view.blueprint([
         {
           tag: 'span',
           text: '<>item',
-        }]
+        }
+      ]
     }
   }
 ]);

@@ -45,7 +45,7 @@ view.blueprint({
         },
         {
           tag: 'p',
-          html: 'If multiple nodes which are direct children of the same parent and have <strong>$if</strong> condition,' +
+          html: 'If multiple nodes which are direct children of the same parent and have <strong>if</strong> condition,' +
             ' then they follow default rendering order upon condition change.'
         },
         '<p class="example">Example</p>',
@@ -62,7 +62,7 @@ view.blueprint({
             path: './multiple-nodes.example.js'
           },
         },
-
+        // -----
         '<h2>Condition on a list</h2>',
         '<p class="example">Example</p>',
         {

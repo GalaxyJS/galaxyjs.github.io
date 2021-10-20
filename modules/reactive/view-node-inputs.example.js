@@ -4,6 +4,6 @@ view.blueprint({
   class: 'example-box',
   children: {
     tag: 'p',
-    text: '<>inputs.fromParent',
+    text: '<>data.fromParent',
   }
 });

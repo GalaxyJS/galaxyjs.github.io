@@ -89,8 +89,8 @@ view.blueprint([
           '<h2 id="getting-started">Getting started</h2>' +
           '<p class="important">This learn assumes intermediate level knowledge of JavaScript, CSS and HTML.</p>' +
           '<p>There are 2 ways to use GalaxyJS</p>' +
-          '<ol><li><strong>1 - </strong>Start a project with GalaxyJS from scratch.</li>' +
-          '<li><strong>2 - </strong>Add GalaxyJS to an existing webpage.</li></ol>' +
+          '<ol><li>Start a project with GalaxyJS from scratch.</li>' +
+          '<li>Add GalaxyJS to an existing webpage.</li></ol>' +
           '<h3>1 - Start a project from scratch 😎👍👍</h3>' +
           '<p>This is the easiest way to start since you are going to use GalaxyJS as your web application framework.</p>' +
           '<p>First create a project directory with the recommended structure that is suggested above. Then add this code into the <code class="prettyprint">/app/index.html</code></p>',
@@ -144,7 +144,7 @@ view.blueprint([
           },
           '<h2 id="ui-creation">UI Creation</h2>',
           '<h3>Modules</h3>',
-          '<p>Modules are the building blocks of your application. A module can serve a visual purpose like a UI component or it can a serve functional purpose like service</p>',
+          '<p>Modules are the building blocks of your application. A module can serve a visual purpose like a UI component, or it can a serve functional purpose like a service.</p>',
           '<p>For a visual module you can think of a page or a section of application UI or something simpler like a button or a text field.</p>',
           '<p>For a functional module you can think of a services, utilities and etc.</p>',
           '<p>Simpler way of describing a module would be that: A module is a just bunch of codes 😂.' +
@@ -170,7 +170,7 @@ view.blueprint([
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./div.example.js')
           },
-          '<p>With <code class="prettyprint">children</code> property we can add nodes to the elements that can have children.</p>',
+          '<p>With <code class="prettyprint">children</code> property we can add nodes to the corresponding.</p>',
           {
             class: 'example-box',
             module: {
@@ -180,7 +180,12 @@ view.blueprint([
           '<p>As you can see, you create your HTML structure by using objects. This way you don\'t have to ' +
           'go back and forth between JS and HTML.</p>',
           '<p>Keep in mind that a blueprint object is not template/static object. it\'s a live object which reflects the ui state.</p>',
-
+          // ------
+          '<h3>Components</h3>',
+          '<p>Components are very similar to modules in many aspects, except:</p>',
+          '<ol><li>They strictly meant for building reusable UI blocks.</li>' +
+          '<li>They may only have one root element.</li></ol>',
+          // ------
           '<h3>List Rendering</h3>',
           '<p style="font-size: .87em">To learn more go to <a href="/list-rendering">List Rendering</a></p>',
           '<p>GalaxyJS provide <strong>repeat</strong> property for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
