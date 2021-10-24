@@ -1,5 +1,6 @@
-Scope.export = function (bp, ls, v) {
+Scope.export = function (props, blueprint, view) {
   return {
+    class: 'example-box',
     children: [
       {
         tag: 'h1',
@@ -7,7 +8,7 @@ Scope.export = function (bp, ls, v) {
       },
       {
         tag: 'p',
-        text: '<>text'
+        text: '<>description'
       }
     ]
   };

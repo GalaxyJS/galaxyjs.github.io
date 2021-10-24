@@ -1,6 +1,7 @@
 const view = Scope.import('galaxy/view');
 const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
+const expandable = Scope.import('services/expandable.js');
 
 Scope.surfaces = [];
 Scope.progressText = 'Ready to make request';
@@ -19,7 +20,7 @@ router.setup([
         return true;
       }
 
-      gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
+      gsap.to('#main-content', {scrollTo: {y: '#' + params.section, offsetY: 30}, duration: .3});
       return true;
     }
   },
@@ -36,6 +37,10 @@ router.setup([
     title: 'UI Creation'
   }
 ]);
+
+view.components({
+  'simple-component': Scope.import('./simple-component.example.js')
+});
 
 view.blueprint([
   {
@@ -185,6 +190,33 @@ view.blueprint([
           '<p>Components are very similar to modules in many aspects, except:</p>',
           '<ol><li>They strictly meant for building reusable UI blocks.</li>' +
           '<li>They may only have one root element.</li></ol>',
+          '<p>Here is an example of a component that takes 2 properties, title and description and shows them.</p>',
+          {
+            tag: 'pre',
+            class: 'prettyprint lang-js',
+            text: Scope.importAsText('./simple-component.example.js'),
+            // expandable
+          },
+          '<p>And here is how to use the component</p>',
+          {
+            tag: 'pre',
+            class: 'prettyprint lang-js',
+            text: '{\n' +
+              '  tag: \'simple-component\',\n' +
+              '  props: {\n' +
+              '    title: \'Much Title\',\n' +
+              '    description: \'Very description.\'\n' +
+              '  }\n' +
+              '}'
+          },
+          '<p>And here is the result:</p>',
+          {
+            tag: 'simple-component',
+            props: {
+              title: 'Much Title',
+              description: 'Very description.'
+            }
+          },
           // ------
           '<h3>List Rendering</h3>',
           '<p style="font-size: .87em">To learn more go to <a href="/list-rendering">List Rendering</a></p>',

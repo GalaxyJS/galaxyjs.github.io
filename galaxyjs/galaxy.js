@@ -1858,7 +1858,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           invokers.push(module.path);
         }
 
-        let url = module.path + '?' + _this.convertToURIString(module.params || {});
+        let url = module.path /*+ '?' + _this.convertToURIString(module.params || {})*/;
+        // if (module.params) debugger
         // contentFetcher makes sure that any module gets loaded from network only once unless cache property is present
         let contentFetcher = Galaxy.moduleContents[url];
         if (!contentFetcher || module.fresh) {
@@ -1945,6 +1946,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 path: item.path,
                 fresh: item.fresh,
                 contentType: item.contentType,
+                // params: item.params,
                 parentScope: scope,
                 invokers: invokers
               }).then(function () {
@@ -2545,7 +2547,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
 
     parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
-      let pathURL = query[query.length - 1];
+      let pathURL = query[query.length - 1] + '#text';
       if (unique.indexOf(pathURL) !== -1) {
         return 'Scope.import(\'' + pathURL + '\')';
       }
@@ -3522,7 +3524,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath !== null) {
-        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
+        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, {propertyKeys: [childPropertyKeyPath]}), root);
       }
     }
 
@@ -3609,7 +3611,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -3651,9 +3653,9 @@ Galaxy.View = /** @class */(function (G) {
     const bpKey = propertyKey + '_' + viewNode.node.nodeType;
     let property = View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
     if (!property) {
-      property = { type: 'prop' };
+      property = {type: 'prop'};
       if (!(propertyKey in viewNode.node) && 'setAttribute' in viewNode.node) {
-        property = { type: 'attr' };
+        property = {type: 'attr'};
       }
 
       View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] = property;
@@ -3728,7 +3730,7 @@ Galaxy.View = /** @class */(function (G) {
           Object.assign(componentScope, blueprint.props || {});
           // componentScope.props = View.bindSubjectsToData(null, blueprint.props || {}, scopeData, true);
           View.bindSubjectsToData(null, componentScope, scopeData);
-          componentBlueprint = this._components[key].call(null, blueprint, componentScope, this);
+          componentBlueprint = this._components[key].call(null, componentScope, blueprint, this);
           if (blueprint instanceof Array) {
             throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
           }

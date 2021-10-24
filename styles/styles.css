@@ -425,6 +425,7 @@ p.important {
 }
 
 .example-box {
+  display: block;
   padding: 10px;
   overflow: hidden;
   border: 1px solid #eee;
@@ -448,6 +449,7 @@ p.important {
 ol {
   list-style: decimal;
   padding-left: 20px;
+  margin: 15px 0;
 }
 
 ol > li::marker {
