@@ -3,10 +3,6 @@ const router = Scope.import('galaxy/router');
 const animations = Scope.import('services/animations.js');
 const expandable = Scope.import('services/expandable.js');
 
-Scope.surfaces = [];
-Scope.progressText = 'Ready to make request';
-Scope.flag = true;
-
 router.setup([
   {
     path: '/',
@@ -85,12 +81,12 @@ view.blueprint([
               '|-nodemodules\n' +
               '|-package.json'
           },
-          '<p>Too lazy to do it yourself!? Here... clone the following repository 😉</p>',
-          {
-            tag: 'pre',
-            class: 'prettyprint lang-html',
-            text: '-- GALAXYJS BOILERPLATE PROJECT URL --'
-          },
+          // '<p>Too lazy to do it yourself!? Here... clone the following repository 😉</p>',
+          // {
+          //   tag: 'pre',
+          //   class: 'prettyprint lang-html',
+          //   text: '-- GALAXYJS BOILERPLATE PROJECT URL --'
+          // },
           '<h2 id="getting-started">Getting started</h2>' +
           '<p class="important">This learn assumes intermediate level knowledge of JavaScript, CSS and HTML.</p>' +
           '<p>There are 2 ways to use GalaxyJS</p>' +

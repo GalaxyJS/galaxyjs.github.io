@@ -1,4 +1,4 @@
-Scope.export = function (props, blueprint, view) {
+Scope.export = function (props, blueprint) {
   return {
     class: 'example-box',
     children: [

@@ -1,11 +1,6 @@
 const view = Scope.import('galaxy/view');
 Scope.data.capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
-// console.log(Scope)
 view.blueprint([
-  // {
-  //   tag: 'p',
-  //   text: '<>data'
-  // },
   {
     animations: {
       enter: {

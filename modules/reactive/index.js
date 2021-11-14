@@ -187,6 +187,7 @@ view.blueprint({
         '<p>The ArrayChange instance would look like this</p>',
         {
           tag: 'pre',
+          class: 'prettyprint lang-js',
           text: Scope.importAsText('./array-instance.example.text')
         },
         '<p class="example">Example</p>' +
