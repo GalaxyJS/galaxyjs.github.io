@@ -4,7 +4,7 @@
 const view = Scope.import('galaxy/view');
 const style = Scope.import('./style.css');
 const animations = Scope.import('services/animations.js');
-Scope.data.fields = ['a', 'b'];
+
 const ToDoService = {
   data: Scope.data.items,
   add: function (newItem) {
@@ -31,15 +31,6 @@ function addToList() {
 
 function removeFromList(item) {
   ToDoService.remove(item);
-}
-
-function calculateDuration() {
-  let listAnimationDuration = 1 / (Scope.data.items.length || 1);
-  if (listAnimationDuration < .12) {
-    listAnimationDuration = .12;
-  }
-
-  return listAnimationDuration;
 }
 
 const checkAllButton = {
@@ -88,7 +79,7 @@ view.blueprint({
           },
         },
         {
-          class: 'fa-end',
+          class: 'flex-bar fa-end',
           children: [
             checkAllButton,
             {
@@ -196,7 +187,7 @@ view.blueprint({
           },
         },
         {
-          class: 'fa-end',
+          class: 'flex-bar fa-end',
           children: [
             {
               tag: 'button',

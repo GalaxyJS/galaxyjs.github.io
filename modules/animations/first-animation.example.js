@@ -1,13 +1,23 @@
 const view = Scope.import('galaxy/view');
 
 const originalDataList = [
-  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'
+  'fa fa-smile',
+  'fa fa-smile-beam',
+  'fa fa-smile-wink',
+  'fa fa-laugh-squint',
+  'fa fa-laugh-beam',
+  'fa fa-grin-beam',
+  'fa fa-grin-beam-sweat',
+  'fa fa-kiss-wink-heart',
+  'fa fa-surprise',
+  'fa fa-grin-hearts',
 ];
 Scope.data.boxes = originalDataList.slice(0);
 
 view.blueprint([
   {
-    tag: 'p',
+    tag: 'div',
+    class: 'flex-bar',
     children: [
       {
         tag: 'button',
@@ -25,11 +35,11 @@ view.blueprint([
     class: 'box-container',
     children: {
       style: {
-        width: '67px',
+        width: '75px'
       },
       animations: {
         enter: {
-          addTo: 'card',
+          addTo: 'main-nav-timeline',
           timeline: 'boxes',
           from: {
             display: 'none',
@@ -43,30 +53,31 @@ view.blueprint([
             ease: 'elastic.out(1,.5)'
           },
           duration: 1,
-          position: '-=.87'
+          position: '-=.87',
         },
         leave: {
-          timeline: 'card',
+          addTo: 'main-nav-timeline',
+          timeline: 'boxes',
           to: {
             scale: 0,
             opacity: 0
           },
           duration: .26,
-          position: '-=0.22'
+          position: '-=.22',
         }
       },
       class: 'box',
       repeat: {
         data: '<>data.boxes',
-        as: 'item'
+        as: 'item',
       },
       children: [
         {
           class: 'height'
         },
         {
-          tag: 'span',
-          text: '<>item',
+          tag: 'i',
+          class: '<>item',
         }
       ]
     }

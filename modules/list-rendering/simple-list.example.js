@@ -28,7 +28,8 @@ view.blueprint([
     }
   },
   {
-    tag: 'p',
+    tag: 'div',
+    class: 'flex-bar',
     children: [
       {
         tag: 'button',

@@ -4,7 +4,7 @@ Scope.export = function ex() {
     container.node.style.position = 'relative';
     container.node.style.overflow = 'hidden';
 
-    container.node.style.height = '60px';
+    container.node.style.height = '80px';
 
     let toggle = false;
     const localScope = {
@@ -27,7 +27,7 @@ Scope.export = function ex() {
             gsap.to(container.node, { height: container.node.scrollHeight, duration: .5, ease: 'power.inOut' });
             localScope.label = 'collapse';
           } else {
-            gsap.to(container.node, { height: 60, duration: .5, ease: 'power.inOut' });
+            gsap.to(container.node, { height: 80, duration: .5, ease: 'power.inOut' });
             localScope.label = 'expand';
           }
         }

@@ -4,6 +4,7 @@ Scope.data.condition = true;
 view.blueprint([
   {
     tag: 'div',
+    class: 'flex-bar',
     children: [
       {
         tag: 'button',

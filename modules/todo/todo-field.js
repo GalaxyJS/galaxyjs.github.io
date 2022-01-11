@@ -1,7 +1,7 @@
 /* global Scope */
 Scope.export = function (props, blueprint) {
   props.focused = false;
-debugger
+
   return {
     class: 'field',
     focused: '<>focused',

@@ -1,8 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap');
-/*@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;200;300;400;500;600;700&display=swap');*/
-/*@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');*/
-/*@import url('https://fonts.googleapis.com/css?family=Nunito:300,400,700');*/
 
 
 /* http://meyerweb.com/eric/tools/css/reset/
@@ -60,7 +57,7 @@ table {
     Author     : Eeliya
 */
 p {
-  margin: 15px 0;
+  margin: 12px 0;
   line-height: 22px;
 }
 
@@ -79,7 +76,7 @@ hr {
 h1 {
   font-size: 1.75em;
   cursor: default;
-  margin: 20px 0;
+  margin: 16px 0;
   line-height: 28px;
   text-transform: capitalize;
 }
@@ -147,6 +144,7 @@ h2 > a:hover {
 
 button {
   font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
 }
 
 html, body {
@@ -160,8 +158,7 @@ html, body {
 }
 
 body {
-  background: rgb(255, 255, 255);
-  background: linear-gradient(185deg, rgba(255, 255, 255, 1) 0%, rgba(250, 251, 252, 1) 70%);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 1) 0%, hsl(210deg 28% 93%) 70%);
 }
 
 html {
@@ -184,18 +181,43 @@ a {
 }
 
 p.important {
-  border-radius: 4px;
+  border-radius: 12px;
   background-color: #f8e5c0;
   color: #b10e21;
   font-weight: 500;
-  padding: 10px;
+  padding: 12px;
+}
+
+.flex-bar {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-bar.jc-center {
+  justify-content: center;
+}
+
+.flex-bar.ai-center {
+  align-items: center;
+}
+
+.flex-bar > * {
+  margin: 0 5px;
+}
+
+.flex-bar > *:first-child {
+  margin-left: 0;
+}
+
+.flex-bar > *:last-child {
+  margin-right: 0;
 }
 
 .main-content {
   position: absolute;
-  width: calc(100% - 270px);
   height: 100%;
-  left: 270px;
+  left: 0;
+  right: 0;
   overflow: auto;
   overflow-y: scroll;
 }
@@ -219,11 +241,16 @@ p.important {
   top: 0;
   white-space: nowrap;
   z-index: 100;
+  transform: translateX(-100%);
 }
+
+/*.main-nav.in {*/
+/*  transform: translateX(0);*/
+/*}*/
 
 .main-nav > h1 {
   color: rgba(0, 0, 0, .25);
-  pointer-events: none;
+  cursor: pointer;
 }
 
 .nav-item {
@@ -406,7 +433,7 @@ p.important {
 
 .content {
   margin-bottom: 50px;
-  padding: 0 25px;
+  padding: 0 24px;
 }
 
 .content > h1 {
@@ -426,12 +453,12 @@ p.important {
 
 .example-box {
   display: block;
-  padding: 10px;
+  padding: 20px;
   overflow: hidden;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  margin: 15px -10px;
-  box-shadow: 0 3px 5px rgba(0, 0, 0, .06);
+  border: 4px solid #eee;
+  border-radius: 12px;
+  margin: 8px 0 16px;
+  /*box-shadow: 0 3px 5px rgba(0, 0, 0, .06);*/
 }
 
 .example-box > *:first-child {
@@ -489,6 +516,10 @@ input[type='checkbox'] {
 
 input[type='checkbox'] + span {
   margin-left: 10px;
+}
+
+input:disabled {
+  opacity: .7;
 }
 
 label.checkbox {
@@ -550,19 +581,15 @@ ul.items-list > li:hover {
 
   .main-nav {
     box-shadow: 0 5px 15px rgba(40, 40, 40, .2);
-    height: 60px;
+    height: 100%;
     width: 100%;
+    max-width: 320px;
     padding: 10px 0;
     outline: none;
     overflow: hidden;
   }
 
-  .main-nav > div {
-    display: none;
-  }
-
   .main-nav.expand {
-    height: 60%;
     box-shadow: 0 15px 25px rgba(40, 40, 40, .35);
     overflow: auto;
   }
@@ -571,10 +598,15 @@ ul.items-list > li:hover {
     display: block;
   }
 
+  .main-nav > div {
+    display: none;
+  }
+
   .main-nav > h1 {
-    text-align: center;
-    margin: 5px 0 20px;
-    padding: 0 15px;
+    /*text-align: center;*/
+    /*margin: 5px 0 20px;*/
+    /*padding: 0 15px;*/
+    display: none;
   }
 
   .main-nav > a {
@@ -643,13 +675,13 @@ ul.items-list > li:hover {
 @media only screen and (min-device-width: 1025px) {
   .main-nav {
     width: 270px;
-    padding: 25px 0;
+    padding: 0;
     height: 100%;
   }
 
   .main-nav > h1 {
-    margin: 0 0 20px;
-    padding: 0 15px 0 20px;
+    margin: 0 0 15px;
+    padding: 25px 15px 15px 15px;
   }
 
   .card {
@@ -686,8 +718,8 @@ ul.items-list > li:hover {
 
 pre.prettyprint {
   border: none;
-  border-radius: 4px;
-  padding: 10px 15px;
+  border-radius: 12px;
+  padding: 12px 16px;
   background-color: #eee;
   font-size: .85em;
   line-height: 1.4em;
@@ -807,8 +839,8 @@ input, select {
   width: 100%;
   display: block;
   padding: 10px 8px;
-  border: 2px solid #aaa;
-  border-radius: 5px;
+  border: 1px solid #c0c6cf;
+  border-radius: 6px;
   /*margin-bottom: 6px;*/
   outline: none;
 
@@ -863,21 +895,13 @@ button {
   outline: none;
   line-height: 22px;
   padding: 8px 14px;
-  border-radius: 5px;
+  border-radius: 6px;
   transition-property: transform, border-color, background-color;
   transition: all .1s linear;
   user-select: none;
   display: inline-block;
   text-transform: uppercase;
   letter-spacing: .5px;
-}
-
-button:first-of-type {
-  margin-left: 0;
-}
-
-button:last-of-type {
-  margin-right: 0;
 }
 
 button:hover, button:focus {
@@ -905,6 +929,24 @@ button > i:last-child {
 
 button > i:first-child {
   margin-right: 4px;
+}
+
+button.big {
+  border: 3px solid;
+  line-height: 22px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  letter-spacing: .6px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+button.big > i:last-child {
+  margin-left: 8px;
+}
+
+button.big > i:first-child {
+  margin-right: 8px;
 }
 
 button.red {
@@ -1014,20 +1056,17 @@ a.icon.gitter {
 p.example {
   font-weight: bold;
   color: #555;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 
 .box-container {
-  margin: 0 -8px;
+  margin: 20px -4px 0;
 }
 
 .box {
   display: inline-block;
   width: 85px;
-  /*line-height: 85px;*/
-  /*background-color: #d05e77;*/
-  /*border-radius: 0 10px 10px;*/
-  /*margin: 8px;*/
+
   color: #fff;
   position: relative;
 }
@@ -1037,12 +1076,12 @@ p.example {
   padding-top: 100%;
 }
 
-.box > span {
+.box > i, .box > span {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0 10px 10px;
-  background-color: #d05e77;
+  border-radius: 8px;
+  background: linear-gradient(315deg, #e83c95, #ea9686);
   line-height: 1;
   font-size: 2em;
   text-align: center;
@@ -1060,18 +1099,24 @@ p.example {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: center;
+  font-size: 20px;
 }
 
 .dots-animation > .dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
   background-color: lightblue;
-  margin-right: 1px;
+  margin: 0 1px;
 }
 
 .dots-animation > p {
-  margin: 0;
+  margin: 0 15px 0 0;
+}
+
+.dots-animation > strong {
+  font-size: 1.5em;
 }
 
 .dialog {

@@ -3,7 +3,8 @@
 const animations = {
   cardInOut: {
     enter: {
-      timeline: 'card',
+      timeline: 'main-nav-timeline',
+      position: 'side-bar+=.25',
       from: {
         transformOrigin: 'top center',
         scale: 1.04,
@@ -25,7 +26,8 @@ const animations = {
       duration: .25,
     },
     leave: {
-      timeline: 'card',
+      timeline: 'main-nav-timeline',
+      position: 'side-bar',
       to: {
         ease: 'Power1.easeIn',
         transformOrigin: 'top center',
@@ -104,38 +106,29 @@ const animations = {
 
 animations.mainNav = {
   enter: {
-    timeline: 'card',
-    from: {
-      ease: 'elastic.inOut(1.2, .8)',
-      x: '-100%'
-    },
-    duration: .5
-  },
-  'add:expand': {
+    timeline: 'nav',
     duration: .5,
+    // position: '-=.5',
     to: {
-      ease: 'power2.inOut',
-      height: '60%',
-      boxShadow: '0 15px 25px rgba(40, 40, 40, .35)',
-      overflow: 'auto'
+      // ease: 'elastic.inOut(1.5, .75)',
+      x: 0,
+      clearProps: ''
     }
   },
-  'remove:expand': {
-    duration: .3,
+  leave: {
+    // timeline: 'card',
+    duration: .25,
+    // position: '-=.25',
     to: {
-      ease: 'power2.inOut',
-      height: 60,
-      boxShadow: '0 5px 15px rgba(40, 40, 40, .2)',
-      overflow: 'hidden'
+      x: '-100%',
+      clearProps: ''
     }
-  }
+  },
 };
 
 animations.mainNavItem = {
   enter: {
-    timeline: 'main-nav-items',
-    appendTo: 'side-bar',
-    positionInParent: '-=.3',
+    timeline: 'card',
 
     from: {
       transition: 'none',

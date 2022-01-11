@@ -33,6 +33,7 @@ Scope.data.conditionForMultiple = true;
 view.blueprint([
   {
     tag: 'div',
+    class: 'flex-bar',
     children: [
       {
         tag: 'button',
