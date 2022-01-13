@@ -75,7 +75,6 @@ view.blueprint([
       },
       leave: {
         timeline: 'main-nav-timeline',
-        position: 'side-bar',
         to: {
           y: 150,
           opacity: 0

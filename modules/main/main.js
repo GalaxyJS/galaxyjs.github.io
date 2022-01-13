@@ -23,16 +23,7 @@ function setTimelineSetupsToDefault() {
   });
 }
 
-// if (window.location.pathname.indexOf('/start') === 0) {
-//   Galaxy.setupTimeline('main-nav-timeline', {
-//     'pre-side-bar': 0,
-//     'side-bar': 0.1
-//   });
-// } else {
-//   setTimelineSetupsToDefault();
-// }
 setTimelineSetupsToDefault();
-
 
 router.setup([
   {
@@ -95,6 +86,9 @@ router.setup([
     },
     title: 'List Rendering',
     icon: 'fas fa-list-ul',
+    onLeave() {
+      setTimelineSetupsToDefault();
+    }
   },
   {
     path: '/animations',
@@ -103,6 +97,9 @@ router.setup([
     },
     title: 'Animations',
     icon: 'fas fa-spinner',
+    onLeave() {
+      setTimelineSetupsToDefault();
+    }
   },
   {
     path: '/router',
@@ -111,6 +108,9 @@ router.setup([
     },
     title: 'Router',
     icon: 'fas fa-road',
+    onLeave() {
+      setTimelineSetupsToDefault();
+    }
   },
   {
     path: '/api',
@@ -119,6 +119,9 @@ router.setup([
     },
     title: 'API',
     icon: 'fas fa-code',
+    onLeave() {
+      setTimelineSetupsToDefault();
+    }
   },
   {
     path: '/todo-demo',
@@ -126,6 +129,9 @@ router.setup([
       main: 'modules/todo/todo.js'
     },
     title: 'ToDo - Demo',
+    onLeave() {
+      setTimelineSetupsToDefault();
+    }
   },
   {
     path: '/vuejs-replica-demo',
@@ -133,6 +139,9 @@ router.setup([
       main: 'modules/vuejs-replica/vuejs-replica.js'
     },
     title: 'VueJS Replica - Demo',
+    onLeave() {
+      setTimelineSetupsToDefault();
+    }
   }
 ]);
 
@@ -279,12 +288,13 @@ view.blueprint([
             children: {
               repeat: {
                 as: 'subNav',
-                data: function (navPath = '<>nav.path', activeRoutePath = '<>router.activeRoute.path', childRoutes = '<>router.activeRoute.children') {
+                data: function (navPath = '<>nav.path', activeRoutePath = '<>router.activePath', childRoutes = '<>router.activeRoute.children') {
                   if (navPath === activeRoutePath) {
+                    // console.info(this.parent.node, navPath, activeRoutePath, childRoutes)
                     return childRoutes.filter(i => !i.hidden);
                   }
 
-                  return null;
+                  return [];
                 },
                 trackBy: 'path'
               },
