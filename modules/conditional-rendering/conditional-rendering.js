@@ -80,7 +80,7 @@ view.blueprint({
         },
         '<h2>Rendering Bahvior</h2>' +
         '<p>The way <strong>if</strong> handles DOM manipulation is important to be understood. ' +
-        'When condition is false, then the element will be detached from DOM and upon true ' +
+        'When condition is <code class="prettyprint">false</code>, then the element will be detached from DOM and upon <code class="prettyprint">true</code> ' +
         'the same element will be reattached to the DOM</p>'
       ]
     },

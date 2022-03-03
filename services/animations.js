@@ -11,9 +11,9 @@ const animations = {
         opacity: 0,
         position: 'absolute',
         top: 0,
-        x: function (val, node) {
-          return node.offsetLeft;
-        }
+        // x: function (val, node) {
+        //   return node.offsetLeft;
+        // }
       },
       to: {
         ease: 'Power1.easeOut',

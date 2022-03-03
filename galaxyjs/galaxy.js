@@ -2262,6 +2262,14 @@ Galaxy.Scope = /** @class */ (function () {
       }
     });
 
+    /**
+     * @property {{
+     *   'galaxy/view': Galaxy.View,
+     *   'galaxy/router': Galaxy.Router,
+     *   [libId]: any
+     * }} __imports__
+     */
+
     defProp(_this, '__imports__', {
       value: {},
       writable: false,
@@ -2271,6 +2279,8 @@ Galaxy.Scope = /** @class */ (function () {
 
     _this.on('module.destroy', this.destroy.bind(_this));
   }
+
+
 
   Scope.prototype = {
     /**
@@ -2283,14 +2293,15 @@ Galaxy.Scope = /** @class */ (function () {
     },
     /**
      *
-     * @param {string} libId Path or id of the addon you want to import
-     * @return {*}
+     * @param {('galaxy/view' | 'galaxy/router' | string)} libId Path or id of the addon you want to import
+     * @return {(Galaxy.View | Galaxy.Router | any)}
      */
     import: function (libId) {
       // if the id starts with `./` then we will replace it with the current scope path.
       if (libId.indexOf('./') === 0) {
         libId = libId.replace('./', this.uri.path);
       }
+
 
       return this.__imports__[libId];
     },
@@ -2533,7 +2544,7 @@ Galaxy.GalaxyURI = /** @class */ (function () {
   function parser(content) {
     const imports = [];
     const unique = [];
-    let parsedContent = content.replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
+    let parsedContent = content.replace(/^\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
       let pathURL = query[query.length - 1];
       if (unique.indexOf(pathURL) !== -1) {
@@ -3731,7 +3742,7 @@ Galaxy.View = /** @class */(function (G) {
       let componentBlueprint = blueprint;
       if (key) {
         if (key in this._components) {
-          if (blueprint.props !== null && typeof blueprint.props !== 'object') {
+          if (blueprint.props && typeof blueprint.props !== 'object') {
             throw new Error('The `props` must be a literal object.');
           }
 
@@ -4797,6 +4808,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       // Destroy
       viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
       viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
+      viewNode.garbage.forEach(function (node) {
+        ViewNode.REMOVE_SELF.call(node, true);
+      });
       viewNode.hasBeenDestroyed();
     } else {
       // Detach
@@ -4811,8 +4825,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       viewNode.garbage.forEach(function (node) {
         ViewNode.REMOVE_SELF.call(node, true);
       });
-      viewNode.garbage = [];
     }
+
+    viewNode.garbage = [];
   };
 
   /**
@@ -4918,25 +4933,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   ViewNode.prototype = {
     onLeaveComplete: null,
 
-    // updateDump: function () {
-    //   if (this.parent) {
-    //     this.parent.garbage = this.parent.garbage.concat(this.garbage);
-    //     this.garbage = [];
-    //     // this.parent.updateDump();
-    //   }
-    // },
     dump: function () {
-      // this.garbage.push(this);
-      // this.parent.garbage = this.parent.garbage.concat(this.garbage);
-      // this.garbage = [];
-
-      // this.garbage.push(this);
       let original = this.parent;
       let targetGarbage = this.garbage;
+      // Find the garbage of the origin if
       while (original.transitory) {
         if (original.blueprint.hasOwnProperty('if') && !this.blueprint.hasOwnProperty('if')) {
-          // original.garbage = original.garbage.concat(_this.garbage);
-          // console.log(this.node)
           targetGarbage = original.garbage;
         }
         if (original.parent && original.parent.transitory) {
@@ -4946,7 +4948,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       }
       targetGarbage.push(this);
-      // debugger
       this.garbage = [];
     },
     query: function (selectors) {
@@ -5003,11 +5004,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         });
         return;
       }
-
-      // if(!flag && _this.node.parentNode && _this.node.classList.contains('sub-nav-container')) {
-      //   this.garbage;
-      //   debugger
-      // }
 
       _this.inDOM = flag;
       if (_this.virtual) return;
@@ -5157,6 +5153,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     destroy: function (hasAnimation) {
       const _this = this;
       _this.transitory = true;
+      // if(!_this.parent)debugger;
       if (_this.parent.destroyOrigin === 0) {
         _this.destroyOrigin = 1;
       } else {
@@ -5185,6 +5182,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.inDOM = false;
         _this.blueprint.node = undefined;
         _this.inputs = {};
+        _this.view = null;
+        _this.parent = null;
         _next();
       });
     },
@@ -5209,6 +5208,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     clean: function (hasAnimation, children) {
       children = children || this.getChildNodes();
       GV.DESTROY_NODES(children, hasAnimation);
+
+      DESTROY_IN_NEXT_FRAME(this.index, (_next) => {
+        let len = this.finalize.length;
+        for (let i = 0; i < len; i++) {
+          this.finalize[i].call(this);
+        }
+        this.finalize = [];
+        _next();
+      });
     },
 
     createNext: function (act) {
@@ -5408,17 +5416,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           }
 
           if (withParentResult) {
-            // if(this.node.classList.contains('sub-nav-container') && this.garbage.length)
-            //   debugger;
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
             if (parent.transitory) {
-              // if (this.node.classList.contains('sub-nav-container') && this.garbage.length)
-              // console.log(viewNode.node);
-              //   debugger;
-              // We dump this _viewNode, so it gets removed when the leave's animation's origin node is detached.
+              // We dump _node, so it gets removed when the leave's animation's origin node is detached.
               // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a 'if'
-
               return this.dump();
             }
           }
@@ -5470,6 +5472,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
               } else if (!type && viewNode.node.classList.contains(key)) {
                 AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
               }
+              // gsap.set(viewNode.node, AnimationMeta.parseStep(viewNode, animationDescription.to));
             }
           });
         });
@@ -5499,14 +5502,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     if (this.parent.transitory) {
-      // ToDo: Why this!?
-      if (!this.inDOM && this.node.parentNode) {
-        // console.log(this.inDOM, this.node, this.node.textContent);
-        // this.dump();
-        // this.node.parentNode.removeChild(this.node);
-        // G.View.ViewNode.REMOVE_SELF.call(this, false);
-      }
-
+      this.dump();
+      // console.info(this);
     } else {
       finalize();
     }
@@ -5655,7 +5652,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     let parentAnimationMeta = null;
     if (timelineName) {
-      const animationMeta = new AnimationMeta(timelineName, newConfig.labels);
+      const animationMeta = new AnimationMeta(timelineName);
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
         parentAnimationMeta = new AnimationMeta(newConfig.addTo);
@@ -5737,6 +5734,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const TIMELINE_SETUP_MAP = {};
   G.setupTimeline = function (name, labels) {
     TIMELINE_SETUP_MAP[name] = labels;
+    const animationMeta = AnimationMeta.ANIMATIONS[name];
+    if (animationMeta) {
+      animationMeta.setupLabels(labels);
+    }
   };
   Galaxy.TIMELINE_SETUP_MAP = TIMELINE_SETUP_MAP;
 
@@ -5767,6 +5768,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.children = [];
         _this.onCompletesActions = [];
       });
+      _this.parsePosition = (p) => p;
       _this.addTo = (tl) => {
         throw new Error('You can not use addTo with a custom timeline: ' + tl);
       };
@@ -5774,10 +5776,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const exist = AnimationMeta.ANIMATIONS[name];
       if (exist) {
         if (!exist.timeline.getChildren().length && !exist.timeline.isActive()) {
-          exist.timeline.clear();
+          exist.timeline.clear(false);
           exist.timeline.invalidate();
         }
-
+        // console.log(name, 'aaaaaaaaaaaaaaaaa');
         return exist;
       }
 
@@ -5794,16 +5796,24 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           _this.awaits = [];
           _this.children = [];
           _this.onCompletesActions = [];
+          // if (name === 'main-nav-timeline') debugger
           AnimationMeta.ANIMATIONS[name] = null;
         }
       });
       _this.timeline.data = { name };
+      _this.labelCounter = 0;
+      _this.labelsMap = {};
 
       const labels = TIMELINE_SETUP_MAP[name];
       if (labels) {
-        for (const l in labels) {
-          _this.timeline.addLabel(l, labels[l]);
-        }
+        // console.log(_this.timeline.progress())
+        _this.setupLabels(labels);
+        // _this.timeline.play(0);
+        // console.log('\nsetup labels', _this.name, '\n\n')
+        // debugger
+        // for (const l in labels) {
+        //   _this.timeline.addLabel(l, labels[l]);
+        // }
       }
 
       AnimationMeta.ANIMATIONS[name] = this;
@@ -5819,13 +5829,40 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   }
 
   AnimationMeta.prototype = {
+    setupLabels: function (labels) {
+      for (const label in labels) {
+        const newLabel = 'label_' + this.labelCounter++;
+        const position = labels[label];
+        this.labelsMap[label] = newLabel;
+        this.timeline.addLabel(newLabel, typeof position === 'number' ? '+=' + position : position);
+      }
+      // debugger;
+    },
+    parsePosition: function (p) {
+      let position = this.labelsMap[p] || p;
+      let label = null;
+      if (position) {
+        if (position.indexOf('+=') !== -1) {
+          const parts = position.split('+=');
+          label = parts[0];
+        } else if (position.indexOf('-=') !== -1) {
+          const parts = position.split('-=');
+          label = parts[0];
+        }
+      }
+
+      if (label && label !== '<' && label !== '>') {
+        position = position.replace(label, this.labelsMap[label]);
+      }
+      return position;
+    },
     addOnComplete: function (action) {
       this.onCompletesActions.push(action);
     },
     addTo(parentAnimationMeta, positionInParent) {
       const children = parentAnimationMeta.timeline.getChildren(false);
       if (children.indexOf(this.timeline) === -1) {
-        parentAnimationMeta.timeline.add(this.timeline, positionInParent);
+        parentAnimationMeta.timeline.add(this.timeline, parentAnimationMeta.parsePosition(positionInParent));
       }
     },
 
@@ -5869,17 +5906,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       }
 
+      const position = this.parsePosition(config.position);
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
+      // console.log(position, tween._targets, config.position)
 
       if (tChildren.length === 0) {
-        _this.timeline.add(tween, (config.position && config.position.indexOf('=') === -1) ? config.position : null);
+        _this.timeline.add(tween, (position && position.indexOf('=') === -1) ? position : null);
       } else if (tChildren.length === 1 && !firstChild.hasOwnProperty('timeline') && firstChild.getChildren(false).length === 0) {
         // This fix a bug where if the 'enter' animation has addTo, then the 'leave' animation is ignored
-        _this.timeline.clear();
-        _this.timeline.add(tween, config.position);
+        _this.timeline.clear(false);
+        _this.timeline.add(tween, position);
       } else {
-        _this.timeline.add(tween, config.position);
+        _this.timeline.add(tween, position);
       }
 
       if (!_this.started && _this.name !== '<user-defined>') {
@@ -6229,6 +6268,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     viewNode.clean(true);
+
+    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, (_next) => {
+    //   let len = viewNode.finalize.length;
+    //   for (let i = 0; i < len; i++) {
+    //     viewNode.finalize[i].call(viewNode);
+    //   }
+    //   viewNode.finalize = [];
+    //   _next();
+    // });
   }
 
   function module_loader(viewNode, cache, moduleMeta, _next) {
@@ -6262,7 +6310,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       element: viewNode
     }).then(function (module) {
       cache.module = module;
-      viewNode.node.setAttribute('module', module.systemId);
+      viewNode.node.setAttribute('module', module.path);
       module.start();
       _next();
     }).catch(function (response) {
@@ -7087,9 +7135,9 @@ Galaxy.Router = /** @class */ (function (G) {
     Router.currentPath.update();
   };
 
-  Router.prepareRoute = function (routeConfig, parentScopeRouter) {
+  Router.prepareRoute = function (routeConfig, parentScopeRouter, fullPath) {
     if (routeConfig instanceof Array) {
-      const routes = routeConfig.map((r) => Router.prepareRoute(r, parentScopeRouter));
+      const routes = routeConfig.map((r) => Router.prepareRoute(r, parentScopeRouter, fullPath));
       if (parentScopeRouter) {
         parentScopeRouter.activeRoute.children = routes;
       }
@@ -7099,6 +7147,7 @@ Galaxy.Router = /** @class */ (function (G) {
 
     return {
       ...routeConfig,
+      fullPath: fullPath + routeConfig.path,
       active: false,
       hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
       viewports: routeConfig.viewports || {},
@@ -7124,7 +7173,20 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.scope = scope;
     _this.module = module;
 
-    _this.path = scope.parentScope && scope.parentScope.router ? scope.parentScope.router.activeRoute.path : '/';
+    // Find active parent router
+    _this.parentRouterScope = scope.parentScope;
+
+    // ToDo: bug
+    if (_this.parentRouterScope && (!_this.parentRouterScope.router || !_this.parentRouterScope.router.activeRoute)) {
+      let ps = _this.parentRouterScope;
+      while (!ps.router || !ps.router.activeRoute) {
+        ps = ps.parentScope;
+      }
+      _this.config.baseURL = ps.router.activePath;
+      _this.parentRouterScope = null;
+    }
+
+    _this.path = _this.parentRouterScope && _this.parentRouterScope.router ? _this.parentRouterScope.router.activeRoute.path : '/';
     _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
     _this.parentRoute = null;
 
@@ -7141,12 +7203,13 @@ Galaxy.Router = /** @class */ (function (G) {
       viewports: {
         main: null,
       },
-      parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
+      parameters: _this.parentRouterScope && _this.parentRouterScope.router ? _this.parentRouterScope.router.parameters : {}
     };
+    _this.onTransitionFn = Galaxy.View.EMPTY_CALL;
 
     _this.viewports = {
       main: {
-        tag: 'main',
+        tag: 'div',
         module: '<>router.activeModule'
       }
     };
@@ -7165,9 +7228,9 @@ Galaxy.Router = /** @class */ (function (G) {
 
   Router.prototype = {
     setup: function (routeConfigs) {
-      this.routes = Router.prepareRoute(routeConfigs, this.scope.parentScope ? this.scope.parentScope.router : null);
-      if (this.scope.parentScope && this.scope.parentScope.router) {
-        this.parentRoute = this.scope.parentScope.router.activeRoute;
+      this.routes = Router.prepareRoute(routeConfigs, this.parentRouterScope ? this.parentRouterScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
+      if (this.parentRouterScope && this.parentRouterScope.router) {
+        this.parentRoute = this.parentRouterScope.router.activeRoute;
       }
 
       this.routes.forEach(route => {
@@ -7193,9 +7256,14 @@ Galaxy.Router = /** @class */ (function (G) {
       this.detect();
     },
 
+    /**
+     *
+     * @param {string} path
+     * @param {boolean} replace
+     */
     navigateToPath: function (path, replace) {
       if (path.indexOf('/') !== 0) {
-        throw console.error('Path argument is not starting with a `/`\nplease use `/' + path + '` instead of `' + path + '`');
+        throw new Error('Path argument is not starting with a `/`\nplease use `/' + path + '` instead of `' + path + '`');
       }
 
       if (path.indexOf(this.config.baseURL) !== 0) {
@@ -7259,8 +7327,9 @@ Galaxy.Router = /** @class */ (function (G) {
       return normalizedHash.replace(this.fullPath, '/').replace('//', '/') || '/';
     },
 
-    onProceed: function () {
-
+    onTransition: function (handler) {
+      this.onTransitionFn = handler;
+      return this;
     },
 
     findMatchRoute: function (routes, hash, parentParams) {
@@ -7298,9 +7367,9 @@ Galaxy.Router = /** @class */ (function (G) {
       }
 
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
-      // debugger
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
+        // debugger
         if (_this.resolvedRouteValue === routeValue) {
           // static routes don't have parameters
           return Object.assign(_this.data.parameters, _this.createClearParameters());
@@ -7324,6 +7393,8 @@ Galaxy.Router = /** @class */ (function (G) {
     callRoute: function (route, hash, params, parentParams) {
       const activeRoute = this.data.activeRoute;
       const activePath = this.data.activePath;
+
+      this.onTransitionFn.call(this, activePath, route.path, activeRoute, route);
       if (!route.redirectTo) {
         if (activeRoute) {
           activeRoute.active = false;
@@ -7346,7 +7417,9 @@ Galaxy.Router = /** @class */ (function (G) {
       if (typeof route.handle === 'function') {
         return route.handle.call(this, params, parentParams);
       } else {
-        for (const key in route.viewports) {
+        // console.log(route.viewports, this.data.viewports)
+        const allViewports = this.data.viewports;
+        for (const key in allViewports) {
           let value = route.viewports[key] || null;
           if (typeof value === 'string') {
             value = {
@@ -7360,12 +7433,20 @@ Galaxy.Router = /** @class */ (function (G) {
 
           this.data.viewports[key] = value;
         }
-        // if (typeof route.viewports.main === 'string') {
-        //   this.data.viewports.main = this.data.activeModule = {
-        //     path: route.viewports.main
-        //   };
-        // } else {
-        //   this.data.viewports.main = this.data.activeModule = route.viewports.main;
+
+        // for (const key in route.viewports) {
+        //   let value = route.viewports[key] || null;
+        //   if (typeof value === 'string') {
+        //     value = {
+        //       path: value
+        //     };
+        //   }
+        //
+        //   if (key === 'main') {
+        //     this.data.activeModule = value;
+        //   }
+        //
+        //   this.data.viewports[key] = value;
         // }
 
         G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
@@ -7417,7 +7498,9 @@ Galaxy.Router = /** @class */ (function (G) {
     },
 
     detect: function () {
-      const hash = window.location.pathname || '/';
+      const pathname = window.location.pathname;
+      const hash = pathname ? pathname.substring(-1) !== '/' ? pathname + '/' : pathname : '/';
+      // const hash = pathname || '/';
       const path = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
 
       if (hash.indexOf(path) === 0) {

@@ -121,7 +121,8 @@ view.blueprint({
             },
             animations: {
               enter: {
-                addTo: 'card',
+                addTo: 'main-nav-timeline',
+                // positionInParent: 'side-bar+=.1',
                 timeline: 'todo-items',
                 from: {
                   opacity: 0,

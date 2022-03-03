@@ -88,6 +88,20 @@ view.blueprint({
           class: 'example-box',
           children: [
             {
+              tag: 'span',
+              style: {
+                width: '32px',
+                height: '32px',
+                position: 'absolute',
+                bottom: '6px',
+                right: '6px',
+                borderRadius: '4px',
+                backgroundColor: (t = '<>data.text') => {
+                  return t || '#eee';
+                }
+              }
+            },
+            {
               tag: 'style',
               text: (text = '<>data.text') => {
                 return 'body { color: ' + text + '}';
@@ -101,7 +115,7 @@ view.blueprint({
             {
               tag: 'p',
               children: [
-                'Type a color in the above field and see it show up here and more! ',
+                'Type a color in the above field and see it changes this page\'s text color! ',
                 {
                   tag: 'strong',
                   text: '<>data.text'

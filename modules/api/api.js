@@ -48,7 +48,7 @@ Scope.data.api = {
       description: 'If set true, the view will empty its container upon initialization. Default is set to false.'
     },
     {
-      title: 'init(uiBlueprint)',
+      title: 'blueprint(uiBlueprint)',
       description: 'init method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
         ' following code will create a pharagraph tag with `Hello World!` text inside it.' +
         '<code class="prettyprint lang-js">view.blueprint({ tag: \'p\', text: \'Hello World!\' });</code>'

@@ -1,4 +1,4 @@
-Scope.export = function (bp, ls, v) {
+Scope.export = function (componentScope, blueprint, view) {
   return {
     children: [
       {

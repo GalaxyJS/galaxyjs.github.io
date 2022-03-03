@@ -7,8 +7,10 @@ Scope.export = function ex() {
     container.node.style.height = '80px';
 
     let toggle = false;
+    const expandHTML = '<i class="fas fa-expand"></i><span>Expand</span>';
+    const collapseHTML = '<i class="fas fa-minus"></i><span>Collapse</span>';
     const localScope = {
-      label: 'expand'
+      label: expandHTML
     };
     container.createNode({
       style: {
@@ -16,19 +18,19 @@ Scope.export = function ex() {
         top: '15px',
         right: '15px'
       },
-      tag: 'a',
-      href: '#',
-      text: '<>label',
+      class: 'nocode',
+      tag: 'button',
+      html: '<>label',
       on: {
         click: function (event) {
           event.preventDefault();
           toggle = !toggle;
           if (toggle) {
             gsap.to(container.node, { height: container.node.scrollHeight, duration: .5, ease: 'power.inOut' });
-            localScope.label = 'collapse';
+            localScope.label = collapseHTML;
           } else {
             gsap.to(container.node, { height: 80, duration: .5, ease: 'power.inOut' });
-            localScope.label = 'expand';
+            localScope.label = expandHTML;
           }
         }
       }

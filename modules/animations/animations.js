@@ -119,6 +119,14 @@ view.blueprint([
         children: [
           {
             tag:'h2',
+            text: 'Philosophy'
+          },
+          {
+            tag: 'p',
+            text: 'A web application can be seen as a continues animation. Every state change represents, more or less, a keyframe in this animation. GalaxyJS\'s goal is to provide the best tools necessary to realize this philosophy.'
+          },
+          {
+            tag:'h2',
             text: 'Showcase'
           },
           {

@@ -16,14 +16,19 @@ Scope.data.todos = [
   }
 ];
 
-function setTimelineSetupsToDefault() {
-  Galaxy.setupTimeline('main-nav-timeline', {
-    'pre-side-bar': 0,
-    'side-bar': .1
-  });
-}
-
-setTimelineSetupsToDefault();
+// let ticking = false;
+// document.addEventListener('scroll', (e) => {
+//   lastKnownScrollPosition = window.scrollY;
+//
+//   if (!ticking) {
+//     window.requestAnimationFrame(() => {
+//
+//       ticking = false;
+//     });
+//
+//     ticking = true;
+//   }
+// });
 
 router.setup([
   {
@@ -39,12 +44,6 @@ router.setup([
     title: 'Start',
     description: '',
     icon: 'fas fa-play',
-    onLeave() {
-      Galaxy.setupTimeline('main-nav-timeline', {
-        'pre-side-bar': 0,
-        'side-bar': .5
-      });
-    },
   },
   {
     path: '/learn',
@@ -53,9 +52,6 @@ router.setup([
     },
     title: 'Learn',
     icon: 'fas fa-map',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   },
   {
     path: '/reactive',
@@ -64,9 +60,6 @@ router.setup([
     },
     title: 'Reactive',
     icon: 'fas fa-exchange-alt',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   },
   {
     path: '/conditional-rendering',
@@ -75,9 +68,6 @@ router.setup([
     },
     title: 'Conditional Rendering',
     icon: 'fas fa-exclamation-triangle',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   },
   {
     path: '/list-rendering',
@@ -86,9 +76,6 @@ router.setup([
     },
     title: 'List Rendering',
     icon: 'fas fa-list-ul',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   },
   {
     path: '/animations',
@@ -97,9 +84,6 @@ router.setup([
     },
     title: 'Animations',
     icon: 'fas fa-spinner',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   },
   {
     path: '/router',
@@ -108,9 +92,6 @@ router.setup([
     },
     title: 'Router',
     icon: 'fas fa-road',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   },
   {
     path: '/api',
@@ -119,9 +100,6 @@ router.setup([
     },
     title: 'API',
     icon: 'fas fa-code',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   },
   {
     path: '/todo-demo',
@@ -129,9 +107,6 @@ router.setup([
       main: 'modules/todo/todo.js'
     },
     title: 'ToDo - Demo',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   },
   {
     path: '/vuejs-replica-demo',
@@ -139,11 +114,23 @@ router.setup([
       main: 'modules/vuejs-replica/vuejs-replica.js'
     },
     title: 'VueJS Replica - Demo',
-    onLeave() {
-      setTimelineSetupsToDefault();
-    }
   }
-]);
+]).onTransition((from, to) => {
+  switch (from) {
+    case '/start':
+      Galaxy.setupTimeline('main-nav-timeline', {
+        'pre-side-bar': 0,
+        'side-bar': .6,
+      });
+      break;
+    case null:
+    default:
+      Galaxy.setupTimeline('main-nav-timeline', {
+        'pre-side-bar': 0,
+        'side-bar': .1,
+      });
+  }
+});
 
 router.notFound(function () {
   console.error('404, Not Found!');
@@ -220,6 +207,10 @@ view.blueprint([
               transition: 'none',
               autoAlpha: 0,
               x: '-35%',
+            },
+            to: {
+              autoAlpha: 1,
+              x: 0,
               ease: 'elastic.out(1, .5)',
               clearProps: 'all'
             },
@@ -265,8 +256,8 @@ view.blueprint([
                 to: {
                   height: 'auto',
                 },
-                position: '-=.3',
-                duration: .3,
+                position: '-=.35',
+                duration: .35,
               },
               leave: {
                 withParent: true,
@@ -275,9 +266,9 @@ view.blueprint([
                   height: 0,
                 },
                 duration: function () {
-                  return this.node.offsetHeight > 0 ? .3 : 0;
+                  return this.node.offsetHeight > 0 ? .35 : 0;
                 },
-                position: '-=.3'
+                position: '-=.35'
               }
             },
             if: function (navPath = '<>nav.path', activePath = '<>router.activePath', length = '<>router.activeRoute.children.length') {
@@ -294,7 +285,7 @@ view.blueprint([
                     return childRoutes.filter(i => !i.hidden);
                   }
 
-                  return [];
+                  return undefined;
                 },
                 trackBy: 'path'
               },
@@ -308,7 +299,7 @@ view.blueprint([
                 active: '<>subNav.active'
               },
               text: '<>subNav.title',
-              href: '#',
+              href: '<>subNav.fullPath',
               on: {
                 click: function (e) {
                   e.preventDefault();
@@ -328,7 +319,12 @@ view.blueprint([
         position: 'side-bar',
         duration: .01,
         to: {
-          marginLeft: 270,
+          paddingLeft: () => {
+            if(window.innerWidth <= 768) {
+              return 0;
+            }
+            return window.innerWidth <= 1024 ? 220 : 270;
+          },
           clearProps: ''
         }
       },
@@ -337,7 +333,7 @@ view.blueprint([
         position: 'side-bar',
         duration: .5,
         to: {
-          marginLeft: 0,
+          paddingLeft: 0,
           clearProps: ''
         }
       },
@@ -368,4 +364,4 @@ view.blueprint([
     router.start();
   }, 'main-nav-timeline'),
 ]);
-console.log(router);
+console.log(Scope);
