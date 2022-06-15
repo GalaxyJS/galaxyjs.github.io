@@ -118,7 +118,7 @@ view.blueprint([
         class: 'content',
         children: [
           {
-            tag:'h2',
+            tag: 'h2',
             text: 'Philosophy'
           },
           {
@@ -126,7 +126,7 @@ view.blueprint([
             text: 'A web application can be seen as a continues animation. Every state change represents, more or less, a keyframe in this animation. GalaxyJS\'s goal is to provide the best tools necessary to realize this philosophy.'
           },
           {
-            tag:'h2',
+            tag: 'h2',
             text: 'Showcase'
           },
           {
@@ -235,7 +235,7 @@ view.blueprint([
             tag: 'p',
             text: 'Ready...'
           },
-          view.enterKeyframe(pageAnimation, 1),
+          view.enterKeyframe(null, pageAnimation, 1),
           {
             animations: {
               enter: {
@@ -255,7 +255,7 @@ view.blueprint([
             tag: 'p',
             text: 'Set...'
           },
-          view.enterKeyframe(pageAnimation, 1),
+          view.enterKeyframe(null, pageAnimation, 1),
           {
             animations: {
               enter: {
@@ -275,7 +275,7 @@ view.blueprint([
             tag: 'strong',
             text: 'Go!'
           },
-          view.enterKeyframe(pageAnimation, .2),
+          view.enterKeyframe(null, pageAnimation, .2),
           {
             animations: {
               enter: {

@@ -145,10 +145,6 @@ h2 > a:hover {
   box-sizing: border-box;
 }
 
-button {
-  font-family: 'Montserrat', sans-serif;
-  font-size: .98em;
-}
 
 html, body {
   position: relative;
@@ -579,10 +575,12 @@ label.checkbox {
 }
 
 label.checkbox > button {
-  margin-left: auto;
-  padding: 0 8px;
+  margin: 0 0 0 auto;
+  padding:  0;
   font-size: .8em;
   font-weight: bold;
+  height: 26px;
+  width: 30px;
 }
 
 label.checkbox > input:focus + span {
@@ -813,24 +811,31 @@ input.w-50 + .w-50 {
 
 button {
   background-color: transparent;
-  border: 1px solid;
+  border: 2px solid;
   color: #666;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 700;
   margin: 0 10px;
   outline: none;
   outline-offset: 2px;
   line-height: 22px;
-  padding: 8px 14px;
+  padding: 8px 10px;
   border-radius: 6px;
   transition-property: transform, border-color, background-color;
   transition: all .1s linear;
   user-select: none;
   display: flex;
   text-transform: uppercase;
-  letter-spacing: .1px;
+  letter-spacing: .2px;
   flex-direction: row;
   align-items: center;
+  font-size: .92em;
+}
+
+button > i {
+  width: 12px;
+  height: 12px;
+  line-height: 12px !important;
 }
 
 button:hover {
@@ -1159,7 +1164,7 @@ p.example {
   }
 }
 
-@media only screen and (min-device-width: 426px)  {
+@media only screen and (min-device-width: 426px) {
   html, body {
     /*font-size: 14px;*/
     /*line-height: 16px;*/
@@ -1220,7 +1225,7 @@ p.example {
   }
 }
 
-@media only screen and (min-device-width: 769px)  {
+@media only screen and (min-device-width: 769px) {
   html, body {
     /*font-size: 15px;*/
     /*line-height: 16px;*/

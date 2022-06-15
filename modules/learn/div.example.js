@@ -4,6 +4,6 @@ view.blueprint({
   tag: 'div',
   children: {
     tag: 'p',
-    text: 'Hello World from inside a div!'
+    text: 'Hello World! I am a paragraph inside a div!'
   }
 });

@@ -35,7 +35,7 @@ view.blueprint([
     class: 'box-container',
     children: {
       style: {
-        width: '75px'
+        width: '64px'
       },
       animations: {
         enter: {
@@ -70,6 +70,16 @@ view.blueprint([
       repeat: {
         data: '<>data.boxes',
         as: 'item',
+        onComplete: (viewNodes) => {
+          // gsap.to(viewNodes.map(vn => vn.node), {
+          //   duration: 1,
+          //   scale: .1,
+          //   stagger: 0.1,
+          //   yoyo: true,
+          //   repeat: -1
+          // });
+          // console.log('test')
+        }
       },
       children: [
         {

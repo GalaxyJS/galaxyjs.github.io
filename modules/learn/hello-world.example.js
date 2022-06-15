@@ -2,5 +2,5 @@ const view = Scope.import('galaxy/view');
 
 view.blueprint({
   tag: 'p',
-  text: 'Hello World!'
+  text: 'Hello World! I am a paragraph.'
 });

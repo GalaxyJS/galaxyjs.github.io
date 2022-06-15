@@ -356,7 +356,7 @@ view.blueprint({
     view.enterKeyframe(() => {
       router.start();
       PR.prettyPrint();
-    }, 'card')
+    }, 'main-nav-timeline')
   ]
 });
 

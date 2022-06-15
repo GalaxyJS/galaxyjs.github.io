@@ -49,9 +49,13 @@ Scope.data.api = {
     },
     {
       title: 'blueprint(uiBlueprint)',
-      description: 'init method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
+      description: 'This method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
         ' following code will create a pharagraph tag with `Hello World!` text inside it.' +
         '<code class="prettyprint lang-js">view.blueprint({ tag: \'p\', text: \'Hello World!\' });</code>'
+    },
+    {
+      title: 'components(componentBuilderMap)',
+      description: 'This method gets object that represents custom components tag name and their builders.'
     },
     {
       title: 'enterKeyframe(onComplete, timeline, duration)',
@@ -204,6 +208,6 @@ view.blueprint({
     view.enterKeyframe(() => {
       PR.prettyPrint();
       router.start();
-    }, 'card')
+    }, 'main-nav-timeline')
   ]
 });

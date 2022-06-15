@@ -168,7 +168,7 @@ view.blueprint({
                 {
                   tag: 'button',
                   class: 'red',
-                  html: '<span>Remove</span><i class="fas fa-trash-alt"></i>',
+                  html: '<i class="fas fa-trash-alt"></i>',
                   on: {
                     click() {
                       removeFromList(this.data.toDoItem);

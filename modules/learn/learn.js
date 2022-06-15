@@ -16,7 +16,7 @@ router.setup([
         return true;
       }
 
-      gsap.to('#main-content', {scrollTo: {y: '#' + params.section, offsetY: 30}, duration: .3});
+      gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
       return true;
     }
   },
@@ -92,7 +92,7 @@ view.blueprint([
           '<p>There are 2 ways to use GalaxyJS</p>' +
           '<ol><li>Start a project with GalaxyJS from scratch.</li>' +
           '<li>Add GalaxyJS to an existing webpage.</li></ol>' +
-          '<h3>1 - Start a project from scratch 😎👍👍</h3>' +
+          '<h3>1. Start a project from scratch 😎👍👍</h3>' +
           '<p>This is the easiest way to start since you are going to use GalaxyJS as your web application framework.</p>' +
           '<p>First create a project directory with the recommended structure that is suggested above. Then add this code into the <code class="prettyprint">/app/index.html</code></p>',
           {
@@ -136,7 +136,7 @@ view.blueprint([
           '  tag: \'h1\',\n' +
           '  text: \'Hello World!\'\n' +
           '});</pre>',
-          '<h3>2 - Add GalaxyJS to an existing webpage</h3>' +
+          '<h3>2. Add GalaxyJS to an existing webpage</h3>' +
           '<p>Sometimes you already have a page and you just want to add some reactive functionality to a page. You can easily do this by transforming your target element into a Galaxy module:</p>',
           {
             tag: 'pre',
@@ -184,14 +184,22 @@ view.blueprint([
           // ------
           '<h3>Components</h3>',
           '<p>Components are very similar to modules in many aspects, except:</p>',
-          '<ol><li>They strictly meant for building reusable UI blocks.</li>' +
-          '<li>They may only have one root element.</li></ol>',
+          '<ol><li>They can only have one root element.</li>' +
+          '<li>They strictly meant for building reusable UI blocks.</li></ol>',
           '<p>Here is an example of a component that takes 2 properties, title and description and shows them.</p>',
           {
             tag: 'pre',
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./simple-component.example.js'),
             // expandable
+          },
+          '<p>Next step is to make sure to add the component to the <code class="prettyprint lang-js">view</code>. The <strong>key</strong> would be the component\'s tag name and <strong>value</strong> would be the components\'s builder function.</p>',
+          {
+            tag: 'pre',
+            class: 'prettyprint lang-js',
+            text: 'view.components({\n' +
+              '  \'simple-component\': Scope.import(\'./simple-component.example.js\')\n' +
+              '});'
           },
           '<p>And here is how to use the component</p>',
           {
@@ -222,41 +230,41 @@ view.blueprint([
             tag: 'pre',
             class: 'prettyprint lang-js',
             text: 'const module = {\n' +
-              '      // Addons that you need for your module\n' +
-              '      imports: [\'galaxy/view\'],\n' +
-              '      // The element which is going to be the module\n' +
-              '      element: document.querySelector(\'#target\'),\n' +
-              '      constructor: function (Scope) {\n' +
-              '         const view = Scope.import(\'galaxy/view\');\n' +
+              '  // Addons that you need for your module\n' +
+              '  imports: [\'galaxy/view\'],\n' +
+              '  // The element which is going to be the module\n' +
+              '  element: document.querySelector(\'#target\'),\n' +
+              '  constructor: function (Scope) {\n' +
+              '     const view = Scope.import(\'galaxy/view\');\n' +
               '\n' +
-              '         Scope.data.list = [\n' +
-              '           {\n' +
-              '              title: \'Item 1\'\n' +
-              '           },\n' +
-              '           {\n' +
-              '              title: \'Item 2\'\n' +
-              '           },\n' +
-              '           {\n' +
-              '              title: \'Item 3\'\n' +
-              '           },\n' +
-              '         ];\n' +
+              '     Scope.data.list = [\n' +
+              '       {\n' +
+              '          title: \'Item 1\'\n' +
+              '       },\n' +
+              '       {\n' +
+              '          title: \'Item 2\'\n' +
+              '       },\n' +
+              '       {\n' +
+              '          title: \'Item 3\'\n' +
+              '       },\n' +
+              '     ];\n' +
               '\n' +
-              '         view.config.cleanContainer = true;\n' +
-              '         view.blueprint({\n' +
-              '           tag: \'ul\',\n' +
-              '           children: {\n' +
-              '             repeat: {\n' +
-              '                // Bind to data.list property\n' +
-              '                data: \'<>data.list\',\n' +
-              '                // An alias for each list item\n' +
-              '                as: \'item\'\n' +
-              '             },\n' +
-              '             tag: \'li\',\n' +
-              '             text: \'<>item.title\'\n' +
-              '           }\n' +
-              '         });\n' +
-              '      }\n' +
-              '    };\n' +
+              '     view.config.cleanContainer = true;\n' +
+              '     view.blueprint({\n' +
+              '       tag: \'ul\',\n' +
+              '       children: {\n' +
+              '         repeat: {\n' +
+              '            // Bind to data.list property\n' +
+              '            data: \'<>data.list\',\n' +
+              '            // An alias for each list item\n' +
+              '            as: \'item\'\n' +
+              '         },\n' +
+              '         tag: \'li\',\n' +
+              '         text: \'<>item.title\'\n' +
+              '       }\n' +
+              '     });\n' +
+              '  }\n' +
+              '};\n' +
               '\n' +
               '// load module\n' +
               'Galaxy.load(module);'
@@ -268,7 +276,7 @@ view.blueprint([
   view.enterKeyframe(() => {
     PR.prettyPrint();
     router.start();
-  }, 'card')
+  }, 'main-nav-timeline')
 ]);
 
 
