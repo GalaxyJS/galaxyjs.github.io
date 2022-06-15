@@ -6,47 +6,125 @@ Scope.data.myValue = 10;
 
 view.blueprint([
   {
-    class: 'card big',
+    class: 'start-page',
     animations: {
-      enter: animations.cardInOut.enter,
+      enter: {
+        timeline: 'main-nav-timeline',
+        position: 'side-bar+=.25',
+        from: {
+          opacity: 0,
+        },
+        to: {
+          opacity: 1,
+        },
+        duration: .25,
+      },
       leave: {
         timeline: 'main-nav-timeline',
-        position: 'pre-side-bar',
+        position: 'pre-side-bar+=.2',
         to: {
           ease: 'Power1.easeIn',
           transformOrigin: 'top center',
           display: 'none',
-          scale: .96,
+          // scale: .96,
           opacity: 0,
-          delay: .1
+          // delay: .1
         },
         duration: .25
       }
     },
     children: [
       {
+        animations: {
+          enter: {
+            timeline: 'main-nav-timeline',
+            position: 'side-bar+=.5',
+            from: {
+              y: '-10%'
+            },
+            to: {
+              y: 0
+            },
+            duration: .3
+          },
+          leave: {
+            timeline: 'main-nav-timeline',
+            position: 'pre-side-bar',
+            to: {
+              ease: 'Power1.easeIn',
+              y: '-50%',
+            },
+            duration: .5
+          }
+        },
         tag: 'img',
         class: 'banner',
-        src: 'assets/images/galaxy.jpg',
-        height: '420',
+        src: 'assets/images/galaxy-large.jpg',
         alt: 'Galaxy',
       },
-      '<h1>Welcome To GalaxyJS</h1>',
+
       {
-        tag: 'section',
-        class: 'content',
-        children: [
-          '<h2>The framework to make visually stunning web applications</h2>'
-        ]
+        animations: {
+          enter: {
+            timeline: 'main-nav-timeline',
+            from: {
+              opacity: 0,
+              y: '-5%'
+            },
+            to: {
+              opacity: 1,
+              y: 0
+            },
+            duration: .3
+          },
+        },
+        tag: 'h1',
+        class: 'title',
+        html: 'GalaxyJS'
       },
+
       {
+        animations: {
+          enter: {
+            timeline: 'main-nav-timeline',
+            from: {
+              opacity: 0,
+              y: '-5%'
+            },
+            to: {
+              opacity: 1,
+              y: 0
+            },
+            duration: .3
+          },
+        },
+        tag: 'h1',
+        html: 'The framework for <br>elegant web applications'
+      },
+
+      {
+        animations: {
+          enter: {
+            timeline: 'main-nav-timeline',
+            position: '-=.15',
+            from: {
+              opacity: 0,
+              y: '-3%'
+            },
+            to: {
+              opacity: 1,
+              y: 0
+            },
+            duration: .3,
+          },
+        },
         tag: 'section',
         class: 'content',
         children: [
           '<p>GalaxyJS is an opinionated framework for building visually rich web applications. Its main key feature is utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a></p>',
           {
-            tag: 'h4',
-            text: 'Don\'t runway from the DOM(Document Object Model), slay it like a dragon.'
+            tag: 'h2',
+            text: 'Don\'t runway from the DOM(Document Object Model), embrace it!'
           },
           {
             tag: 'ul',
@@ -86,12 +164,7 @@ view.blueprint([
               }
             ]
           },
-        ]
-      },
-      {
-        tag: 'section',
-        class: 'content',
-        children: [
+
           {
             tag: 'div',
             class: 'flex-bar jc-center',

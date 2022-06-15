@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap');
+/*@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;500;600;700;800&display=swap');*/
+/*@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800&display=swap');*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 /*@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;300;400;500;600;700;800;900&display=swap');*/
 /*@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap');*/
 /*@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@100;200;300;400;500;600;700;800;900&display=swap');*/
@@ -74,7 +75,7 @@ hr {
 }
 
 h1 {
-  font-size: 1.75em;
+  font-size: 1.76em;
   cursor: default;
   /* margin: 16px 0; */
   line-height: 28px;
@@ -82,24 +83,26 @@ h1 {
 }
 
 h2 {
-  font-size: 1.66em;
+  font-size: 1.68em;
   line-height: 1;
   margin: 15px 0;
   text-transform: capitalize;
+  font-weight: 800;
+  /*color: #777;*/
 }
 
 h3 {
-  font-size: 1.30em;
+  font-size: 1.28em;
   line-height: 1.15;
   margin: 12px 0;
   text-transform: capitalize;
-  color: #484848;
+  /*color: #555;*/
 }
 
 h4 {
-  font-size: 1.2em;
+  font-size: 1.17em;
   line-height: 22px;
-  color: #484848;
+  /*color: #484848;*/
   margin: 12px 0;
 }
 
@@ -135,7 +138,9 @@ h2 > a:hover {
   /*font-family: 'Nunito', sans-serif;*/
   /*font-family: 'Quicksand', sans-serif;*/
   /*font-family: 'Josefin Sans', sans-serif;*/
-  font-family: 'Assistant', sans-serif;
+  /*font-family: 'Assistant', sans-serif;*/
+  /*font-family: 'Montserrat', sans-serif;*/
+  font-family: 'Inter', sans-serif;
   /*font-family: 'Inconsolata', monospace;*/
   /*font-family: 'JetBrains Mono', monospace;*/
   /*font-family: 'Noto Sans Mono', monospace;*/
@@ -447,7 +452,7 @@ file-icon > i {
 }
 
 .content > h2:first-child {
-  margin-top: 12px;
+  margin-top: 2vmax;
 }
 
 .content > h3 {
@@ -576,7 +581,7 @@ label.checkbox {
 
 label.checkbox > button {
   margin: 0 0 0 auto;
-  padding:  0;
+  padding: 0;
   font-size: .8em;
   font-weight: bold;
   height: 26px;
@@ -833,7 +838,6 @@ button {
 }
 
 button > i {
-  width: 12px;
   height: 12px;
   line-height: 12px !important;
 }
@@ -872,6 +876,11 @@ button > i:last-child {
 
 button > i:first-child {
   margin-right: 8px;
+}
+
+button > i:only-child {
+  display: block;
+  margin: 0 auto;
 }
 
 button.big {
@@ -1143,6 +1152,42 @@ p.example {
     height: calc(100% - 50px);
   }
 
+  .start-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .start-page > .banner {
+    height: 50vh;
+    object-fit: cover;
+  }
+
+  .start-page > h1 {
+    font-size: 72px;
+    line-height: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 3vmax 15px;
+    white-space: nowrap;
+  }
+
+  .start-page > h1.title {
+    font-size: 110px;
+    margin: -210px auto 0;
+    height: 210px;
+    color: #e8edf2;
+    position: relative;
+    z-index: 10;
+  }
+
+  .start-page > .content {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
   .card {
     border-radius: 6px;
     margin: 8px 4px 32px;
@@ -1160,7 +1205,7 @@ p.example {
   }
 
   .content > h2:first-child {
-    margin: 8px 0;
+    /*margin: 8px 0;*/
   }
 }
 
@@ -1284,7 +1329,7 @@ p.example {
   }
 
   .content > h2:first-child {
-    margin: 12px 0;
+    /*margin: 12px 0;*/
   }
 }
 
