@@ -3789,14 +3789,25 @@ Galaxy.View = /** @class */(function (G) {
         }
       };
     },
-    leaveKeyframe: function (onComplete, timeline, duration) {
+    leaveKeyframe: function (onComplete, timeline, durOrPos) {
+      let position = undefined;
+      let duration = durOrPos || .01;
+      if (typeof timeline === 'number') {
+        duration = timeline;
+        timeline = null;
+      } else if (typeof timeline === 'string') {
+        position = durOrPos;
+        duration = .01;
+      }
+
       return {
         tag: 'comment',
         text: 'keyframe:leave',
         animations: {
-          enter: {
-            duration: duration !== undefined ? duration : .01,
+          leave: {
+            duration,
             timeline,
+            position,
             onComplete
           }
         }
@@ -5465,11 +5476,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
             if (animationDescription) {
               if (type && !viewNode.node.classList.contains(key)) {
+                AnimationMeta.setupOnComplete(animationDescription, () => {
+                  viewNode.node.classList.add(key);
+                });
                 AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
               } else if (!type && viewNode.node.classList.contains(key)) {
+                AnimationMeta.setupOnComplete(animationDescription, () => {
+                  viewNode.node.classList.remove(key);
+                });
                 AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
               }
-              // gsap.set(viewNode.node, AnimationMeta.parseStep(viewNode, animationDescription.to));
             }
           });
         });
@@ -5617,6 +5633,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     return step;
+  };
+
+  AnimationMeta.setupOnComplete = function (description, onComplete) {
+    if (description.onComplete) {
+      const userDefinedOnComplete = description.onComplete;
+      description.onComplete = function () {
+        userDefinedOnComplete();
+        onComplete();
+      };
+    } else {
+      description.onComplete = () => {
+        onComplete();
+      };
+    }
   };
 
   /**
@@ -5776,7 +5806,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           exist.timeline.clear(false);
           exist.timeline.invalidate();
         }
-        // console.log(name, 'aaaaaaaaaaaaaaaaa');
         return exist;
       }
 
@@ -5793,7 +5822,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           _this.awaits = [];
           _this.children = [];
           _this.onCompletesActions = [];
-          // if (name === 'main-nav-timeline') debugger
           AnimationMeta.ANIMATIONS[name] = null;
         }
       });
@@ -6023,19 +6051,27 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return true;
       }
 
-      const viewNode = this;
       // when value is an object
+      const viewNode = this;
       const reactiveClasses = config.reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
       const observer = config.observer = new G.Observer(reactiveClasses);
+      const animations = viewNode.blueprint.animations || {};
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
-        viewNode.rendered.then(function () {
-          applyClasses(viewNode, reactiveClasses);
-          observer.onAll(() => {
+        viewNode.rendered.then(() => {
+          // ToDo: Don't know why this is here. It looks redundant
+          // applyClasses(viewNode, reactiveClasses);
+          observer.onAll((k) => {
+            if (animations['add:' + k] || animations['remove:' + k]) {
+              return;
+            }
             applyClasses(viewNode, reactiveClasses);
           });
         });
       } else {
-        observer.onAll(() => {
+        observer.onAll((k) => {
+          if (animations['add:' + k] || animations['remove:' + k]) {
+            return;
+          }
           applyClasses(viewNode, reactiveClasses);
         });
       }
@@ -6074,7 +6110,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       // when value is an object
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
-        viewNode.rendered.then(function () {
+        viewNode.rendered.then(() => {
           applyClasses(viewNode, value);
         });
       } else {
@@ -6108,7 +6144,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return;
     }
 
-    // viewNode.node.className = newClasses.join(' ');
     G.View.CREATE_IN_NEXT_FRAME(viewNode.index, (_next) => {
       viewNode.node.className = newClasses.join(' ');
       _next();

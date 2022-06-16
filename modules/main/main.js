@@ -54,11 +54,11 @@ router.setup([
     icon: 'fas fa-map',
   },
   {
-    path: '/reactive',
+    path: '/reactivity',
     viewports: {
-      main: 'modules/reactive/reactive.js'
+      main: 'modules/reactivity/reactivity.js'
     },
-    title: 'Reactive',
+    title: 'Reactivity',
     icon: 'fas fa-exchange-alt',
   },
   {
@@ -325,7 +325,7 @@ view.blueprint([
             }
             return window.innerWidth <= 1024 ? 220 : 270;
           },
-          clearProps: ''
+          clearProps: 'all'
         }
       },
       'remove:in': {
@@ -334,7 +334,7 @@ view.blueprint([
         duration: .5,
         to: {
           paddingLeft: 0,
-          clearProps: ''
+          clearProps: 'all'
         }
       },
     },
@@ -344,7 +344,7 @@ view.blueprint([
       'main-content': true,
       'in': (ap = '<>router.activePath') => {
         return ap !== '/start';
-      }
+      },
     },
     children: [
       {

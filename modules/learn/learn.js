@@ -56,11 +56,11 @@ view.blueprint([
         tag: 'section',
         children: [
           '<h2>Installation</h2>' +
-          '<p>Simply copy & paste the following into your page\'s head</p>',
+          '<p>Simply copy & paste the following into your page\'s head.</p>',
           {
             tag: 'pre',
             class: 'prettyprint lang-html',
-            text: '<script src="https://cdn.jsdelivr.net/gh/GalaxyJS/galaxyjs.github.io/galaxyjs/galaxy.js"></script>'
+            text: '<script src="https://cdn.jsdelivr.net/gh/GalaxyJS/galaxyjs.github.io/galaxyjs/galaxy.js">\n</script>'
           },
           '<h3>Recommended project file & folder structure</h3>' +
           '<p>You can have whatever directory structure you like as long as you know how to the load modules. The following structure is' +
@@ -88,8 +88,9 @@ view.blueprint([
           //   text: '-- GALAXYJS BOILERPLATE PROJECT URL --'
           // },
           '<h2 id="getting-started">Getting started</h2>' +
-          '<p class="important">This learn assumes intermediate level knowledge of JavaScript, CSS and HTML.</p>' +
-          '<p>There are 2 ways to use GalaxyJS</p>' +
+          '<p class="important">This documentation assumes intermediate level knowledge of JavaScript, CSS and HTML. ' +
+          'If you are completely new to frontend development, we recommend that you learn the basics first and then come back!</p>' +
+          '<p>There are 2 ways to use GalaxyJS:</p>' +
           '<ol><li>Start a project with GalaxyJS from scratch.</li>' +
           '<li>Add GalaxyJS to an existing webpage.</li></ol>' +
           '<h3>1. Start a project from scratch 😎👍👍</h3>' +
@@ -126,7 +127,7 @@ view.blueprint([
           '<p>This line is loading the view addon which provides functionality necessary to create the UI/UX' +
           ' of your module and/or component.</p>',
           '<pre class="prettyprint inline lang-js">view.config.cleanContainer = true</pre> ' +
-          '<p>Above code tells the view addon to start by cleaning the its parent and then render its content. In this case, this code will' +
+          '<p>Above code tells the view addon to start by cleaning its parent and then render its content. In this case, this code will' +
           ' remove the \'Loading...\' from the body.</p>',
           {
             tag: 'p',
@@ -156,9 +157,9 @@ view.blueprint([
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./hello-world.example.js')
           },
-          '<p>In the above code we started by importing <code class="prettyprint">\'galaxy/view\'</code> service which we can use to create UI blocks.</p>',
+          '<p>In the above code we started by importing <code class="prettyprint">\'galaxy/view\'</code> addon which we need in order to create a UI.</p>',
           '<p><code class="prettyprint">view.blueprint()</code> accepts an array or object which is the blueprint of ' +
-          'our UI block. In this case a <strong>p</strong> tag with <strong>Hello World!</strong> as its text.</p>',
+          'our UI. In this case a <strong>p</strong> tag with <strong>Hello World!</strong> as its text.</p>',
           {
             class: 'example-box',
             module: {
@@ -171,14 +172,15 @@ view.blueprint([
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./div.example.js')
           },
-          '<p>With <code class="prettyprint">children</code> property we can add nodes to the corresponding.</p>',
+          '<p>With <code class="prettyprint">children</code> property we can add nodes to an element ' +
+          'or in other word <a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Introduction_to_HTML/Getting_started#nesting_elements" target="_blank">nesting elements(MDN)</a>.</p>',
           {
             class: 'example-box',
             module: {
               path: './div.example.js'
             }
           },
-          '<p>As you can see, you create your HTML structure by using objects. This way you don\'t have to ' +
+          '<p>As you can see, you create your HTML structures by using JS objects. This way you don\'t have to ' +
           'go back and forth between JS and HTML.</p>',
           '<p>Keep in mind that a blueprint object is not template/static object. it\'s a live object which reflects the ui state.</p>',
           // ------
@@ -223,7 +225,7 @@ view.blueprint([
           },
           // ------
           '<h3>List Rendering</h3>',
-          '<p style="font-size: .87em">To learn more go to <a href="/list-rendering">List Rendering</a></p>',
+          '<p>To learn more go to <a href="/list-rendering">List Rendering</a></p>',
           '<p>GalaxyJS provide <strong>repeat</strong> property for list rendering. <strong>repeat</strong> reacts to <code class="prettyprint' +
           ' lang-js">array.change</code> property which is provided automatically by GalaxyJS on array values that are bound to view.</p>',
           {

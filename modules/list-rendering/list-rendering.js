@@ -65,6 +65,6 @@ view.blueprint({
     },
     view.enterKeyframe(() => {
       PR.prettyPrint();
-    })
+    }, 'main-nav-timeline')
   ]
 });

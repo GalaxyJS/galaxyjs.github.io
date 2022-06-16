@@ -121,7 +121,8 @@ view.blueprint([
         tag: 'section',
         class: 'content',
         children: [
-          '<p>GalaxyJS is an opinionated framework for building visually rich web applications. Its main key feature is utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a></p>',
+          '<p>GalaxyJS is an opinionated framework for building visually rich web applications. ' +
+          'Its main key feature is utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a>.</p>',
           {
             tag: 'h2',
             text: 'Don\'t runway from the DOM(Document Object Model), embrace it!'
@@ -129,8 +130,8 @@ view.blueprint([
           {
             tag: 'ul',
             children: [
-              '<li><strong>Animations</strong> are built in, utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a></li>' +
-              '<li><strong>Versatile</strong> in order to achieve most optimal solution for your app</li>'
+              '<li><strong>Animations</strong> are built in, utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a>.</li>' +
+              '<li><strong>Versatile</strong> in order to achieve most optimal solution for your app.</li>'
             ]
           },
           {

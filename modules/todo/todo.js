@@ -73,7 +73,7 @@ view.blueprint({
       class: 'content',
       children: [
         {
-          tag: 'h1',
+          tag: 'h2',
           text: (len = '<>data.items.length') => {
             return 'ToDos, Count: ' + len;
           },
@@ -203,4 +203,3 @@ view.blueprint({
     }
   ]
 });
-console.log(Scope);

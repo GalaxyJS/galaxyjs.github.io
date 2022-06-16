@@ -6,7 +6,9 @@ view.blueprint({
   children: [
     {
       tag: 'h5',
-      text: '<>data.selectedOption'
+      text: (so = '<>data.selectedOption') => {
+        return 'The selected option\'s value is: ' + so;
+      }
     },
     {
       tag: 'select',

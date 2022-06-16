@@ -77,6 +77,12 @@ view.blueprint({
         '<li><code class="prettyprint lang-js">data</code> which refers to the module\'s <code class="prettyprint lang-js">Scope.data</code></li>' +
         '<li><code class="prettyprint lang-js">this</code> which refers to the corresponding node.</li>' +
         '</ul>',
+        '<h3>Under the hood</h3>',
+        '<p>GalaxyJS utilizes <code class="prettyprint lang-js">Object.defineProperty()</code> and custom <code class="prettyprint lang-js">setter/getter</code> to achieve reactivity. ' +
+        'Any UI property which is bound to a data property will be updated upon changes to that data property.</p>' +
+        '<p>GalaxyJS keeps track of all the UI elements that are bound to data and makes sure they are updated efficiently. ' +
+        'By doing this, GalaxyJS can reach very high performance when it comes to updateding the DOM.' +
+        '</p><p>However, as a developer you are still responsible to write efficient code and keep the quantity and amount of data changes to the minimum.</p>',
         {
           tag: 'h2',
           id: 'binding-syntax',
@@ -297,7 +303,7 @@ view.blueprint({
           id: 'class-and-style',
           text: 'Class and Style'
         },
-        '<p>The <code class="prettyprint lang-js">class</code> and <code class="prettyprint lang-js">style</code> property support variety of types like string, array, object and literal object.</p>',
+        '<p>The <code class="prettyprint lang-js">class</code> and <code class="prettyprint lang-js">style</code> properties support variety of types like string, array, object and literal object.</p>',
         {
           module: {
             path: './class-and-style.example.js'

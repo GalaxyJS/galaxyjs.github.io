@@ -323,5 +323,5 @@ view.blueprint([
   view.enterKeyframe(() => {
     PR.prettyPrint();
     pageAnimation.progress(Scope.data.sliderValue / 100);
-  }),
+  }, 'main-nav-timeline'),
 ]);
