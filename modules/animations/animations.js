@@ -66,9 +66,8 @@ view.blueprint([
         timeline: 'main-nav-timeline',
         position: 'side-bar+=.5',
         from: {
-          x: 80,
-          y: 150,
-          rotationZ: -8,
+          // x: 80,
+          y: 100,
           opacity: 0
         },
         duration: .5
@@ -84,14 +83,57 @@ view.blueprint([
     },
     children: [
       {
+        animations: {
+          enter: {
+            timeline: 'main-nav-timeline',
+            position: '-=.5',
+            from: {
+              opacity: 0,
+              y: -35,
+            },
+            to: {
+              opacity: 1,
+              y: 0
+            },
+            duration: .3
+          },
+        },
         tag: 'img',
         class: 'banner',
         src: 'assets/images/asphalt-blur-cars.jpg',
         height: '410',
       },
+      view.enterKeyframe(null, 'main-nav-timeline', '+=.7'),
       {
         tag: 'h1',
-        text: 'Animations'
+        style: {
+          textTransform: 'unset'
+        },
+        // text: 'Animations'
+        children: {
+          animations: {
+            enter: {
+              timeline: 'main-nav-timeline',
+              position: '-=.75',
+              from: {
+                opacity: 0,
+                x: 100,
+              },
+              to: {
+                opacity: 1,
+                x: 0,
+                ease: 'elastic.out(1, .75)'
+              },
+              duration: .8
+            },
+          },
+          tag: 'span',
+          repeat: {
+            data: ('Animations').split(''),
+            as: 'letter'
+          },
+          text: '<>letter'
+        }
       },
       {
         tag: 'section',
@@ -323,5 +365,5 @@ view.blueprint([
   view.enterKeyframe(() => {
     PR.prettyPrint();
     pageAnimation.progress(Scope.data.sliderValue / 100);
-  }, 'main-nav-timeline'),
+  }),
 ]);

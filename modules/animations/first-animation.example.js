@@ -52,8 +52,8 @@ view.blueprint([
             clearProps: '',
             ease: 'elastic.out(1,.5)'
           },
-          duration: 1,
-          position: '-=.87',
+          duration: .8,
+          position: '-=.75',
         },
         leave: {
           addTo: 'main-nav-timeline',
