@@ -56,6 +56,7 @@ view.blueprint([
           position: '-=.75',
         },
         leave: {
+          withParent: true,
           addTo: 'main-nav-timeline',
           timeline: 'boxes',
           to: {

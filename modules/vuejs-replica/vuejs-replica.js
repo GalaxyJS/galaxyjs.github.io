@@ -7,8 +7,6 @@ Scope.data = {
   test: data
 };
 
-console.log(Scope.data);
-
 view.blueprint({
   tag: 'div',
   class: 'card',
@@ -55,15 +53,6 @@ view.blueprint({
                   class: 'flex-item-50',
                   text: '<>product.title',
                   children: {
-                    animations: {
-                      leave: {
-                        timeline: 'DESTROY',
-                        to: {
-                          opacity: 0
-                        },
-                        duration: .5
-                      }
-                    },
                     style: {
                       paddingLeft: '10px',
                       fontSize: '.85em',

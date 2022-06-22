@@ -116,6 +116,10 @@ router.setup([
     title: 'VueJS Replica - Demo',
   }
 ]).onTransition((from, to) => {
+  if (window.innerWidth < 768) {
+    Scope.data.expandNav = false;
+  }
+
   switch (from) {
     case '/start':
       Galaxy.setupTimeline('main-nav-timeline', {
@@ -139,6 +143,21 @@ router.notFound(function () {
 view.container.node.innerHTML = '';
 view.blueprint([
   {
+    tag: 'button',
+    class: 'btn-main-menu',
+    html: '<i class="fa fa-bars"></i>',
+    if: (ap = '<>router.activePath') => {
+      return ap && ap !== '/start';
+    },
+    on: {
+      click(vn) {
+        if (window.innerWidth < 768) {
+          Scope.data.expandNav = !Scope.data.expandNav;
+        }
+      }
+    },
+  },
+  {
     tag: 'div',
     id: 'main-nav',
     class: {
@@ -150,10 +169,17 @@ view.blueprint([
         timeline: 'main-nav-timeline',
         position: 'side-bar',
         duration: .5,
+        from: {
+          x: '-100%'
+        },
         to: {
-          // ease: 'elastic.inOut(1, .5)',
-          x: 0,
-          clearProps: ''
+          x: () => {
+            if (window.innerWidth <= 768) {
+              return '-100%';
+            }
+            return 0;
+          },
+          // clearProps: ''
         }
       },
       leave: {
@@ -162,24 +188,34 @@ view.blueprint([
         duration: .5,
         to: {
           x: '-100%',
-          clearProps: ''
+          // clearProps: ''
         }
       },
+      'add:expand': {
+        from: {
+          x: '-100%',
+        },
+        to: {
+          x: 0,
+          boxShadow: '0 15px 25px rgba(40, 40, 40, .35)'
+        },
+        duration: .3
+      },
+      'remove:expand': {
+        to: {
+          x: () => {
+            if (window.innerWidth <= 768) {
+              return '-100%';
+            }
+            return 0;
+          },
+          boxShadow: '0 0 0 rgba(40, 40, 40, .35)'
+        },
+        duration: .2
+      }
     },
     if: (ap = '<>router.activePath') => {
       return ap && ap !== '/start';
-    },
-    on: {
-      click(vn) {
-        if (window.innerWidth < 768) {
-          Scope.data.expandNav = !Scope.data.expandNav;
-        }
-      },
-      tap(vn) {
-        if (window.innerWidth < 768) {
-          Scope.data.expandNav = !Scope.data.expandNav;
-        }
-      }
     },
     children: [
       {
@@ -320,7 +356,7 @@ view.blueprint([
         duration: .01,
         to: {
           paddingLeft: () => {
-            if(window.innerWidth <= 768) {
+            if (window.innerWidth <= 768) {
               return 0;
             }
             return window.innerWidth <= 1024 ? 220 : 270;
@@ -345,6 +381,11 @@ view.blueprint([
       'in': (ap = '<>router.activePath') => {
         return ap !== '/start';
       },
+    },
+    on: {
+      click: () => {
+        Scope.data.expandNav = false;
+      }
     },
     children: [
       {

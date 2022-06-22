@@ -86,16 +86,14 @@ view.blueprint([
         animations: {
           enter: {
             timeline: 'main-nav-timeline',
-            position: '-=.5',
+            position: 'side-bar+=1',
             from: {
-              opacity: 0,
-              y: -35,
+              filter: 'grayscale(100%)'
             },
             to: {
-              opacity: 1,
-              y: 0
+              filter: 'grayscale(0%)'
             },
-            duration: .3
+            duration: .4
           },
         },
         tag: 'img',

@@ -279,12 +279,7 @@ file-icon > i {
   top: 0;
   white-space: nowrap;
   z-index: 100;
-  transform: translateX(-100%);
 }
-
-/*.main-nav.in {*/
-/*  transform: translateX(0);*/
-/*}*/
 
 .main-nav > h1 {
   color: rgba(0, 0, 0, .25);
@@ -293,7 +288,6 @@ file-icon > i {
 
 .nav-item {
   display: block;
-  margin: 15px;
   border-radius: 7px;
   overflow: hidden;
   transition: box-shadow .3s;
@@ -315,7 +309,6 @@ file-icon > i {
   margin: 0;
   line-height: 20px;
   cursor: pointer;
-  padding: 15px 20px;
   font-size: 1em;
   font-weight: normal;
   outline-offset: -5px;
@@ -361,7 +354,6 @@ file-icon > i {
   padding: 10px;
   font-size: .9em;
   line-height: 20px;
-  margin: 0 15px 5px;
   border-radius: 4px;
   text-decoration: none;
   color: inherit;
@@ -432,11 +424,8 @@ file-icon > i {
   overflow: hidden;
 }
 
-.card .banner + h1 , .card .banner + .card-title {
+.card .banner + h1, .card .banner + .card-title {
   position: relative;
-  height: 100px;
-  line-height: 100px;
-  margin-top: -100px;
   padding: 0 1vmax;
   color: #fff;
   /*text-shadow: 1px 1px 3px rgba(0, 0, 0, .4);*/
@@ -641,7 +630,7 @@ ul.items-list > li:hover {
 pre.prettyprint {
   border: none;
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 1vmax 1.35vmax;
   background-color: #eee;
   font-size: .82em;
   line-height: 1.4em;
@@ -1108,17 +1097,29 @@ p.example {
   }
 }
 
-@media only screen and (max-device-width: 199px) {
+.btn-main-menu {
+  position: fixed;
+  right: 0;
+  top: 0;
+  margin: 5px;
+  width: 40px;
+  height: 40px;
+  z-index: 1000;
+  box-shadow: 0 0 1px 2px rgba(255, 255, 255, .75);
+  background-color: rgba(255, 255, 255, .75);
+}
+
+@media only screen and (max-device-width: 299px) {
   html, body {
     display: none;
   }
 
 }
 
-@media only screen and (min-device-width: 200px) {
+@media only screen and (min-device-width: 300px) {
   html, body {
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 14px;
+    line-height: 16px;
   }
 
   p {
@@ -1130,21 +1131,44 @@ p.example {
   }
 
   .main-nav {
-    width: 100%;
-    height: 50px;
+    width: 220px;
+    height: 100%;
+    transform: translateX(-100%);
   }
 
   .main-nav > h1 {
-    padding: 11px 12px 11px 22px;
+    font-size: 2.5em;
+    line-height: 50px;
+    padding: 0 1vmax;
   }
 
   .main-nav > div {
-    display: none;
+    /*display: none;*/
   }
 
+  .main-nav.expand {
+    box-shadow: 0 15px 25px rgba(40, 40, 40, .35);
+    overflow: auto;
+    transform: translateX(0);
+  }
+
+  .main-nav.expand > div {
+    display: block;
+  }
+
+  .nav-item {
+    margin: 8px;
+  }
+
+  .nav-item > a {
+    padding: 12px;
+  }
+
+  .sub-nav-container > a {
+    margin: 0 8px 8px;
+  }
 
   .main-content {
-    padding-top: 50px;
     left: 0;
     width: 100%;
     height: 100%;
@@ -1199,15 +1223,26 @@ p.example {
 
   .card {
     border-radius: 0;
-    margin: 1vmax 1vmax 2vmax;
+    margin: 0 1vmax 2vmax;
     width: 100%;
     max-width: 525px;
+  }
+
+  .card .banner + h1 {
+    font-size: 3em;
+    line-height: 60px;
+    height: 60px;
+    margin-top: -60px;
+  }
+
+  .content {
+    padding: 1.2vmax 2vmax;
   }
 }
 
 @media only screen and (min-device-width: 426px) {
   html, body {
-    /*font-size: 14px;*/
+    /*font-size: 16px;*/
     /*line-height: 16px;*/
   }
 
@@ -1221,22 +1256,15 @@ p.example {
     height: 120px;
   }
 
+  .btn-main-menu {
+    /*margin: 10px;*/
+  }
+
   .main-nav {
-    width: 100%;
-    height: 60px;
   }
 
   .main-nav > h1 {
-    padding: 16px 12px 16px 22px;
-  }
-
-  .main-nav.expand {
-    box-shadow: 0 15px 25px rgba(40, 40, 40, .35);
-    overflow: auto;
-  }
-
-  .main-nav.expand > div {
-    display: block;
+    line-height: 60px;
   }
 
   .main-nav > a {
@@ -1246,7 +1274,6 @@ p.example {
   }
 
   .main-content {
-    padding-top: 60px;
     height: 100%;
   }
 
@@ -1254,6 +1281,7 @@ p.example {
     box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04), 0 9px 19px rgba(80, 80, 80, .08);
     border-radius: 16px;
     max-width: calc(100% - 2vmax);
+    margin-top: 1vmax;
   }
 
   .card.big {
@@ -1269,16 +1297,12 @@ p.example {
     /*margin-top: -70px;*/
     /*height: 70px;*/
   }
-
-  .content {
-    /*margin-bottom: 36px;*/
-    /*padding: 0 15px;*/
-  }
 }
 
 @media only screen and (min-device-width: 769px) {
   html, body {
-    /*font-size: 15px;*/
+    font-size: 15px;
+    line-height: 20px;
     /*line-height: 16px;*/
   }
 
@@ -1300,13 +1324,20 @@ p.example {
     height: 160px;
   }
 
+  .btn-main-menu {
+    display: none;
+  }
+
   .main-nav {
-    width: 220px;
-    height: 100%;
+    max-height: unset;
+    overflow: auto;
+    transform: translateX(0);
   }
 
   .main-nav > h1 {
     padding: 8px 12px 8px 8px;
+    line-height: 40px;
+    max-width: unset;
   }
 
   .main-nav > a {
@@ -1346,14 +1377,16 @@ p.example {
     width: auto;
   }
 
-  .content {
-    padding: 1vmax;
+  .card .banner + h1 {
+    height: 100px;
+    line-height: 100px;
+    margin-top: -100px;
   }
 }
 
 @media only screen and (min-device-width: 1025px) {
   html, body {
-    /*font-size: 16px;*/
+    font-size: 16px;
     /*line-height: 22px;*/
   }
 
@@ -1391,5 +1424,9 @@ p.example {
     width: calc(100% - 30px);
     max-width: 720px;
     border-radius: 12px;
+  }
+
+  .content {
+    padding: .8vmax 1.1vmax;
   }
 }
