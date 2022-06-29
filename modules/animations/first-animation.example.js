@@ -35,7 +35,7 @@ view.blueprint([
     class: 'box-container',
     children: {
       style: {
-        width: '64px'
+        width: '10%'
       },
       animations: {
         enter: {
@@ -88,7 +88,7 @@ view.blueprint([
         },
         {
           tag: 'i',
-          class: '<>item',
+          class: '<>item'
         }
       ]
     }

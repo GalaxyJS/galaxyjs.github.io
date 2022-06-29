@@ -3,7 +3,6 @@
   grid-template-columns: 1fr 1fr;
   grid-gap: 10px 20px;
   font-size: .9em;
-  text-align: justify;
 }
 
 :host ul > li {
