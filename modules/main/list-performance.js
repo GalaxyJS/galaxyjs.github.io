@@ -15,42 +15,35 @@ view.blueprint([
     class: 'main-content',
     children: [
       {
-        children: {
-          tag: 'button',
-          text: 'RUN',
-          on: {
-            click() {
-              const t0 = performance.now();
-              // for (let i = 0; i < Scope.data.list.length; i++) {
-              //   Object.assign(Scope.data.list[i], { title: 'new-' + i });
-              // }
+        children: [
+          {
+            tag: 'button',
+            text: 'RUN',
+            on: {
+              click() {
+                const t0 = performance.now();
 
-              for (let i = 0; i < 10000; i++) {
-                Scope.data.list.push({
-                  title: 'index: ' + i
-                });
+                for (let i = 0; i < 10000; i++) {
+                  Scope.data.list.push({
+                    title: 'index: ' + i
+                  });
+                }
+
+                const t1 = performance.now();
+                console.log('Call to doSomething took ' + (t1 - t0) + ' milliseconds.');
               }
-
-              // const main = document.getElementById('main');
-              // for (let i = 0; i < 10000; i++) {
-              //   const p = document.createElement('p');
-              //   p.innerText = 'index: ' + i;
-              //   main.appendChild(p);
-              // }
-
-              const t1 = performance.now();
-              console.log('Call to doSomething took ' + (t1 - t0) + ' milliseconds.');
             }
+          },
+          {
+            tag: 'p',
+            repeat: {
+              data: '<>data.list',
+              as: 'iitem'
+            },
+            text: '<>iitem.title'
           }
-        }
-      },
-      {
-        tag: 'p',
-        repeat: {
-          data: '<>data.list',
-          as: 'iitem'
-        },
-        text: '<>iitem.title'
-      }]
+        ]
+      }
+    ]
   }
 ]);

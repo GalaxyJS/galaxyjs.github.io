@@ -3052,7 +3052,7 @@ Galaxy.View = /** @class */(function (G) {
     diff = diff + (now - preTS);
     preTS = now;
 
-    if (diff > 3) {
+    if (diff > 2) {
       diff = 0;
       if (too_many_jumps) {
         clearTimeout(too_many_jumps);
@@ -3147,6 +3147,36 @@ Galaxy.View = /** @class */(function (G) {
       }
     });
   }
+
+  // function update_on_animation_frame() {
+  //   if (last_dom_manipulation_id) {
+  //     clearTimeout(last_dom_manipulation_id);
+  //     last_dom_manipulation_id = null;
+  //   }
+  //
+  //   dom_manipulation_order = arrConcat(destroy_order, create_order);
+  //   last_dom_manipulation_id = setTimeout(() => {
+  //     if (manipulation_done) {
+  //       manipulation_done = false;
+  //       next_batch.call(dom_manipulation_order);
+  //     }
+  //   });
+  // }
+  //
+  // function update_on_timeout() {
+  //   if (last_dom_manipulation_id) {
+  //     cancelAnimationFrame(last_dom_manipulation_id);
+  //     last_dom_manipulation_id = null;
+  //   }
+  //
+  //   dom_manipulation_order = arrConcat(destroy_order, create_order);
+  //   last_dom_manipulation_id = requestAnimationFrame(() => {
+  //     if (manipulation_done) {
+  //       manipulation_done = false;
+  //       next_batch.call(dom_manipulation_order);
+  //     }
+  //   });
+  // }
 
   /**
    *
@@ -3765,6 +3795,19 @@ Galaxy.View = /** @class */(function (G) {
       };
     },
 
+    /**
+     *
+     * @param {{enter?: AnimationConfig, leave?:AnimationConfig}} animations
+     * @returns Blueprint
+     */
+    addTimeline: function (animations) {
+      return {
+        tag: 'comment',
+        text: 'timeline',
+        animations
+      };
+    },
+
     enterKeyframe: function (onComplete, timeline, durOrPos) {
       let position = undefined;
       let duration = durOrPos || .01;
@@ -3854,7 +3897,7 @@ Galaxy.View = /** @class */(function (G) {
 
         return nodes;
       } else if (typeof blueprint === 'function') {
-        return blueprint();
+        return blueprint.call(_this);
       } else if (blueprint instanceof Array) {
         const result = [];
         for (i = 0, len = blueprint.length; i < len; i++) {
@@ -5684,11 +5727,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (newConfig.addTo) {
         parentAnimationMeta = new AnimationMeta(newConfig.addTo);
 
-        // const children = parentAnimationMeta.timeline.getChildren(false);
-        // if (children.indexOf(animationMeta.timeline) === -1) {
-        //   parentAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
-        // }
-        animationMeta.addTo(parentAnimationMeta, newConfig.positionInParent);
+        const children = parentAnimationMeta.timeline.getChildren(false);
+        if (children.indexOf(animationMeta.timeline) === -1) {
+          parentAnimationMeta.timeline.add(animationMeta.timeline, parentAnimationMeta.parsePosition(newConfig.positionInParent));
+        }
+        // animationMeta.addTo(parentAnimationMeta, newConfig.positionInParent);
       }
 
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
@@ -5831,14 +5874,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       const labels = TIMELINE_SETUP_MAP[name];
       if (labels) {
-        // console.log(_this.timeline.progress())
         _this.setupLabels(labels);
-        // _this.timeline.play(0);
-        // console.log('\nsetup labels', _this.name, '\n\n')
-        // debugger
-        // for (const l in labels) {
-        //   _this.timeline.addLabel(l, labels[l]);
-        // }
       }
 
       AnimationMeta.ANIMATIONS[name] = this;
@@ -5934,7 +5970,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const position = this.parsePosition(config.position);
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
-      // console.log(position, tween._targets, config.position)
 
       if (tChildren.length === 0) {
         _this.timeline.add(tween, (position && position.indexOf('=') === -1) ? position : null);

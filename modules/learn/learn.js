@@ -275,10 +275,29 @@ view.blueprint([
       }
     ]
   },
-  view.enterKeyframe(() => {
+  view.addTimeline({
+    enter: {
+      addTo: 'main-nav-timeline',
+      timeline: () => {
+        return gsap.timeline().fromTo(document.querySelectorAll('.card:last-child p'),
+          {
+            x: 30,
+            opacity: 0
+          },
+          {
+            opacity: 1,
+            x: 0,
+            duration: .5,
+            stagger: .1
+          });
+      }
+    }
+  }),
+  view.enterKeyframe((a) => {
     PR.prettyPrint();
     router.start();
-  }, 'main-nav-timeline')
+  }, 'main-nav-timeline'),
+
 ]);
 
 
