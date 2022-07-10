@@ -275,24 +275,24 @@ view.blueprint([
       }
     ]
   },
-  view.addTimeline({
-    enter: {
-      addTo: 'main-nav-timeline',
-      timeline: () => {
-        return gsap.timeline().fromTo(document.querySelectorAll('.card:last-child p'),
-          {
-            x: 30,
-            opacity: 0
-          },
-          {
-            opacity: 1,
-            x: 0,
-            duration: .5,
-            stagger: .1
-          });
-      }
-    }
-  }),
+  // view.addTimeline({
+  //   enter: {
+  //     addTo: 'main-nav-timeline',
+  //     timeline: () => {
+  //       return gsap.timeline({autoRemoveChildren: true}).fromTo(document.querySelectorAll('.card:last-child p'),
+  //         {
+  //           x: 30,
+  //           opacity: 0
+  //         },
+  //         {
+  //           opacity: 1,
+  //           x: 0,
+  //           duration: .5,
+  //           stagger: .2
+  //         });
+  //     }
+  //   }
+  // }),
   view.enterKeyframe((a) => {
     PR.prettyPrint();
     router.start();

@@ -2764,7 +2764,7 @@ Galaxy.View = /** @class */(function (G) {
     return map;
   };
 
-  View.EMPTY_CALL = function () {
+  View.EMPTY_CALL = function EMPTY_CALL() {
   };
 
   View.GET_MAX_INDEX = function () {
@@ -3891,8 +3891,12 @@ Galaxy.View = /** @class */(function (G) {
         content.innerHTML = blueprint;
         const nodes = Array.prototype.slice.call(content.childNodes);
         nodes.forEach(function (node) {
-          // View.ViewNode.convertToSimpleNode(node);
-          parent.node.appendChild(node);
+          // parent.node.appendChild(node);
+          const viewNode = new G.View.ViewNode({ tag: node }, parent, _this);
+          parent.registerChild(viewNode, position);
+          node.parentNode.removeChild(node);
+          View.setPropertyForNode(viewNode, 'animations', {});
+          viewNode.setInDOM(true);
         });
 
         return nodes;
@@ -4852,7 +4856,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return r + res;
   };
 
-  ViewNode.REMOVE_SELF = function (destroy) {
+  function REMOVE_SELF(destroy) {
     const viewNode = this;
 
     if (destroy) {
@@ -4860,7 +4864,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
       viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
       viewNode.garbage.forEach(function (node) {
-        ViewNode.REMOVE_SELF.call(node, true);
+        REMOVE_SELF.call(node, true);
       });
       viewNode.hasBeenDestroyed();
     } else {
@@ -4874,12 +4878,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       viewNode.garbage.forEach(function (node) {
-        ViewNode.REMOVE_SELF.call(node, true);
+        REMOVE_SELF.call(node, true);
       });
     }
 
     viewNode.garbage = [];
-  };
+  }
 
   /**
    *
@@ -4896,6 +4900,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     /** @type {Node|Element|*} */
     if (blueprint.tag instanceof Node) {
       _this.node = blueprint.tag;
+      blueprint.tag = blueprint.tag.tagName;
+      if (_this.node instanceof Text) {
+        _this.populateEnterSequence = EMPTY_CALL;
+      }
     } else {
       _this.node = create_elem(blueprint.tag || 'div', parent);
     }
@@ -4922,7 +4930,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.transitory = false;
     _this.garbage = [];
     _this.leaveWithParent = false;
-    _this.onLeaveComplete = ViewNode.REMOVE_SELF.bind(_this, true);
+    _this.onLeaveComplete = REMOVE_SELF.bind(_this, true);
 
     const cache = {};
     defProp(_this, 'cache', {
@@ -5084,7 +5092,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         const children = _this.getChildNodes();
         _this.prepareLeaveSequence(_this.hasAnimation(children), children);
         DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-          _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
+          _this.populateLeaveSequence(REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
           _this.populateLeaveSequence = defaultPopulateLeaveSequence;
@@ -5164,11 +5172,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       for (let i = 0, len = children.length; i < len; i++) {
         const node = children[i];
-        // TODO: seems obsolete
-        // if (node.leaveWithParent) {
-        //   return true;
-        // }
-
         if (node.hasAnimation(node.getChildNodes())) {
           return true;
         }
@@ -5183,7 +5186,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (hasAnimation) {
         if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
           _this.populateLeaveSequence = function () {
-            ViewNode.REMOVE_SELF.call(_this, false);
+            REMOVE_SELF.call(_this, false);
           };
         } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
           // Children with leave animation should not get removed from dom for visual purposes.
@@ -5196,7 +5199,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       } else {
         _this.populateLeaveSequence = function () {
-          ViewNode.REMOVE_SELF.call(_this, !_this.origin);
+          REMOVE_SELF.call(_this, !_this.origin);
         };
       }
     },
@@ -5559,7 +5562,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     if (this.parent.transitory) {
       this.dump();
-      // console.info(this);
     } else {
       finalize();
     }
