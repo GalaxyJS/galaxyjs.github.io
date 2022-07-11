@@ -4,7 +4,7 @@
   <title>Learning GalaxyJS</title>
   <meta charset="UTF-8">
 
-  <script src="path/to/galaxy-min.js"></script>
+  <script src="path/to/galaxy-min.js" defer></script>
 
   <script>
       (function () {
@@ -15,7 +15,7 @@
         function run() {
           Galaxy.boot({
             // The path to your main module file
-            url: 'modules/main/index.js',
+            path: 'modules/main/index.js',
             // The container element for your app
             element: document.querySelector('body')
           }).then(function (module) {
