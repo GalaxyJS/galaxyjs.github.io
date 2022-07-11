@@ -109,7 +109,7 @@ view.blueprint([
             text: '//Import the view addon\n' +
               'const view = Scope.import(\'galaxy/view\');\n\n' +
               '// This will remove all the contents of the parent element which in this case is body\n' +
-              'view.config.cleanContainer = true;\n' +
+              'view.container.node.innerHTML = \'\';\n' +
               'view.blueprint({\n' +
               '  tag: \'h1\',\n' +
               '  text: \'Hello World!\'\n' +
@@ -126,7 +126,7 @@ view.blueprint([
           '<pre class="prettyprint inline lang-js">const view = Scope.import(\'galaxy/view\');</pre>' +
           '<p>This line is loading the view addon which provides functionality necessary to create the UI/UX' +
           ' of your module and/or component.</p>',
-          '<pre class="prettyprint inline lang-js">view.config.cleanContainer = true</pre> ' +
+          '<pre class="prettyprint inline lang-js">view.container.node.innerHTML = \'\'</pre> ' +
           '<p>Above code tells the view addon to start by cleaning its parent and then render its content. In this case, this code will' +
           ' remove the \'Loading...\' from the body.</p>',
           {

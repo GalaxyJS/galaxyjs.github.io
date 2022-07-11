@@ -3,7 +3,7 @@ const view = Scope.import('galaxy/view');
 Scope.data.cond = true;
 Scope.data.visibility = true;
 
-view.config.cleanContainer = true;
+view.container.node.innerHTML = '';
 view.blueprint([
   {
     children: [

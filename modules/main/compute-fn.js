@@ -3,7 +3,7 @@ const view = Scope.import('galaxy/view');
 Scope.data.first = 'First';
 Scope.data.last = 'Last';
 
-view.config.cleanContainer = true;
+view.container.node.innerHTML = '';
 view.blueprint([
   {
     text: function (f = '<>data.first', l = '<>data.last') {

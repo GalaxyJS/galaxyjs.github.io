@@ -5,7 +5,7 @@ const module = {
   element: document.querySelector('#target'),
   constructor: function (Scope) {
     const view = Scope.import('galaxy/view');
-    view.config.cleanContainer = true;
+    view.container.node.innerHTML = '';
     view.blueprint({
       tag: 'h2',
       text: 'Hello World from GalaxyJS!'

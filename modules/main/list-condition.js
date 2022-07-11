@@ -9,7 +9,7 @@ for (let i = 0; i < 20; i++) {
   });
 }
 
-view.config.cleanContainer = true;
+view.container.node.innerHTML = '';
 view.blueprint([
   {
     children: {

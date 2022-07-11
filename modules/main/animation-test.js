@@ -1,6 +1,6 @@
 const view = Scope.import('galaxy/view');
 
-view.config.cleanContainer = true;
+view.container.node.innerHTML = '';
 view.blueprint({
 
 });
