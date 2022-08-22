@@ -177,6 +177,7 @@ pre, code {
   overflow: hidden;
   text-align: left;
   white-space: pre-wrap;
+  font-family: 'Ubuntu Mono', monospace;
 }
 
 pre *, code * {
