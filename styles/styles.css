@@ -158,7 +158,7 @@ h2 > a:hover {
 
 html, body {
   position: relative;
-  height: 100%;
+  height: 100vh;
   max-width: 100%;
   margin: 0;
   padding: 0;
@@ -1102,9 +1102,9 @@ p.example {
   position: fixed;
   right: 0;
   top: 0;
-  margin: 5px;
-  width: 40px;
-  height: 40px;
+  margin: 10px;
+  width: 48px;
+  height: 48px;
   z-index: 1000;
   box-shadow: 0 0 1px 2px rgba(255, 255, 255, .75);
   background-color: rgba(255, 255, 255, .75);
@@ -1120,7 +1120,7 @@ p.example {
 @media only screen and (min-device-width: 300px) {
   html, body {
     font-size: 14px;
-    line-height: 16px;
+    line-height: 20px;
   }
 
   p {
@@ -1133,7 +1133,7 @@ p.example {
 
   .main-nav {
     width: 220px;
-    height: 100%;
+    height: 100vh;
     transform: translateX(-100%);
   }
 
@@ -1255,10 +1255,6 @@ p.example {
     font-size: 84px;
     margin: -120px auto 0;
     height: 120px;
-  }
-
-  .btn-main-menu {
-    /*margin: 10px;*/
   }
 
   .main-nav {

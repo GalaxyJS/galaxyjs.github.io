@@ -117,7 +117,7 @@ router.setup([
   }
 ]).onTransition((from, to) => {
   if (window.innerWidth < 768) {
-    Scope.data.expandNav = false;
+    // Scope.data.expandNav = false;
   }
 
   switch (from) {
@@ -405,4 +405,3 @@ view.blueprint([
     router.start();
   }, 'main-nav-timeline'),
 ]);
-console.log(Scope);
