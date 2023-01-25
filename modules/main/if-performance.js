@@ -38,7 +38,7 @@ view.blueprint([
         click() {
           const t0 = performance.now();
 
-          for (let i = 0; i < 10001; i++) {
+          for (let i = 0; i < 10000; i++) {
             Scope.data.visibility = i % 2 === 0;
           }
 
