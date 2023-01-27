@@ -1,7 +1,6 @@
 /** @type Galaxy.View */
 const view = Scope.import('galaxy/view');
 const router = Scope.import('galaxy/router');
-const animations = Scope.import('services/animations.js');
 const navService = Scope.import('services/navigation.js');
 
 Scope.data.navService = navService;
@@ -124,7 +123,7 @@ router.setup([
     case '/start':
       Galaxy.setupTimeline('main-nav-timeline', {
         'pre-side-bar': 0,
-        'side-bar': .8,
+        'side-bar': .5,
       });
       break;
     case null:
@@ -168,9 +167,8 @@ view.blueprint([
       enter: {
         timeline: 'main-nav-timeline',
         position: 'side-bar',
-        duration: .5,
         from: {
-          x: '-100%'
+          x: '-100%',
         },
         to: {
           x: () => {
@@ -179,16 +177,16 @@ view.blueprint([
             }
             return 0;
           },
-          // clearProps: ''
+          duration: .5,
         }
       },
       leave: {
         timeline: 'main-nav-timeline',
         position: 'side-bar',
-        duration: .5,
         to: {
           x: '-100%',
           // clearProps: ''
+          duration: .5,
         }
       },
       'add:expand': {
@@ -197,9 +195,9 @@ view.blueprint([
         },
         to: {
           x: 0,
-          boxShadow: '0 15px 25px rgba(40, 40, 40, .35)'
+          boxShadow: '0 15px 25px rgba(40, 40, 40, .35)',
+          duration: .3
         },
-        duration: .3
       },
       'remove:expand': {
         to: {
@@ -209,9 +207,9 @@ view.blueprint([
             }
             return 0;
           },
-          boxShadow: '0 0 0 rgba(40, 40, 40, .35)'
+          boxShadow: '0 0 0 rgba(40, 40, 40, .35)',
+          duration: .2
         },
-        duration: .2
       }
     },
     if: (ap = '<>router.activePath') => {
@@ -239,6 +237,7 @@ view.blueprint([
             addTo: 'main-nav-timeline',
             positionInParent: 'side-bar+=.4',
             timeline: 'nav',
+            position: '-=.56',
             from: {
               transition: 'none',
               autoAlpha: 0,
@@ -248,10 +247,9 @@ view.blueprint([
               autoAlpha: 1,
               x: 0,
               ease: 'elastic.out(1, .5)',
-              clearProps: 'all'
-            },
-            position: '-=.56',
-            duration: .6
+              clearProps: 'all',
+              duration: .6
+            }
           }
         },
         class: {
@@ -286,25 +284,25 @@ view.blueprint([
               enter: {
                 withParent: true,
                 timeline: 'nav',
+                position: '-=.35',
                 from: {
                   height: 0
                 },
                 to: {
                   height: 'auto',
+                  duration: .35,
                 },
-                position: '-=.35',
-                duration: .35,
               },
               leave: {
                 withParent: true,
                 timeline: 'nav',
+                position: '-=.35',
                 to: {
                   height: 0,
+                  duration: function (v, node) {
+                    return node.offsetHeight > 0 ? .35 : 0;
+                  },
                 },
-                duration: function () {
-                  return this.node.offsetHeight > 0 ? .35 : 0;
-                },
-                position: '-=.35'
               }
             },
             if: function (navPath = '<>nav.path', activePath = '<>router.activePath', length = '<>router.activeRoute.children.length') {
@@ -353,7 +351,6 @@ view.blueprint([
       'add:in': {
         timeline: 'main-nav-timeline',
         position: 'side-bar',
-        duration: .01,
         to: {
           paddingLeft: () => {
             if (window.innerWidth <= 768) {
@@ -361,16 +358,17 @@ view.blueprint([
             }
             return window.innerWidth <= 1024 ? 220 : 270;
           },
-          clearProps: 'all'
+          clearProps: 'all',
+          duration: .01,
         }
       },
       'remove:in': {
         timeline: 'main-nav-timeline',
         position: 'side-bar',
-        duration: .5,
         to: {
           paddingLeft: 0,
-          clearProps: 'all'
+          clearProps: 'all',
+          duration: .5,
         }
       },
     },

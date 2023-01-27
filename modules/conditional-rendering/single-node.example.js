@@ -39,18 +39,18 @@ view.blueprint([
         },
         to: {
           opacity: 1,
-          y: 0
+          y: 0,
+          duration: .3
         },
-        duration: .3
       },
       leave: {
         withParent: true,
+        position: '-=.18',
         to: {
           y: -15,
-          opacity: 0
+          opacity: 0,
+          duration: .2
         },
-        position: '-=.18',
-        duration: .2
       }
     }
   }

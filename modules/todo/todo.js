@@ -122,29 +122,28 @@ view.blueprint({
             animations: {
               enter: {
                 addTo: 'main-nav-timeline',
-                // positionInParent: 'side-bar+=.1',
                 timeline: 'todo-items',
+                position: '-=.1',
                 from: {
                   opacity: 0,
                   y: -15,
                   x: -15,
-                  clearProps: 'all'
+                  clearProps: 'all',
+                  duration: .15
                 },
-                position: '-=.1',
-                duration: .15
               },
               leave: {
                 withParent: true,
                 timeline: 'card',
+                position: '-=.1',
                 to: {
                   height: 0,
                   paddingTop: 0,
                   paddingBottom: 0,
                   marginTop: 0,
-                  marginBottom: 0
+                  marginBottom: 0,
+                  duration: .25
                 },
-                position: '-=.1',
-                duration: .25
               }
             },
             class: {

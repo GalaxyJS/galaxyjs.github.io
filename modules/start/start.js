@@ -16,8 +16,8 @@ view.blueprint([
         },
         to: {
           opacity: 1,
+          duration: .25,
         },
-        duration: .25,
       },
       leave: {
         timeline: 'main-nav-timeline',
@@ -28,9 +28,9 @@ view.blueprint([
           display: 'none',
           // scale: .96,
           opacity: 0,
-          // delay: .1
+          // delay: .1,
+          duration: .25
         },
-        duration: .25
       }
     },
     children: [
@@ -43,9 +43,9 @@ view.blueprint([
               y: '-10%'
             },
             to: {
-              y: 0
+              y: 0,
+              duration: .3
             },
-            duration: .3
           },
           leave: {
             timeline: 'main-nav-timeline',
@@ -53,8 +53,8 @@ view.blueprint([
             to: {
               ease: 'Power1.easeIn',
               y: '-50%',
+              duration: .5
             },
-            duration: .5
           }
         },
         tag: 'img',
@@ -73,9 +73,9 @@ view.blueprint([
             },
             to: {
               opacity: 1,
-              y: 0
+              y: 0,
+              duration: .3
             },
-            duration: .3
           },
         },
         tag: 'h1',
@@ -93,9 +93,9 @@ view.blueprint([
             },
             to: {
               opacity: 1,
-              y: 0
+              y: 0,
+              duration: .3
             },
-            duration: .3
           },
         },
         tag: 'h1',
@@ -113,9 +113,9 @@ view.blueprint([
             },
             to: {
               opacity: 1,
-              y: 0
+              y: 0,
+              duration: .3,
             },
-            duration: .3,
           },
         },
         tag: 'section',

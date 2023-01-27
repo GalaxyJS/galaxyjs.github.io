@@ -68,17 +68,17 @@ view.blueprint([
         from: {
           // x: 80,
           y: 100,
-          opacity: 0
+          opacity: 0,
+          duration: .5
         },
-        duration: .5
       },
       leave: {
         timeline: 'main-nav-timeline',
         to: {
           y: 150,
-          opacity: 0
+          opacity: 0,
+          duration: .5
         },
-        duration: .5
       }
     },
     children: [
@@ -91,9 +91,9 @@ view.blueprint([
               filter: 'grayscale(100%)'
             },
             to: {
-              filter: 'grayscale(0%)'
-            },
-            duration: .4
+              filter: 'grayscale(0%)',
+              duration: .4
+            }
           },
         },
         tag: 'img',
@@ -120,9 +120,9 @@ view.blueprint([
               to: {
                 opacity: 1,
                 x: 0,
-                ease: 'elastic.out(1, .75)'
+                ease: 'elastic.out(1, .75)',
+                duration: .8
               },
-              duration: .8
             },
           },
           tag: 'span',
@@ -267,9 +267,9 @@ view.blueprint([
                 },
                 to: {
                   x: 0,
-                  opacity: 1
+                  opacity: 1,
+                  duration: .2
                 },
-                duration: .2
               }
             },
             tag: 'p',
@@ -280,16 +280,16 @@ view.blueprint([
             animations: {
               enter: {
                 timeline: pageAnimation,
+                position: '-=.1',
                 from: {
                   x: -15,
                   opacity: 0
                 },
                 to: {
                   x: 0,
-                  opacity: 1
+                  opacity: 1,
+                  duration: .2
                 },
-                position: '-=.1',
-                duration: .2
               }
             },
             tag: 'p',
@@ -300,16 +300,16 @@ view.blueprint([
             animations: {
               enter: {
                 timeline: pageAnimation,
+                position: '-=.1',
                 from: {
                   x: -30,
                   opacity: 0
                 },
                 to: {
                   x: 0,
-                  opacity: 1
+                  opacity: 1,
+                  duration: .2
                 },
-                position: '-=.1',
-                duration: .2
               }
             },
             tag: 'strong',
@@ -320,16 +320,16 @@ view.blueprint([
             animations: {
               enter: {
                 timeline: pageAnimation,
+                position: '-=.1',
                 from: {
                   x: 30,
                   opacity: 0
                 },
                 to: {
                   x: 0,
-                  opacity: 1
+                  opacity: 1,
+                  duration: .2
                 },
-                position: '-=.1',
-                duration: .2
               }
             },
             class: 'dot',
@@ -341,16 +341,16 @@ view.blueprint([
             animations: {
               enter: {
                 timeline: pageAnimation,
+                position: '+=.1',
                 from: {
                   x: 15,
                   opacity: 0
                 },
                 to: {
                   x: 0,
-                  opacity: 1
+                  opacity: 1,
+                  duration: .2
                 },
-                position: '+=.1',
-                duration: .2
               }
             },
             tag: 'strong',

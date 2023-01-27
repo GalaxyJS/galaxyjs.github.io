@@ -41,6 +41,7 @@ view.blueprint([
         enter: {
           addTo: 'main-nav-timeline',
           timeline: 'boxes',
+          position: '-=.75',
           from: {
             display: 'none',
             scale: 0,
@@ -50,21 +51,20 @@ view.blueprint([
             scale: 1,
             display: null,
             clearProps: '',
-            ease: 'elastic.out(1,.5)'
+            ease: 'elastic.out(1,.5)',
+            duration: .8,
           },
-          duration: .8,
-          position: '-=.75',
         },
         leave: {
           withParent: true,
           addTo: 'main-nav-timeline',
           timeline: 'boxes',
+          position: '-=.22',
           to: {
             scale: 0,
-            opacity: 0
+            opacity: 0,
+            duration: .26,
           },
-          duration: .26,
-          position: '-=.22',
         }
       },
       class: 'box',
