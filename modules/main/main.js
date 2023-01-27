@@ -123,7 +123,7 @@ router.setup([
     case '/start':
       Galaxy.setupTimeline('main-nav-timeline', {
         'pre-side-bar': 0,
-        'side-bar': .8,
+        'side-bar': 13.5,
       });
       break;
     case null:
@@ -178,7 +178,6 @@ view.blueprint([
             return 0;
           },
           duration: .5,
-          // clearProps: ''
         }
       },
       leave: {
@@ -300,9 +299,8 @@ view.blueprint([
                 position: '-=.35',
                 to: {
                   height: 0,
-                  duration: function () {
-                    debugger
-                    return this.node.offsetHeight > 0 ? .35 : 0;
+                  duration: function (v, node) {
+                    return node.offsetHeight > 0 ? .35 : 0;
                   },
                 },
               }
@@ -379,7 +377,6 @@ view.blueprint([
     class: {
       'main-content': true,
       'in': (ap = '<>router.activePath') => {
-        console.log('ap', ap);
         return ap !== '/start';
       },
     },

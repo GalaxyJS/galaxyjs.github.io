@@ -36,16 +36,16 @@ view.blueprint([
       enter: {
         to: {
           opacity: 1,
-          x: 0
+          x: 0,
+          duration: 0
         },
-        duration: 0
       },
       leave: {
         to: {
           opacity: 0,
           x: 20,
+          duration: .3
         },
-        duration: .3
       }
     },
     children: [
@@ -59,18 +59,18 @@ view.blueprint([
             },
             to: {
               opacity: 1,
-              x: 0
+              x: 0,
+              duration: .5
             },
-            duration: .5
           },
           leave: {
             timeline: 'if-items',
+            position: '-=.18',
             to: {
               opacity: 0,
               x: 20,
+              duration: .3
             },
-            position: '-=.18',
-            duration: .3
           }
         },
         repeat: {

@@ -23,6 +23,7 @@ view.blueprint({
       animations: {
         'add:move': [
           {
+            timeline: 'sync',
             to: {
               left: '500px',
               ease: 'power3.out',
@@ -31,6 +32,7 @@ view.blueprint({
             },
           },
           {
+            timeline: 'sync',
             to: {
               top: '500px',
               ease: 'power1.inout',
@@ -39,7 +41,17 @@ view.blueprint({
             },
           }
         ],
+        // 'add:move': {
+        //   timeline: 'sync',
+        //   to: {
+        //     left: '500px',
+        //     ease: 'power3.out',
+        //     clearProps: '',
+        //     duration: 1,
+        //   },
+        // },
         'remove:move': {
+          timeline: 'sync',
           to: {
             left: '100px',
             top: '100px',

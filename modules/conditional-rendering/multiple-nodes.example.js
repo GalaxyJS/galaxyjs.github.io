@@ -4,6 +4,7 @@ const itemAnimations = {
   enter: {
     withParent: true,
     timeline: 'if-timeline',
+    position: '-=.2',
     from: {
       opacity: 0,
       x: 25,
@@ -12,20 +13,19 @@ const itemAnimations = {
       opacity: 1,
       x: 0,
       ease: 'sine.out',
+      duration: .3
     },
-    position: '-=.2',
-    duration: .3
   },
   leave: {
     withParent: true,
     timeline: 'if-timeline',
+    position: '-=.25',
     to: {
       x: 50,
       opacity: 0,
       ease: 'power1.in',
+      duration: .3
     },
-    position: '-=.25',
-    duration: .3
   }
 };
 

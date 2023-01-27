@@ -9,9 +9,9 @@ view.blueprint([
           opacity: 0
         },
         to: {
-          opacity: 1
+          opacity: 1,
+          duration: .5
         },
-        duration: .5
       }
     },
     tag: 'p',
