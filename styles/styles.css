@@ -276,7 +276,7 @@ file-icon > i {
   font-weight: normal;
   left: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible;
   top: 0;
   white-space: nowrap;
   z-index: 100;

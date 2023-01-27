@@ -21,26 +21,44 @@ view.blueprint({
     },
     {
       animations: {
-        'add:move': [
-          {
-            timeline: 'sync',
-            to: {
-              left: '500px',
-              ease: 'power3.out',
-              clearProps: '',
-              duration: 1,
-            },
-          },
-          {
-            timeline: 'sync',
-            to: {
-              top: '500px',
-              ease: 'power1.inout',
-              clearProps: '',
-              duration: 1,
-            },
+        // 'add:move': [
+        //   {
+        //     // timeline: 'sync',
+        //     to: {
+        //       left: '500px',
+        //       ease: 'power3.out',
+        //       clearProps: '',
+        //       duration: 1,
+        //     },
+        //   },
+        //   {
+        //     // timeline: 'sync',
+        //     to: {
+        //       top: '500px',
+        //       ease: 'power1.inout',
+        //       clearProps: '',
+        //       duration: 1,
+        //     },
+        //   }
+        // ],
+        'add:move': {
+          to: {
+            keyframes: [
+              {
+                top: '500px',
+                ease: 'power1.inout',
+                duration: 1
+              },
+              {
+                left: '500px',
+                ease: 'power3.out',
+                duration: 1,
+                delay: -1
+              }
+            ],
+            // duration: 1,
           }
-        ],
+        },
         // 'add:move': {
         //   timeline: 'sync',
         //   to: {
@@ -51,7 +69,7 @@ view.blueprint({
         //   },
         // },
         'remove:move': {
-          timeline: 'sync',
+          // timeline: 'sync',
           to: {
             left: '100px',
             top: '100px',

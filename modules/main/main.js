@@ -123,7 +123,7 @@ router.setup([
     case '/start':
       Galaxy.setupTimeline('main-nav-timeline', {
         'pre-side-bar': 0,
-        'side-bar': 13.5,
+        'side-bar': .5,
       });
       break;
     case null:
