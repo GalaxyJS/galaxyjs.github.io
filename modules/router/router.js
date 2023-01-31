@@ -73,6 +73,22 @@ view.blueprint({
       }
     },
 
+    {
+      tag: 'section',
+      class: 'content',
+      children: [
+        {
+          tag: 'h2',
+          text: 'onTransition'
+        },
+        {
+          tag: 'p',
+          class: 'example',
+          text: 'Example'
+        },
+      ]
+    },
+
     view.enterKeyframe(() => {
       PR.prettyPrint();
     }, 'main-nav-timeline')
