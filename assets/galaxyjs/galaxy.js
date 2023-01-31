@@ -75,7 +75,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       for (let i in obj) {
         if (obj.hasOwnProperty(i)) {
           const v = obj[i];
-          if (v instanceof Promise) {
+          // Some objects can not be cloned and must be passed by reference
+          if (v instanceof Promise || v instanceof Galaxy.Router) {
             clone[i] = v;
           } else if (typeof (v) === 'object' && v !== null) {
             if (i === 'animations' && v && typeof v === 'object') {
@@ -1726,6 +1727,17 @@ Galaxy.View = /** @class */(function (G) {
     for (let i = 0, len = keys.length; i < len; i++) {
       attributeName = keys[i];
       attributeValue = subjectsClone[attributeName];
+
+      // Object that have __singleton property will be ignored
+      if (attributeValue.__singleton__) {
+        continue;
+      }
+
+      // if (attributeValue instanceof Galaxy.Router) {
+      //   console.log(attributeName, attributeValue)
+      //   continue;
+      // }
+
       const bindings = View.getBindings(attributeValue);
       if (bindings.propertyKeys.length) {
         View.makeBinding(subjectsClone, attributeName, parentReactiveData, data, bindings, viewNode);
@@ -2158,6 +2170,7 @@ Galaxy.Router = /** @class */ (function (G) {
    */
   function Router(scope, module) {
     const _this = this;
+    _this.__singleton__ = true;
     _this.config = {
       baseURL: Router.BASE_URL
     };
@@ -2188,6 +2201,7 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.routesMap = null;
     _this.data = {
       routes: [],
+      navs: [],
       activeRoute: null,
       activePath: null,
       activeModule: null,
@@ -2237,6 +2251,7 @@ Galaxy.Router = /** @class */ (function (G) {
       });
 
       this.data.routes = this.routes;
+      this.data.navs = this.routes.filter(r => !r.hidden);
 
       return this;
     },
@@ -2531,6 +2546,181 @@ Galaxy.registerAddOnProvider('galaxy/view', function (scope) {
     }
   };
 });
+
+(function (GMC) {
+  GMC.registerParser('text/css', parser);
+
+  const hosts = {};
+
+  function getHostId(id) {
+    if (hosts.hasOwnProperty(id)) {
+      return hosts[id];
+    }
+    const index = Object.keys(hosts).length;
+    const ids = {
+      host: 'gjs-host-' + index,
+      content: 'gjs-content-' + index,
+    };
+
+    hosts[id] = ids;
+
+    return ids;
+  }
+
+  function rulesForCssText(styleContent) {
+    const doc = document.implementation.createHTMLDocument(''),
+      styleElement = document.createElement('style');
+
+    styleElement.textContent = styleContent;
+    // the style will only be parsed once it is added to a document
+    doc.body.appendChild(styleElement);
+
+    return styleElement;
+  }
+
+  function applyContentAttr(children, ids) {
+    if (!(children instanceof Array) && children !== null && children !== undefined) {
+      children = [children];
+    }
+
+    children.forEach((child) => {
+      if (typeof child === 'string' || child.tag === 'comment') return;
+      child[ids.content] = '';
+
+      if (child.children) {
+        applyContentAttr(child.children, ids);
+      }
+    });
+  }
+
+  function parser(content) {
+    return {
+      imports: [],
+      source: async function (Scope) {
+        const ids = getHostId(Scope.systemId);
+        const cssRules = rulesForCssText(content);
+        const hostSuffix = '[' + ids.host + ']';
+        // const contentSuffix = '[' + ids.content + ']';
+        const parsedCSSRules = [];
+        const host = /(:host)/g;
+        const selector = /([^\s+>~,]+)/g;
+        const selectorReplacer = function (item) {
+          if (item === ':host') {
+            return item;
+          }
+
+          return item /*+ contentSuffix*/;
+        };
+
+        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
+          let selectorText = css.selectorText.replace(selector, selectorReplacer);
+
+          css.selectorText = selectorText.replace(host, hostSuffix);
+          parsedCSSRules.push(css.cssText);
+        });
+        const parsedCSSText = parsedCSSRules.join('\n');
+
+        Scope.export = {
+          _temp: true,
+          tag: 'style',
+          type: 'text/css',
+          id: Scope.systemId,
+          text: parsedCSSText,
+          _create() {
+            const parent = this.parent;
+            parent.node.setAttribute(ids.host, '');
+            const children = parent.blueprint.children || [];
+            applyContentAttr(children, ids);
+          }
+        };
+      }
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('default', parser);
+
+  function parser(content) {
+    return {
+      imports: [],
+      source: async function as_text(scope) {
+        scope.export = content;
+      }
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('function', parser);
+
+  function parser(content, metaData) {
+    const unique = [];
+    let imports = metaData.imports ? metaData.imports.slice(0) : [];
+    imports = imports.map(function (item) {
+      if (unique.indexOf(item) !== -1) {
+        return null;
+      }
+
+      unique.push(item);
+      return { path: item };
+    }).filter(Boolean);
+
+    return {
+      imports: imports,
+      source: content
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('application/javascript', parser);
+
+  function parser(content) {
+    const imports = [];
+    const unique = [];
+    let parsedContent = content.replace(/^\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
+      let query = path.match(/([\S]+)/gm);
+      let pathURL = query[query.length - 1];
+      if (unique.indexOf(pathURL) !== -1) {
+        return 'Scope.import(\'' + pathURL + '\')';
+      }
+
+      unique.push(pathURL);
+      imports.push({
+        path: pathURL,
+        fresh: query.indexOf('new') === 0,
+        contentType: null
+      });
+
+      return 'Scope.import(\'' + pathURL + '\')';
+    });
+
+    parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
+      let query = path.match(/([\S]+)/gm);
+      let pathURL = query[query.length - 1] + '#text';
+      if (unique.indexOf(pathURL) !== -1) {
+        return 'Scope.import(\'' + pathURL + '\')';
+      }
+
+      unique.push(pathURL);
+      imports.push({
+        path: pathURL,
+        fresh: true,
+        contentType: 'text/plain'
+      });
+
+      return 'Scope.import(\'' + pathURL + '\')';
+    });
+
+    parsedContent = parsedContent.replace(/Scope\.kill\(.*\)/gm, 'return');
+
+    return {
+      imports: imports,
+      source: parsedContent
+    };
+  }
+})(Galaxy.Module.Content);
 
 /* global Galaxy */
 Galaxy.View.ArrayChange = /** @class */ (function (G) {
@@ -3901,181 +4091,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 })(Galaxy);
 
-(function (GMC) {
-  GMC.registerParser('text/css', parser);
-
-  const hosts = {};
-
-  function getHostId(id) {
-    if (hosts.hasOwnProperty(id)) {
-      return hosts[id];
-    }
-    const index = Object.keys(hosts).length;
-    const ids = {
-      host: 'gjs-host-' + index,
-      content: 'gjs-content-' + index,
-    };
-
-    hosts[id] = ids;
-
-    return ids;
-  }
-
-  function rulesForCssText(styleContent) {
-    const doc = document.implementation.createHTMLDocument(''),
-      styleElement = document.createElement('style');
-
-    styleElement.textContent = styleContent;
-    // the style will only be parsed once it is added to a document
-    doc.body.appendChild(styleElement);
-
-    return styleElement;
-  }
-
-  function applyContentAttr(children, ids) {
-    if (!(children instanceof Array) && children !== null && children !== undefined) {
-      children = [children];
-    }
-
-    children.forEach((child) => {
-      if (typeof child === 'string' || child.tag === 'comment') return;
-      child[ids.content] = '';
-
-      if (child.children) {
-        applyContentAttr(child.children, ids);
-      }
-    });
-  }
-
-  function parser(content) {
-    return {
-      imports: [],
-      source: async function (Scope) {
-        const ids = getHostId(Scope.systemId);
-        const cssRules = rulesForCssText(content);
-        const hostSuffix = '[' + ids.host + ']';
-        // const contentSuffix = '[' + ids.content + ']';
-        const parsedCSSRules = [];
-        const host = /(:host)/g;
-        const selector = /([^\s+>~,]+)/g;
-        const selectorReplacer = function (item) {
-          if (item === ':host') {
-            return item;
-          }
-
-          return item /*+ contentSuffix*/;
-        };
-
-        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
-          let selectorText = css.selectorText.replace(selector, selectorReplacer);
-
-          css.selectorText = selectorText.replace(host, hostSuffix);
-          parsedCSSRules.push(css.cssText);
-        });
-        const parsedCSSText = parsedCSSRules.join('\n');
-
-        Scope.export = {
-          _temp: true,
-          tag: 'style',
-          type: 'text/css',
-          id: Scope.systemId,
-          text: parsedCSSText,
-          _create() {
-            const parent = this.parent;
-            parent.node.setAttribute(ids.host, '');
-            const children = parent.blueprint.children || [];
-            applyContentAttr(children, ids);
-          }
-        };
-      }
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('default', parser);
-
-  function parser(content) {
-    return {
-      imports: [],
-      source: async function as_text(scope) {
-        scope.export = content;
-      }
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('function', parser);
-
-  function parser(content, metaData) {
-    const unique = [];
-    let imports = metaData.imports ? metaData.imports.slice(0) : [];
-    imports = imports.map(function (item) {
-      if (unique.indexOf(item) !== -1) {
-        return null;
-      }
-
-      unique.push(item);
-      return { path: item };
-    }).filter(Boolean);
-
-    return {
-      imports: imports,
-      source: content
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('application/javascript', parser);
-
-  function parser(content) {
-    const imports = [];
-    const unique = [];
-    let parsedContent = content.replace(/^\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
-      let query = path.match(/([\S]+)/gm);
-      let pathURL = query[query.length - 1];
-      if (unique.indexOf(pathURL) !== -1) {
-        return 'Scope.import(\'' + pathURL + '\')';
-      }
-
-      unique.push(pathURL);
-      imports.push({
-        path: pathURL,
-        fresh: query.indexOf('new') === 0,
-        contentType: null
-      });
-
-      return 'Scope.import(\'' + pathURL + '\')';
-    });
-
-    parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
-      let query = path.match(/([\S]+)/gm);
-      let pathURL = query[query.length - 1] + '#text';
-      if (unique.indexOf(pathURL) !== -1) {
-        return 'Scope.import(\'' + pathURL + '\')';
-      }
-
-      unique.push(pathURL);
-      imports.push({
-        path: pathURL,
-        fresh: true,
-        contentType: 'text/plain'
-      });
-
-      return 'Scope.import(\'' + pathURL + '\')';
-    });
-
-    parsedContent = parsedContent.replace(/Scope\.kill\(.*\)/gm, 'return');
-
-    return {
-      imports: imports,
-      source: parsedContent
-    };
-  }
-})(Galaxy.Module.Content);
-
 /* global Galaxy, gsap */
 (function (G) {
   if (!window.gsap) {
@@ -4219,6 +4234,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
               if (type) {
                 viewNode.node.classList.add(key);
+              } else {
+                viewNode.node.classList.remove(key);
               }
             }
           }
