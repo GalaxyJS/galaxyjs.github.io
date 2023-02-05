@@ -34,7 +34,7 @@ router.setup([
     }
   },
 ]);
-
+console.log(router)
 view.components({
   'file-icon': Scope.import('./file-icon.component.js')
 });

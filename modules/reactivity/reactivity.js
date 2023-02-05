@@ -99,20 +99,20 @@ view.blueprint({
                 width: '32px',
                 height: '32px',
                 position: 'absolute',
-                bottom: '6px',
-                right: '6px',
+                bottom: '14px',
+                right: '20px',
                 borderRadius: '4px',
                 backgroundColor: (t = '<>data.text') => {
                   return t || '#eee';
                 }
               }
             },
-            {
-              tag: 'style',
-              text: (text = '<>data.text') => {
-                return 'body { color: ' + text + '}';
-              },
-            },
+            // {
+            //   tag: 'style',
+            //   text: (text = '<>data.text') => {
+            //     return 'body { color: ' + text + '}';
+            //   },
+            // },
             {
               tag: 'input',
               placeholder: 'Type a color name',
@@ -120,6 +120,11 @@ view.blueprint({
             },
             {
               tag: 'p',
+              style: {
+                color: (t = '<>data.text') => {
+                  return t || 'unset';
+                }
+              },
               children: [
                 'Type a color in the above field and see it changes this page\'s text color! ',
                 {
@@ -326,9 +331,10 @@ view.blueprint({
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
-          text: Scope.importAsText('./module-with-inputs.example.text')
+          text: Scope.importAsText('./module-with-inputs.example.js')
         },
-        '<p>You can access the data properties from within the context of a module via <code class="prettyprint lang-js">Scope.inputs</code></p>',
+        '<p>You can access the data properties from within the context of a module via <code class="prettyprint lang-js">Scope.data</code></p>',
+        '<p class="important">Keep in mind this data is provided by two-way binding. So any changes to bound properties in the child module scope will be reflected in the parent module.</p>',
         {
           data: {
             fromParent: 'This is a message from parent module!'
@@ -347,15 +353,15 @@ view.blueprint({
         '<h2 id="value-property">Value property</h2>',
         '<p>When it comes to read & write data from & to inputs elements, you need the <code class="prettyprint lang-js">value</code> property.</p>',
         {
+          module: {
+            path: './value-property.example.js'
+          }
+        },
+        {
           tag: 'pre',
           exapndable: exapndable,
           class: 'prettyprint lang-js',
           text: Scope.importAsText('./value-property.example.js')
-        },
-        {
-          module: {
-            path: './value-property.example.js'
-          }
         },
       ]
     },

@@ -124,6 +124,20 @@ view.blueprint([
           '<p>GalaxyJS is an opinionated framework for building visually rich web applications. ' +
           'Its main key feature is utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a>.</p>',
           {
+            tag: 'div',
+            class: 'flex-bar jc-center',
+            children: {
+              tag: 'button',
+              class: 'big',
+              html: '<i class="fas fa-graduation-cap"></i><span>Get Started</span>',
+              on: {
+                click() {
+                  router.navigateToPath('/learn');
+                }
+              }
+            }
+          },
+          {
             tag: 'h2',
             text: 'Don\'t runway from the DOM(Document Object Model), embrace it!'
           },
@@ -164,21 +178,6 @@ view.blueprint([
               //   children: { tag: 'img', src: 'https://badges.gitter.im/GalaxyJS/galaxy.svg', alt: 'gitter badge icon' }
               // }
             ]
-          },
-
-          {
-            tag: 'div',
-            class: 'flex-bar jc-center',
-            children: {
-              tag: 'button',
-              class: 'big',
-              html: '<i class="fas fa-graduation-cap"></i><span>Get Started</span>',
-              on: {
-                click() {
-                  router.navigateToPath('/learn');
-                }
-              }
-            }
           }
         ]
       }

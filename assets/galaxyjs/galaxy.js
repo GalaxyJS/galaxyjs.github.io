@@ -2402,7 +2402,8 @@ Galaxy.Router = /** @class */ (function (G) {
 
       this.onTransitionFn.call(this, activePath, route.path, activeRoute, route);
       if (!route.redirectTo) {
-        if (activeRoute) {
+        // if current route's path starts with the old route's path, then the old route should stay active
+        if (activeRoute && route.path.indexOf(activePath) !== 0) {
           activeRoute.active = false;
 
           if (typeof activeRoute.onLeave === 'function') {
@@ -2439,21 +2440,6 @@ Galaxy.Router = /** @class */ (function (G) {
 
           this.data.viewports[key] = value;
         }
-
-        // for (const key in route.viewports) {
-        //   let value = route.viewports[key] || null;
-        //   if (typeof value === 'string') {
-        //     value = {
-        //       path: value
-        //     };
-        //   }
-        //
-        //   if (key === 'main') {
-        //     this.data.activeModule = value;
-        //   }
-        //
-        //   this.data.viewports[key] = value;
-        // }
 
         G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
           Object.assign(this.data.parameters, params);
@@ -3486,7 +3472,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   //   properties: new Set(),
   //   finalize: [],
   //   placeholder: {},
-  //   populateLeaveSequence: EMPTY_CALL,
+  //   processLeaveAnimation: EMPTY_CALL,
   //   hasBeenDestroyed: EMPTY_CALL,
   //   inDOM: true,
   //   parent: null,
@@ -3502,7 +3488,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   //   });
   //
   //   vn.clean = ViewNode.prototype.clean.bind(vn);
-  //   vn.prepareLeaveSequence = ViewNode.prototype.prepareLeaveSequence.bind(vn);
+  //   vn.prepareLeaveAnimation = ViewNode.prototype.prepareLeaveAnimation.bind(vn);
   //   vn.getChildNodes = ViewNode.prototype.getChildNodes.bind(vn);
   //   vn.hasAnimation = ViewNode.prototype.hasAnimation.bind(vn);
   //   vn.destroy = ViewNode.prototype.destroy.bind(vn);
@@ -3666,7 +3652,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.node = blueprint.tag;
       blueprint.tag = blueprint.tag.tagName;
       if (_this.node instanceof Text) {
-        _this.populateEnterSequence = EMPTY_CALL;
+        _this.processEnterAnimation = EMPTY_CALL;
       }
     } else {
       _this.node = create_elem(blueprint.tag || 'div', parent);
@@ -3803,11 +3789,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       this.setInDOM(false);
     },
 
-    populateEnterSequence: function () {
+    processEnterAnimation: function () {
       this.node.style.display = null;
     },
 
-    populateLeaveSequence: EMPTY_CALL,
+    processLeaveAnimation: EMPTY_CALL,
 
     populateHideSequence: function () {
       this.node.style.display = 'none';
@@ -3820,8 +3806,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     setInDOM: function (flag) {
       const _this = this;
       if (_this.blueprint.renderConfig.renderDetached) {
-        _this.blueprint.renderConfig.renderDetached = false;
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+          _this.blueprint.renderConfig.renderDetached = false;
           _this.hasBeenRendered();
           _next();
         });
@@ -3846,20 +3832,24 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
-          _this.populateEnterSequence();
+          _this.processEnterAnimation();
           _next();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
+        const defaultProcessLeaveAnimation = _this.processLeaveAnimation;
         const children = _this.getChildNodes();
-        _this.prepareLeaveSequence(_this.hasAnimation(children), children);
+        _this.prepareLeaveAnimation(_this.hasAnimation(children), children);
         DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-          _this.populateLeaveSequence(REMOVE_SELF.bind(_this, false));
-          _this.origin = false;
-          _this.transitory = false;
-          _this.populateLeaveSequence = defaultPopulateLeaveSequence;
+          _this.processLeaveAnimation(() => {
+            // set origin and transitory to false after leave animation is over
+            _this.origin = false;
+            _this.transitory = false;
+            REMOVE_SELF.call(_this, false);
+          });
+
+          _this.processLeaveAnimation = defaultProcessLeaveAnimation;
           _next();
         });
       }
@@ -3872,7 +3862,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (flag && !_this.virtual) {
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.node.style.display = null;
-          _this.populateEnterSequence();
+          _this.processEnterAnimation();
           _next();
         });
       } else if (!flag && _this.node.parentNode) {
@@ -3930,7 +3920,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     hasAnimation: function (children) {
-      if (this.populateLeaveSequence && this.populateLeaveSequence !== EMPTY_CALL) {
+      if (this.processLeaveAnimation && this.processLeaveAnimation !== EMPTY_CALL) {
         return true;
       }
 
@@ -3944,15 +3934,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return false;
     },
 
-    prepareLeaveSequence: function (hasAnimation, children) {
+    prepareLeaveAnimation: function (hasAnimation, children) {
       const _this = this;
 
       if (hasAnimation) {
-        if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
-          _this.populateLeaveSequence = function () {
+        if (_this.processLeaveAnimation === EMPTY_CALL && _this.origin) {
+          _this.processLeaveAnimation = function () {
             REMOVE_SELF.call(_this, false);
           };
-        } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
+        } else if (_this.processLeaveAnimation !== EMPTY_CALL && !_this.origin) {
           // Children with leave animation should not get removed from dom for visual purposes.
           // Since their this node already has a leave animation and eventually will be removed from dom.
           // this is not the case for when this node is being detached by if
@@ -3962,7 +3952,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           }
         }
       } else {
-        _this.populateLeaveSequence = function () {
+        _this.processLeaveAnimation = function () {
           REMOVE_SELF.call(_this, !_this.origin);
         };
       }
@@ -3981,7 +3971,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (_this.inDOM) {
         const children = _this.getChildNodes();
         hasAnimation = hasAnimation || _this.hasAnimation(children);
-        _this.prepareLeaveSequence(hasAnimation, children);
+        _this.prepareLeaveAnimation(hasAnimation, children);
         _this.clean(hasAnimation, children);
       }
 
@@ -3993,7 +3983,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-        _this.populateLeaveSequence(_this.destroyOrigin === 2 ? EMPTY_CALL : _this.onLeaveComplete);
+        _this.processLeaveAnimation(_this.destroyOrigin === 2 ? EMPTY_CALL : _this.onLeaveComplete);
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
@@ -4105,9 +4095,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
        */
       update: function (viewNode, animationDescriptions) {
         if (animationDescriptions.enter && animationDescriptions.enter.onComplete) {
-          viewNode.populateEnterSequence = animationDescriptions.enter.onComplete;
+          viewNode.processEnterAnimation = animationDescriptions.enter.onComplete;
         }
-        viewNode.populateLeaveSequence = (onComplete) => {
+        viewNode.processLeaveAnimation = (onComplete) => {
           onComplete();
         };
       }
@@ -4186,7 +4176,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       const enter = animations.enter;
       if (enter) {
-        viewNode.populateEnterSequence = function () {
+        viewNode.processEnterAnimation = function () {
           process_enter_animation(this, enter);
         };
       }
@@ -4200,18 +4190,18 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           console.warn(viewNode.node);
         }
 
-        viewNode.populateLeaveSequence = function (finalize) {
+        viewNode.processLeaveAnimation = function (finalize) {
           process_leave_animation(this, leave, finalize);
         };
 
         // Hide timeline is the same as leave timeline.
         // The only difference is that hide timeline will add `display: 'none'` to the node at the end
-        viewNode.populateHideSequence = viewNode.populateLeaveSequence.bind(viewNode, () => {
+        viewNode.populateHideSequence = viewNode.processLeaveAnimation.bind(viewNode, () => {
           viewNode.node.style.display = 'none';
         });
       } else {
         // By default, imitate leave with parent behavior
-        viewNode.populateLeaveSequence = leave_with_parent.bind(viewNode);
+        viewNode.processLeaveAnimation = leave_with_parent.bind(viewNode);
       }
 
       const viewNodeCache = viewNode.cache;
@@ -5130,8 +5120,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const children = viewNode.getChildNodes();
     for (let i = 0, len = children.length; i < len; i++) {
       const vn = children[i];
-      if (vn.populateLeaveSequence === EMPTY_CALL) {
-        vn.populateLeaveSequence = function (finalize) {
+      if (vn.processLeaveAnimation === EMPTY_CALL) {
+        vn.processLeaveAnimation = function (finalize) {
           finalize();
         };
       }
