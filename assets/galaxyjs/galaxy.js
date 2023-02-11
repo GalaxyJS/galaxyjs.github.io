@@ -101,7 +101,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       _this.rootElement = bootModule.element;
 
-      bootModule.id = 'root';
+      bootModule.id = '@root';
 
       if (!_this.rootElement) {
         throw new Error('element property is mandatory');
@@ -153,8 +153,10 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           });
         }
 
+        module.path = module.path.indexOf('/') === 0 ? module.path.substring(1) : module.path;
+        // module.path = module.path.indexOf('/') === 0 ? module.path : '/' + module.path;
         if (!module.id) {
-          module.id = module.path.indexOf('/') === 0 ? module.path.substring(1) : module.path /*+ '-' + (new Date()).valueOf() + '-' + Math.round(performance.now())*/;
+          module.id = '@' + module.path;
         }
         module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
@@ -223,39 +225,34 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
         const parsedContent = Galaxy.Module.Content.parse(moduleConstructor);
         const imports = parsedContent.imports;
-        const source = parsedContent.source;
 
         const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);
         // Create module from moduleMetaData
-        const module = new Galaxy.Module(moduleMetaData, source, scope);
+        const module = new Galaxy.Module(moduleMetaData, scope, parsedContent.source, parsedContent.native);
         if (imports.length) {
           const importsCopy = imports.slice(0);
-          imports.forEach(function (item) {
-            const moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.path);
-            // Module is an addon
+          imports.forEach(function (importable) {
+            const moduleAddOnProvider = Galaxy.getAddOnProvider(importable.path);
+            // importable is an addon
             if (moduleAddOnProvider) {
-              const providerStages = moduleAddOnProvider.handler.call(null, scope, module);
-              const addOnInstance = providerStages.create();
-              module.registerAddOn(item.path, addOnInstance);
-              module.addOnProviders.push(providerStages);
-
+              module.addAddOn(moduleAddOnProvider);
               doneImporting(module, importsCopy);
             }
-            // Module is already loaded and we don't need a new instance of it (Singleton)
-            else if (cachedModules[item.path] && !item.fresh) {
+            // importable is already loaded, and we don't need a new instance of it (Singleton)
+            else if (cachedModules[importable.path] && !importable.fresh) {
               doneImporting(module, importsCopy);
             }
-            // Module is not loaded
+            // importable is not loaded
             else {
-              if (item.path.indexOf('./') === 0) {
-                item.path = scope.uri.path + item.path.substr(2);
+              if (importable.path.indexOf('./') === 0) {
+                importable.path = scope.uri.path + importable.path.substring(2);
               }
 
               Galaxy.load({
-                name: item.name,
-                path: item.path,
-                fresh: item.fresh,
-                contentType: item.contentType,
+                name: importable.name,
+                path: importable.path,
+                fresh: importable.fresh,
+                contentType: importable.contentType,
                 // params: item.params,
                 parentScope: scope,
                 invokers: invokers
@@ -278,7 +275,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @return {Promise<any>}
      */
     executeCompiledModule: function (module) {
-      return new Promise(function (resolve, reject) {
+      return new Promise(async function (resolve, reject) {
         try {
           for (let item in module.addOns) {
             module.scope.inject(item, module.addOns[item]);
@@ -293,19 +290,15 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
           }
 
-          const source = module.source;
+          // debugger;
+          const source = module.native ? (await import('/' + module.path)).default : module.source;
+          // const source = (await import('/' + module.path)).default;
           const moduleSource = typeof source === 'function' ?
-            source :
-            new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.path, source].join('\n'));
-          const output = moduleSource.call(null, module.scope);
+            source : function () { console.error('Can\'t find default function in %c' + module.path, 'font-weight: bold;'); };
+          // new AsyncFunction('Scope', ['//' + module.id + ': ' + module.path, '"use strict";\n', source].join('\n'));
+          const output = moduleSource.call(null, module.scope) || null;
 
           const proceed = () => {
-            Reflect.deleteProperty(module, 'source');
-
-            module.addOnProviders.forEach(item => item.start());
-
-            Reflect.deleteProperty(module, 'addOnProviders');
-
             const id = module.path;
             // if the module export has _temp then do not cache the module
             if (module.scope.export._temp) {
@@ -317,9 +310,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
               };
             }
 
-            const currentModule = module;
-            currentModule.init();
-            return resolve(currentModule);
+            module.init();
+            return resolve(module);
           };
 
           // if the function is not async, output would be undefined
@@ -338,17 +330,13 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       });
     },
 
-    getModuleAddOnProvider: function (name) {
+    getAddOnProvider: function (name) {
       return this.addOnProviders.filter((service) => {
         return service.name === name;
       })[0];
     },
 
     registerAddOnProvider: function (name, handler) {
-      if (typeof handler !== 'function') {
-        throw 'Addon provider should be a function';
-      }
-
       this.addOnProviders.push({
         name: name,
         handler: handler
@@ -367,25 +355,35 @@ Galaxy.Module = /** @class */ (function () {
 
   /**
    *
-   * @param {Object} module
-   * @param {string} source
+   * @param {object} module
    * @param {Galaxy.Scope} scope
+   * @param {string} source
+   * @param {boolean} native
    * @constructor
    * @memberOf Galaxy
    */
-  function Module(module, source, scope) {
+  function Module(module, scope, source, native) {
     this.id = module.id;
     this.systemId = module.systemId;
     this.source = source;
     this.path = module.path || null;
     this.importId = module.importId || module.path;
     this.addOns = module.addOns || {};
-    this.addOnProviders = [];
+    this.addOnProviders = {};
     this.scope = scope;
+    this.native = native || false;
   }
 
   Module.prototype = {
     init: function () {
+      const providers = this.addOnProviders;
+      Reflect.deleteProperty(this, 'source');
+      Reflect.deleteProperty(this, 'addOnProviders');
+
+      for (let addOnName in this.addOns) {
+        providers[addOnName].startInstance(this.addOns[addOnName], this);
+      }
+
       this.scope.trigger('module.init');
     },
 
@@ -397,8 +395,10 @@ Galaxy.Module = /** @class */ (function () {
       this.scope.trigger('module.destroy');
     },
 
-    registerAddOn: function (id, object) {
-      this.addOns[id] = object;
+    addAddOn: function (addOnProvider) {
+      const h = addOnProvider.handler;
+      this.addOnProviders[addOnProvider.name] = h;
+      this.addOns[addOnProvider.name] = h.provideInstance(this.scope, this);
     }
   };
 
@@ -538,6 +538,7 @@ Galaxy.Observer = /** @class */ (function () {
 /* global Galaxy */
 Galaxy.Scope = /** @class */ (function () {
   const defProp = Object.defineProperty;
+  const delProp = Reflect.deleteProperty;
 
   /**
    *
@@ -552,7 +553,9 @@ Galaxy.Scope = /** @class */ (function () {
     _this.parentScope = module.parentScope || null;
     _this.element = element || null;
     _this.export = {};
+
     _this.uri = new Galaxy.GalaxyURI(module.path);
+    // console.log('---', module.path, _this.uri.path);
     _this.eventHandlers = {};
     _this.observers = [];
     const _data = _this.element.data ? Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true) : {};
@@ -563,6 +566,10 @@ Galaxy.Scope = /** @class */ (function () {
         return _data;
       },
       set: function (value) {
+        if (value === null || typeof value !== 'object') {
+          throw Error('The `Scope.data` property must be type of object and can not be null.');
+        }
+
         Object.assign(_data, value);
       }
     });
@@ -585,8 +592,6 @@ Galaxy.Scope = /** @class */ (function () {
     _this.on('module.destroy', this.destroy.bind(_this));
   }
 
-
-
   Scope.prototype = {
     /**
      *
@@ -607,14 +612,17 @@ Galaxy.Scope = /** @class */ (function () {
         libId = libId.replace('./', this.uri.path);
       }
 
-
       return this.__imports__[libId];
+    },
+
+    importAsText: function (libId) {
+      return this.import(libId + '#text');
     },
     /**
      *
      */
     destroy: function () {
-      this.data = null;
+      delProp(this, 'data');
       this.observers.forEach(function (observer) {
         observer.remove();
       });
@@ -705,11 +713,11 @@ Galaxy.GalaxyURI = /** @class */ (function () {
   function GalaxyURI(url) {
     let urlParser = document.createElement('a');
     urlParser.href = url;
-    let myRegexp = /([^\t\n]+)\//g;
+    let myRegexp = /\/([^\t\n]+\/)/g;
     let match = myRegexp.exec(urlParser.pathname);
 
     this.parsedURL = urlParser.href;
-    this.path = match ? match[0] : '/';
+    this.path = match ? match[1] : '/';
     this.base = window.location.pathname;
     this.protocol = urlParser.protocol;
   }
@@ -2100,20 +2108,20 @@ Galaxy.View = /** @class */(function (G) {
 })(Galaxy);
 
 /* global Galaxy */
-Galaxy.registerAddOnProvider('galaxy/router', function (scope, module) {
-  return {
-    create: function () {
-      const router = new Galaxy.Router(scope, module);
-      if (module.systemId !== 'root') {
-        scope.on('module.destroy', () => router.destroy());
-      }
+Galaxy.registerAddOnProvider('galaxy/router', {
+  provideInstance: function (scope, module) {
+    const router = new Galaxy.Router(scope, module);
+    if (module.systemId !== '@root') {
+      scope.on('module.destroy', () => router.destroy());
+    }
 
-      scope.router = router.data;
+    scope.router = router.data;
 
-      return router;
-    },
-    start: function () { }
-  };
+    return router;
+  },
+  startInstance: function (instance) {
+
+  }
 });
 
 /* global Galaxy */
@@ -2211,6 +2219,8 @@ Galaxy.Router = /** @class */ (function (G) {
       parameters: _this.parentRouterScope && _this.parentRouterScope.router ? _this.parentRouterScope.router.parameters : {}
     };
     _this.onTransitionFn = Galaxy.View.EMPTY_CALL;
+    _this.onInvokeFn = Galaxy.View.EMPTY_CALL;
+    _this.onLoadFn = Galaxy.View.EMPTY_CALL;
 
     _this.viewports = {
       main: {
@@ -2226,7 +2236,7 @@ Galaxy.Router = /** @class */ (function (G) {
       enumerable: true
     });
 
-    if (module.id === 'root') {
+    if (module.id === '@root') {
       Router.currentPath.update();
     }
   }
@@ -2338,6 +2348,16 @@ Galaxy.Router = /** @class */ (function (G) {
       return this;
     },
 
+    onInvoke: function (handler) {
+      this.onInvokeFn = handler;
+      return this;
+    },
+
+    onLoad: function (handler) {
+      this.onLoadFn = handler;
+      return this;
+    },
+
     findMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
       let matchCount = 0;
@@ -2424,13 +2444,14 @@ Galaxy.Router = /** @class */ (function (G) {
       if (typeof route.handle === 'function') {
         return route.handle.call(this, params, parentParams);
       } else {
-        // console.log(route.viewports, this.data.viewports)
         const allViewports = this.data.viewports;
         for (const key in allViewports) {
           let value = route.viewports[key] || null;
           if (typeof value === 'string') {
             value = {
-              path: value
+              path: value,
+              onInvoke: this.onInvokeFn.bind(this, value, key),
+              onLoad: this.onLoadFn.bind(this, value, key)
             };
           }
 
@@ -2519,18 +2540,18 @@ Galaxy.Router = /** @class */ (function (G) {
 })(Galaxy);
 
 /* global Galaxy */
-Galaxy.registerAddOnProvider('galaxy/view', function (scope) {
-  return {
-    /**
-     *
-     * @return {Galaxy.View}
-     */
-    create: function () {
-      return new Galaxy.View(scope);
-    },
-    start: function () {
-    }
-  };
+Galaxy.registerAddOnProvider('galaxy/view', {
+  /**
+   *
+   * @return {Galaxy.View}
+   */
+  provideInstance: function (scope, module) {
+    return new Galaxy.View(scope);
+  },
+  startInstance: function (instance, module) {
+
+  }
+
 });
 
 (function (GMC) {
@@ -2703,7 +2724,8 @@ Galaxy.registerAddOnProvider('galaxy/view', function (scope) {
 
     return {
       imports: imports,
-      source: parsedContent
+      source: parsedContent,
+      native: /^export default/gm.test(parsedContent)
     };
   }
 })(Galaxy.Module.Content);
@@ -5139,6 +5161,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     // });
   }
 
+  /**
+   *
+   * @param viewNode
+   * @param cache
+   * @param {object} moduleMeta
+   * @param _next
+   */
   function module_loader(viewNode, cache, moduleMeta, _next) {
     if (cache.module) {
       cache.module.destroy();
@@ -5147,6 +5176,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     const tempURI = new G.GalaxyURI(moduleMeta.path);
     let moduleScope = cache.scope;
     let currentScope = cache.scope;
+
+    if(typeof moduleMeta.onInvoke === 'function') {
+      moduleMeta.onInvoke.call();
+    }
 
     while (moduleScope) {
       // In the case where module is a part of repeat, cache.scope will be NOT an instance of Scope
@@ -5172,6 +5205,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       cache.module = module;
       viewNode.node.setAttribute('module', module.path);
       module.start();
+
+      if(typeof moduleMeta.onLoad === 'function') {
+        moduleMeta.onLoad.call();
+      }
+
       _next();
     }).catch(function (response) {
       console.error(response);

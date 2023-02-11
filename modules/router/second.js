@@ -1,15 +1,16 @@
-const view = Scope.import('galaxy/view');
+export default (Scope) => {
+  const view = Scope.import('galaxy/view');
 
-view.blueprint([
-  {
-    tag: 'file-icon',
-    props: {
-      text: 'second.js'
-    }
-  },
-  {
-    tag: 'h2',
-    text: 'This is Second!'
-  },
-]);
-
+  view.blueprint([
+    {
+      tag: 'file-icon',
+      props: {
+        text: 'second.js'
+      }
+    },
+    {
+      tag: 'h2',
+      text: 'This is Second!'
+    },
+  ]);
+};

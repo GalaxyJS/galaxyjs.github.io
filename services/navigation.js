@@ -1,8 +1,8 @@
-const service = {
-  subNavItems: [],
-  setSubNavItems: function (items) {
-    this.subNavItems = items;
-  }
+export default (Scope) => {
+  Scope.export = {
+    subNavItems: [],
+    setSubNavItems: function (items) {
+      this.subNavItems = items;
+    }
+  };
 };
-
-Scope.export = service;

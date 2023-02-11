@@ -1,111 +1,112 @@
 /* global Scope */
+export default (Scope) => {
+  const animations = {};
 
-const animations = {};
-
-animations.cardInOut = {
-  enter: {
-    timeline: 'main-nav-timeline',
-    position: 'side-bar+=.25',
-    from: {
-      transformOrigin: 'top center',
-      scale: 1.04,
-      opacity: 0,
-      position: 'absolute',
-      top: 0
+  animations.cardInOut = {
+    enter: {
+      timeline: 'main-nav-timeline',
+      position: 'side-bar+=.25',
+      from: {
+        transformOrigin: 'top center',
+        scale: 1.04,
+        opacity: 0,
+        position: 'absolute',
+        top: 0
+      },
+      to: {
+        ease: 'Power1.easeOut',
+        transformOrigin: 'top center',
+        top: 0,
+        scale: 1,
+        opacity: 1,
+        position: 'absolute',
+        duration: .25,
+      },
     },
-    to: {
-      ease: 'Power1.easeOut',
-      transformOrigin: 'top center',
-      top: 0,
-      scale: 1,
-      opacity: 1,
-      position: 'absolute',
-      duration: .25,
-    },
-  },
-  leave: {
-    timeline: 'main-nav-timeline',
-    position: 'side-bar',
-    to: {
-      ease: 'Power1.easeIn',
-      transformOrigin: 'top center',
-      display: 'none',
-      scale: .96,
-      opacity: 0,
-      delay: .1,
-      duration: .25
+    leave: {
+      timeline: 'main-nav-timeline',
+      position: 'side-bar',
+      to: {
+        ease: 'Power1.easeIn',
+        transformOrigin: 'top center',
+        display: 'none',
+        scale: .96,
+        opacity: 0,
+        delay: .1,
+        duration: .25
+      }
     }
-  }
-};
+  };
 
-animations.itemInOut = {
-  enter: {
-    timeline: 'item',
+  animations.itemInOut = {
+    enter: {
+      timeline: 'item',
+      position: '-=.3',
+      addTo: 'card',
+      from: {
+        x: 100,
+        opacity: 0,
+        duration: .5
+      },
+    },
+    leave: {
+      timeline: 'item',
+      position: '-=.4',
+      addTo: 'card',
+      order: 5,
+      to: {
+        x: 100,
+        opacity: 0,
+        duration: .5
+      },
+    }
+  };
+
+  animations.mainNav = {
+    enter: {
+      timeline: 'nav',
+      to: {
+        x: 0,
+        clearProps: '',
+        duration: .5,
+      }
+    },
+    leave: {
+      to: {
+        x: '-100%',
+        clearProps: '',
+        duration: .25,
+      }
+    },
+  };
+
+  animations.mainNavItem = {
+    enter: {
+      timeline: 'card',
+      position: '-=.5',
+      from: {
+        transition: 'none',
+        autoAlpha: 0,
+        x: '-25%',
+        ease: 'elastic.easeOut.config(1, .5)',
+        clearProps: 'all',
+        duration: .6
+      },
+    }
+  };
+
+  animations.navSubItem = {
+    timeline: 'sub-nav-items',
     position: '-=.3',
-    addTo: 'card',
+    attachTo: 'main-nav-items',
+    positionInParent: '+=.2',
+
     from: {
-      x: 100,
       opacity: 0,
-      duration: .5
+      y: -10,
+      duration: .35
     },
-  },
-  leave: {
-    timeline: 'item',
-    position: '-=.4',
-    addTo: 'card',
-    order: 5,
-    to: {
-      x: 100,
-      opacity: 0,
-      duration: .5
-    },
-  }
+  };
+
+  Scope.export = animations;
 };
-
-animations.mainNav = {
-  enter: {
-    timeline: 'nav',
-    to: {
-      x: 0,
-      clearProps: '',
-      duration: .5,
-    }
-  },
-  leave: {
-    to: {
-      x: '-100%',
-      clearProps: '',
-      duration: .25,
-    }
-  },
-};
-
-animations.mainNavItem = {
-  enter: {
-    timeline: 'card',
-    position: '-=.5',
-    from: {
-      transition: 'none',
-      autoAlpha: 0,
-      x: '-25%',
-      ease: 'elastic.easeOut.config(1, .5)',
-      clearProps: 'all',
-      duration: .6
-    },
-  }
-};
-
-animations.navSubItem = {
-  timeline: 'sub-nav-items',
-  position: '-=.3',
-  attachTo: 'main-nav-items',
-  positionInParent: '+=.2',
-
-  from: {
-    opacity: 0,
-    y: -10,
-    duration: .35
-  },
-};
-
-Scope.export = animations;

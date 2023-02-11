@@ -1,9 +1,11 @@
-const view = Scope.import('galaxy/view');
+export default (Scope) => {
+  const view = Scope.import('galaxy/view');
 
-view.blueprint({
-  class: 'example-box',
-  children: {
-    tag: 'p',
-    text: '<>data.fromParent',
-  }
-});
+  view.blueprint({
+    class: 'example-box',
+    children: {
+      tag: 'p',
+      text: '<>data.fromParent',
+    }
+  });
+};
