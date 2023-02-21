@@ -227,6 +227,7 @@ file-icon > i {
 .flex-bar {
   display: flex;
   flex-direction: row;
+  column-gap: 5px;
 }
 
 .flex-bar.jc-center {
@@ -237,17 +238,17 @@ file-icon > i {
   align-items: center;
 }
 
-.flex-bar > * {
-  margin: 0 5px;
-}
+/*.flex-bar > * {*/
+/*  margin: 0 5px;*/
+/*}*/
 
-.flex-bar > *:first-child {
-  margin-left: 0;
-}
+/*.flex-bar > *:first-child {*/
+/*  margin-left: 0;*/
+/*}*/
 
-.flex-bar > *:last-child {
-  margin-right: 0;
-}
+/*.flex-bar > *:last-child {*/
+/*  margin-right: 0;*/
+/*}*/
 
 .main-content {
   position: absolute;
@@ -276,7 +277,7 @@ file-icon > i {
   font-weight: normal;
   left: 0;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
   top: 0;
   white-space: nowrap;
   z-index: 100;
@@ -809,7 +810,7 @@ button {
   color: #666;
   cursor: pointer;
   font-weight: 700;
-  margin: 0 10px;
+  margin: 0;
   outline: none;
   outline-offset: 2px;
   line-height: 22px;
@@ -1327,7 +1328,6 @@ p.example {
 
   .main-nav {
     max-height: unset;
-    overflow: auto;
     transform: translateX(0);
   }
 
