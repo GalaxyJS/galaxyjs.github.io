@@ -1,32 +1,8 @@
 export default (Scope) => {
   const view = Scope.import('galaxy/view');
-// const router = Scope.import('galaxy/router');
   const animations = Scope.import('services/animations.js');
   const expandable = Scope.import('services/expandable.js');
   const simpleRouterExample = Scope.importAsText('./simple-router.example.js');
-
-// router.setup([
-//   {
-//     path: '/',
-//     redirectTo: '/fundamentals'
-//   },
-//   {
-//     path: '/:section',
-//     hidden: true,
-//     handle: (params) => {
-//       if (!document.querySelector('#' + params.section)) {
-//         return true;
-//       }
-//
-//       gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
-//       return true;
-//     }
-//   },
-//   {
-//     path: '/fundamentals',
-//     title: 'Fundamentals'
-//   },
-// ]);
 
   view.blueprint({
     class: 'card big',

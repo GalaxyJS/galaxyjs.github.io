@@ -35,7 +35,7 @@ export default (Scope) => {
       }
     },
   ]);
-  console.log(router)
+
   view.components({
     'file-icon': Scope.import('./file-icon.component.js')
   });
@@ -49,7 +49,7 @@ export default (Scope) => {
           repeat: {
             data: function (routes = '<>router.routes') {
               if (this.cache.routes === routes)
-                return null;
+                return;
 
               this.cache.routes = routes;
               return routes.filter(r => !r.hidden);
