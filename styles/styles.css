@@ -1362,7 +1362,7 @@ p.example {
   }
 
   .main-content.in {
-    padding-left: 220px;
+    /*padding-left: 220px;*/
   }
 
   .card {
@@ -1410,7 +1410,7 @@ p.example {
   }
 
   .main-content.in {
-    padding-left: 270px;
+    /*padding-left: 270px;*/
   }
 
   .card {

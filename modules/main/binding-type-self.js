@@ -39,7 +39,7 @@ export default (Scope) => {
     {
       tag: 'p',
       text: (list = '<>data.list') => {
-        return 'Bind via <>data.list, show list.length: ' + list.count;
+        return 'Bind via <>data.list, show list.length: ' + list.length;
       }
     },
     {

@@ -349,7 +349,7 @@ export default (Scope) => {
               }
               return window.innerWidth <= 1024 ? 220 : 270;
             },
-            clearProps: 'all',
+            clearProps: 'none',
             duration: .01,
           }
         },

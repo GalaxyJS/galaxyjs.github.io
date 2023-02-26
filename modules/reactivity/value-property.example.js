@@ -13,17 +13,19 @@ export default (Scope) => {
       },
       {
         tag: 'select',
+        // multiple: true,
         value: '<>data.selectedOption',
         children: [
           {
             tag: 'option',
             text: 'Option 1',
-            value: 'opt-1'
+            value: 'opt-1',
           },
           {
             tag: 'option',
             text: 'Option 2',
-            value: 'opt-2'
+            value: 'opt-2',
+            // selected: '<>data.selected'
           },
           {
             tag: 'option',

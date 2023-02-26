@@ -10,7 +10,7 @@ export default (Scope) => {
       animations: {
         enter: {
           timeline: 'main-nav-timeline',
-          position: 'side-bar+=.25',
+          position: 'side-bar+=.5',
           from: {
             opacity: 0,
           },
