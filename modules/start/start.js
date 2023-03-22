@@ -9,27 +9,24 @@ export default (Scope) => {
       class: 'start-page',
       animations: {
         enter: {
-          timeline: 'main-nav-timeline',
-          position: 'side-bar+=.5',
+          timeline: 'main-timeline',
           from: {
             opacity: 0,
           },
           to: {
             opacity: 1,
-            duration: .25,
+            duration: .5,
           },
         },
         leave: {
-          timeline: 'main-nav-timeline',
-          position: 'pre-side-bar+=.2',
+          timeline: 'main-timeline',
+          position: '-=.5',
           to: {
             ease: 'Power1.easeIn',
             transformOrigin: 'top center',
             display: 'none',
-            // scale: .96,
             opacity: 0,
-            // delay: .1,
-            duration: .25
+            duration: .5
           },
         }
       },
@@ -37,19 +34,18 @@ export default (Scope) => {
         {
           animations: {
             enter: {
-              timeline: 'main-nav-timeline',
-              position: 'side-bar+=.5',
+              timeline: 'main-timeline',
+              position: '-=.5',
               from: {
                 y: '-10%'
               },
               to: {
                 y: 0,
-                duration: .3
+                duration: .5
               },
             },
             leave: {
-              timeline: 'main-nav-timeline',
-              position: 'pre-side-bar',
+              timeline: 'main-timeline',
               to: {
                 ease: 'Power1.easeIn',
                 y: '-50%',
@@ -66,7 +62,8 @@ export default (Scope) => {
         {
           animations: {
             enter: {
-              timeline: 'main-nav-timeline',
+              timeline: 'main-timeline',
+              position: '-=.25',
               from: {
                 opacity: 0,
                 y: '-5%'
@@ -74,7 +71,7 @@ export default (Scope) => {
               to: {
                 opacity: 1,
                 y: 0,
-                duration: .3
+                duration: .4
               },
             },
           },
@@ -86,7 +83,8 @@ export default (Scope) => {
         {
           animations: {
             enter: {
-              timeline: 'main-nav-timeline',
+              timeline: 'main-timeline',
+              position: '-=.25',
               from: {
                 opacity: 0,
                 y: '-5%'
@@ -94,7 +92,7 @@ export default (Scope) => {
               to: {
                 opacity: 1,
                 y: 0,
-                duration: .3
+                duration: .4
               },
             },
           },
@@ -105,8 +103,8 @@ export default (Scope) => {
         {
           animations: {
             enter: {
-              timeline: 'main-nav-timeline',
-              position: '-=.15',
+              timeline: 'main-timeline',
+              position: '-=.25',
               from: {
                 opacity: 0,
                 y: '-3%'
@@ -114,7 +112,7 @@ export default (Scope) => {
               to: {
                 opacity: 1,
                 y: 0,
-                duration: .3,
+                duration: .4,
               },
             },
           },
@@ -182,13 +180,7 @@ export default (Scope) => {
           ]
         }
       ]
-    },
-    // view.enterKeyframe(() => {
-    //   Galaxy.setupTimeline('main-nav-timeline', {
-    //     'pre-side-bar': 0,
-    //     'side-bar': .5
-    //   });
-    // })
+    }
   ]);
 };
 

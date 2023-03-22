@@ -64,8 +64,8 @@ export default (Scope) => {
       class: 'card big anime',
       animations: {
         enter: {
-          timeline: 'main-nav-timeline',
-          position: 'side-bar+=.5',
+          timeline: 'main-timeline',
+          // position: 'side-bar+=.5',
           from: {
             // x: 80,
             y: 100,
@@ -74,7 +74,7 @@ export default (Scope) => {
           },
         },
         leave: {
-          timeline: 'main-nav-timeline',
+          timeline: 'main-timeline',
           to: {
             y: 150,
             opacity: 0,
@@ -86,8 +86,8 @@ export default (Scope) => {
         {
           animations: {
             enter: {
-              timeline: 'main-nav-timeline',
-              position: 'side-bar+=1',
+              timeline: 'main-timeline',
+              // position: 'side-bar+=1',
               from: {
                 filter: 'grayscale(100%)'
               },
@@ -102,7 +102,7 @@ export default (Scope) => {
           src: 'assets/images/asphalt-blur-cars.jpg',
           height: '410',
         },
-        view.enterKeyframe(null, 'main-nav-timeline', '+=.7'),
+        view.entering.startKeyframe('main-timeline'),
         {
           tag: 'h1',
           style: {
@@ -112,7 +112,7 @@ export default (Scope) => {
           children: {
             animations: {
               enter: {
-                timeline: 'main-nav-timeline',
+                timeline: 'main-timeline',
                 position: '-=.75',
                 from: {
                   opacity: 0,
@@ -185,6 +185,7 @@ export default (Scope) => {
               text: firstAnimationExample,
               expandable: exapndable
             },
+            view.entering.startKeyframe('main-timeline'),
             {
               class: 'example-box',
               module: {
@@ -276,7 +277,7 @@ export default (Scope) => {
               tag: 'p',
               text: 'Ready...'
             },
-            view.enterKeyframe(null, pageAnimation, 1),
+            view.entering.addKeyframe(null, pageAnimation, 1),
             {
               animations: {
                 enter: {
@@ -296,7 +297,7 @@ export default (Scope) => {
               tag: 'p',
               text: 'Set...'
             },
-            view.enterKeyframe(null, pageAnimation, 1),
+            view.entering.addKeyframe(null, pageAnimation, 1),
             {
               animations: {
                 enter: {
@@ -316,7 +317,7 @@ export default (Scope) => {
               tag: 'strong',
               text: 'Go!'
             },
-            view.enterKeyframe(null, pageAnimation, .2),
+            view.entering.addKeyframe(null, pageAnimation, .2),
             {
               animations: {
                 enter: {
@@ -361,7 +362,7 @@ export default (Scope) => {
         }
       ]
     },
-    view.enterKeyframe(() => {
+    view.entering.addKeyframe(() => {
       PR.prettyPrint();
       pageAnimation.progress(Scope.data.sliderValue / 100);
     }),

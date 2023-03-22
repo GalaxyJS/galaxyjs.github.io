@@ -40,8 +40,7 @@ export default (Scope) => {
         },
         animations: {
           enter: {
-            addTo: 'main-nav-timeline',
-            timeline: 'boxes',
+            timeline: 'main-timeline',
             position: '-=.75',
             from: {
               display: 'none',
@@ -58,7 +57,6 @@ export default (Scope) => {
           },
           leave: {
             withParent: true,
-            addTo: 'main-nav-timeline',
             timeline: 'boxes',
             position: '-=.22',
             to: {

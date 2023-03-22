@@ -19,6 +19,7 @@ export default (Scope) => {
                 click() {
                   const t0 = performance.now();
 
+                  Scope.data.list = [];
                   for (let i = 0; i < 10000; i++) {
                     Scope.data.list.push({
                       title: 'index: ' + i

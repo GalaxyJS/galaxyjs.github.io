@@ -108,17 +108,24 @@ export default (Scope) => {
 
     switch (from) {
       case '/start':
-        Galaxy.setupTimeline('main-nav-timeline', {
+        Galaxy.setupTimeline('main-timeline', {
           'pre-side-bar': 0,
           'side-bar': .5,
         });
         break;
       case null:
       default:
-        Galaxy.setupTimeline('main-nav-timeline', {
+        Galaxy.setupTimeline('main-timeline', {
           'pre-side-bar': 0,
           'side-bar': .1,
         });
+    }
+
+    if (from && to === '/start') {
+      Galaxy.setupTimeline('main-timeline', {
+        'pre-side-bar': 0,
+        'side-bar': .5,
+      });
     }
   }).onInvoke((path, viewport) => {
     // console.info('invoke: ' + path + '\nviewport: ' + viewport);
@@ -147,6 +154,7 @@ export default (Scope) => {
         }
       },
     },
+    view.entering.startKeyframe('main-timeline', '+=1'),
     {
       tag: 'div',
       id: 'main-nav',
@@ -156,8 +164,7 @@ export default (Scope) => {
       },
       animations: {
         enter: {
-          timeline: 'main-nav-timeline',
-          position: 'side-bar',
+          timeline: 'main-timeline',
           from: {
             x: '-100%',
           },
@@ -172,36 +179,36 @@ export default (Scope) => {
           }
         },
         leave: {
-          timeline: 'main-nav-timeline',
-          position: 'side-bar',
+          timeline: 'main-timeline',
+          position: '-=.5',
           to: {
             x: '-100%',
-            // clearProps: ''
             duration: .5,
           }
         },
-        'add:expand': {
-          from: {
-            x: '-100%',
-          },
-          to: {
-            x: 0,
-            boxShadow: '0 15px 25px rgba(40, 40, 40, .35)',
-            duration: .3
-          },
-        },
-        'remove:expand': {
-          to: {
-            x: () => {
-              if (window.innerWidth <= 768) {
-                return '-100%';
-              }
-              return 0;
-            },
-            boxShadow: '0 0 0 rgba(40, 40, 40, .35)',
-            duration: .2
-          },
-        }
+        // 'add:expand': {
+        //   timeline: 'main-timeline',
+        //   from: {
+        //     x: '-100%',
+        //   },
+        //   to: {
+        //     x: 0,
+        //     boxShadow: '0 15px 25px rgba(40, 40, 40, .35)',
+        //     duration: 1.3
+        //   },
+        // },
+        // 'remove:expand': {
+        //   to: {
+        //     x: () => {
+        //       if (window.innerWidth <= 768) {
+        //         return '-100%';
+        //       }
+        //       return 0;
+        //     },
+        //     boxShadow: '0 0 0 rgba(40, 40, 40, .35)',
+        //     duration: .2
+        //   },
+        // }
       },
       if: (ap = '<>router.activePath') => {
         return ap && ap !== '/start';
@@ -216,18 +223,17 @@ export default (Scope) => {
             }
           }
         },
+        view.entering.startKeyframe('main-timeline'),
         {
           tag: 'div',
           repeat: {
-            data: '<>router.routes',
+            data: '<>router.navs',
             as: 'nav'
           },
-          if: (hidden = '<>nav.hidden', activePath = '<>router.activePath') => !hidden && activePath && activePath !== '/start',
+          // if: (activePath = '<>router.activePath') => activePath && activePath !== '/start',
           animations: {
             enter: {
-              addTo: 'main-nav-timeline',
-              positionInParent: 'side-bar+=.4',
-              timeline: 'nav',
+              timeline: 'main-timeline',
               position: '-=.56',
               from: {
                 transition: 'none',
@@ -238,7 +244,7 @@ export default (Scope) => {
                 autoAlpha: 1,
                 x: 0,
                 ease: 'elastic.out(1, .5)',
-                clearProps: 'all',
+                // clearProps: 'all',
                 duration: .6
               }
             }
@@ -271,33 +277,32 @@ export default (Scope) => {
               ]
             },
             {
-              animations: {
-                enter: {
-                  withParent: true,
-                  timeline: 'nav',
-                  position: '-=.35',
-                  from: {
-                    height: 0
-                  },
-                  to: {
-                    height: 'auto',
-                    duration: .35,
-                  },
-                },
-                leave: {
-                  withParent: true,
-                  timeline: 'nav',
-                  position: '-=.35',
-                  to: {
-                    height: 0,
-                    duration: function (v, node) {
-                      return node.offsetHeight > 0 ? .35 : 0;
-                    },
-                  },
-                }
-              },
+              // animations: {
+              //   enter: {
+              //     withParent: true,
+              //     timeline: 'nav',
+              //     position: '-=.35',
+              //     from: {
+              //       height: 0
+              //     },
+              //     to: {
+              //       height: 'auto',
+              //       duration: .35,
+              //     },
+              //   },
+              //   leave: {
+              //     withParent: true,
+              //     timeline: 'nav',
+              //     position: '-=.35',
+              //     to: {
+              //       height: 0,
+              //       duration: function (v, node) {
+              //         return node.offsetHeight > 0 ? .35 : 0;
+              //       },
+              //     },
+              //   }
+              // },
               if: function (navPath = '<>nav.path', activePath = '<>router.activePath', length = '<>router.activeRoute.children.length') {
-                // console.log(this.node, navPath ,activePath)
                 return navPath === activePath && length;
               },
               class: 'sub-nav-container',
@@ -340,10 +345,10 @@ export default (Scope) => {
     {
       animations: {
         'add:in': {
-          timeline: 'main-nav-timeline',
-          position: 'side-bar',
+          timeline: 'main-timeline',
+          position: '-=.5',
           to: {
-            paddingLeft: () => {
+            marginLeft: () => {
               if (window.innerWidth <= 768) {
                 return 0;
               }
@@ -354,12 +359,13 @@ export default (Scope) => {
           }
         },
         'remove:in': {
-          timeline: 'main-nav-timeline',
-          position: 'side-bar',
+          timeline: 'main-timeline',
+          position: '-=.5',
           to: {
-            paddingLeft: 0,
-            clearProps: 'all',
             duration: .5,
+            onComplete() {
+              this.node.style.paddingLeft = 0;
+            }
           }
         },
       },
@@ -377,6 +383,7 @@ export default (Scope) => {
         }
       },
       children: [
+        // view.entering.startKeyframe('main-timeline', '+=2'),
         {
           ...router.viewports.main,
           data: {
@@ -390,8 +397,11 @@ export default (Scope) => {
         }
       ]
     },
-    view.enterKeyframe(() => {
-      router.start();
-    }, 'main-nav-timeline'),
+    // view.enterKeyframe(() => {
+    //   router.start();
+    // }, 'main-timeline'),
   ]);
-}
+
+  router.start();
+};
+

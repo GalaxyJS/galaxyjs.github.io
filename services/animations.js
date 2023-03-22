@@ -1,39 +1,44 @@
-/* global Scope */
 export default (Scope) => {
   const animations = {};
 
   animations.cardInOut = {
     enter: {
-      timeline: 'main-nav-timeline',
-      position: 'side-bar+=.25',
+      timeline: 'main-timeline',
+      position: '-=.5',
       from: {
         transformOrigin: 'top center',
         scale: 1.04,
         opacity: 0,
         position: 'absolute',
-        top: 0
+        top: 0,
+        // xPercent: -100
       },
       to: {
-        ease: 'Power1.easeOut',
+        ease: 'power1.inOut',
         transformOrigin: 'top center',
         top: 0,
         scale: 1,
         opacity: 1,
         position: 'absolute',
-        duration: .25,
+        xPercent: 0,
+        duration: .5,
       },
     },
     leave: {
-      timeline: 'main-nav-timeline',
-      position: 'side-bar',
+      timeline: 'main-timeline',
+      position: '-=.5',
+      from: {
+        position: 'absolute',
+      },
       to: {
-        ease: 'Power1.easeIn',
+        ease: 'power1.inOut',
         transformOrigin: 'top center',
         display: 'none',
         scale: .96,
         opacity: 0,
         delay: .1,
-        duration: .25
+        duration: .5,
+        // xPercent: 100
       }
     }
   };
