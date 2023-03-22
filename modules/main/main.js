@@ -397,9 +397,6 @@ export default (Scope) => {
         }
       ]
     },
-    // view.enterKeyframe(() => {
-    //   router.start();
-    // }, 'main-timeline'),
   ]);
 
   router.start();

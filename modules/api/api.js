@@ -205,7 +205,7 @@ export default (Scope) => {
           }
         ]
       },
-      view.enterKeyframe(() => {
+      view.entering.addKeyframe(() => {
         PR.prettyPrint();
         router.start();
       }, 'main-nav-timeline')

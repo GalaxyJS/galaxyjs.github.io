@@ -364,7 +364,7 @@ export default (Scope) => {
           },
         ]
       },
-      view.enterKeyframe(() => {
+      view.entering.addKeyframe(() => {
         router.start();
         PR.prettyPrint();
       }, 'main-nav-timeline')

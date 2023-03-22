@@ -66,7 +66,7 @@ export default (Scope) => {
         ]
       },
 
-      view.enterKeyframe(() => {
+      view.entering.addKeyframe(() => {
         PR.prettyPrint();
       }, 'main-nav-timeline')
     ]
