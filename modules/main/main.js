@@ -277,31 +277,31 @@ export default (Scope) => {
               ]
             },
             {
-              // animations: {
-              //   enter: {
-              //     withParent: true,
-              //     timeline: 'nav',
-              //     position: '-=.35',
-              //     from: {
-              //       height: 0
-              //     },
-              //     to: {
-              //       height: 'auto',
-              //       duration: .35,
-              //     },
-              //   },
-              //   leave: {
-              //     withParent: true,
-              //     timeline: 'nav',
-              //     position: '-=.35',
-              //     to: {
-              //       height: 0,
-              //       duration: function (v, node) {
-              //         return node.offsetHeight > 0 ? .35 : 0;
-              //       },
-              //     },
-              //   }
-              // },
+              animations: {
+                enter: {
+                  withParent: true,
+                  timeline: 'nav',
+                  position: '-=.35',
+                  from: {
+                    height: 0
+                  },
+                  to: {
+                    height: 'auto',
+                    duration: .35,
+                  },
+                },
+                leave: {
+                  withParent: true,
+                  timeline: 'nav',
+                  position: '-=.35',
+                  to: {
+                    height: 0,
+                    duration: function (v, node) {
+                      return node.offsetHeight > 0 ? .35 : 0;
+                    },
+                  },
+                }
+              },
               if: function (navPath = '<>nav.path', activePath = '<>router.activePath', length = '<>router.activeRoute.children.length') {
                 return navPath === activePath && length;
               },

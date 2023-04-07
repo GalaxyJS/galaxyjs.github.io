@@ -1099,6 +1099,22 @@ Galaxy.View = /** @class */(function (G) {
   //   }
   // };
 
+  function parse_bind_exp_string(propertyKey, clean) {
+    const matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
+    const result = matches.filter(a => a !== '' && a !== '.');
+
+    if (clean) {
+      return result.map(p => {
+        if (p.indexOf('[') === 0) {
+          return p.substring(1, p.length - 1);
+        }
+        return p;
+      });
+    }
+
+    return result;
+  }
+
   /**
    *
    * @param data
@@ -1106,8 +1122,8 @@ Galaxy.View = /** @class */(function (G) {
    * @return {*}
    */
   function safe_property_lookup(data, properties) {
-    properties = properties.split('.');
-    let property = properties[0];
+    const propertiesArr = parse_bind_exp_string(properties, true);
+    let property = propertiesArr[0];
     const original = data;
     let target = data;
     let temp = data;
@@ -1129,8 +1145,8 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     target = target || {};
-    const lastIndex = properties.length - 1;
-    properties.forEach(function (key, i) {
+    const lastIndex = propertiesArr.length - 1;
+    propertiesArr.forEach(function (key, i) {
       target = target[key];
 
       if (i !== lastIndex && !(target instanceof Object)) {
@@ -1443,8 +1459,8 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.property_lookup = function (data, key) {
-    key = key.split('.');
-    let firstKey = key[0];
+    const propertiesArr = parse_bind_exp_string(key, true);
+    let firstKey = propertiesArr[0];
     const original = data;
     let target = data;
     let temp = data;
@@ -1603,8 +1619,9 @@ Galaxy.View = /** @class */(function (G) {
       propertyKey = propertyKeys[i];
       childPropertyKeyPath = null;
       const bindType = bindings.bindTypes[i];
-      let matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
-      propertyKeyPathItems = matches.filter(a => a !== '' && a !== '.');
+      // let matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
+      // propertyKeyPathItems = matches.filter(a => a !== '' && a !== '.');
+      propertyKeyPathItems = parse_bind_exp_string(propertyKey);
 
       if (propertyKeyPathItems.length > 1) {
         propertyKey = propertyKeyPathItems[0];
@@ -4318,6 +4335,24 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
   };
 
+  function clear_tweens(node) {
+    const tweens = gsap.getTweensOf(node);
+    for (const t of tweens) {
+      if (t.parent) {
+        if (t.parent === gsap.globalTimeline) {
+          // we can not pause the parent timeline if it's the  global timeline
+          t.pause();
+        } else {
+          t.parent.pause();
+        }
+
+        t.parent.remove(t);
+      } else {
+        t.pause();
+      }
+    }
+  }
+
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
@@ -4396,16 +4431,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return finalize();
     }
 
-    const tweens = gsap.getTweensOf(_node);
-    for (const t of tweens) {
-      if (t.parent) {
-        t.parent.pause();
-        t.parent.remove(t);
-      } else {
-        t.pause();
-      }
-    }
-
+    clear_tweens(_node);
     AnimationMeta.installGSAPAnimation(viewNode, 'leave', animationConfig, finalize);
   }
 
@@ -4424,11 +4450,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const tweenExist = Boolean(viewNodeCache[tweenKey]);
 
       if (addOrRemove && (!viewNode.node.classList.contains(className) || tweenExist)) {
-        AnimationMeta.setupOnComplete(animationConfig, () => {
+        AnimationMeta.setupOnComplete(animationConfig.to || animationConfig.from, () => {
           viewNode.node.classList.add(className);
         });
       } else if (!addOrRemove && (viewNode.node.classList.contains(className) || tweenExist)) {
-        AnimationMeta.setupOnComplete(animationConfig, () => {
+        AnimationMeta.setupOnComplete(animationConfig.to || animationConfig.from, () => {
           viewNode.node.classList.remove(className);
         });
       }
@@ -4452,19 +4478,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   }
 
   function leave_with_parent(finalize) {
-    // if (gsap.getTweensOf(this.node).length) {
-    //   gsap.killTweensOf(this.node);
-    // }
-    const tweens = gsap.getTweensOf(this.node);
-    for (const t of tweens) {
-      if (t.parent) {
-        // t.pause();
-        t.parent.pause();
-        t.parent.remove(t);
-      } else {
-        t.pause();
-      }
-    }
+    clear_tweens(this.node);
 
     if (this.parent.transitory) {
       this.dump();
@@ -4557,8 +4571,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   /**
    *
    * @param stepDescription
-   * @param onStart
-   * @param onComplete
    * @param viewNode
    * @return {*}
    */
