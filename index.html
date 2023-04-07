@@ -3,12 +3,16 @@
 <head>
   <meta charset="utf-8">
   <title>GalaxyJS</title>
+
+  <base href="/">
   <meta name="description" content="GalaxyJS - The framework to build fancy web applications">
   <meta name="keywords" content="galaxyjs, frontend, framework, frontend framework, javascript, fancy">
   <meta name="author" content="Eeliya Rasta, eeliya.rasta@gmail.com">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-  <meta name="google-site-verification" content="Tf4EBRQYPffk-wg58AbwlqYHQ9jYRcNRG4vKqnFzkV0"/>
+  <meta name="google-site-verification" content="Tf4EBRQYPffk-wg58AbwlqYHQ9jYRcNRG4vKqnFzkV0" />
+
+  <link rel="canonical" href="https://galaxyjs.github.io" />
 
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123343761-1"></script>
@@ -21,15 +25,17 @@
     gtag('config', 'UA-123343761-1');
   </script>
 
-  <meta property="og:url" content="http://galaxyjs.github.io"/>
-  <meta property="og:title" content="GalaxyJS"/>
-  <meta property="og:description" content="GalaxyJS - The framework to build fancy web applications"/>
-  <meta property="og:image" content="http://galaxyjs.github.io/styles/images/logo.png"/>
+  <meta property="og:url" content="http://galaxyjs.github.io" />
+  <meta property="og:title" content="GalaxyJS" />
+  <meta property="og:description" content="GalaxyJS - The framework to build fancy web applications" />
+  <meta property="og:image" content="http://galaxyjs.github.io/styles/images/logo.png" />
 
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="GalaxyJS">
   <meta name="twitter:description" content="GalaxyJS - The framework to build fancy web applications">
   <meta name="twitter:image" content="http://galaxyjs.github.io/styles/images/logo.png">
+
+  <link rel="prefetch" href="assets/images/galaxy.jpg" as="image">
 
   <script type="application/ld+json">
     {
@@ -38,12 +44,13 @@
       "@type": "WebSite",
       "url": "https://galaxyjs.github.io",
       "@context": "http://schema.org"
-    };
+    }
   </script>
 
   <!-- google prettyprint -->
   <script src="assets/prettify/prettify.js"></script>
   <!-- End of google code prettyprint -->
+  <script src="assets/redux/redux.js"></script>
 
   <link rel="icon" type="image/png" href="styles/images/favicon.ico">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/solid.css"
@@ -52,22 +59,58 @@
         integrity="sha384-rf1bqOAj3+pw6NqYrtaE1/4Se2NBwkIfeYbsFdtiR6TQz0acWiwJbv1IM/Nt/ite" crossorigin="anonymous">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/fontawesome.css"
         integrity="sha384-1rquJLNOM3ijoueaaeS5m+McXPJCGdr5HcA03/VHXxcp2kX2sUrQDmFc3jR5i/C7" crossorigin="anonymous">
-  <link rel="stylesheet" href="styles/styles.css"/>
+  <link rel="stylesheet" href="styles/styles.css" />
 
-  <script>
+  <script src="assets/gsap/ScrollToPlugin.min.js" defer></script>
+  <script src="assets/gsap/EasePack.min.js" defer></script>
+  <script src="assets/gsap/gsap.min.js" defer></script>
+
+  <script src="assets/galaxyjs/galaxy.js" defer></script>
+  <!-- Start Single Page Apps for GitHub Pages -->
+  <script type="text/javascript">
+    // Single Page Apps for GitHub Pages
+    // MIT License
+    // https://github.com/rafgraph/spa-github-pages
+    // This script checks to see if a redirect is present in the query string,
+    // converts it back into the correct url and adds it to the
+    // browser's history using window.history.replaceState(...),
+    // which won't cause the browser to attempt to load the new url.
+    // When the single page app is loaded further down in this file,
+    // the correct url will be waiting in the browser's history for
+    // the single page app to route accordingly.
+    (function (l) {
+      if (l.search[1] === '/') {
+        var decoded = l.search.slice(1).split('&').map(function (s) {
+          return s.replace(/~and~/g, '&');
+        }).join('?');
+        window.history.replaceState(null, null,
+          l.pathname.slice(0, -1) + decoded + l.hash
+        );
+      }
+    }(window.location));
+
+
+    // Startup GalaxyJS application
     (function () {
       window.addEventListener('load', run);
 
       function run() {
         Galaxy.boot({
-          url: 'modules/main/index.js',
-          element: document.getElementById('body')
+          element: document.getElementById('body'),
+          path: 'modules/main/main.js',
+          // path: 'modules/main/binding-type-self.js',
+          // path: 'modules/main/multi-tween.test.js',
+          // path: 'modules/main/component-test.js',
+          // path: 'modules/main/list-performance.js',
+          // path: 'modules/main/if-performance.js',
+          // path: 'modules/main/animation-test.js',
+          // path: 'modules/main/mods.js',
+          // path: 'modules/main/compute-fn.js',
         }).then(function (module) {
           module.start();
         });
       }
     })();
-
   </script>
 </head>
 
@@ -87,10 +130,5 @@
   </div>
 </noscript>
 </body>
-<script src="assets/gsap/TweenLite.min.js" defer></script>
-<script src="assets/gsap/TimelineLite.min.js" defer></script>
-<script src="assets/gsap/easing/EasePack.min.js" defer></script>
-<script src="assets/gsap/plugins/CSSPlugin.min.js" defer></script>
-
-<script src="galaxyjs/galaxy.js" defer></script>
 </html>
+

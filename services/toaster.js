@@ -14,4 +14,4 @@ Toaster.prototype.info = function () {
 
 };
 
-Scope.exports = new Toaster();
+Scope.export = new Toaster();
