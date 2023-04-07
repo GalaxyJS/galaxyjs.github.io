@@ -3,8 +3,7 @@ export default (Scope) => {
   const animations = Scope.import('services/animations.js');
   const expandable = Scope.import('services/expandable.js');
   const simpleListExample = Scope.importAsText('./simple-list.example.js');
-// debugger
-  console.log(Scope)
+
   view.blueprint({
     tag: 'div',
     class: 'card big',
@@ -64,7 +63,7 @@ export default (Scope) => {
           }
         ]
       },
-      view.enterKeyframe(() => {
+      view.entering.addKeyframe(() => {
         PR.prettyPrint();
       }, 'main-nav-timeline')
     ]

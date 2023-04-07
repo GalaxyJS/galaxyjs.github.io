@@ -362,9 +362,9 @@ export default (Scope) => {
         }
       ]
     },
-    view.entering.addKeyframe(() => {
+    () => {
       PR.prettyPrint();
       pageAnimation.progress(Scope.data.sliderValue / 100);
-    }),
+    },
   ]);
 };
