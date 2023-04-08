@@ -3,24 +3,24 @@ export default (Scope) => {
   const router = Scope.import('galaxy/router');
   const animations = Scope.import('services/animations.js');
   const expandable = Scope.import('services/expandable.js');
-  // console.log(Scope)
+
   router.setup([
     {
       path: '/',
       redirectTo: '/installation'
     },
-    {
-      path: '/:section',
-      hidden: true,
-      handle: (params) => {
-        if (!document.querySelector('#' + params.section)) {
-          return true;
-        }
-
-        gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
-        return true;
-      }
-    },
+    // {
+    //   path: '/:section',
+    //   hidden: true,
+    //   handle: (params) => {
+    //     if (!document.querySelector('#' + params.section)) {
+    //       return true;
+    //     }
+    //
+    //     gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
+    //     return true;
+    //   }
+    // },
     {
       path: '/installation',
       title: 'Installation'
@@ -276,24 +276,6 @@ export default (Scope) => {
         }
       ]
     },
-    // view.addTimeline({
-    //   enter: {
-    //     addTo: 'main-nav-timeline',
-    //     timeline: () => {
-    //       return gsap.timeline({autoRemoveChildren: true}).fromTo(document.querySelectorAll('.card:last-child p'),
-    //         {
-    //           x: 30,
-    //           opacity: 0
-    //         },
-    //         {
-    //           opacity: 1,
-    //           x: 0,
-    //           duration: .5,
-    //           stagger: .2
-    //         });
-    //     }
-    //   }
-    // }),
     view.entering.addKeyframe((a) => {
       PR.prettyPrint();
       router.start();

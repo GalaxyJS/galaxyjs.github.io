@@ -16,6 +16,7 @@ export default (Scope) => {
     }
   ];
 
+  router.setTitle('GalaxyJS');
   router.setup([
     {
       path: '/',
@@ -363,7 +364,7 @@ export default (Scope) => {
           position: '-=.5',
           to: {
             duration: .5,
-            onComplete() {
+            onComplete: function(sd) {
               this.node.style.paddingLeft = 0;
             }
           }

@@ -1,7 +1,6 @@
 export default (Scope) => {
   const view = Scope.import('galaxy/view');
   const router = Scope.import('galaxy/router');
-// const animations = Scope.import('services/animations.js');
 
   router.setup([
     {
