@@ -119,8 +119,8 @@ export default (Scope) => {
           tag: 'section',
           class: 'content',
           children: [
-            '<p>GalaxyJS is an opinionated framework for building visually rich web applications. ' +
-            'Its main key feature is utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a>.</p>',
+            '<p>GalaxyJS is an opinionated javascript framework for building visually rich web applications. ' +
+            'Its main feature is utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a>.</p>',
             {
               tag: 'div',
               class: 'flex-bar jc-center',
@@ -166,15 +166,7 @@ export default (Scope) => {
                       text: 'GITHUB'
                     }
                   ]
-                },
-                // {
-                //   tag: 'a',
-                //   class: 'icon gitter',
-                //   href: 'https://gitter.im/GalaxyJS/galaxy?utm_source=share-link&utm_medium=link&utm_campaign=share-link',
-                //   target: '_blank',
-                //   rel: 'noopener',
-                //   children: { tag: 'img', src: 'https://badges.gitter.im/GalaxyJS/galaxy.svg', alt: 'gitter badge icon' }
-                // }
+                }
               ]
             }
           ]
