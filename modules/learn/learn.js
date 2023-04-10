@@ -31,7 +31,7 @@ export default (Scope) => {
     },
     {
       path: '/ui-creation',
-      title: 'UI Creation'
+      title: 'UI Creation',
     }
   ]);
 
