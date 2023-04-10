@@ -29,6 +29,7 @@ export default (Scope) => {
         main: 'modules/start/start.js'
       },
       title: 'Start',
+      pageTitle: 'GalaxyJS - Build Visually Rich Web Apps',
       description: '',
       icon: 'fas fa-play',
     },
@@ -38,6 +39,7 @@ export default (Scope) => {
         main: 'modules/learn/learn.js'
       },
       title: 'Learn',
+      pageTitle: 'Learn',
       icon: 'fas fa-map',
     },
     {
@@ -46,6 +48,7 @@ export default (Scope) => {
         main: 'modules/reactivity/reactivity.js'
       },
       title: 'Reactivity',
+      pageTitle: 'Reactivity',
       icon: 'fas fa-exchange-alt',
     },
     {
