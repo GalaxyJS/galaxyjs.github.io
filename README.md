@@ -1,2 +1,3 @@
 # galaxyjs.github.io
-GalaxyJS Website
+The official documentation for GalaxyJS
+
