@@ -1914,7 +1914,7 @@ Galaxy.View = /** @class */(function (G) {
 
   TimelineControl.prototype.startKeyframe = function (timeline, position) {
     if (!timeline) {
-      throw new Error('Argument Missing: view.' + this.type + '.start(timeline:string) needs a `timeline`');
+      throw new Error('Argument Missing: view.' + this.type + '.startKeyframe(timeline:string) needs a `timeline`');
     }
 
     position = position || '+=0';
@@ -1940,7 +1940,7 @@ Galaxy.View = /** @class */(function (G) {
 
   TimelineControl.prototype.addKeyframe = function (onComplete, timeline, position) {
     if (!timeline) {
-      throw new Error('Argument Missing: view.' + this.type + '.add(timeline:string) needs a `timeline`');
+      throw new Error('Argument Missing: view.' + this.type + '.addKeyframe(timeline:string) needs a `timeline`');
     }
 
     const animations = {
@@ -2645,182 +2645,6 @@ Galaxy.registerAddOnProvider('galaxy/view', {
   }
 
 });
-
-(function (GMC) {
-  GMC.registerParser('text/css', parser);
-
-  const hosts = {};
-
-  function getHostId(id) {
-    if (hosts.hasOwnProperty(id)) {
-      return hosts[id];
-    }
-    const index = Object.keys(hosts).length;
-    const ids = {
-      host: 'gjs-host-' + index,
-      content: 'gjs-content-' + index,
-    };
-
-    hosts[id] = ids;
-
-    return ids;
-  }
-
-  function rulesForCssText(styleContent) {
-    const doc = document.implementation.createHTMLDocument(''),
-      styleElement = document.createElement('style');
-
-    styleElement.textContent = styleContent;
-    // the style will only be parsed once it is added to a document
-    doc.body.appendChild(styleElement);
-
-    return styleElement;
-  }
-
-  function applyContentAttr(children, ids) {
-    if (!(children instanceof Array) && children !== null && children !== undefined) {
-      children = [children];
-    }
-
-    children.forEach((child) => {
-      if (typeof child === 'string' || child.tag === 'comment') return;
-      child[ids.content] = '';
-
-      if (child.children) {
-        applyContentAttr(child.children, ids);
-      }
-    });
-  }
-
-  function parser(content) {
-    return {
-      imports: [],
-      source: async function (Scope) {
-        const ids = getHostId(Scope.systemId);
-        const cssRules = rulesForCssText(content);
-        const hostSuffix = '[' + ids.host + ']';
-        // const contentSuffix = '[' + ids.content + ']';
-        const parsedCSSRules = [];
-        const host = /(:host)/g;
-        const selector = /([^\s+>~,]+)/g;
-        const selectorReplacer = function (item) {
-          if (item === ':host') {
-            return item;
-          }
-
-          return item /*+ contentSuffix*/;
-        };
-
-        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
-          let selectorText = css.selectorText.replace(selector, selectorReplacer);
-
-          css.selectorText = selectorText.replace(host, hostSuffix);
-          parsedCSSRules.push(css.cssText);
-        });
-        const parsedCSSText = parsedCSSRules.join('\n');
-
-        Scope.export = {
-          _temp: true,
-          tag: 'style',
-          type: 'text/css',
-          id: Scope.systemId,
-          text: parsedCSSText,
-          _create() {
-            const parent = this.parent;
-            parent.node.setAttribute(ids.host, '');
-            const children = parent.blueprint.children || [];
-            applyContentAttr(children, ids);
-          }
-        };
-      }
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('default', parser);
-
-  function parser(content) {
-    return {
-      imports: [],
-      source: async function as_text(scope) {
-        scope.export = content;
-      }
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('function', parser);
-
-  function parser(content, metaData) {
-    const unique = [];
-    let imports = metaData.imports ? metaData.imports.slice(0) : [];
-    imports = imports.map(function (item) {
-      if (unique.indexOf(item) !== -1) {
-        return null;
-      }
-
-      unique.push(item);
-      return { path: item };
-    }).filter(Boolean);
-
-    return {
-      imports: imports,
-      source: content
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('application/javascript', parser);
-
-  function parser(content) {
-    const imports = [];
-    const unique = [];
-    let parsedContent = content.replace(/^\s*\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
-      let query = path.match(/(\S+)/gm);
-      let pathURL = query[query.length - 1];
-      if (unique.indexOf(pathURL) !== -1) {
-        return 'Scope.import(\'' + pathURL + '\')';
-      }
-
-      unique.push(pathURL);
-      imports.push({
-        path: pathURL,
-        fresh: query.indexOf('new') === 0,
-        contentType: null
-      });
-
-      return 'Scope.import(\'' + pathURL + '\')';
-    });
-
-    parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
-      let query = path.match(/(\S+)/gm);
-      let pathURL = query[query.length - 1] + '#text';
-      if (unique.indexOf(pathURL) !== -1) {
-        return 'Scope.import(\'' + pathURL + '\')';
-      }
-
-      unique.push(pathURL);
-      imports.push({
-        path: pathURL,
-        fresh: true,
-        contentType: 'text/plain'
-      });
-
-      return 'Scope.import(\'' + pathURL + '\')';
-    });
-
-    parsedContent = parsedContent.replace(/Scope\.kill\(.*\)/gm, 'return');
-
-    return {
-      imports: imports,
-      source: parsedContent,
-      native: /^export default/gm.test(parsedContent)
-    };
-  }
-})(Galaxy.Module.Content);
 
 /* global Galaxy */
 Galaxy.View.ArrayChange = /** @class */ (function (G) {
@@ -4196,6 +4020,182 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   return ViewNode;
 
 })(Galaxy);
+
+(function (GMC) {
+  GMC.registerParser('text/css', parser);
+
+  const hosts = {};
+
+  function getHostId(id) {
+    if (hosts.hasOwnProperty(id)) {
+      return hosts[id];
+    }
+    const index = Object.keys(hosts).length;
+    const ids = {
+      host: 'gjs-host-' + index,
+      content: 'gjs-content-' + index,
+    };
+
+    hosts[id] = ids;
+
+    return ids;
+  }
+
+  function rulesForCssText(styleContent) {
+    const doc = document.implementation.createHTMLDocument(''),
+      styleElement = document.createElement('style');
+
+    styleElement.textContent = styleContent;
+    // the style will only be parsed once it is added to a document
+    doc.body.appendChild(styleElement);
+
+    return styleElement;
+  }
+
+  function applyContentAttr(children, ids) {
+    if (!(children instanceof Array) && children !== null && children !== undefined) {
+      children = [children];
+    }
+
+    children.forEach((child) => {
+      if (typeof child === 'string' || child.tag === 'comment') return;
+      child[ids.content] = '';
+
+      if (child.children) {
+        applyContentAttr(child.children, ids);
+      }
+    });
+  }
+
+  function parser(content) {
+    return {
+      imports: [],
+      source: async function (Scope) {
+        const ids = getHostId(Scope.systemId);
+        const cssRules = rulesForCssText(content);
+        const hostSuffix = '[' + ids.host + ']';
+        // const contentSuffix = '[' + ids.content + ']';
+        const parsedCSSRules = [];
+        const host = /(:host)/g;
+        const selector = /([^\s+>~,]+)/g;
+        const selectorReplacer = function (item) {
+          if (item === ':host') {
+            return item;
+          }
+
+          return item /*+ contentSuffix*/;
+        };
+
+        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
+          let selectorText = css.selectorText.replace(selector, selectorReplacer);
+
+          css.selectorText = selectorText.replace(host, hostSuffix);
+          parsedCSSRules.push(css.cssText);
+        });
+        const parsedCSSText = parsedCSSRules.join('\n');
+
+        Scope.export = {
+          _temp: true,
+          tag: 'style',
+          type: 'text/css',
+          id: Scope.systemId,
+          text: parsedCSSText,
+          _create() {
+            const parent = this.parent;
+            parent.node.setAttribute(ids.host, '');
+            const children = parent.blueprint.children || [];
+            applyContentAttr(children, ids);
+          }
+        };
+      }
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('default', parser);
+
+  function parser(content) {
+    return {
+      imports: [],
+      source: async function as_text(scope) {
+        scope.export = content;
+      }
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('function', parser);
+
+  function parser(content, metaData) {
+    const unique = [];
+    let imports = metaData.imports ? metaData.imports.slice(0) : [];
+    imports = imports.map(function (item) {
+      if (unique.indexOf(item) !== -1) {
+        return null;
+      }
+
+      unique.push(item);
+      return { path: item };
+    }).filter(Boolean);
+
+    return {
+      imports: imports,
+      source: content
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('application/javascript', parser);
+
+  function parser(content) {
+    const imports = [];
+    const unique = [];
+    let parsedContent = content.replace(/^\s*\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
+      let query = path.match(/(\S+)/gm);
+      let pathURL = query[query.length - 1];
+      if (unique.indexOf(pathURL) !== -1) {
+        return 'Scope.import(\'' + pathURL + '\')';
+      }
+
+      unique.push(pathURL);
+      imports.push({
+        path: pathURL,
+        fresh: query.indexOf('new') === 0,
+        contentType: null
+      });
+
+      return 'Scope.import(\'' + pathURL + '\')';
+    });
+
+    parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
+      let query = path.match(/(\S+)/gm);
+      let pathURL = query[query.length - 1] + '#text';
+      if (unique.indexOf(pathURL) !== -1) {
+        return 'Scope.import(\'' + pathURL + '\')';
+      }
+
+      unique.push(pathURL);
+      imports.push({
+        path: pathURL,
+        fresh: true,
+        contentType: 'text/plain'
+      });
+
+      return 'Scope.import(\'' + pathURL + '\')';
+    });
+
+    parsedContent = parsedContent.replace(/Scope\.kill\(.*\)/gm, 'return');
+
+    return {
+      imports: imports,
+      source: parsedContent,
+      native: /^export default/gm.test(parsedContent)
+    };
+  }
+})(Galaxy.Module.Content);
 
 /* global Galaxy, gsap */
 (function (G) {

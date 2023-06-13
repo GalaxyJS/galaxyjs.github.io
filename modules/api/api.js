@@ -44,25 +44,25 @@ export default (Scope) => {
     ],
     view: [
       {
-        title: 'config.cleanContainer',
+        title: 'config.cleanContainer: boolean',
         description: 'If set true, the view will empty its container upon initialization. Default is set to false.'
       },
       {
-        title: 'blueprint(uiBlueprint)',
-        description: 'This method gets an UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
+        title: 'blueprint(uiBlueprint): void',
+        description: 'This method gets a UI blueprint object as argument and renders it and also take care of data bindings. For example,' +
           ' following code will create a pharagraph tag with `Hello World!` text inside it.' +
           '<code class="prettyprint lang-js">view.blueprint({ tag: \'p\', text: \'Hello World!\' });</code>'
       },
       {
-        title: 'components(componentBuilderMap)',
+        title: 'components(componentBuilderMap): void',
         description: 'This method gets object that represents custom components tag name and their builders.'
       },
       {
-        title: 'enterKeyframe(onComplete, timeline, duration)',
+        title: 'entering.addKeyframe(onComplete, timeline, position): void',
         description: 'Create a enter keyframe node which invokes onComplete with respect to active animations.'
       },
       {
-        title: 'leaveKeyframe(onComplete, timeline, duration)',
+        title: 'leaving.\naddKeyframe(onComplete, timeline, position): void',
         description: 'Create a leave keyframe node which invokes onComplete with respect to active animations.'
       }
     ],
@@ -78,18 +78,6 @@ export default (Scope) => {
     {
       path: '/',
       redirectTo: '/scope'
-    },
-    {
-      path: '/:section',
-      hidden: true,
-      handle: (params, pp) => {
-        if (!document.querySelector('#' + params.section)) {
-          return true;
-        }
-
-        gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
-        return true;
-      }
     },
     {
       path: '/scope',
@@ -108,6 +96,15 @@ export default (Scope) => {
       title: 'ViewNode'
     },
   ]);
+
+  router.onTransition((oldPath, newPath) => {
+    const target = document.querySelector('#' + newPath.replace('/', ''));
+    if (!target) {
+      return true;
+    }
+
+    gsap.to('#main-content', { duration: .3, scrollTo: { y: target, offsetY: 30 } });
+  });
 
   view.blueprint({
     tag: 'div',
@@ -208,7 +205,7 @@ export default (Scope) => {
       view.entering.addKeyframe(() => {
         PR.prettyPrint();
         router.start();
-      }, 'main-nav-timeline')
+      }, 'main-timeline')
     ]
   });
 };

@@ -40,6 +40,15 @@ export default (Scope) => {
     }
   ]);
 
+  router.onTransition((oldPath, newPath) => {
+    const target = document.querySelector('#' + newPath.replace('/', ''));
+    if (!target) {
+      return true;
+    }
+
+    gsap.to('#main-content', { duration: .3, scrollTo: { y: target, offsetY: 30 } });
+  });
+
   view.blueprint({
     class: 'card big',
     animations: animations.cardInOut,
@@ -364,10 +373,12 @@ export default (Scope) => {
           },
         ]
       },
+      () => {
+        PR.prettyPrint();
+      },
       view.entering.addKeyframe(() => {
         router.start();
-        PR.prettyPrint();
-      }, 'main-nav-timeline')
+      }, 'main-timeline')
     ]
   });
 };

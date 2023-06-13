@@ -1,3 +1,7 @@
+/**
+ *
+ * @param {Galaxy.Scope} Scope
+ */
 export default (Scope) => {
   const view = Scope.import('galaxy/view');
   const router = Scope.import('galaxy/router');
@@ -9,18 +13,6 @@ export default (Scope) => {
       path: '/',
       redirectTo: '/installation'
     },
-    // {
-    //   path: '/:section',
-    //   hidden: true,
-    //   handle: (params) => {
-    //     if (!document.querySelector('#' + params.section)) {
-    //       return true;
-    //     }
-    //
-    //     gsap.to('#main-content', { scrollTo: { y: '#' + params.section, offsetY: 30 }, duration: .3 });
-    //     return true;
-    //   }
-    // },
     {
       path: '/installation',
       title: 'Installation'
@@ -34,6 +26,15 @@ export default (Scope) => {
       title: 'UI Creation',
     }
   ]);
+
+  router.onTransition((oldPath, newPath) => {
+    const target = document.querySelector('#' + newPath.replace('/', ''));
+    if (!target) {
+      return true;
+    }
+
+    gsap.to('#main-content', { duration: .3, scrollTo: { y: target, offsetY: 30 } });
+  });
 
   view.components({
     'simple-component': Scope.import('./simple-component.example.js')
@@ -279,7 +280,7 @@ export default (Scope) => {
     view.entering.addKeyframe((a) => {
       PR.prettyPrint();
       router.start();
-    }, 'main-nav-timeline'),
+    }, 'main-timeline'),
   ]);
 
 };
