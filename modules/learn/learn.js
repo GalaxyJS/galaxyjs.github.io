@@ -6,7 +6,6 @@ export default (Scope) => {
   const view = Scope.useView();
   const router = Scope.useRouter();
   const animations = Scope.import('services/animations.js');
-  const expandable = Scope.import('services/expandable.js');
 
   router.setup([
     {
