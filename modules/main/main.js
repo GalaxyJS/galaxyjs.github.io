@@ -1,10 +1,10 @@
+import Navigation from '/services/navigation.js';
 export default (Scope) => {
   /** @type Galaxy.View */
-  const view = Scope.import('galaxy/view');
-  const router = Scope.import('galaxy/router');
-  const navService = Scope.import('services/navigation.js');
+  const view = Scope.useView();
+  const router = Scope.useRouter();
 
-  Scope.data.navService = navService;
+  Scope.data.navService = Navigation;
   Scope.data.todos = [
     {
       title: 'Should add new item to todos',

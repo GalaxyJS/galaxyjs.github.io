@@ -1,6 +1,6 @@
 export default (Scope) => {
-  const view = Scope.import('galaxy/view');
-  const router = Scope.import('galaxy/router');
+  const view = Scope.useView();
+  const router = Scope.useRouter();
 
   Scope.data.myValue = 10;
 

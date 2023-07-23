@@ -1,5 +1,5 @@
 export default (Scope) => {
-  const view = Scope.import('galaxy/view');
+  const view = Scope.useView();
   const fullNameComputed = (fn = '<>data.firstName', ln = '<>data.lastName') => (fn || '...') + ' ' + (ln || '...');
 
   view.blueprint({

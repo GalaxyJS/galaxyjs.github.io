@@ -1,9 +1,9 @@
+import { expandable } from '/services/expandable.js';
+
 export default (Scope) => {
-  const view = Scope.import('galaxy/view');
-  const router = Scope.import('galaxy/router');
+  const view = Scope.useView();
+  const router = Scope.useRouter();
   const animations = Scope.import('services/animations.js');
-// const navService = Scope.import('services/navigation.js');
-  const exapndable = Scope.import('services/expandable.js');
   const scrollToRouter = Scope.import('services/scroll-to-router.js');
 
   Scope.data.citiesList = ['Amsterdam', 'Paris'];
@@ -293,7 +293,7 @@ export default (Scope) => {
           },
           {
             tag: 'pre',
-            exapndable: exapndable,
+            expandable: expandable,
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./inline-computed-bind.example.js')
           },
@@ -306,7 +306,7 @@ export default (Scope) => {
           },
           {
             tag: 'pre',
-            exapndable: exapndable,
+            expandable: expandable,
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./variable-computed-bind.example.js')
           },
@@ -324,7 +324,7 @@ export default (Scope) => {
           },
           {
             tag: 'pre',
-            exapndable: exapndable,
+            expandable: expandable,
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./class-and-style.example.js')
           },
@@ -337,7 +337,7 @@ export default (Scope) => {
           '<p>The <code class="prettyprint lang-js">data</code> property can be used to send data to a module. This property only accepts a literal object as input.</p>',
           {
             tag: 'pre',
-            exapndable: exapndable,
+            expandable: expandable,
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./module-with-inputs.example.js')
           },
@@ -353,7 +353,7 @@ export default (Scope) => {
           },
           {
             tag: 'pre',
-            exapndable: exapndable,
+            expandable: expandable,
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./view-node-inputs.example.js')
           },
@@ -367,7 +367,7 @@ export default (Scope) => {
           },
           {
             tag: 'pre',
-            exapndable: exapndable,
+            expandable: expandable,
             class: 'prettyprint lang-js',
             text: Scope.importAsText('./value-property.example.js')
           },

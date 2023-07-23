@@ -3,8 +3,8 @@
  * @param {Galaxy.Scope} Scope
  */
 export default (Scope) => {
-  const view = Scope.import('galaxy/view');
-  const router = Scope.import('galaxy/router');
+  const view = Scope.useView();
+  const router = Scope.useRouter();
   const animations = Scope.import('services/animations.js');
   const expandable = Scope.import('services/expandable.js');
 
