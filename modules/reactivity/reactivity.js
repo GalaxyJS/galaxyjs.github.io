@@ -1,9 +1,9 @@
 import { expandable } from '/services/expandable.js';
+import { animations } from '/services/animations.js';
 
 export default (Scope) => {
   const view = Scope.useView();
   const router = Scope.useRouter();
-  const animations = Scope.import('services/animations.js');
   const scrollToRouter = Scope.import('services/scroll-to-router.js');
 
   Scope.data.citiesList = ['Amsterdam', 'Paris'];

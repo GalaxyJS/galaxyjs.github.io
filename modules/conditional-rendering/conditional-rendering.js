@@ -1,7 +1,8 @@
+import { expandable } from '/services/expandable.js';
+import { animations } from '/services/animations.js';
+
 export default (Scope) => {
-  const animations = Scope.import('services/animations.js');
-  const view = Scope.import('galaxy/view');
-  const expandable = Scope.import('services/expandable.js');
+  const view = Scope.useView();
 
   view.blueprint({
     tag: 'div',

@@ -1,5 +1,9 @@
+/**
+ *
+ * @param {Galaxy.Scope} Scope
+ */
 export default (Scope) => {
-  const view = Scope.import('galaxy/view');
+  const view = Scope.useView();
 
   Scope.data.capitals = ['Amsterdam', 'Paris', 'Budapest', 'Berlin', 'Prague', 'Vienna'];
   view.blueprint([

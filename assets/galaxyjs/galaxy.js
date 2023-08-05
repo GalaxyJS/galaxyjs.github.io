@@ -12,6 +12,14 @@
 (function (_window) {
   'use strict';
 
+  function FetchContent(type, content, metaData) {
+    this.type = type;
+    this.content = content;
+    this.metaData = metaData;
+  }
+
+  FetchContent.prototype = {};
+
   // const AsyncFunction = Object.getPrototypeOf(async function () {
   // }).constructor;
   Array.prototype.unique = function () {
@@ -27,10 +35,29 @@
     return a;
   };
 
+  const FETCH_CONTENT_PARSERS = {};
+
+  /**
+   *
+   * @param {FetchContent} content
+   * @returns {*}
+   */
+  function parse_fetch_content(content) {
+    const safeType = (content.type || '').split(';')[0];
+    const parser = FETCH_CONTENT_PARSERS[safeType];
+
+    if (parser) {
+      return parser.call(null, content.content, content.metaData);
+    }
+
+    return FETCH_CONTENT_PARSERS['default'].call(null, content.content, content.metaData);
+  }
+
   const CACHED_MODULES = {};
 
   const Galaxy = {
-    cm: CACHED_MODULES,
+    CACHED_MODULES,
+    FETCH_CONTENT_PARSERS,
     moduleContents: {},
     addOnProviders: [],
     rootElement: null,
@@ -184,7 +211,7 @@
         contentFetcher = contentFetcher.then(response => {
           const contentType = module.contentType || response.headers.get('content-type');
           return response.clone().text().then(content => {
-            return new Galaxy.Module.Content(contentType, content, module);
+            return new FetchContent(contentType, content, module);
           });
         });
 
@@ -216,10 +243,10 @@
         };
 
         if (typeof moduleConstructor === 'function') {
-          moduleConstructor = new Galaxy.Module.Content('function', moduleConstructor, moduleMetaData);
+          moduleConstructor = new FetchContent('function', moduleConstructor, moduleMetaData);
         }
 
-        const parsedContent = Galaxy.Module.Content.parse(moduleConstructor);
+        const parsedContent = parse_fetch_content(moduleConstructor);
         const imports = parsedContent.imports;
 
         const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);
@@ -330,7 +357,7 @@
 
 /* global Galaxy */
 (function (_galaxy) {
-
+  'use strict';
   /**
    *
    * @param {object} module
@@ -372,68 +399,15 @@
     destroy: function () {
       this.scope.trigger('module.destroy');
     },
-
-    // addAddOn: function (addOnProvider) {
-    //   const h = addOnProvider.handler;
-    //   this.addOnProviders[addOnProvider.name] = h;
-    //   this.addOns[addOnProvider.name] = h.provideInstance(this.scope, this);
-    // }
   };
 
   _galaxy.Module = Module;
 })(Galaxy);
 
-(function (_module) {
-  const parsers = {};
-
-  /**
-   *
-   * @param {Galaxy.Module.Content} ModuleContent
-   * @returns {*}
-   */
-  Content.parse = function (ModuleContent) {
-    const safeType = (ModuleContent.type || '').split(';')[0];
-    const parser = parsers[safeType];
-
-    if (parser) {
-      return parser.call(null, ModuleContent.content, ModuleContent.metaData);
-    }
-
-    return parsers['default'].call(null, ModuleContent.content, ModuleContent.metaData);
-  };
-
-  /**
-   *
-   * @param {string} type
-   * @param {function} parser
-   */
-  Content.registerParser = function (type, parser) {
-    parsers[type] = parser;
-  };
-
-  /**
-   *
-   * @param {string} type
-   * @param {*} content
-   * @param {*} metaData
-   * @constructor
-   * @memberOf Galaxy.Module
-   */
-  function Content(type, content, metaData) {
-    this.type = type;
-    this.content = content;
-    this.metaData = metaData;
-  }
-
-  Content.prototype = {};
-
-  /** @class */
-  _module.Content = Content;
-})(Galaxy.Module);
-
 /* global Galaxy */
 (function (_galaxy) {
-  const defProp = Object.defineProperty;
+  'use strict';
+  const def_prop = Object.defineProperty;
 
   Observer.notify = function (obj, key, value) {
     const observers = obj.__observers__;
@@ -458,7 +432,7 @@
 
     const __observers__ = '__observers__';
     if (!this.context.hasOwnProperty(__observers__)) {
-      defProp(context, __observers__, {
+      def_prop(context, __observers__, {
         value: [],
         writable: true,
         configurable: true
@@ -517,6 +491,8 @@
 
 /* global Galaxy */
 (function (_galaxy) {
+  'use strict';
+
   const def_prop = Object.defineProperty;
   const del_prop = Reflect.deleteProperty;
 
@@ -572,6 +548,7 @@
   }
 
   Scope.prototype = {
+    data: null,
     systemId: null,
     parentScope: null,
     /**
@@ -687,6 +664,7 @@
 
 /* global Galaxy */
 (function (_galaxy) {
+  'use strict';
   /**
    *
    * @param {string} url
@@ -709,6 +687,8 @@
 
 /* global Galaxy */
 (function (_galaxy) {
+  'use strict';
+
   const def_prop = Object.defineProperty;
   const obj_keys = Object.keys;
   const arr_concat = Array.prototype.concat.bind([]);
@@ -2119,8 +2099,501 @@
   };
 })(Galaxy);
 
-(function (GMC) {
-  GMC.registerParser('text/css', parser);
+/* global Galaxy */
+(function (_galaxy) {
+  Router.TITLE_SEPARATOR = ' • ';
+  Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
+  Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
+  Router.BASE_URL = '/';
+  Router.currentPath = {
+    handlers: [],
+    subscribe: function (handler) {
+      this.handlers.push(handler);
+      handler(location.pathname);
+    },
+    update: function () {
+      this.handlers.forEach((h) => {
+        h(location.pathname);
+      });
+    }
+  };
+
+  Router.mainListener = function (e) {
+    Router.currentPath.update();
+  };
+
+  Router.prepare_route = function (routeConfig, parentScopeRouter, fullPath) {
+    if (routeConfig instanceof Array) {
+      const routes = routeConfig.map((r) => Router.prepare_route(r, parentScopeRouter, fullPath));
+      if (parentScopeRouter) {
+        parentScopeRouter.activeRoute.children = routes;
+      }
+
+      return routes;
+    }
+
+    return {
+      ...routeConfig,
+      fullPath: fullPath + routeConfig.path,
+      active: false,
+      hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
+      viewports: routeConfig.viewports || {},
+      parent: parentScopeRouter ? parentScopeRouter.activeRoute : null,
+      children: routeConfig.children || []
+    };
+  };
+
+  Router.extract_dynamic_routes = function (routesPath) {
+    return routesPath.map(function (route) {
+      const paramsNames = [];
+
+      // Find all the parameters names in the route
+      let match = Router.PARAMETER_NAME_REGEX.exec(route);
+      while (match) {
+        paramsNames.push(match[1]);
+        match = Router.PARAMETER_NAME_REGEX.exec(route);
+      }
+
+      if (paramsNames.length) {
+        return {
+          id: route,
+          paramNames: paramsNames,
+          paramFinderExpression: new RegExp(route.replace(Router.PARAMETER_NAME_REGEX, Router.PARAMETER_NAME_REPLACEMENT))
+        };
+      }
+
+      return null;
+    }).filter(Boolean);
+  };
+
+  window.addEventListener('popstate', Router.mainListener);
+
+  /**
+   *
+   * @param {Galaxy.Scope} scope
+   * @constructor
+   * @memberOf Galaxy
+   */
+  function Router(scope) {
+    const _this = this;
+    _this.__singleton__ = true;
+    _this.config = {
+      baseURL: Router.BASE_URL
+    };
+
+    _this.scope = scope;
+    _this.routes = [];
+    // Find active parent router
+    _this.parentScope = scope.parentScope;
+    _this.parentRouter = scope.parentScope ? scope.parentScope.__router__ : null;
+
+    // ToDo: bug
+    // Find the next parent router if there is no direct parent router
+    if (_this.parentScope && (!_this.parentScope.router || !_this.parentScope.router.activeRoute)) {
+      let _parentScope = _this.parentScope;
+      while (!_parentScope.router || !_parentScope.router.activeRoute) {
+        _parentScope = _parentScope.parentScope;
+      }
+      // This line cause a bug
+      // _this.config.baseURL = _parentScope.router.activePath;
+      _this.parentScope = _parentScope;
+      _this.parentRouter = _parentScope.__router__;
+    }
+
+    const hasParentRouter = _this.parentScope && _this.parentScope.router;
+    _this.title = hasParentRouter ? this.parentScope.router.activeRoute.title : '';
+    _this.path = hasParentRouter ? _this.parentScope.router.activeRoute.path : '/';
+    _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
+    _this.parentRoute = hasParentRouter ? this.parentScope.router.activeRoute : null;
+    _this.oldURL = '';
+    _this.resolvedRouteValue = null;
+    _this.resolvedDynamicRouteValue = null;
+    _this.routesMap = null;
+    _this.data = {
+      routes: [],
+      navs: [],
+      activeRoute: null,
+      activePath: null,
+      activeModule: null,
+      viewports: {
+        main: null,
+      },
+      parameters: _this.parentScope && _this.parentScope.router ? _this.parentScope.router.parameters : {}
+    };
+    _this.onTransitionFn = _galaxy.View.EMPTY_CALL;
+    _this.onInvokeFn = _galaxy.View.EMPTY_CALL;
+    _this.onLoadFn = _galaxy.View.EMPTY_CALL;
+    _this.viewports = {
+      main: {
+        tag: 'div',
+        module: '<>router.activeModule'
+      }
+    };
+
+    Object.defineProperty(this, 'urlParts', {
+      get: function () {
+        return _this.oldURL.split('/').slice(1);
+      },
+      enumerable: true
+    });
+
+    if (scope.systemId === '@root') {
+      Router.currentPath.update();
+    }
+  }
+
+  Router.prototype = {
+    setup: function (routeConfigs) {
+      this.routes = Router.prepare_route(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
+      // if (this.parentScope && this.parentScope.router) {
+      //   this.parentRoute = this.parentScope.router.activeRoute;
+      // }
+
+      this.routes.forEach(route => {
+        const viewportNames = route.viewports ? Object.keys(route.viewports) : [];
+        viewportNames.forEach(vp => {
+          if (vp === 'main' || this.viewports[vp]) return;
+
+          this.viewports[vp] = {
+            tag: 'div',
+            module: '<>router.viewports.' + vp
+          };
+        });
+      });
+
+      this.data.routes = this.routes;
+      this.data.navs = this.routes.filter(r => !r.hidden);
+
+      return this;
+    },
+
+    start: function () {
+      this.listener = this.detect.bind(this);
+      window.addEventListener('popstate', this.listener);
+      this.detect();
+    },
+
+    setTitle(title) {
+      this.title = title;
+    },
+
+    getTitle(route) {
+      const titles = [];
+      if (route.pageTitle) {
+        return route.pageTitle;
+      }
+
+      if (this.parentRouter) {
+        // if parentRoute has a pageTitle, then that pageTitle will be the starting title
+        const parentPageTitle = this.parentRoute.pageTitle;
+        if (parentPageTitle) {
+          titles.push(parentPageTitle);
+          if (route.title) {
+            titles.push(route.title);
+          }
+
+          return titles.join(Router.TITLE_SEPARATOR);
+        }
+
+        titles.push(this.parentRouter.title);
+      }
+
+      if (this.title) {
+        titles.push(this.title);
+      }
+
+      if (route.title) {
+        titles.push(route.title);
+      }
+
+      return titles.join(Router.TITLE_SEPARATOR);
+    },
+
+    /**
+     *
+     * @param {string} path
+     * @param {boolean} replace
+     */
+    navigateToPath: function (path, replace) {
+      if (typeof path !== 'string') {
+        throw new Error('Invalid argument(s) for `navigateToPath`: path must be a string. ' + typeof path + ' is given');
+      }
+
+      if (path.indexOf('/') !== 0) {
+        throw new Error('Invalid argument(s) for `navigateToPath`: path must be starting with a `/`\nPlease use `/' + path + '` instead of `' + path + '`');
+      }
+
+      if (path.indexOf(this.config.baseURL) !== 0) {
+        path = this.config.baseURL + path;
+      }
+
+      const currentPath = window.location.pathname;
+      if (currentPath === path /*&& this.resolvedRouteValue === path*/) {
+        return;
+      }
+
+      if (replace) {
+        history.replaceState({}, '', path);
+      } else {
+        history.pushState({}, '', path);
+      }
+
+      dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+    },
+
+    navigate: function (path, replace) {
+      if (typeof path !== 'string') {
+        throw new Error('Invalid argument(s) for `navigate`: path must be a string. ' + typeof path + ' is given');
+      }
+
+      if (path.indexOf('/') !== 0) {
+        throw new Error('Invalid argument(s) for `navigate`: path must be starting with a `/`\nPlease use `/' + path + '` instead of `' + path + '`');
+      }
+
+      if (path.indexOf(this.path) !== 0) {
+        path = this.path + path;
+      }
+
+      this.navigateToPath(path, replace);
+    },
+
+    navigateToRoute: function (route, replace) {
+      let path = route.path;
+      if (route.parent) {
+        path = route.parent.path + route.path;
+      }
+
+      this.navigate(path, replace);
+    },
+
+    notFound: function () {
+
+    },
+
+    normalizeHash: function (hash) {
+      if (hash.indexOf('#!/') === 0) {
+        throw new Error('Please use `#/` instead of `#!/` for you hash');
+      }
+
+      let normalizedHash = hash;
+      if (hash.indexOf('#/') !== 0) {
+        if (hash.indexOf('/') !== 0) {
+          normalizedHash = '/' + hash;
+        } else if (hash.indexOf('#') === 0) {
+          normalizedHash = hash.split('#').join('#/');
+        }
+      }
+
+      // if (this.config.baseURL !== '/') {
+      //   normalizedHash = normalizedHash.replace(this.config.baseURL, '');
+      // }
+      return normalizedHash.replace(this.fullPath, '/').replace('//', '/') || '/';
+    },
+
+    onTransition: function (handler) {
+      this.onTransitionFn = handler;
+      return this;
+    },
+
+    onInvoke: function (handler) {
+      this.onInvokeFn = handler;
+      return this;
+    },
+
+    onLoad: function (handler) {
+      this.onLoadFn = handler;
+      return this;
+    },
+
+    findMatchRoute: function (routes, hash, parentParams) {
+      const _this = this;
+      let matchCount = 0;
+      const normalizedHash = _this.normalizeHash(hash);
+      const routesPath = routes.map(item => item.path);
+      const dynamicRoutes = Router.extract_dynamic_routes(routesPath);
+      const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0);
+      const targetStaticRoute = staticRoutes.length ? staticRoutes.reduce((a, b) => a.path.length > b.path.length ? a : b) : false;
+
+      if (targetStaticRoute && !(normalizedHash !== '/' && targetStaticRoute.path === '/')) {
+        const routeValue = normalizedHash.slice(0, targetStaticRoute.path.length);
+
+        if (_this.resolvedRouteValue === routeValue) {
+          // static routes don't have parameters
+          return Object.assign(_this.data.parameters, _this.createClearParameters());
+        }
+
+        _this.resolvedDynamicRouteValue = null;
+        _this.resolvedRouteValue = routeValue;
+
+        if (targetStaticRoute.redirectTo) {
+          return this.navigate(targetStaticRoute.redirectTo, true);
+        }
+
+        matchCount++;
+        return _this.callRoute(targetStaticRoute, normalizedHash, _this.createClearParameters(), parentParams);
+      }
+
+      for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
+        const targetDynamicRoute = dynamicRoutes[i];
+        const match = targetDynamicRoute.paramFinderExpression.exec(normalizedHash);
+
+        if (!match) {
+          continue;
+        }
+
+        matchCount++;
+        const params = _this.createParamValueMap(targetDynamicRoute.paramNames, match.slice(1));
+
+        if (_this.resolvedDynamicRouteValue === hash) {
+          return Object.assign(_this.data.parameters, params);
+        }
+
+        _this.resolvedDynamicRouteValue = hash;
+        _this.resolvedRouteValue = null;
+        const routeIndex = routesPath.indexOf(targetDynamicRoute.id);
+        const pathParameterPlaceholder = targetDynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
+        const parts = hash.replace(pathParameterPlaceholder, '').split('/');
+        return _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
+      }
+
+      if (matchCount === 0) {
+        console.warn('No associated route has been found', hash);
+      }
+    },
+
+    callRoute: function (newRoute, hash, params, parentParams) {
+      const oldRoute = this.data.activeRoute;
+      const oldPath = this.data.activePath;
+      this.data.activeRoute = newRoute;
+      this.data.activePath = newRoute.path;
+
+      this.onTransitionFn.call(this, oldPath, newRoute.path, oldRoute, newRoute);
+      if (!newRoute.redirectTo) {
+        // if current route's path starts with the old route's path, then the old route should stay active
+        if (oldRoute && newRoute.path.indexOf(oldPath) !== 0) {
+          oldRoute.active = false;
+
+          if (typeof oldRoute.onLeave === 'function') {
+            oldRoute.onLeave.call(null, oldPath, newRoute.path, oldRoute, newRoute);
+          }
+        }
+
+        newRoute.active = true;
+      }
+
+      if (typeof newRoute.onEnter === 'function') {
+        newRoute.onEnter.call(null, oldPath, newRoute.path, oldRoute, newRoute);
+      }
+
+      document.title = this.getTitle(newRoute);
+      if (typeof newRoute.handle === 'function') {
+        return newRoute.handle.call(this, params, parentParams);
+      } else {
+        this.populateViewports(newRoute);
+
+        _galaxy.View.create_in_next_frame(_galaxy.View.GET_MAX_INDEX(), (_next) => {
+          Object.assign(this.data.parameters, params);
+          _next();
+        });
+      }
+
+      return false;
+    },
+
+    populateViewports: function (route) {
+      let viewportFound = false;
+      const allViewports = this.data.viewports;
+      for (const key in allViewports) {
+        let value = route.viewports[key];
+        if (value === undefined) {
+          continue;
+        }
+
+        if (typeof value === 'string') {
+          value = {
+            path: value,
+            onInvoke: this.onInvokeFn.bind(this, value, key),
+            onLoad: this.onLoadFn.bind(this, value, key)
+          };
+          viewportFound = true;
+        }
+
+        if (key === 'main') {
+          this.data.activeModule = value;
+        }
+
+        this.data.viewports[key] = value;
+      }
+
+      if (!viewportFound && this.parentRouter) {
+        this.parentRouter.populateViewports(route);
+      }
+    },
+
+    createClearParameters: function () {
+      const clearParams = {};
+      const keys = Object.keys(this.data.parameters);
+      keys.forEach(k => clearParams[k] = undefined);
+      return clearParams;
+    },
+
+    createParamValueMap: function (names, values) {
+      const params = {};
+      names.forEach(function (name, i) {
+        params[name] = values[i];
+      });
+
+      return params;
+    },
+
+    detect: function () {
+      const pathname = window.location.pathname;
+      const hash = pathname ? pathname.substring(-1) !== '/' ? pathname + '/' : pathname : '/';
+      // const hash = pathname || '/';
+      const path = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
+
+      if (hash.indexOf(path) === 0) {
+        if (hash !== this.oldURL) {
+          this.oldURL = hash;
+          this.findMatchRoute(this.routes, hash, {});
+        }
+      }
+    },
+
+    getURLParts: function () {
+      return this.oldURL.split('/').slice(1);
+    },
+
+    destroy: function () {
+      if (this.parentRoute) {
+        this.parentRoute.children = [];
+      }
+      window.removeEventListener('popstate', this.listener);
+    }
+  };
+
+  /** @class */
+  _galaxy.Router = Router;
+
+  /**
+   * @memberOf Galaxy.Scope
+   * @returns {Galaxy.Router}
+   */
+  _galaxy.Scope.prototype.useRouter = function () {
+    const router = new Router(this);
+    if (this.systemId !== '@root') {
+      this.on('module.destroy', () => router.destroy());
+    }
+
+    this.__router__ = router;
+    this.router = router.data;
+
+    return router;
+  };
+})(Galaxy);
+
+(function (_galaxy) {
+  _galaxy.FETCH_CONTENT_PARSERS['text/css'] = parser;
 
   const hosts = {};
 
@@ -2208,10 +2681,10 @@
       }
     };
   }
-})(Galaxy.Module.Content);
+})(Galaxy);
 
-(function (GMC) {
-  GMC.registerParser('default', parser);
+(function (_galaxy) {
+  _galaxy.FETCH_CONTENT_PARSERS['default'] = parser;
 
   function parser(content) {
     return {
@@ -2221,10 +2694,10 @@
       }
     };
   }
-})(Galaxy.Module.Content);
+})(Galaxy);
 
-(function (GMC) {
-  GMC.registerParser('function', parser);
+(function (_galaxy) {
+  _galaxy.FETCH_CONTENT_PARSERS['function'] = parser;
 
   function parser(content, metaData) {
     const unique = [];
@@ -2243,10 +2716,10 @@
       source: content
     };
   }
-})(Galaxy.Module.Content);
+})(Galaxy);
 
-(function (GMC) {
-  GMC.registerParser('application/javascript', parser);
+(function (_galaxy) {
+  _galaxy.FETCH_CONTENT_PARSERS['application/javascript'] =  parser;
 
   function parser(content) {
     const imports = [];
@@ -2293,10 +2766,10 @@
       native: /^export default/gm.test(parsedContent)
     };
   }
-})(Galaxy.Module.Content);
+})(Galaxy);
 
 /* global Galaxy */
-(function (G) {
+(function (_galaxy) {
   let lastId = 0;
 
   function ArrayChange() {
@@ -2316,7 +2789,7 @@
 
   ArrayChange.prototype = {
     getInstance: function () {
-      const instance = new G.View.ArrayChange();
+      const instance = new _galaxy.View.ArrayChange();
       instance.init = this.init;
       instance.original = this.original;
       instance.params = this.params.slice(0);
@@ -2326,11 +2799,11 @@
     }
   };
 
-  G.View.ArrayChange = ArrayChange;
+  _galaxy.View.ArrayChange = ArrayChange;
 })(Galaxy);
 
 /* global Galaxy */
-Galaxy.View.ReactiveData = /** @class */ (function (G) {
+(function (_galaxy) {
   const ARRAY_PROTO = Array.prototype;
   const ARRAY_MUTATOR_METHODS = [
     'push',
@@ -2397,7 +2870,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       const returnValue = originalMethod.apply(this, args);
-      const changes = new G.View.ArrayChange();
+      const changes = new _galaxy.View.ArrayChange();
       const _original = changes.original = arr;
       changes.type = method;
       changes.params = args;
@@ -2446,17 +2919,17 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
   const SYNC_NODE = {
     _(node, key, value) {
       // Pass a copy of the ArrayChange to every bound
-      if (value instanceof G.View.ArrayChange) {
+      if (value instanceof _galaxy.View.ArrayChange) {
         value = value.getInstance();
       }
 
-      if (node instanceof G.View.ViewNode) {
+      if (node instanceof _galaxy.View.ViewNode) {
         node.setters[key](value);
       } else {
         node[key] = value;
       }
 
-      G.Observer.notify(node, key, value);
+      _galaxy.Observer.notify(node, key, value);
     },
     self(node, key, value, sameObjectValue, fromChild) {
       if (fromChild || sameObjectValue)
@@ -2551,7 +3024,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       });
 
       if (this.data instanceof Galaxy.Scope || this.data.__scope__) {
-        this.addKeyToShadow = G.View.EMPTY_CALL;
+        this.addKeyToShadow = _galaxy.View.EMPTY_CALL;
       }
 
       if (this.data instanceof Galaxy.Scope) {
@@ -2714,7 +3187,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       const _this = this;
-      const initialChanges = new G.View.ArrayChange();
+      const initialChanges = new _galaxy.View.ArrayChange();
       initialChanges.original = arr;
       initialChanges.type = 'reset';
       initialChanges.params = arr;
@@ -2803,7 +3276,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       const _this = this;
       const map = _this.nodesMap[propertyKey];
       // notify the observers on the data
-      G.Observer.notify(_this.data, propertyKey, value);
+      _galaxy.Observer.notify(_this.data, propertyKey, value);
 
       if (map) {
         for (let i = 0, len = map.nodes.length; i < len; i++) {
@@ -2924,7 +3397,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // Ensure that same node with different property bind can exist
       if (index === -1 || map.keys[index] !== nodeKey) {
         this.nodeCount++;
-        if (node instanceof G.View.ViewNode && !node.setters[nodeKey]) {
+        if (node instanceof _galaxy.View.ViewNode && !node.setters[nodeKey]) {
           node.registerActiveProperty(nodeKey, this, expression);
         }
 
@@ -3036,21 +3509,21 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     }
   };
 
-  return ReactiveData;
+  _galaxy.View.ReactiveData = ReactiveData;
 
 })(Galaxy);
 
 /* global Galaxy, Promise */
-Galaxy.View.ViewNode = /** @class */ (function (G) {
-  const GV = G.View;
-  const commentNode = document.createComment('');
-  const defProp = Object.defineProperty;
-  const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
-  const create_in_next_frame = G.View.create_in_next_frame;
-  const destroy_in_next_frame = G.View.destroy_in_next_frame;
+(function (_galaxy) {
+  const _galaxy_view = _galaxy.View;
+  const EMPTY_CALL = _galaxy_view.EMPTY_CALL;
+  const create_in_next_frame = _galaxy_view.create_in_next_frame;
+  const destroy_in_next_frame = _galaxy_view.destroy_in_next_frame;
+  const COMMENT_NODE = document.createComment('');
+  const def_prop = Object.defineProperty;
 
   function create_comment(t) {
-    const n = commentNode.cloneNode();
+    const n = COMMENT_NODE.cloneNode();
     n.textContent = t;
     return n;
   }
@@ -3081,47 +3554,47 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     node.removeChild(child);
   }
 
-  const referenceToThis = {
+  const REFERENCE_TO_THIS = {
     value: this,
     configurable: false,
     enumerable: false
   };
 
-  const __node__ = {
+  const __NODE__ = {
     value: null,
     configurable: false,
     enumerable: false,
     writable: true
   };
 
-  const arrIndexOf = Array.prototype.indexOf;
-  const arrSlice = Array.prototype.slice;
+  const arr_index_of = Array.prototype.indexOf;
+  const arr_slice = Array.prototype.slice;
 
   //------------------------------
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['node'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['node'] = {
     type: 'none'
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
     key: '_create',
     getSetter: () => EMPTY_CALL
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['_render'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['_render'] = {
     type: 'prop',
     key: '_render',
     getSetter: () => EMPTY_CALL
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['_destroy'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['_destroy'] = {
     type: 'prop',
     key: '_destroy',
     getSetter: () => EMPTY_CALL
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
     type: 'prop',
     key: 'renderConfig'
   };
@@ -3260,7 +3733,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.onLeaveComplete = REMOVE_SELF.bind(_this, true);
 
     const cache = {};
-    defProp(_this, 'cache', {
+    def_prop(_this, 'cache', {
       enumerable: false,
       configurable: false,
       value: cache
@@ -3302,13 +3775,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     _this.blueprint.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, blueprint.renderConfig || {});
 
-    __node__.value = this.node;
-    defProp(_this.blueprint, 'node', __node__);
+    __NODE__.value = this.node;
+    def_prop(_this.blueprint, 'node', __NODE__);
 
-    referenceToThis.value = this;
+    REFERENCE_TO_THIS.value = this;
     if (!_this.node.__vn__) {
-      defProp(_this.node, '__vn__', referenceToThis);
-      defProp(_this.placeholder, '__vn__', referenceToThis);
+      def_prop(_this.node, '__vn__', REFERENCE_TO_THIS);
+      def_prop(_this.placeholder, '__vn__', REFERENCE_TO_THIS);
     }
 
     if (_this.blueprint._create) {
@@ -3349,7 +3822,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const blueprintClone = Object.assign({}, this.blueprint);
       ViewNode.cleanReferenceNode(blueprintClone);
 
-      defProp(blueprintClone, 'mother', {
+      def_prop(blueprintClone, 'mother', {
         value: this.blueprint,
         writable: false,
         enumerable: false,
@@ -3478,7 +3951,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     registerActiveProperty: function (propertyKey, reactiveData, expression) {
       this.properties.add(reactiveData);
-      GV.activate_property_for_node(this, propertyKey, reactiveData, expression);
+      _galaxy_view.activate_property_for_node(this, propertyKey, reactiveData, expression);
     },
 
     snapshot: function (animations) {
@@ -3525,7 +3998,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
               REMOVE_SELF.call(_this, false);
             };
           }
-          // if a child has an animation and this node is being removed directly, then we need to remove this node
+            // if a child has an animation and this node is being removed directly, then we need to remove this node
           // in order for element to get removed properly
           else if (_this.destroyOrigin === 1) {
             REMOVE_SELF.call(_this, true);
@@ -3586,7 +4059,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     getChildNodes: function () {
       const nodes = [];
-      const cn = arrSlice.call(this.node.childNodes, 0);
+      const cn = arr_slice.call(this.node.childNodes, 0);
       for (let i = cn.length - 1; i >= 0; i--) {
         // All the nodes that are ViewNode
         const node = cn[i];
@@ -3600,7 +4073,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     getChildNodesAsc: function () {
       const nodes = [];
-      const cn = arrSlice.call(this.node.childNodes, 0);
+      const cn = arr_slice.call(this.node.childNodes, 0);
       for (let i = 0; i < cn.length; i++) {
         // All the nodes that are ViewNode
         const node = cn[i];
@@ -3617,7 +4090,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     clean: function (hasAnimation, children) {
       children = children || this.getChildNodes();
-      GV.destroy_nodes(children, hasAnimation);
+      _galaxy_view.destroy_nodes(children, hasAnimation);
 
       destroy_in_next_frame(this.index, (_next) => {
         let len = this.finalize.length;
@@ -3666,8 +4139,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
   };
 
-  return ViewNode;
-
+  _galaxy_view.ViewNode = ViewNode;
 })(Galaxy);
 
 /* global Galaxy, gsap */
@@ -5606,497 +6078,4 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return nodeUpdateFn(config, value, expression, scope);
     };
   }
-})(Galaxy);
-
-/* global Galaxy */
-(function (_galaxy) {
-  Router.TITLE_SEPARATOR = ' • ';
-  Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
-  Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
-  Router.BASE_URL = '/';
-  Router.currentPath = {
-    handlers: [],
-    subscribe: function (handler) {
-      this.handlers.push(handler);
-      handler(location.pathname);
-    },
-    update: function () {
-      this.handlers.forEach((h) => {
-        h(location.pathname);
-      });
-    }
-  };
-
-  Router.mainListener = function (e) {
-    Router.currentPath.update();
-  };
-
-  Router.prepare_route = function (routeConfig, parentScopeRouter, fullPath) {
-    if (routeConfig instanceof Array) {
-      const routes = routeConfig.map((r) => Router.prepare_route(r, parentScopeRouter, fullPath));
-      if (parentScopeRouter) {
-        parentScopeRouter.activeRoute.children = routes;
-      }
-
-      return routes;
-    }
-
-    return {
-      ...routeConfig,
-      fullPath: fullPath + routeConfig.path,
-      active: false,
-      hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
-      viewports: routeConfig.viewports || {},
-      parent: parentScopeRouter ? parentScopeRouter.activeRoute : null,
-      children: routeConfig.children || []
-    };
-  };
-
-  Router.extract_dynamic_routes = function (routesPath) {
-    return routesPath.map(function (route) {
-      const paramsNames = [];
-
-      // Find all the parameters names in the route
-      let match = Router.PARAMETER_NAME_REGEX.exec(route);
-      while (match) {
-        paramsNames.push(match[1]);
-        match = Router.PARAMETER_NAME_REGEX.exec(route);
-      }
-
-      if (paramsNames.length) {
-        return {
-          id: route,
-          paramNames: paramsNames,
-          paramFinderExpression: new RegExp(route.replace(Router.PARAMETER_NAME_REGEX, Router.PARAMETER_NAME_REPLACEMENT))
-        };
-      }
-
-      return null;
-    }).filter(Boolean);
-  };
-
-  window.addEventListener('popstate', Router.mainListener);
-
-  /**
-   *
-   * @param {Galaxy.Scope} scope
-   * @constructor
-   * @memberOf Galaxy
-   */
-  function Router(scope) {
-    const _this = this;
-    _this.__singleton__ = true;
-    _this.config = {
-      baseURL: Router.BASE_URL
-    };
-
-    _this.scope = scope;
-    _this.routes = [];
-    // Find active parent router
-    _this.parentScope = scope.parentScope;
-    _this.parentRouter = scope.parentScope ? scope.parentScope.__router__ : null;
-
-    // ToDo: bug
-    // Find the next parent router if there is no direct parent router
-    if (_this.parentScope && (!_this.parentScope.router || !_this.parentScope.router.activeRoute)) {
-      let _parentScope = _this.parentScope;
-      while (!_parentScope.router || !_parentScope.router.activeRoute) {
-        _parentScope = _parentScope.parentScope;
-      }
-      // This line cause a bug
-      // _this.config.baseURL = _parentScope.router.activePath;
-      _this.parentScope = _parentScope;
-      _this.parentRouter = _parentScope.__router__;
-    }
-
-    const hasParentRouter = _this.parentScope && _this.parentScope.router;
-    _this.title = hasParentRouter ? this.parentScope.router.activeRoute.title : '';
-    _this.path = hasParentRouter ? _this.parentScope.router.activeRoute.path : '/';
-    _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
-    _this.parentRoute = hasParentRouter ? this.parentScope.router.activeRoute : null;
-    _this.oldURL = '';
-    _this.resolvedRouteValue = null;
-    _this.resolvedDynamicRouteValue = null;
-    _this.routesMap = null;
-    _this.data = {
-      routes: [],
-      navs: [],
-      activeRoute: null,
-      activePath: null,
-      activeModule: null,
-      viewports: {
-        main: null,
-      },
-      parameters: _this.parentScope && _this.parentScope.router ? _this.parentScope.router.parameters : {}
-    };
-    _this.onTransitionFn = _galaxy.View.EMPTY_CALL;
-    _this.onInvokeFn = _galaxy.View.EMPTY_CALL;
-    _this.onLoadFn = _galaxy.View.EMPTY_CALL;
-    _this.viewports = {
-      main: {
-        tag: 'div',
-        module: '<>router.activeModule'
-      }
-    };
-
-    Object.defineProperty(this, 'urlParts', {
-      get: function () {
-        return _this.oldURL.split('/').slice(1);
-      },
-      enumerable: true
-    });
-
-    if (scope.systemId === '@root') {
-      Router.currentPath.update();
-    }
-  }
-
-  Router.prototype = {
-    setup: function (routeConfigs) {
-      this.routes = Router.prepare_route(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
-      // if (this.parentScope && this.parentScope.router) {
-      //   this.parentRoute = this.parentScope.router.activeRoute;
-      // }
-
-      this.routes.forEach(route => {
-        const viewportNames = route.viewports ? Object.keys(route.viewports) : [];
-        viewportNames.forEach(vp => {
-          if (vp === 'main' || this.viewports[vp]) return;
-
-          this.viewports[vp] = {
-            tag: 'div',
-            module: '<>router.viewports.' + vp
-          };
-        });
-      });
-
-      this.data.routes = this.routes;
-      this.data.navs = this.routes.filter(r => !r.hidden);
-
-      return this;
-    },
-
-    start: function () {
-      this.listener = this.detect.bind(this);
-      window.addEventListener('popstate', this.listener);
-      this.detect();
-    },
-
-    setTitle(title) {
-      this.title = title;
-    },
-
-    getTitle(route) {
-      const titles = [];
-      if (route.pageTitle) {
-        return route.pageTitle;
-      }
-
-      if (this.parentRouter) {
-        // if parentRoute has a pageTitle, then that pageTitle will be the starting title
-        const parentPageTitle = this.parentRoute.pageTitle;
-        if (parentPageTitle) {
-          titles.push(parentPageTitle);
-          if (route.title) {
-            titles.push(route.title);
-          }
-
-          return titles.join(Router.TITLE_SEPARATOR);
-        }
-
-        titles.push(this.parentRouter.title);
-      }
-
-      if (this.title) {
-        titles.push(this.title);
-      }
-
-      if (route.title) {
-        titles.push(route.title);
-      }
-
-      return titles.join(Router.TITLE_SEPARATOR);
-    },
-
-    /**
-     *
-     * @param {string} path
-     * @param {boolean} replace
-     */
-    navigateToPath: function (path, replace) {
-      if (typeof path !== 'string') {
-        throw new Error('Invalid argument(s) for `navigateToPath`: path must be a string. ' + typeof path + ' is given');
-      }
-
-      if (path.indexOf('/') !== 0) {
-        throw new Error('Invalid argument(s) for `navigateToPath`: path must be starting with a `/`\nPlease use `/' + path + '` instead of `' + path + '`');
-      }
-
-      if (path.indexOf(this.config.baseURL) !== 0) {
-        path = this.config.baseURL + path;
-      }
-
-      const currentPath = window.location.pathname;
-      if (currentPath === path /*&& this.resolvedRouteValue === path*/) {
-        return;
-      }
-
-      if (replace) {
-        history.replaceState({}, '', path);
-      } else {
-        history.pushState({}, '', path);
-      }
-
-      dispatchEvent(new PopStateEvent('popstate', { state: {} }));
-    },
-
-    navigate: function (path, replace) {
-      if (typeof path !== 'string') {
-        throw new Error('Invalid argument(s) for `navigate`: path must be a string. ' + typeof path + ' is given');
-      }
-
-      if (path.indexOf('/') !== 0) {
-        throw new Error('Invalid argument(s) for `navigate`: path must be starting with a `/`\nPlease use `/' + path + '` instead of `' + path + '`');
-      }
-
-      if (path.indexOf(this.path) !== 0) {
-        path = this.path + path;
-      }
-
-      this.navigateToPath(path, replace);
-    },
-
-    navigateToRoute: function (route, replace) {
-      let path = route.path;
-      if (route.parent) {
-        path = route.parent.path + route.path;
-      }
-
-      this.navigate(path, replace);
-    },
-
-    notFound: function () {
-
-    },
-
-    normalizeHash: function (hash) {
-      if (hash.indexOf('#!/') === 0) {
-        throw new Error('Please use `#/` instead of `#!/` for you hash');
-      }
-
-      let normalizedHash = hash;
-      if (hash.indexOf('#/') !== 0) {
-        if (hash.indexOf('/') !== 0) {
-          normalizedHash = '/' + hash;
-        } else if (hash.indexOf('#') === 0) {
-          normalizedHash = hash.split('#').join('#/');
-        }
-      }
-
-      // if (this.config.baseURL !== '/') {
-      //   normalizedHash = normalizedHash.replace(this.config.baseURL, '');
-      // }
-      return normalizedHash.replace(this.fullPath, '/').replace('//', '/') || '/';
-    },
-
-    onTransition: function (handler) {
-      this.onTransitionFn = handler;
-      return this;
-    },
-
-    onInvoke: function (handler) {
-      this.onInvokeFn = handler;
-      return this;
-    },
-
-    onLoad: function (handler) {
-      this.onLoadFn = handler;
-      return this;
-    },
-
-    findMatchRoute: function (routes, hash, parentParams) {
-      const _this = this;
-      let matchCount = 0;
-      const normalizedHash = _this.normalizeHash(hash);
-      const routesPath = routes.map(item => item.path);
-      const dynamicRoutes = Router.extract_dynamic_routes(routesPath);
-      const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0);
-      const targetStaticRoute = staticRoutes.length ? staticRoutes.reduce((a, b) => a.path.length > b.path.length ? a : b) : false;
-
-      if (targetStaticRoute && !(normalizedHash !== '/' && targetStaticRoute.path === '/')) {
-        const routeValue = normalizedHash.slice(0, targetStaticRoute.path.length);
-
-        if (_this.resolvedRouteValue === routeValue) {
-          // static routes don't have parameters
-          return Object.assign(_this.data.parameters, _this.createClearParameters());
-        }
-
-        _this.resolvedDynamicRouteValue = null;
-        _this.resolvedRouteValue = routeValue;
-
-        if (targetStaticRoute.redirectTo) {
-          return this.navigate(targetStaticRoute.redirectTo, true);
-        }
-
-        matchCount++;
-        return _this.callRoute(targetStaticRoute, normalizedHash, _this.createClearParameters(), parentParams);
-      }
-
-      for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
-        const targetDynamicRoute = dynamicRoutes[i];
-        const match = targetDynamicRoute.paramFinderExpression.exec(normalizedHash);
-
-        if (!match) {
-          continue;
-        }
-
-        matchCount++;
-        const params = _this.createParamValueMap(targetDynamicRoute.paramNames, match.slice(1));
-
-        if (_this.resolvedDynamicRouteValue === hash) {
-          return Object.assign(_this.data.parameters, params);
-        }
-
-        _this.resolvedDynamicRouteValue = hash;
-        _this.resolvedRouteValue = null;
-        const routeIndex = routesPath.indexOf(targetDynamicRoute.id);
-        const pathParameterPlaceholder = targetDynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
-        const parts = hash.replace(pathParameterPlaceholder, '').split('/');
-        return _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
-      }
-
-      if (matchCount === 0) {
-        console.warn('No associated route has been found', hash);
-      }
-    },
-
-    callRoute: function (newRoute, hash, params, parentParams) {
-      const oldRoute = this.data.activeRoute;
-      const oldPath = this.data.activePath;
-      this.data.activeRoute = newRoute;
-      this.data.activePath = newRoute.path;
-
-      this.onTransitionFn.call(this, oldPath, newRoute.path, oldRoute, newRoute);
-      if (!newRoute.redirectTo) {
-        // if current route's path starts with the old route's path, then the old route should stay active
-        if (oldRoute && newRoute.path.indexOf(oldPath) !== 0) {
-          oldRoute.active = false;
-
-          if (typeof oldRoute.onLeave === 'function') {
-            oldRoute.onLeave.call(null, oldPath, newRoute.path, oldRoute, newRoute);
-          }
-        }
-
-        newRoute.active = true;
-      }
-
-      if (typeof newRoute.onEnter === 'function') {
-        newRoute.onEnter.call(null, oldPath, newRoute.path, oldRoute, newRoute);
-      }
-
-      document.title = this.getTitle(newRoute);
-      if (typeof newRoute.handle === 'function') {
-        return newRoute.handle.call(this, params, parentParams);
-      } else {
-        this.populateViewports(newRoute);
-
-        _galaxy.View.create_in_next_frame(_galaxy.View.GET_MAX_INDEX(), (_next) => {
-          Object.assign(this.data.parameters, params);
-          _next();
-        });
-      }
-
-      return false;
-    },
-
-    populateViewports: function (route) {
-      let viewportFound = false;
-      const allViewports = this.data.viewports;
-      for (const key in allViewports) {
-        let value = route.viewports[key];
-        if (value === undefined) {
-          continue;
-        }
-
-        if (typeof value === 'string') {
-          value = {
-            path: value,
-            onInvoke: this.onInvokeFn.bind(this, value, key),
-            onLoad: this.onLoadFn.bind(this, value, key)
-          };
-          viewportFound = true;
-        }
-
-        if (key === 'main') {
-          this.data.activeModule = value;
-        }
-
-        this.data.viewports[key] = value;
-      }
-
-      if (!viewportFound && this.parentRouter) {
-        this.parentRouter.populateViewports(route);
-      }
-    },
-
-    createClearParameters: function () {
-      const clearParams = {};
-      const keys = Object.keys(this.data.parameters);
-      keys.forEach(k => clearParams[k] = undefined);
-      return clearParams;
-    },
-
-    createParamValueMap: function (names, values) {
-      const params = {};
-      names.forEach(function (name, i) {
-        params[name] = values[i];
-      });
-
-      return params;
-    },
-
-    detect: function () {
-      const pathname = window.location.pathname;
-      const hash = pathname ? pathname.substring(-1) !== '/' ? pathname + '/' : pathname : '/';
-      // const hash = pathname || '/';
-      const path = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
-
-      if (hash.indexOf(path) === 0) {
-        if (hash !== this.oldURL) {
-          this.oldURL = hash;
-          this.findMatchRoute(this.routes, hash, {});
-        }
-      }
-    },
-
-    getURLParts: function () {
-      return this.oldURL.split('/').slice(1);
-    },
-
-    destroy: function () {
-      if (this.parentRoute) {
-        this.parentRoute.children = [];
-      }
-      window.removeEventListener('popstate', this.listener);
-    }
-  };
-
-  /** @class */
-  _galaxy.Router = Router;
-
-  /**
-   * @memberOf Galaxy.Scope
-   * @returns {Galaxy.Router}
-   */
-  _galaxy.Scope.prototype.useRouter = function () {
-    const router = new Router(this);
-    if (this.systemId !== '@root') {
-      this.on('module.destroy', () => router.destroy());
-    }
-
-    this.__router__ = router;
-    this.router = router.data;
-
-    return router;
-  };
 })(Galaxy);

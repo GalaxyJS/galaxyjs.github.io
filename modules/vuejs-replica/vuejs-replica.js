@@ -1,11 +1,12 @@
+import { products } from '/data/products.js';
+import { animations } from '/services/animations.js';
+
 export default (Scope) => {
-  const animations = Scope.import('services/animations.js');
-  const view = Scope.import('galaxy/view');
-  const data = Scope.import('data/products.js');
+  const view = Scope.useView();
 
   Scope.data = {
-    products: data,
-    test: data
+    products: products,
+    test: products
   };
 
   view.blueprint({

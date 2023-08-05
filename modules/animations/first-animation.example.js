@@ -1,5 +1,5 @@
 export default (Scope) => {
-  const view = Scope.import('galaxy/view');
+  const view = Scope.useView();
 
   const originalDataList = [
     'fa fa-smile',

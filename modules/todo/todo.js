@@ -1,7 +1,8 @@
+import { animations } from '/services/animations.js';
+import TodoField from './todo-field.js';
 export default (Scope) => {
-  const view = Scope.import('galaxy/view');
+  const view = Scope.useView();
   const style = Scope.import('./style.css');
-  const animations = Scope.import('services/animations.js');
 
   const ToDoService = {
     data: Scope.data.items,
@@ -56,7 +57,7 @@ export default (Scope) => {
   };
 
   view.components({
-    'todo-field': Scope.import('./todo-field.js')
+    'todo-field': TodoField
   });
 
   view.blueprint({

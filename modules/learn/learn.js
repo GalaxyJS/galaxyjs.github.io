@@ -1,3 +1,5 @@
+import { animations } from '/services/animations.js';
+
 /**
  *
  * @param {Galaxy.Scope} Scope
@@ -5,7 +7,6 @@
 export default (Scope) => {
   const view = Scope.useView();
   const router = Scope.useRouter();
-  const animations = Scope.import('services/animations.js');
 
   router.setup([
     {

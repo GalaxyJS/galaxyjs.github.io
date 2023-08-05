@@ -1,8 +1,9 @@
+import { animations } from '/services/animations.js';
 export default (Scope) => {
   const style = Scope.import('./style.css');
-  const view = Scope.import('galaxy/view');
-  const animations = Scope.import('services/animations.js');
-  const router = Scope.import('galaxy/router');
+  const view = Scope.useView();
+  const router = Scope.useRouter();
+
 
   Scope.data.api = {
     scope: [

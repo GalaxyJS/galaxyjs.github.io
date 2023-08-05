@@ -1,7 +1,6 @@
+import { expandable } from '/services/expandable.js';
 export default (Scope) => {
-  const view = Scope.import('galaxy/view');
-  const exapndable = Scope.import('services/expandable.js');
-
+  const view = Scope.useView();
   const howToLOadGSAPExample = Scope.importAsText('./how-to-load-gsap.example.html');
   const firstAnimationExample = Scope.importAsText('./first-animation.example.js');
 
@@ -183,7 +182,7 @@ export default (Scope) => {
               tag: 'pre',
               class: 'prettyprint lang-js',
               text: firstAnimationExample,
-              expandable: exapndable
+              expandable: expandable
             },
             view.entering.startKeyframe('main-timeline'),
             {
