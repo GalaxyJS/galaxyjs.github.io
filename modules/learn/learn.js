@@ -1,4 +1,5 @@
 import { animations } from '/services/animations.js';
+import SimpleComponent from './simple-component.example.js';
 
 /**
  *
@@ -37,7 +38,7 @@ export default (Scope) => {
   });
 
   view.components({
-    'simple-component': Scope.import('./simple-component.example.js')
+    'simple-component': SimpleComponent
   });
 
   view.blueprint([
@@ -66,21 +67,20 @@ export default (Scope) => {
             },
             '<h3>Recommended project file & folder structure</h3>' +
             '<p>You can have whatever directory structure you like as long as you know how to the load modules. The following structure is' +
-            ' recommended and we are using this structure though out our learn.</p>',
+            ' recommended, and we are using this structure though out our learn.</p>',
             {
               tag: 'pre',
               class: 'prettyprint lang-js',
               text: 'project\n' +
-                '|-app  \n' +
+                '|-src  \n' +
                 '| |-assets\n' +
-                '| |-modules\n' +
-                '| | |-main\n' +
-                '| | | |-index.js\n' +
+                '| |-ui\n' +
+                '| | |-main.js\n' +
                 '| | \n' +
                 '| |-services \n' +
                 '| |-index.html\n' +
                 '|\n' +
-                '|-nodemodules\n' +
+                '|-node_modules\n' +
                 '|-package.json'
             },
             // '<p>Too lazy to do it yourself!? Here... clone the following repository 😉</p>',
@@ -97,19 +97,19 @@ export default (Scope) => {
             '<li>Add GalaxyJS to an existing webpage.</li></ol>' +
             '<h3>1. Start a project from scratch 😎👍👍</h3>' +
             '<p>This is the easiest way to start since you are going to use GalaxyJS as your web application framework.</p>' +
-            '<p>First create a project directory with the recommended structure that is suggested above. Then add this code into the <code class="prettyprint">/app/index.html</code></p>',
+            '<p>First create a project directory with the recommended structure that is suggested above. Then add this code into the <code class="prettyprint">/src/index.html</code></p>',
             {
               tag: 'pre',
               class: 'prettyprint lang-html',
               text: Scope.importAsText('./start-from-scratch.example.html')
             },
             '<h3>Main module</h3>' +
-            '<p>Add this code into the <code class="prettyprint">app/modules/index.js</code></p>',
+            '<p>Add this code into the <code class="prettyprint">src/ui/main.js</code></p>',
             {
               tag: 'pre',
               class: 'prettyprint lang-js',
               text: '//Import the view addon\n' +
-                'const view = Scope.import(\'galaxy/view\');\n\n' +
+                'const view = Scope.useView();\n\n' +
                 '// This will remove all the contents of the parent element which in this case is body\n' +
                 'view.container.node.innerHTML = \'\';\n' +
                 'view.blueprint({\n' +
@@ -125,7 +125,7 @@ export default (Scope) => {
               tag: 'h3',
               html: 'Now, lets see what is going on here!'
             },
-            '<pre class="prettyprint inline lang-js">const view = Scope.import(\'galaxy/view\');</pre>' +
+            '<pre class="prettyprint inline lang-js">const view = Scope.useView();</pre>' +
             '<p>This line is loading the view addon which provides functionality necessary to create the UI/UX' +
             ' of your module and/or component.</p>',
             '<pre class="prettyprint inline lang-js">view.container.node.innerHTML = \'\'</pre> ' +
@@ -140,7 +140,7 @@ export default (Scope) => {
             '  text: \'Hello World!\'\n' +
             '});</pre>',
             '<h3>2. Add GalaxyJS to an existing webpage</h3>' +
-            '<p>Sometimes you already have a page and you just want to add some reactive functionality to a page. You can easily do this by transforming your target element into a Galaxy module:</p>',
+            '<p>Sometimes you already have a page, and you just want to add some reactive functionality to a page. You can easily do this by transforming your target element into a Galaxy module:</p>',
             {
               tag: 'pre',
               class: 'prettyprint lang-js',
@@ -159,7 +159,7 @@ export default (Scope) => {
               class: 'prettyprint lang-js',
               text: Scope.importAsText('./hello-world.example.js')
             },
-            '<p>In the above code we started by importing <code class="prettyprint">\'galaxy/view\'</code> addon which we need in order to create a UI.</p>',
+            '<p>In the above code we start by initiating a View object using <code class="prettyprint">const view = Scope.useView();</code>. We need this object in order to create a UI.</p>',
             '<p><code class="prettyprint">view.blueprint()</code> accepts an array or object which is the blueprint of ' +
             'our UI. In this case a <strong>p</strong> tag with <strong>Hello World!</strong> as its text.</p>',
             {
@@ -201,8 +201,10 @@ export default (Scope) => {
             {
               tag: 'pre',
               class: 'prettyprint lang-js',
-              text: 'view.components({\n' +
-                '  \'simple-component\': Scope.import(\'./simple-component.example.js\')\n' +
+              text: 'import SimpleComponent from \'./simple-component.example.js\';\n' +
+                '\n...\n\n' +
+                'view.components({\n' +
+                '  \'simple-component\': SimpleComponent\n' +
                 '});'
             },
             '<p>And here is how to use the component</p>',

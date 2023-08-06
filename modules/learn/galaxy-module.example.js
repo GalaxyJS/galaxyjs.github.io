@@ -1,10 +1,8 @@
 const module = {
-  // Addons that you need for your module
-  imports: ['galaxy/view'],
   // The element which is going to be the module
   element: document.querySelector('#target'),
   constructor: function (Scope) {
-    const view = Scope.import('galaxy/view');
+    const view = Scope.useView();
     view.container.node.innerHTML = '';
     view.blueprint({
       tag: 'h2',
