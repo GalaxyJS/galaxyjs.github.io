@@ -241,7 +241,7 @@ export default (Scope) => {
                 '  // The element which is going to be the module\n' +
                 '  element: document.querySelector(\'#target\'),\n' +
                 '  constructor: function (Scope) {\n' +
-                '     const view = Scope.import(\'galaxy/view\');\n' +
+                '     const view = Scope.useView();\n' +
                 '\n' +
                 '     Scope.data.list = [\n' +
                 '       {\n' +

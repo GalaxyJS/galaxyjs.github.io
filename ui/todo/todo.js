@@ -2,7 +2,7 @@ import { animations } from '/services/animations.js';
 import TodoField from './todo-field.js';
 export default (Scope) => {
   const view = Scope.useView();
-  const style = Scope.import('./style.css');
+  // const style = Scope.import('./style.css');
 
   const ToDoService = {
     data: Scope.data.items,
@@ -65,7 +65,7 @@ export default (Scope) => {
     class: 'card',
     animations: animations.cardInOut,
     children: [
-      style,
+      // style,
       {
         tag: 'section',
         class: 'content',

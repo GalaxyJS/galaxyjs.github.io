@@ -26,7 +26,7 @@ export default (Scope) => {
       hidden: true,
       path: '/start',
       viewports: {
-        main: 'modules/start/start.js'
+        main: 'ui/start/start.js'
       },
       title: 'Start',
       pageTitle: 'GalaxyJS - Build Visually Rich Web Apps',
@@ -36,7 +36,7 @@ export default (Scope) => {
     {
       path: '/learn',
       viewports: {
-        main: 'modules/learn/learn.js'
+        main: 'ui/learn/learn.js'
       },
       title: 'Learn',
       pageTitle: 'Learn',
@@ -45,7 +45,7 @@ export default (Scope) => {
     {
       path: '/reactivity',
       viewports: {
-        main: 'modules/reactivity/reactivity.js'
+        main: 'ui/reactivity/reactivity.js'
       },
       title: 'Reactivity',
       pageTitle: 'Reactivity',
@@ -54,7 +54,7 @@ export default (Scope) => {
     {
       path: '/conditional-rendering',
       viewports: {
-        main: 'modules/conditional-rendering/conditional-rendering.js'
+        main: 'ui/conditional-rendering/conditional-rendering.js'
       },
       title: 'Conditional Rendering',
       icon: 'fas fa-exclamation-triangle',
@@ -62,7 +62,7 @@ export default (Scope) => {
     {
       path: '/list-rendering',
       viewports: {
-        main: 'modules/list-rendering/list-rendering.js'
+        main: 'ui/list-rendering/list-rendering.js'
       },
       title: 'List Rendering',
       icon: 'fas fa-list-ul',
@@ -70,7 +70,7 @@ export default (Scope) => {
     {
       path: '/animations',
       viewports: {
-        main: 'modules/animations/animations.js'
+        main: 'ui/animations/animations.js'
       },
       title: 'Animations',
       icon: 'fas fa-spinner',
@@ -78,7 +78,7 @@ export default (Scope) => {
     {
       path: '/router',
       viewports: {
-        main: 'modules/router/router.js'
+        main: 'ui/router/router.js'
       },
       title: 'Router',
       icon: 'fas fa-road',
@@ -86,7 +86,7 @@ export default (Scope) => {
     {
       path: '/api',
       viewports: {
-        main: 'modules/api/api.js'
+        main: 'ui/api/api.js'
       },
       title: 'API',
       icon: 'fas fa-code',
@@ -94,14 +94,14 @@ export default (Scope) => {
     {
       path: '/todo-demo',
       viewports: {
-        main: 'modules/todo/todo.js'
+        main: 'ui/todo/todo.js'
       },
       title: 'ToDo - Demo',
     },
     {
       path: '/vuejs-replica-demo',
       viewports: {
-        main: 'modules/vuejs-replica/vuejs-replica.js'
+        main: 'ui/vuejs-replica/vuejs-replica.js'
       },
       title: 'VueJS Replica - Demo',
     }

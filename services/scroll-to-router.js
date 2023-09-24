@@ -1,5 +1,5 @@
-export default (Scope) => {
-  Scope.export = {
+export default function ScrollToRouter(Scope) {
+  return {
     path: '/:section',
     hidden: true,
     handle: (params) => {
@@ -11,4 +11,4 @@ export default (Scope) => {
       return true;
     }
   };
-};
+}

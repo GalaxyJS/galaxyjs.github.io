@@ -1,6 +1,6 @@
 import { animations } from '/services/animations.js';
 export default (Scope) => {
-  const style = Scope.import('./style.css');
+  // const style = Scope.import('./style.css');
   const view = Scope.useView();
   const router = Scope.useRouter();
 
@@ -28,8 +28,12 @@ export default (Scope) => {
         description: 'Path to the host module'
       },
       {
-        title: 'import(path)',
-        description: 'Import module from the specified path.'
+        title: 'useView()',
+        description: 'Returns a Galaxy.View instance'
+      },
+      {
+        title: 'useRouter()',
+        description: 'Returns a Galaxy.Router instance'
       },
       {
         title: 'on(event, handler)',
@@ -112,7 +116,7 @@ export default (Scope) => {
     class: 'card big',
     animations: animations.cardInOut,
     children: [
-      style,
+      // style,
       {
         tag: 'img',
         id: 'scope',
@@ -159,6 +163,10 @@ export default (Scope) => {
             id: 'module',
             text: 'Module'
           },
+          {
+            tag: 'h4',
+            text: 'Galaxy.Scope'
+          },
           '<p>Modules are the building blocks of the application and they can be variety of things like components, services, utilities and etc.</p>' +
           '<p>Modules will provide you with a Galaxy.Scope instance which gives you the ability to import plugins and other type of' +
           ' resources.</p>',
@@ -167,9 +175,13 @@ export default (Scope) => {
             id: 'view',
             text: 'View'
           },
+          {
+            tag: 'h4',
+            text: 'Galaxy.view'
+          },
           '<p>View provide functionality for creating rich UI blocks. ' +
           'It is available as a addon and can be retrieved by: <br/>' +
-          '<code class="prettyprint lang-js">const view = Scope.import(\'galaxy/view\');</code></p>',
+          '<code class="prettyprint lang-js">const view = Scope.useView();</code></p>',
           {
             tag: 'ul',
             children: [
@@ -199,7 +211,7 @@ export default (Scope) => {
           },
           {
             tag: 'h4',
-            text: 'Galaxy.view.ViewNode'
+            text: 'Galaxy.View.ViewNode'
           }
         ]
       },

@@ -1,10 +1,10 @@
 import { expandable } from '/services/expandable.js';
 import { animations } from '/services/animations.js';
+import ScrollToRouter from '/services/scroll-to-router.js';
 
 export default (Scope) => {
   const view = Scope.useView();
   const router = Scope.useRouter();
-  const scrollToRouter = Scope.import('services/scroll-to-router.js');
 
   Scope.data.citiesList = ['Amsterdam', 'Paris'];
 
@@ -13,7 +13,7 @@ export default (Scope) => {
       path: '/',
       redirectTo: '/fundamentals'
     },
-    scrollToRouter,
+    ScrollToRouter,
     {
       title: 'Fundamentals',
       path: '/fundamentals'

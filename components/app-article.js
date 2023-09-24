@@ -1,4 +1,4 @@
-Scope.export = function (componentScope, blueprint, view) {
+export default function AppArticle (componentScope, blueprint, view) {
   return {
     children: [
       {

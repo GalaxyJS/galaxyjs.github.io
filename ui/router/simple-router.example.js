@@ -1,3 +1,5 @@
+import FileIcon from './file-icon.component.js';
+
 export default (Scope) => {
   const view = Scope.useView();
   const router = Scope.useRouter();
@@ -35,8 +37,10 @@ export default (Scope) => {
     },
   ]);
 
+  // console.log(FileIcon)
+
   view.components({
-    'file-icon': Scope.import('./file-icon.component.js')
+    'file-icon': FileIcon
   });
 
   view.blueprint([

@@ -57,7 +57,7 @@ export default (Scope) => {
           },
           leave: {
             withParent: true,
-            timeline: 'boxes',
+            timeline: 'main-timeline',
             position: '-=.22',
             to: {
               scale: 0,
