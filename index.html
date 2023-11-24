@@ -66,9 +66,10 @@
 <!--  <script src="assets/gsap/EasePack.min.js" defer></script>-->
 
 
-  <script src="assets/galaxyjs/galaxy.js" defer></script>
+<!--  <script src="assets/galaxyjs/galaxy.js" defer></script>-->
   <!-- Start Single Page Apps for GitHub Pages -->
-  <script>
+  <script type="module">
+    import { boot } from './assets/galaxyjs/galaxy.js';
     // Single Page Apps for GitHub Pages
     // MIT License
     // https://github.com/rafgraph/spa-github-pages
@@ -96,7 +97,7 @@
       window.addEventListener('load', run);
 
       function run() {
-        Galaxy.boot({
+        boot({
           element: document.getElementById('body'),
           path: 'ui/main/main.js',
           // path: 'modules/main/binding-type-self.js',

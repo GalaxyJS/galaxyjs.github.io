@@ -1,0 +1,15 @@
+{
+  "name": "galaxyjs-site",
+  "version": "1.0.0",
+  "description": "The official documentation for GalaxyJS",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.2"
+  }
+}

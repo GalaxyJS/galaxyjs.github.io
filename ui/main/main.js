@@ -1,4 +1,5 @@
 import Navigation from '/services/navigation.js';
+import {setupTimeline} from "../../assets/galaxyjs/galaxy";
 export default (Scope) => {
   /** @type Galaxy.View */
   const view = Scope.useView();
@@ -112,21 +113,21 @@ export default (Scope) => {
 
     switch (from) {
       case '/start':
-        Galaxy.setupTimeline('main-timeline', {
+        setupTimeline('main-timeline', {
           'pre-side-bar': 0,
           'side-bar': .5,
         });
         break;
       case null:
       default:
-        Galaxy.setupTimeline('main-timeline', {
+        setupTimeline('main-timeline', {
           'pre-side-bar': 0,
           'side-bar': .1,
         });
     }
 
     if (from && to === '/start') {
-      Galaxy.setupTimeline('main-timeline', {
+      setupTimeline('main-timeline', {
         'pre-side-bar': 0,
         'side-bar': .5,
       });
