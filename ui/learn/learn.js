@@ -50,7 +50,7 @@ export default (Scope) => {
           tag: 'img',
           id: 'installation',
           class: 'banner',
-          src: 'assets/images/learn.jpg',
+          src: '/images/learn.jpg',
           height: '410',
         },
         '<h1>Learn</h1>',
@@ -279,7 +279,7 @@ export default (Scope) => {
         }
       ]
     },
-    view.entering.addKeyframe((a) => {
+    view.entering.keyframe(() => {
       PR.prettyPrint();
       router.start();
     }, 'main-timeline'),

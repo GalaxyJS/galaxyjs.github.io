@@ -5,6 +5,7 @@ export default (Scope) => {
   Scope.data.myValue = 10;
 
   view.blueprint([
+    view.leaving.waitKeyframe('main-timeline', '+=.5'),
     {
       class: 'start-page',
       animations: {
@@ -55,10 +56,9 @@ export default (Scope) => {
           },
           tag: 'img',
           class: 'banner',
-          src: 'assets/images/galaxy-large.jpg',
+          src: '/images/galaxy-large.jpg',
           alt: 'Galaxy',
         },
-
         {
           animations: {
             enter: {

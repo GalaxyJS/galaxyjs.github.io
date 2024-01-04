@@ -11,7 +11,7 @@ export default (Scope) => {
       {
         tag: 'img',
         class: 'banner',
-        src: 'assets/images/junction.jpg',
+        src: '/images/junction.jpg',
         height: '420',
         alt: 'Galaxy',
       },
@@ -66,7 +66,7 @@ export default (Scope) => {
         ]
       },
 
-      view.entering.addKeyframe(() => {
+      view.entering.keyframe(() => {
         PR.prettyPrint();
       }, 'main-nav-timeline')
     ]

@@ -57,7 +57,7 @@ export default (Scope) => {
         tag: 'img',
         id: 'fundamentals',
         class: 'banner',
-        src: 'assets/images/watch.jpg',
+        src: '/images/watch.jpg',
         height: '355',
       },
       {
@@ -376,7 +376,7 @@ export default (Scope) => {
       () => {
         PR.prettyPrint();
       },
-      view.entering.addKeyframe(() => {
+      view.entering.keyframe(() => {
         router.start();
       }, 'main-timeline')
     ]

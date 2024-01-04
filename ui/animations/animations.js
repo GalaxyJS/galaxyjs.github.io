@@ -1,8 +1,10 @@
-import { expandable } from '/services/expandable.js';
-export default (Scope) => {
+import {expandable} from '/services/expandable.js';
+import howToLOadGSAPExample from './how-to-load-gsap.example.html?raw';
+import firstAnimationExample from './first-animation.example.js?raw';
+
+export default async (Scope) => {
   const view = Scope.useView();
-  const howToLOadGSAPExample = Scope.importAsText('./how-to-load-gsap.example.html');
-  const firstAnimationExample = Scope.importAsText('./first-animation.example.js');
+
 
   Scope.data.sliderValue = 0;
   Scope.data.animationPaused = true;
@@ -77,7 +79,8 @@ export default (Scope) => {
           to: {
             y: 150,
             opacity: 0,
-            duration: .5
+            delay: .1,
+            duration: .4,
           },
         }
       },
@@ -98,7 +101,7 @@ export default (Scope) => {
           },
           tag: 'img',
           class: 'banner',
-          src: 'assets/images/asphalt-blur-cars.jpg',
+          src: '/images/asphalt-blur-cars.jpg',
           height: '410',
         },
         view.entering.startKeyframe('main-timeline'),
@@ -184,13 +187,13 @@ export default (Scope) => {
               text: firstAnimationExample,
               expandable: expandable
             },
-            view.entering.startKeyframe('main-timeline'),
-            {
-              class: 'example-box',
-              module: {
-                path: './first-animation.example.js'
-              }
-            },
+            // view.entering.startKeyframe('main-timeline'),
+            // {
+            //   class: 'example-box',
+            //   module: {
+            //     path: './first-animation.example.js'
+            //   }
+            // },
           ]
         },
 
@@ -276,7 +279,7 @@ export default (Scope) => {
               tag: 'p',
               text: 'Ready...'
             },
-            view.entering.addKeyframe(null, pageAnimation, 1),
+            view.entering.waitKeyframe(pageAnimation, 1),
             {
               animations: {
                 enter: {
@@ -296,7 +299,7 @@ export default (Scope) => {
               tag: 'p',
               text: 'Set...'
             },
-            view.entering.addKeyframe(null, pageAnimation, 1),
+            view.entering.waitKeyframe(pageAnimation, 1),
             {
               animations: {
                 enter: {
@@ -316,7 +319,7 @@ export default (Scope) => {
               tag: 'strong',
               text: 'Go!'
             },
-            view.entering.addKeyframe(null, pageAnimation, .2),
+            view.entering.waitKeyframe(pageAnimation, .2),
             {
               animations: {
                 enter: {
@@ -361,9 +364,9 @@ export default (Scope) => {
         }
       ]
     },
-    () => {
+    view.entering.keyframe(() => {
       PR.prettyPrint();
       pageAnimation.progress(Scope.data.sliderValue / 100);
-    },
+    }, 'main-timeline'),
   ]);
 };

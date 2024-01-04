@@ -121,7 +121,7 @@ export default (Scope) => {
         tag: 'img',
         id: 'scope',
         class: 'banner',
-        src: 'assets/images/tools.jpg',
+        src: '/images/tools.jpg',
         height: '410',
       },
       {
@@ -215,7 +215,7 @@ export default (Scope) => {
           }
         ]
       },
-      view.entering.addKeyframe(() => {
+      view.entering.keyframe(() => {
         PR.prettyPrint();
         router.start();
       }, 'main-timeline')

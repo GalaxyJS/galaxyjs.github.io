@@ -1,7 +1,7 @@
 import Navigation from '/services/navigation.js';
-import {setupTimeline} from "../../assets/galaxyjs/galaxy";
+import {setupTimeline} from "@/galaxyjs/galaxy";
+
 export default (Scope) => {
-  /** @type Galaxy.View */
   const view = Scope.useView();
   const router = Scope.useRouter();
 
@@ -111,27 +111,27 @@ export default (Scope) => {
       // Scope.data.expandNav = false;
     }
 
-    switch (from) {
-      case '/start':
-        setupTimeline('main-timeline', {
-          'pre-side-bar': 0,
-          'side-bar': .5,
-        });
-        break;
-      case null:
-      default:
-        setupTimeline('main-timeline', {
-          'pre-side-bar': 0,
-          'side-bar': .1,
-        });
-    }
-
-    if (from && to === '/start') {
-      setupTimeline('main-timeline', {
-        'pre-side-bar': 0,
-        'side-bar': .5,
-      });
-    }
+    // switch (from) {
+    //   case '/start':
+    //     setupTimeline('main-timeline', {
+    //       'pre-side-bar': 0,
+    //       'side-bar': 2.5,
+    //     });
+    //     break;
+    //   case null:
+    //   default:
+    //     setupTimeline('main-timeline', {
+    //       'pre-side-bar': 0,
+    //       'side-bar': .1,
+    //     });
+    // }
+    //
+    // if (from && to === '/start') {
+    //   setupTimeline('main-timeline', {
+    //     'pre-side-bar': 0,
+    //     'side-bar': .5,
+    //   });
+    // }
   }).onInvoke((path, viewport) => {
     // console.info('invoke: ' + path + '\nviewport: ' + viewport);
   }).onLoad((path, viewport) => {
@@ -159,7 +159,7 @@ export default (Scope) => {
         }
       },
     },
-    view.entering.startKeyframe('main-timeline', '+=1'),
+    view.entering.startKeyframe('main-timeline', '+=.5'),
     {
       tag: 'div',
       id: 'main-nav',
@@ -240,6 +240,7 @@ export default (Scope) => {
             enter: {
               timeline: 'main-timeline',
               position: '-=.56',
+              // positionInParent: 'side-bar',
               from: {
                 transition: 'none',
                 autoAlpha: 0,
@@ -368,7 +369,7 @@ export default (Scope) => {
           position: '-=.5',
           to: {
             duration: .5,
-            onComplete: function(sd) {
+            onComplete: function (sd) {
               this.node.style.paddingLeft = 0;
             }
           }

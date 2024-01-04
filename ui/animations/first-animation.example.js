@@ -69,17 +69,7 @@ export default (Scope) => {
         class: 'box',
         repeat: {
           data: '<>data.boxes',
-          as: 'item',
-          onComplete: (viewNodes) => {
-            // gsap.to(viewNodes.map(vn => vn.node), {
-            //   duration: 1,
-            //   scale: .1,
-            //   stagger: 0.1,
-            //   yoyo: true,
-            //   repeat: -1
-            // });
-            // console.log('test')
-          }
+          as: 'item'
         },
         children: [
           {

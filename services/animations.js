@@ -3,7 +3,7 @@ const animations = {};
 animations.cardInOut = {
   enter: {
     timeline: 'main-timeline',
-    // position: '-=.5',
+    // position: 'pre-side-bar',
     from: {
       transformOrigin: 'top center',
       scale: 1.04,

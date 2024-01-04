@@ -2,6 +2,7 @@
   "name": "galaxyjs-site",
   "version": "1.0.0",
   "description": "The official documentation for GalaxyJS",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
