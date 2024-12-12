@@ -1,6 +1,6 @@
-import { expandable } from '/services/expandable.js';
-import { animations } from '/services/animations.js';
-import ScrollToRouter from '/services/scroll-to-router.js';
+import { expandable } from '@/services/expandable.js';
+import { animations } from '@/services/animations.js';
+import ScrollToRouter from '@/services/scroll-to-router.js';
 
 export default (Scope) => {
   const view = Scope.useView();
@@ -31,7 +31,7 @@ export default (Scope) => {
       path: '/class-and-style'
     },
     {
-      title: 'Inputs property',
+      title: 'Data property',
       path: '/data-property'
     },
     {
@@ -97,7 +97,7 @@ export default (Scope) => {
             text: 'Binding Syntax'
           },
           '<p>The binding syntax is a string which starts with <code class="prettyprint lang-js">\'<>\'</code>, then followed with the path to the property in Scope\'s <code class="prettyprint lang-js">data</code></p>',
-          '<p>For example: <code class="prettyprint lang-js">\'<>data.path.to.myProperty\'</code></p>',
+          '<p>For example: <code class="prettyprint lang-js">\'<>data.path.to.theProperty\'</code></p>',
           {
             class: 'example-box',
             children: [
@@ -373,10 +373,8 @@ export default (Scope) => {
           },
         ]
       },
-      () => {
-        PR.prettyPrint();
-      },
       view.entering.keyframe(() => {
+        PR.prettyPrint();
         router.start();
       }, 'main-timeline')
     ]

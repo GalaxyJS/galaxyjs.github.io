@@ -1743,7 +1743,7 @@ P.prototype = {
           const c = d.refs[p];
           c.shadow[t] && (c.makeKeyEnum(t), c.shadow[t].setData(l));
         }
-        d.notify(t, i);
+        d.notify(t, i, null, !1);
       },
       enumerable: !n,
       configurable: !0
@@ -1805,7 +1805,7 @@ P.prototype = {
   notifyRefs: function(e, t) {
     for (let n = 0, i = this.refs.length; n < i; n++) {
       const s = this.refs[n];
-      this !== s && s.notify(e, t, this.refs);
+      this !== s && s.notify(e, t, this.refs, !1);
     }
   },
   /**

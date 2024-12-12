@@ -123,7 +123,7 @@ export default (Scope) => {
             'Its main feature is utilizing the power of a crazy fast animation library called <a href="https://greensock.com/gsap" target="_blank">GSAP</a>.</p>',
             {
               tag: 'div',
-              class: 'flex-bar jc-center',
+              class: 'flex-bar jc-center start-button',
               children: {
                 tag: 'button',
                 class: 'big',

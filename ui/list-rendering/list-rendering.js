@@ -1,5 +1,5 @@
-import { expandable } from '/services/expandable.js';
-import { animations } from '/services/animations.js';
+import { expandable } from '@/services/expandable.js';
+import { animations } from '@/services/animations.js';
 export default (Scope) => {
   const view = Scope.useView();
   const simpleListExample = Scope.importAsText('./simple-list.example.js');

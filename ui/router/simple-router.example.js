@@ -24,6 +24,7 @@ export default (Scope) => {
       title: 'Second',
       viewports: {
         main: './second.js',
+        secondary: null
       }
     },
 
@@ -36,8 +37,6 @@ export default (Scope) => {
       }
     },
   ]);
-
-  // console.log(FileIcon)
 
   view.components({
     'file-icon': FileIcon

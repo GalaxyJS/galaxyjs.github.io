@@ -86,7 +86,7 @@ export default (Scope) => {
           'the same element will be reattached to the DOM</p>'
         ]
       },
-      view.entering.addKeyframe(() => {
+      view.entering.keyframe(() => {
         PR.prettyPrint();
       }, 'main-nav-timeline')
     ],

@@ -26,7 +26,7 @@ animations.cardInOut = {
     timeline: 'main-timeline',
     position: '-=.4',
     from: {
-      position: 'absolute',
+      // position: 'absolute',
     },
     to: {
       ease: 'power1.inOut',

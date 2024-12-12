@@ -1214,14 +1214,17 @@ p.example {
     width: 100%;
     max-width: 960px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
-  .start-page > .content > *:first-child {
-    margin-top: 0;
+  .start-page > .content > * {
+    margin: 0;
   }
 
-  .start-page > .content > h2 {
-    margin-top: 3vmax;
+  .start-page > .content > .start-button {
+    margin: 3rem 0;
   }
 
   .card {
