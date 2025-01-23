@@ -4,6 +4,7 @@ import {setupTimeline} from "@/galaxyjs/galaxy";
 export default (Scope) => {
   const view = Scope.useView();
   const router = Scope.useRouter();
+  console.log(Scope)
 
   Scope.data.navService = Navigation;
   Scope.data.todos = [
