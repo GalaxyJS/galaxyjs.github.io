@@ -1,4 +1,146 @@
-const A = {
+var Ue = Object.defineProperty;
+var He = (t, e, n) => e in t ? Ue(t, e, { enumerable: !0, configurable: !0, writable: !0, value: n }) : t[e] = n;
+var de = (t, e, n) => He(t, typeof e != "symbol" ? e + "" : e, n);
+function xe(t) {
+  let e = document.createElement("a");
+  e.href = t;
+  let s = /\/([^\t\n]+\/)/g.exec(e.pathname);
+  this.parsedURL = e.href, this.path = s ? s[1] : "/", this.base = window.location.pathname, this.protocol = e.protocol;
+}
+class D {
+  /**
+   * Create an Observer.
+   * @param {Object} context - The context to observe.
+   */
+  constructor(e) {
+    this.context = e, this.subjectsActions = {}, this.allSubjectAction = [];
+    const n = "__observers__";
+    this.context.hasOwnProperty(n) || k(e, n, {
+      value: [],
+      writable: !0,
+      configurable: !0
+    }), this.context[n].push(this);
+  }
+  /**
+   * Remove the observer from the context.
+   */
+  remove() {
+    const e = this.context.__observers__, n = e.indexOf(this);
+    n !== -1 && e.splice(n, 1);
+  }
+  /**
+   * Notify the observer of a change.
+   * @param {string} key - The key that changed.
+   * @param {*} value - The new value.
+   */
+  notify(e, n) {
+    this.subjectsActions.hasOwnProperty(e) && this.subjectsActions[e].call(this.context, n), this.allSubjectAction.forEach((s) => {
+      s.call(this.context, e, n);
+    });
+  }
+  /**
+   * Register an action for a specific subject.
+   * @param {string} subject - The subject to observe.
+   * @param {Function} action - The action to perform.
+   */
+  on(e, n) {
+    this.subjectsActions[e] = n;
+  }
+  /**
+   * Register an action for all subjects.
+   * @param {Function} action - The action to perform.
+   */
+  onAll(e) {
+    this.allSubjectAction.indexOf(e) === -1 && this.allSubjectAction.push(e);
+  }
+  /**
+   * Notify all observers of a change.
+   * @param {Object} obj - The object being observed.
+   * @param {string} key - The key that changed.
+   * @param {*} value - The new value.
+   */
+  static notify(e, n, s) {
+    const i = e.__observers__;
+    i !== void 0 && i.forEach((r) => {
+      r.notify(n, s);
+    });
+  }
+}
+class R {
+  /**
+   *
+   * @param {ModuleMetaData} module
+   */
+  constructor(e) {
+    this.systemId = e.id, this.parentScope = e.parentScope || null, this.element = e.element || null, this.export = {}, this.uri = new xe(e.path), this.eventHandlers = {}, this.observers = [];
+    const n = this.element.data ? B(
+      this.element,
+      this.element.data,
+      this.parentScope,
+      !0
+    ) : {};
+    k(this, "data", {
+      enumerable: !0,
+      configurable: !0,
+      get: function() {
+        return n;
+      },
+      set: function(s) {
+        if (s === null || typeof s != "object")
+          throw Error(
+            "The `Scope.data` property must be type of object and can not be null."
+          );
+        Object.assign(n, s);
+      }
+    }), this.on("module.destroy", this.destroy.bind(this));
+  }
+  importAsText(e) {
+    return e.indexOf("./") === 0 && (e = e.replace("./", this.uri.path)), fetch(e, {
+      headers: {
+        "Content-Type": "text/plain"
+      }
+    }).then((n) => n.text());
+  }
+  destroy() {
+    Xt(this, "data"), this.observers.forEach(function(e) {
+      e.remove();
+    });
+  }
+  kill() {
+    throw Error("Scope.kill() should not be invoked at the runtime");
+  }
+  load(e, n = {}) {
+    const s = Object.assign({}, e, n);
+    return s.path.indexOf("./") === 0 && (s.path = this.uri.path + e.path.substr(2)), s.parentScope = this, Fe(s);
+  }
+  loadModuleInto(e, n) {
+    return this.load(e, {
+      element: n
+    }).then(function(s) {
+      return s.start(), s;
+    });
+  }
+  on(e, n) {
+    this.eventHandlers[e] || (this.eventHandlers[e] = []), this.eventHandlers[e].indexOf(n) === -1 && this.eventHandlers[e].push(n);
+  }
+  trigger(e, n) {
+    this.eventHandlers[e] && this.eventHandlers[e].forEach(function(s) {
+      s.call(null, n);
+    });
+  }
+  observe(e) {
+    const n = new D(e);
+    return this.observers.push(n), n;
+  }
+  useView() {
+    return new W(this);
+  }
+  useRouter() {
+    const e = new x(this);
+    return this.systemId !== "@root" && this.on("module.destroy", () => e.destroy()), this.__router__ = e, this.router = e.data, e;
+  }
+}
+const O = {
   tag: {
     type: "none"
   },
@@ -74,7 +216,7 @@ const A = {
   onsubmit: {
     type: "event"
   }
-}, Be = [
+}, Ge = [
   "text",
   "comment",
   //
@@ -215,186 +357,138 @@ const A = {
   "wbr",
   "xmp"
 ];
-I.notify = function(e, t, n) {
-  const i = e.__observers__;
-  i !== void 0 && i.forEach(function(s) {
-    s.notify(t, n);
-  });
-};
-function I(e) {
-  this.context = e, this.subjectsActions = {}, this.allSubjectAction = [];
-  const t = "__observers__";
-  this.context.hasOwnProperty(t) || R(e, t, {
-    value: [],
-    writable: !0,
-    configurable: !0
-  }), this.context[t].push(this);
-}
-I.prototype = {
-  remove: function() {
-    const e = this.context.__observers__, t = e.indexOf(this);
-    t !== -1 && e.splice(t, 1);
-  },
-  /**
-   *
-   * @param {string} key
-   * @param value
-   */
-  notify: function(e, t) {
-    const n = this;
-    n.subjectsActions.hasOwnProperty(e) && n.subjectsActions[e].call(n.context, t), n.allSubjectAction.forEach(function(i) {
-      i.call(n.context, e, t);
-    });
-  },
-  /**
-   *
-   * @param subject
-   * @param action
-   */
-  on: function(e, t) {
-    this.subjectsActions[e] = t;
-  },
-  /**
-   *
-   * @param {Function} action
-   */
-  onAll: function(e) {
-    this.allSubjectAction.indexOf(e) === -1 && this.allSubjectAction.push(e);
-  }
-};
-function de(e, t) {
-  if (typeof t == "object" && t !== null) {
+function he(t, e) {
+  if (typeof e == "object" && e !== null) {
     const n = {};
-    for (const i in t) {
-      const s = t[i];
-      typeof s == "object" ? n[i] = JSON.stringify(s) : n[i] = s;
+    for (const s in e) {
+      const i = e[s];
+      typeof i == "object" ? n[s] = JSON.stringify(i) : n[s] = i;
     }
-    Object.assign(e.dataset, n);
+    Object.assign(t.dataset, n);
   } else
-    e.dataset = null;
+    t.dataset = null;
 }
-const Fe = {
+const Ke = {
   type: "reactive",
   key: "data",
-  getConfig: function(e, t) {
-    if (t !== null && (typeof t != "object" || t instanceof Array))
+  getConfig: function(t, e) {
+    if (e !== null && (typeof e != "object" || e instanceof Array))
       throw new Error(`data property should be an object with explicits keys:
 ` + JSON.stringify(this.blueprint, null, "  "));
     return {
       reactiveData: null,
-      subjects: t,
-      scope: e
+      subjects: e,
+      scope: t
     };
   },
-  install: function(e) {
-    if (e.scope.data === e.subjects)
+  install: function(t) {
+    if (t.scope.data === t.subjects)
       throw new Error("It is not allowed to use Scope.data as data value");
     if (!this.blueprint.module) {
-      e.reactiveData = V(this, e.subjects, e.scope, !0), new I(e.reactiveData).onAll(() => {
-        de(this.node, e.reactiveData);
+      t.reactiveData = B(this, t.subjects, t.scope, !0), new D(t.reactiveData).onAll(() => {
+        he(this.node, t.reactiveData);
       });
       return;
     }
-    return Object.assign(this.data, e.subjects), !1;
+    return Object.assign(this.data, t.subjects), !1;
   },
-  update: function(e, t, n) {
-    n && (t = n()), e.subjects === t && (t = e.reactiveData), de(this.node, t);
+  update: function(t, e, n) {
+    n && (e = n()), t.subjects === e && (e = t.reactiveData), he(this.node, e);
   }
-}, Ue = {
+}, qe = {
   type: "prop",
   key: "nodeValue"
-}, He = {
+}, Ye = {
   type: "prop",
   key: "nodeValue"
-}, Ge = {
+}, Je = {
   type: "prop",
   key: "text",
   /**
    *
-   * @param {Galaxy.ViewNode} viewNode
+   * @param {ViewNode} viewNode
    * @param value
    */
-  update: function(e, t) {
-    let n = typeof t > "u" || t === null ? "" : t;
+  update: function(t, e) {
+    let n = typeof e > "u" || e === null ? "" : e;
     n instanceof Object && (n = JSON.stringify(n));
-    const i = e.node, s = i["<>text"];
-    if (s)
-      s.nodeValue = n;
+    const s = t.node, i = s["<>text"];
+    if (i)
+      i.nodeValue = n;
     else {
-      const r = i["<>text"] = document.createTextNode(n);
-      i.insertBefore(r, i.firstChild);
+      const r = s["<>text"] = document.createTextNode(n);
+      s.insertBefore(r, s.firstChild);
     }
   }
 };
-let se, he;
+let ie, ye;
 if (!window.gsap)
-  he = function() {
-  }, se = {
+  ye = function() {
+  }, ie = {
     type: "prop",
     key: "animations",
     /**
      *
-     * @param {Galaxy.ViewNode} viewNode
+     * @param {ViewNode} viewNode
      * @param animationDescriptions
      */
-    update: function(e, t) {
-      t.enter && t.enter.to.onComplete && (e.processEnterAnimation = t.enter.to.onComplete), e.processLeaveAnimation = (n) => {
+    update: function(t, e) {
+      e.enter && e.enter.to.onComplete && (t.processEnterAnimation = e.enter.to.onComplete), t.processLeaveAnimation = (n) => {
         n();
       };
     }
   }, window.gsap = {
-    to: function(e, t) {
+    to: function(t, e) {
       return requestAnimationFrame(() => {
-        typeof e == "string" && (e = document.querySelector(e));
-        const n = e.style;
+        typeof t == "string" && (t = document.querySelector(t));
+        const n = t.style;
         if (n) {
-          const i = Object.keys(t);
-          for (let s = 0, r = i.length; s < r; s++) {
-            const a = i[s], l = t[a];
-            switch (a) {
+          const s = Object.keys(e);
+          for (let i = 0, r = s.length; i < r; i++) {
+            const l = s[i], a = e[l];
+            switch (l) {
               case "duration":
               case "ease":
                 break;
               case "opacity":
               case "z-index":
-                n.setProperty(a, l);
+                n.setProperty(l, a);
                 break;
               case "scrollTo":
-                e.scrollTop = typeof l.y == "string" ? document.querySelector(l.y).offsetTop : l.y, e.scrollLeft = typeof l.x == "string" ? document.querySelector(l.x).offsetLeft : l.x;
+                t.scrollTop = typeof a.y == "string" ? document.querySelector(a.y).offsetTop : a.y, t.scrollLeft = typeof a.x == "string" ? document.querySelector(a.x).offsetLeft : a.x;
                 break;
               default:
-                n.setProperty(a, typeof l == "number" && l !== 0 ? l + "px" : l);
+                n.setProperty(l, typeof a == "number" && a !== 0 ? a + "px" : a);
             }
           }
         } else
-          Object.assign(e, t);
+          Object.assign(t, e);
       });
     }
   }, console.info("%cIn order to activate animations, load GSAP - GreenSock", "color: yellowgreen; font-weight: bold;"), console.info("%cYou can implement most common animations by loading the following resources before galaxy.js", "color: yellowgreen;"), console.info("https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"), console.info("https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/ScrollToPlugin.min.js"), console.info(`https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/EasePack.min.js
 
 `);
 else {
-  let e = function(o) {
-    if (!o.parent)
-      return !1;
+  let t = function(o) {
+    if (!o.parent) return !1;
     const c = o.parent;
-    return c.blueprint.animations && c.blueprint.animations.enter && gsap.getTweensOf(c.node).length ? !0 : e(o.parent);
+    return c.blueprint.animations && c.blueprint.animations.enter && gsap.getTweensOf(c.node).length ? !0 : t(o.parent);
   }, n = function(o) {
     const c = gsap.getTweensOf(o);
     for (const f of c)
       f.parent ? (f.parent === gsap.globalTimeline ? f.pause() : f.parent.pause(), f.parent.remove(f)) : f.pause();
-  }, i = function(o, c) {
+  }, s = function(o, c) {
     const f = o.node;
     if (c.withParent) {
-      if (e(o))
+      if (t(o))
         return gsap.set(f, Object.assign({}, c.to || {}));
       if (!o.parent.rendered.resolved)
         return;
     }
-    gsap.getTweensOf(f).length && gsap.killTweensOf(f), t.contains(f) && p.installGSAPAnimation(o, "enter", c);
-  }, s = function(o, c, f) {
+    gsap.getTweensOf(f).length && gsap.killTweensOf(f), e.contains(f) && p.installGSAPAnimation(o, "enter", c);
+  }, i = function(o, c, f) {
     if (c.active === !1)
-      return l.call(o, f);
+      return a.call(o, f);
     const h = c.withParent;
     o.leaveWithParent = h === !0;
     const m = o.node;
@@ -407,7 +501,7 @@ else {
     }
     n(m), p.installGSAPAnimation(o, "leave", c, f);
   }, r = function(o, c, f, u, h, m) {
-    (h ? j : B)(o.index, (_) => {
+    (h ? j : F)(o.index, (_) => {
       const y = !!c[f];
       h && (!o.node.classList.contains(m) || y) ? p.setupOnComplete(u.to || u.from, () => {
         o.node.classList.add(m);
@@ -415,17 +509,17 @@ else {
         o.node.classList.remove(m);
       }), c[f] = c[f] || [], c[f].push(p.installGSAPAnimation(o, null, u)), _();
     });
-  }, a = function(o, c, f) {
+  }, l = function(o, c, f) {
     const u = c ? "add:" + f : "remove:" + f;
     return o[u];
-  }, l = function(o) {
+  }, a = function(o) {
     n(this.node), this.parent.transitory ? this.dump() : o();
   }, p = function(o) {
     const c = this;
     if (o && typeof o != "string") {
       if (o.__am__)
         return o.__am__;
-      const f = o.eventCallback("onComplete") || x;
+      const f = o.eventCallback("onComplete") || w;
       c.name = "<user-defined>", c.timeline = o, c.timeline.__am__ = this, c.timeline.eventCallback("onComplete", function() {
         f.call(c.timeline), c.onCompletesActions.forEach((u) => {
           u(c.timeline);
@@ -450,13 +544,13 @@ else {
     }
     c.type = null, c.onCompletesActions = [], c.started = !1, c.configs = {}, c.children = [], c.nodes = [], c.awaits = [];
   };
-  const t = document.body;
-  se = {
+  const e = document.body;
+  ie = {
     type: "prop",
     key: "animations",
     /**
      *
-     * @param {Galaxy.ViewNode} viewNode
+     * @param {ViewNode} viewNode
      * @param animations
      */
     update: function(o, c) {
@@ -464,25 +558,25 @@ else {
         return;
       const f = c.enter;
       f && (o.processEnterAnimation = function() {
-        i(this, f);
+        s(this, f);
       });
       const u = c.leave;
       u ? (!f && o.blueprint.if && (console.warn("The following node has `if` and a `leave` animation but does NOT have a `enter` animation.\nThis can result in unexpected UI behavior.\nTry to define a `enter` animation that negates the leave animation to prevent unexpected behavior\n\n"), console.warn(o.node)), o.processLeaveAnimation = function(m) {
-        s(this, u, m);
+        i(this, u, m);
       }, o.populateHideSequence = o.processLeaveAnimation.bind(o, () => {
         o.node.style.display = "none";
-      })) : o.processLeaveAnimation = l.bind(o);
+      })) : o.processLeaveAnimation = a.bind(o);
       const h = o.cache;
       h.class && h.class.observer && o.rendered.then(function() {
         const m = h.class.observer.context;
         for (const _ in m) {
-          const y = !!m[_], O = a(c, y, _);
-          if (O) {
-            if (O.to.keyframes instanceof Array)
-              for (let g = 0, E = O.to.keyframes.length; g < E; g++)
-                gsap.set(o.node, Object.assign({ callbackScope: o }, O.to.keyframes[g] || {}));
+          const y = !!m[_], A = l(c, y, _);
+          if (A) {
+            if (A.to.keyframes instanceof Array)
+              for (let g = 0, E = A.to.keyframes.length; g < E; g++)
+                gsap.set(o.node, Object.assign({ callbackScope: o }, A.to.keyframes[g] || {}));
             else
-              gsap.set(o.node, Object.assign({ callbackScope: o }, O.to || {}));
+              gsap.set(o.node, Object.assign({ callbackScope: o }, A.to || {}));
             y ? o.node.classList.add(_) : o.node.classList.remove(_);
           }
         }
@@ -492,16 +586,16 @@ else {
           if (b === y)
             return;
           b = y;
-          const O = !!m[_], g = a(c, O, _);
+          const A = !!m[_], g = l(c, A, _);
           if (g) {
             const E = "tween:" + _;
-            h[E] && (h[E].forEach((S) => S.kill()), Reflect.deleteProperty(h, E)), r(o, h, E, g, O, _);
+            h[E] && (h[E].forEach((S) => S.kill()), Reflect.deleteProperty(h, E)), r(o, h, E, g, A, _);
           }
         });
       });
     }
   }, p.ANIMATIONS = {}, p.TIMELINES = {}, p.createSimpleAnimation = function(o, c, f) {
-    f = f || x;
+    f = f || w;
     const u = o.node;
     let h = c.from, m = c.to;
     if (m && (m = Object.assign({}, m), m.onComplete = f, c.onComplete)) {
@@ -562,8 +656,7 @@ else {
       if (c = c || y.type, b.await && y.awaits.indexOf(b.await) === -1) {
         let g = y.timeline;
         for (; g.parent !== gsap.globalTimeline; ) {
-          if (!g.parent)
-            return;
+          if (!g.parent) return;
           g = g.parent;
         }
         y.awaits.push(b.await);
@@ -580,13 +673,13 @@ else {
         });
       }
       y.type && y.type !== c && b.position && b.position.indexOf("=") !== -1 && (b.position = b.startPosition);
-      const O = y.timeline.getChildren(!1);
-      return O.length && O[O.length - 1].data === "timeline:start" && (b.position = "+=0"), y.type = c, y.add(o, b, u);
+      const A = y.timeline.getChildren(!1);
+      return A.length && A[A.length - 1].data === "timeline:start" && (b.position = "+=0"), y.type = c, y.add(o, b, u);
     } else
       return p.createSimpleAnimation(o, b, u);
   };
   const d = {};
-  he = function(o, c) {
+  ye = function(o, c) {
     d[o] = c;
     const f = p.ANIMATIONS[o];
     f && f.setupLabels(c);
@@ -636,64 +729,62 @@ else {
     }
   };
 }
-const Ke = {
+const Xe = {
   type: "prop",
   key: "checked",
   /**
    *
-   * @param {Galaxy.ViewNode} viewNode
-   * @param {Galaxy.View.ReactiveData} scopeReactiveData
+   * @param {ViewNode} viewNode
+   * @param {ReactiveData} scopeReactiveData
    * @param prop
    * @param {Function} expression
    */
-  beforeActivate: function(e, t, n, i) {
-    if (!t)
+  beforeActivate: function(t, e, n, s) {
+    if (!e)
       return;
-    if (i && e.blueprint.tag === "input")
+    if (s && t.blueprint.tag === "input")
       throw new Error("input.checked property does not support binding expressions because it must be able to change its data.\nIt uses its bound value as its `model` and expressions can not be used as model.\n");
-    const r = D(e.blueprint.checked).propertyKeys[0].split(".").pop(), a = e.node;
-    a.addEventListener("change", function() {
-      const l = t.data[r];
-      if (l instanceof Array && a.type !== "radio") {
-        const d = a.hasAttribute("value") ? a.value : !0;
-        l instanceof Array ? l.indexOf(d) === -1 ? l.push(d) : l.splice(l.indexOf(d), 1) : t.data[r] = [d];
-      } else
-        a.hasAttribute("value") ? t.data[r] = a.checked ? a.value : null : t.data[r] = a.checked;
+    const r = V(t.blueprint.checked).propertyKeys[0].split(".").pop(), l = t.node;
+    l.addEventListener("change", function() {
+      const a = e.data[r];
+      if (a instanceof Array && l.type !== "radio") {
+        const d = l.hasAttribute("value") ? l.value : !0;
+        a instanceof Array ? a.indexOf(d) === -1 ? a.push(d) : a.splice(a.indexOf(d), 1) : e.data[r] = [d];
+      } else l.hasAttribute("value") ? e.data[r] = l.checked ? l.value : null : e.data[r] = l.checked;
     });
   },
-  update: function(e, t) {
-    const n = e.node;
-    e.rendered.then(function() {
-      if (t instanceof Array) {
+  update: function(t, e) {
+    const n = t.node;
+    t.rendered.then(function() {
+      if (e instanceof Array) {
         if (n.type === "radio")
           return console.error("Inputs with type `radio` can not provide array as a value."), console.warn("Read about radio input at: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/radio");
-        const i = n.hasAttribute("value") ? n.value : !0;
-        n.checked = t.indexOf(i) !== -1;
-      } else
-        n.hasAttribute("value") ? n.checked = t === n.value : n.checked = t;
+        const s = n.hasAttribute("value") ? n.value : !0;
+        n.checked = e.indexOf(s) !== -1;
+      } else n.hasAttribute("value") ? n.checked = e === n.value : n.checked = e;
     });
   }
-}, qe = {
+}, ze = {
   type: "reactive",
   key: "class",
-  getConfig: function(e, t) {
+  getConfig: function(t, e) {
     return {
-      scope: e,
-      subjects: t,
+      scope: t,
+      subjects: e,
       reactiveClasses: null,
       observer: null
     };
   },
-  install: function(e) {
-    if (this.virtual || e.subjects === null || e.subjects instanceof Array || typeof e.subjects != "object")
+  install: function(t) {
+    if (this.virtual || t.subjects === null || t.subjects instanceof Array || typeof t.subjects != "object")
       return !0;
-    const t = this, n = e.reactiveClasses = V(t, e.subjects, e.scope, !0), i = e.observer = new I(n), s = t.blueprint.animations || {}, r = !!window.gsap.config;
-    return t.blueprint.renderConfig.applyClassListAfterRender ? t.rendered.then(() => {
-      i.onAll((a) => {
-        r && (s["add:" + a] || s["remove:" + a]) || H(t, n);
+    const e = this, n = t.reactiveClasses = B(e, t.subjects, t.scope, !0), s = t.observer = new D(n), i = e.blueprint.animations || {}, r = !!window.gsap.config;
+    return e.blueprint.renderConfig.applyClassListAfterRender ? e.rendered.then(() => {
+      s.onAll((l) => {
+        r && (i["add:" + l] || i["remove:" + l]) || G(e, n);
       });
-    }) : i.onAll((a) => {
-      r && (s["add:" + a] || s["remove:" + a]) || H(t, n);
+    }) : s.onAll((l) => {
+      r && (i["add:" + l] || i["remove:" + l]) || G(e, n);
     }), !0;
   },
   /**
@@ -701,49 +792,49 @@ const Ke = {
    * @param config
    * @param value
    * @param expression
-   * @this Galaxy.ViewNode
+   * @this ViewNode
    */
-  update: function(e, t, n) {
+  update: function(t, e, n) {
     if (this.virtual)
       return;
-    const i = this, s = i.node;
-    if (n && (t = n()), typeof t == "string" || t === null || t === void 0)
-      return s.className = t;
-    if (t instanceof Array)
-      return s.className = t.join(" ");
-    e.subjects === t && (t = e.reactiveClasses), i.blueprint.renderConfig.applyClassListAfterRender ? i.rendered.then(() => {
-      H(i, t);
-    }) : H(i, t);
+    const s = this, i = s.node;
+    if (n && (e = n()), typeof e == "string" || e === null || e === void 0)
+      return i.className = e;
+    if (e instanceof Array)
+      return i.className = e.join(" ");
+    t.subjects === e && (e = t.reactiveClasses), s.blueprint.renderConfig.applyClassListAfterRender ? s.rendered.then(() => {
+      G(s, e);
+    }) : G(s, e);
   }
 };
-function Ye(e) {
-  if (typeof e == "string")
-    return [e];
-  if (e instanceof Array)
-    return e;
-  if (e !== null && typeof e == "object") {
-    let t = [];
-    for (let n in e)
-      e.hasOwnProperty(n) && e[n] && t.push(n);
+function $e(t) {
+  if (typeof t == "string")
+    return [t];
+  if (t instanceof Array)
     return t;
+  if (t !== null && typeof t == "object") {
+    let e = [];
+    for (let n in t)
+      t.hasOwnProperty(n) && t[n] && e.push(n);
+    return e;
   }
 }
-function H(e, t) {
-  const n = e.node.className || [], i = Ye(t);
-  JSON.stringify(n) !== JSON.stringify(i) && (e.node.className = i.join(" "));
+function G(t, e) {
+  const n = t.node.className || [], s = $e(e);
+  JSON.stringify(n) !== JSON.stringify(s) && (t.node.className = s.join(" "));
 }
-const Je = {
+const We = {
   type: "attr",
   key: "disabled",
-  update: function(e, t, n) {
-    e.rendered.then(() => {
-      if (e.blueprint.tag.toLowerCase() === "form") {
-        const i = e.node.querySelectorAll("input, textarea, select, button");
-        t ? Array.prototype.forEach.call(i, (s) => s.setAttribute("disabled", "")) : Array.prototype.forEach.call(i, (s) => s.removeAttribute("disabled"));
+  update: function(t, e, n) {
+    t.rendered.then(() => {
+      if (t.blueprint.tag.toLowerCase() === "form") {
+        const s = t.node.querySelectorAll("input, textarea, select, button");
+        e ? Array.prototype.forEach.call(s, (i) => i.setAttribute("disabled", "")) : Array.prototype.forEach.call(s, (i) => i.removeAttribute("disabled"));
       }
-    }), Ie(e, t ? "" : null, n);
+    }), Me(t, e ? "" : null, n);
   }
-}, Xe = {
+}, Qe = {
   type: "reactive",
   key: "if",
   getConfig: function() {
@@ -751,36 +842,29 @@ const Je = {
       throttleId: 0
     };
   },
-  install: function(e) {
+  install: function(t) {
     return !0;
   },
   /**
    *
-   * @this Galaxy.ViewNode
+   * @this ViewNode
    * @param config
    * @param value
    * @param expression
    */
-  update: function(e, t, n) {
-    e.throttleId !== 0 && (window.clearTimeout(e.throttleId), e.throttleId = 0), n && (t = n()), t = !!t, !this.rendered.resolved && !this.inDOM && (this.blueprint.renderConfig.renderDetached = !t), e.throttleId = setTimeout(() => {
-      this.inDOM !== t && this.setInDOM(t);
+  update: function(t, e, n) {
+    t.throttleId !== 0 && (window.clearTimeout(t.throttleId), t.throttleId = 0), n && (e = n()), e = !!e, !this.rendered.resolved && !this.inDOM && (this.blueprint.renderConfig.renderDetached = !e), t.throttleId = setTimeout(() => {
+      this.inDOM !== e && this.setInDOM(e);
     });
   }
-};
-function Ee(e) {
-  let t = document.createElement("a");
-  t.href = e;
-  let i = /\/([^\t\n]+\/)/g.exec(t.pathname);
-  this.parsedURL = t.href, this.path = i ? i[1] : "/", this.base = window.location.pathname, this.protocol = t.protocol;
-}
-const ze = {
+}, Ze = {
   type: "reactive",
   key: "module",
-  getConfig: function(e) {
+  getConfig: function(t) {
     return {
       previousModule: null,
       moduleMeta: null,
-      scope: e
+      scope: t
     };
   },
   install: function() {
@@ -789,331 +873,341 @@ const ze = {
   /**
    *
    * @param cache
-   * @param {Galaxy.ModuleMetaData} newModuleMeta
+   * @param {ModuleMetaData} newModuleMeta
    * @param expression
    */
-  update: function(t, n, i) {
-    const s = this;
-    if (i && (n = i()), n !== void 0) {
+  update: function(e, n, s) {
+    const i = this;
+    if (s && (n = s()), n !== void 0) {
       if (typeof n != "object")
         return console.error("module property only accept objects as value", n);
-      n && t.moduleMeta && n.path === t.moduleMeta.path || ((!n || n !== t.moduleMeta) && ($e(s), t.loadedModule && (t.loadedModule.destroy(), t.loadedModule = null)), !s.virtual && n && n.path && n !== t.moduleMeta && j(s.index, (r) => {
-        We.call(null, s, t, n, r);
-      }), t.moduleMeta = n);
+      n && e.moduleMeta && n.path === e.moduleMeta.path || ((!n || n !== e.moduleMeta) && (et(i), e.loadedModule && (e.loadedModule.destroy(), e.loadedModule = null)), !i.virtual && n && n.path && n !== e.moduleMeta && j(i.index, (r) => {
+        tt.call(null, i, e, n, r);
+      }), e.moduleMeta = n);
     }
   }
 };
-function $e(e) {
-  const t = e.getChildNodes();
-  for (let n = 0, i = t.length; n < i; n++) {
-    const s = t[n];
-    s.processLeaveAnimation === x && (s.processLeaveAnimation = function(r) {
+function et(t) {
+  const e = t.getChildNodes();
+  for (let n = 0, s = e.length; n < s; n++) {
+    const i = e[n];
+    i.processLeaveAnimation === w && (i.processLeaveAnimation = function(r) {
       r();
     });
   }
-  e.clean(e.hasAnimation(t));
+  t.clean(t.hasAnimation(e));
 }
-function We(e, t, n, i) {
-  const s = new Ee(n.path);
-  let r = t.scope, a = t.scope;
+function tt(t, e, n, s) {
+  const i = new xe(n.path);
+  let r = e.scope, l = e.scope;
   for (typeof n.onInvoke == "function" && n.onInvoke.call(); r; ) {
-    if (a instanceof k || (a = new k(t.scope.__parent__.context, {
+    if (l instanceof R || (l = new R({
       systemId: "repeat-item",
-      path: t.scope.__parent__.uri.parsedURL,
-      parentScope: t.scope.__parent__
-    })), s.parsedURL === a.uri.parsedURL)
+      path: e.scope.__parent__.uri.parsedURL,
+      parentScope: e.scope.__parent__
+    })), i.parsedURL === l.uri.parsedURL)
       return console.error(`Circular module loading detected and stopped. 
-` + a.uri.parsedURL + " tries to load itself.");
+` + l.uri.parsedURL + " tries to load itself.");
     r = r.parentScope;
   }
-  a.load(n, {
-    element: e
-  }).then(function(l) {
-    t.loadedModule = l, e.node.setAttribute("module", l.path), l.start(), typeof n.onLoad == "function" && n.onLoad.call(), i();
-  }).catch(function(l) {
-    console.error(l), i();
+  l.load(n, {
+    element: t
+  }).then(function(a) {
+    e.loadedModule = a, t.node.setAttribute("module", a.path), a.start(), typeof n.onLoad == "function" && n.onLoad.call(), s();
+  }).catch(function(a) {
+    console.error(a), s();
   });
 }
-const Qe = {
+const nt = {
   type: "prop",
   key: "on",
   /**
    *
-   * @param {Galaxy.ViewNode} viewNode
+   * @param {ViewNode} viewNode
    * @param events
    */
-  update: function(e, t) {
-    if (t !== null && typeof t == "object") {
-      for (let n in t)
-        if (t.hasOwnProperty(n)) {
-          const i = function(s) {
-            return t[n].call(e, s, e.data);
+  update: function(t, e) {
+    if (e !== null && typeof e == "object") {
+      for (let n in e)
+        if (e.hasOwnProperty(n)) {
+          const s = function(i) {
+            return e[n].call(t, i, t.data);
           };
-          e.node.addEventListener(n, i, !1), e.finalize.push(() => {
-            e.node.removeEventListener(n, i, !1);
+          t.node.addEventListener(n, s, !1), t.finalize.push(() => {
+            t.node.removeEventListener(n, s, !1);
           });
         }
     }
   }
-};
-let Z = 0;
-function C() {
-  this.id = Z++, Z > 1e8 && (Z = 0), this.init = null, this.original = null, this.returnValue = null, this.params = [], this.type = "reset";
-}
-C.prototype = {
-  getInstance: function() {
-    const e = new C();
-    return e.init = this.init, e.original = this.original, e.params = this.params.slice(0), e.type = this.type, e;
+}, I = class I {
+  constructor() {
+    this.id = I.lastId++, I.lastId > 1e8 && (I.lastId = 0), this.init = null, this.original = null, this.returnValue = null, this.params = [], this.type = "reset";
+  }
+  /**
+   * Get a new instance of ArrayChange with the same properties.
+   * @returns {ArrayChange} A new instance of ArrayChange.
+   */
+  getInstance() {
+    const e = new I();
+    return e.init = this.init, e.original = this.original, e.params = [...this.params], e.type = this.type, e;
   }
 };
-const xe = {
+de(I, "lastId", 0);
+let C = I;
+const ve = {
   type: "reactive",
   key: "repeat",
-  getConfig: function(e, t) {
+  getConfig: function(t, e) {
     return this.virtualize(), {
       changeId: null,
       previousActionId: null,
       nodes: [],
-      data: t.data,
-      as: t.as,
-      indexAs: t.indexAs || "_index",
+      data: e.data,
+      as: e.as,
+      indexAs: e.indexAs || "_index",
       oldChanges: {},
       positions: [],
       trackMap: [],
-      scope: e,
-      trackBy: t.trackBy,
-      onComplete: t.onComplete
+      scope: t,
+      trackBy: e.trackBy,
+      onComplete: e.onComplete
     };
   },
   /**
    *
    * @param config Value return by getConfig
    */
-  install: function(e) {
-    const t = this;
-    if (e.data) {
-      if (e.as === "data")
+  install: function(t) {
+    const e = this;
+    if (t.data) {
+      if (t.as === "data")
         throw new Error("`data` is an invalid value for repeat.as property. Please choose a different value.`");
-      t.localPropertyNames.add(e.as), t.localPropertyNames.add(e.indexAs);
-      const n = D(e.data);
+      e.localPropertyNames.add(t.as), e.localPropertyNames.add(t.indexAs);
+      const n = V(t.data);
       if (n.propertyKeys.length)
-        $(t, "repeat", void 0, e.scope, n, t), n.propertyKeys.forEach((i) => {
+        $(e, "repeat", void 0, t.scope, n, e), n.propertyKeys.forEach((s) => {
           try {
-            const s = Me(e.scope, i);
-            t.finalize.push(() => {
-              s.removeNode(t);
+            const i = De(t.scope, s);
+            e.finalize.push(() => {
+              i.removeNode(e);
             });
-          } catch (s) {
-            console.error("Could not find: " + i + `
-`, s);
+          } catch (i) {
+            console.error("Could not find: " + s + `
+`, i);
           }
         });
-      else if (e.data instanceof Array) {
-        const i = t.setters.repeat = fe(xe, t, e.data, null), s = new C();
-        s.params = e.data, e.data.changes = s, i(e.data);
+      else if (t.data instanceof Array) {
+        const s = e.setters.repeat = fe(ve, e, t.data, null), i = new C();
+        i.params = t.data, t.data.changes = i, s(t.data);
       }
     }
     return !1;
   },
   /**
    *
-   * @this Galaxy.ViewNode
+   * @this ViewNode
    * @param config The value returned by getConfig
    * @param value
    * @param {Function} expression
    */
-  update: function(e, t, n) {
-    let i = null;
+  update: function(t, e, n) {
+    let s = null;
     if (n) {
-      if (t = n(), t === void 0)
+      if (e = n(), e === void 0)
         return;
-      if (t === null)
-        throw Error("Invalid return type: " + t + "\nThe expression function for `repeat.data` must return an instance of Array or Galaxy.View.ArrayChange or undefined");
-      if (t instanceof C)
-        i = t;
-      else if (t instanceof Array) {
+      if (e === null)
+        throw Error("Invalid return type: " + e + "\nThe expression function for `repeat.data` must return an instance of Array or Galaxy.View.ArrayChange or undefined");
+      if (e instanceof C)
+        s = e;
+      else if (e instanceof Array) {
         const r = new C();
-        r.original = t, r.type = "reset", r.params = t, i = t.changes = r;
-      } else if (t instanceof Object) {
-        const r = Object.entries(t).map(([l, d]) => ({ key: l, value: d })), a = new C();
-        a.original = r, a.type = "reset", a.params = r, i = t.changes = a;
+        r.original = e, r.type = "reset", r.params = e, s = e.changes = r;
+      } else if (e instanceof Object) {
+        const r = Object.entries(e).map(([a, d]) => ({ key: a, value: d })), l = new C();
+        l.original = r, l.type = "reset", l.params = r, s = e.changes = l;
       } else
-        i = {
+        s = {
           type: "reset",
           params: []
         };
-    } else if (t instanceof C)
-      i = t;
-    else if (t instanceof Array)
-      i = t.changes;
-    else if (t instanceof Object) {
-      const r = Object.entries(t).map(([a, l]) => ({ key: a, value: l }));
-      i = new C(), i.original = r, i.type = "reset", i.params = r;
+    } else if (e instanceof C)
+      s = e;
+    else if (e instanceof Array)
+      s = e.changes;
+    else if (e instanceof Object) {
+      const r = Object.entries(e).map(([l, a]) => ({ key: l, value: a }));
+      s = new C(), s.original = r, s.type = "reset", s.params = r;
     }
-    if (i && !(i instanceof C))
+    if (s && !(s instanceof C))
       return console.warn(`%crepeat %cdata is not a type of ArrayChange
-data: ` + e.data + `
-%ctry '` + e.data + `.changes'
+data: ` + t.data + `
+%ctry '` + t.data + `.changes'
 `, "color:black;font-weight:bold", null, "color:green;font-weight:bold");
-    (!i || typeof i == "string") && (i = {
+    (!s || typeof s == "string") && (s = {
       id: 0,
       type: "reset",
       params: []
     });
-    const s = this;
-    i.id !== e.changeId && (e.changeId = i.id, e.oldChanges = i, et(s, e, Ze(s, e, i)));
+    const i = this;
+    s.id !== t.changeId && (t.changeId = s.id, t.oldChanges = s, it(i, t, st(i, t, s)));
   }
 };
-function Ze(e, t, n) {
-  const i = e.blueprint.animations && e.blueprint.animations.leave, s = t.trackBy;
-  if (s && n.type === "reset") {
+function st(t, e, n) {
+  const s = t.blueprint.animations && t.blueprint.animations.leave, i = e.trackBy;
+  if (i && n.type === "reset") {
     let r;
-    s === !0 ? r = n.params.map((d) => d) : typeof s == "string" && (r = n.params.map((d) => d[s]));
-    const a = [];
-    t.trackMap = t.trackMap.filter(function(d, p) {
-      return r.indexOf(d) === -1 && t.nodes[p] ? (a.push(t.nodes[p]), !1) : !0;
+    i === !0 ? r = n.params.map((d) => d) : typeof i == "string" && (r = n.params.map((d) => d[i]));
+    const l = [];
+    e.trackMap = e.trackMap.filter(function(d, p) {
+      return r.indexOf(d) === -1 && e.nodes[p] ? (l.push(e.nodes[p]), !1) : !0;
     });
-    const l = new C();
-    return l.init = n.init, l.type = n.type, l.original = n.original, l.params = n.params, l.__rd__ = n.__rd__, l.type === "reset" && l.params.length && (l.type = "push"), t.nodes = t.nodes.filter(function(d) {
-      return a.indexOf(d) === -1;
-    }), z(a, i), l;
+    const a = new C();
+    return a.init = n.init, a.type = n.type, a.original = n.original, a.params = n.params, a.__rd__ = n.__rd__, a.type === "reset" && a.params.length && (a.type = "push"), e.nodes = e.nodes.filter(function(d) {
+      return l.indexOf(d) === -1;
+    }), z(l, s), a;
   } else if (n.type === "reset") {
-    const r = t.nodes.slice(0);
-    t.nodes = [], z(r, i);
-    const a = Object.assign({}, n);
-    return a.type = "push", a;
+    const r = e.nodes.slice(0);
+    e.nodes = [], z(r, s);
+    const l = Object.assign({}, n);
+    return l.type = "push", l;
   }
   return n;
 }
-function et(e, t, n) {
-  const i = e.parent, s = [], r = [], a = t.scope, l = t.trackMap, d = t.as, p = t.indexAs, o = t.nodes, c = t.trackBy, f = e.cloneBlueprint();
+function it(t, e, n) {
+  const s = t.parent, i = [], r = [], l = e.scope, a = e.trackMap, d = e.as, p = e.indexAs, o = e.nodes, c = e.trackBy, f = t.cloneBlueprint();
   f.repeat = null;
-  let u = o.length ? o[o.length - 1].anchor.nextSibling : e.placeholder.nextSibling, h = [], m;
-  if (c === !0 ? m = function(_, y, O) {
-    l.push(O), this.push(_);
-  } : typeof c == "string" ? m = function(_, y, O) {
-    l.push(O[t.trackBy]), this.push(_);
+  let u = o.length ? o[o.length - 1].anchor.nextSibling : t.placeholder.nextSibling, h = [], m;
+  if (c === !0 ? m = function(_, y, A) {
+    a.push(A), this.push(_);
+  } : typeof c == "string" ? m = function(_, y, A) {
+    a.push(A[e.trackBy]), this.push(_);
   } : m = function(_) {
     this.push(_);
   }, n.type === "push")
     h = n.params;
   else if (n.type === "unshift")
-    u = o[0] ? o[0].anchor : u, h = n.params, c === !0 ? m = function(_, y, O) {
-      l.unshift(O), this.unshift(_);
-    } : m = function(_, y, O) {
-      l.unshift(O[c]), this.unshift(_);
+    u = o[0] ? o[0].anchor : u, h = n.params, c === !0 ? m = function(_, y, A) {
+      a.unshift(A), this.unshift(_);
+    } : m = function(_, y, A) {
+      a.unshift(A[c]), this.unshift(_);
     };
   else if (n.type === "splice") {
     const _ = n.params.slice(0, 2), y = Array.prototype.splice.apply(o, _);
-    z(y.reverse(), e.blueprint.animations && e.blueprint.animations.leave), Array.prototype.splice.apply(l, _);
-    const O = n.params[0];
+    z(y.reverse(), t.blueprint.animations && t.blueprint.animations.leave), Array.prototype.splice.apply(a, _);
+    const A = n.params[0];
     h = n.params.slice(2);
     for (let g = 0, E = h.length; g < E; g++) {
-      const S = g + O;
-      s.push(S), r.push(o[S] ? o[S].anchor : u);
+      const S = g + A;
+      i.push(S), r.push(o[S] ? o[S].anchor : u);
     }
     c === !0 ? m = function(g, E, S) {
-      l.splice(E, 0, S), this.splice(E, 0, g);
+      a.splice(E, 0, S), this.splice(E, 0, g);
     } : m = function(g, E, S) {
-      l.splice(E, 0, S[c]), this.splice(E, 0, g);
+      a.splice(E, 0, S[c]), this.splice(E, 0, g);
     };
   } else if (n.type === "pop") {
     const _ = o.pop();
-    _ && _.destroy(), l.pop();
+    _ && _.destroy(), a.pop();
   } else if (n.type === "shift") {
     const _ = o.shift();
-    _ && _.destroy(), l.shift();
-  } else
-    (n.type === "sort" || n.type === "reverse") && (o.forEach(function(_) {
-      _.destroy();
-    }), t.nodes = [], h = n.original, Array.prototype[n.type].call(l));
-  const b = e.view;
+    _ && _.destroy(), a.shift();
+  } else (n.type === "sort" || n.type === "reverse") && (o.forEach(function(_) {
+    _.destroy();
+  }), e.nodes = [], h = n.original, Array.prototype[n.type].call(a));
+  const b = t.view;
   if (h instanceof Array) {
     const _ = h.slice(0);
     if (c)
       if (c === !0)
-        for (let y = 0, O = h.length; y < O; y++) {
-          const g = _[y], E = l.indexOf(g);
+        for (let y = 0, A = h.length; y < A; y++) {
+          const g = _[y], E = a.indexOf(g);
           if (E !== -1) {
-            t.nodes[E].data._index = E;
+            e.nodes[E].data._index = E;
             continue;
           }
-          ee(b, f, a, d, g, p, y, i, r[y] || u, m, o, s);
+          Z(b, f, l, d, g, p, y, s, r[y] || u, m, o, i);
         }
       else
-        for (let y = 0, O = h.length; y < O; y++) {
-          const g = _[y], E = l.indexOf(g[c]);
+        for (let y = 0, A = h.length; y < A; y++) {
+          const g = _[y], E = a.indexOf(g[c]);
           if (E !== -1) {
-            t.nodes[E].data._index = E;
+            e.nodes[E].data._index = E;
             continue;
           }
-          ee(b, f, a, d, g, p, y, i, r[y] || u, m, o, s);
+          Z(b, f, l, d, g, p, y, s, r[y] || u, m, o, i);
         }
     else
-      for (let y = 0, O = h.length; y < O; y++)
-        ee(b, f, a, d, _[y], p, y, i, r[y] || u, m, o, s);
-    t.onComplete && j(e.index, (y) => {
-      t.onComplete(o), y();
+      for (let y = 0, A = h.length; y < A; y++)
+        Z(b, f, l, d, _[y], p, y, s, r[y] || u, m, o, i);
+    e.onComplete && j(t.index, (y) => {
+      e.onComplete(o), y();
     });
   }
 }
-function tt(e, t, n) {
-  const i = Le(e);
-  return i[t] = n, i;
+function rt(t, e, n) {
+  const s = Ne(t);
+  return s[e] = n, s;
 }
-function ee(e, t, n, i, s, r, a, l, d, p, o, c) {
-  const f = tt(n, i, s), u = pe(t);
-  f[r] = a;
-  const h = e.createNode(u, f, l, d);
-  p.call(o, h, c[a], f[i]);
+function Z(t, e, n, s, i, r, l, a, d, p, o, c) {
+  const f = rt(n, s, i), u = pe(e);
+  f[r] = l;
+  const h = t.createNode(u, f, a, d);
+  p.call(o, h, c[l], f[s]);
 }
-const nt = {
+const ot = {
   type: "prop",
   key: "selected",
   /**
    *
-   * @param {Galaxy.ViewNode} viewNode
-   * @param {Galaxy.View.ReactiveData} scopeReactiveData
+   * @param {ViewNode} viewNode
+   * @param {ReactiveData} scopeReactiveData
    * @param prop
    * @param {Function} expression
    */
-  beforeActivate: function(e, t, n, i) {
-    if (t) {
-      if (i && e.blueprint.tag === "select")
-        throw new Error("select.selected property does not support binding expressions because it must be able to change its data.\nIt uses its bound value as its `model` and expressions can not be used as model.\n");
-      e.blueprint.tag === "select" && (D(e.blueprint.selected).propertyKeys[0].split(".").pop(), e.node.addEventListener("change", (a) => {
-        console.log(e.node, "SELECTED", a);
+  beforeActivate: function(t, e, n, s) {
+    if (e) {
+      if (s && t.blueprint.tag === "select")
+        throw new Error(
+          "select.selected property does not support binding expressions because it must be able to change its data.\nIt uses its bound value as its `model` and expressions can not be used as model.\n"
+        );
+      t.blueprint.tag === "select" && (V(t.blueprint.selected).propertyKeys[0].split(".").pop(), t.node.addEventListener("change", (l) => {
+        console.log(t.node, "SELECTED", l);
       }));
     }
   },
-  update: function(e, t) {
-    const n = e.node;
-    e.rendered.then(function() {
-      n.value !== t && (e.blueprint.tag === "select" ? n.value = t : t ? n.setAttribute("selected", !0) : n.removeAttribute("selected"));
+  update: function(t, e) {
+    const n = t.node;
+    t.rendered.then(function() {
+      n.value !== e && (t.blueprint.tag === "select" ? n.value = e : e ? n.setAttribute("selected", !0) : n.removeAttribute("selected"));
     });
   }
-}, it = {
+}, at = {
   type: "prop",
   key: "style"
-}, st = {
+}, lt = {
   type: "prop",
   key: "style"
-}, rt = {
+}, ct = {
   type: "reactive",
   key: "style",
-  getConfig: function(e, t) {
+  getConfig: function(t, e) {
     return {
-      scope: e,
-      subjects: t,
+      scope: t,
+      subjects: e,
       reactiveStyle: null
     };
   },
-  install: function(e) {
-    if (this.virtual || e.subjects === null || e.subjects instanceof Array || typeof e.subjects != "object")
+  install: function(t) {
+    if (this.virtual || t.subjects === null || t.subjects instanceof Array || typeof t.subjects != "object")
       return !0;
-    const t = this.node, n = e.reactiveStyle = V(this, e.subjects, e.scope, !0);
-    return new I(n).onAll(() => {
-      te(t, n);
+    const e = this.node, n = t.reactiveStyle = B(
+      this,
+      t.subjects,
+      t.scope,
+      !0
+    );
+    return new D(n).onAll(() => {
+      ee(e, n);
     }), !0;
   },
   /**
@@ -1121,88 +1215,92 @@ const nt = {
    * @param config
    * @param value
    * @param expression
-   * @this {Galaxy.ViewNode}
+   * @this {ViewNode}
    */
-  update: function(e, t, n) {
+  update: function(t, e, n) {
     if (this.virtual)
       return;
-    const s = this.node;
-    if (n && (t = n()), typeof t == "string")
-      return s.style = t;
-    if (t instanceof Array)
-      return s.style = t.join(";");
-    if (t instanceof Promise)
-      t.then(function(r) {
-        te(s, r);
+    const i = this.node;
+    if (n && (e = n()), typeof e == "string")
+      return i.style = e;
+    if (e instanceof Array)
+      return i.style = e.join(";");
+    if (e instanceof Promise)
+      e.then(function(r) {
+        ee(i, r);
       });
-    else if (t === null)
-      return s.removeAttribute("style");
-    e.subjects === t && (t = e.reactiveStyle), te(s, t);
+    else if (e === null)
+      return i.removeAttribute("style");
+    t.subjects === e && (e = t.reactiveStyle), ee(i, e);
   }
 };
-function te(e, t) {
-  if (t instanceof Object)
-    for (let n in t) {
-      const i = t[n];
-      i instanceof Promise ? i.then((s) => {
-        e.style[n] = s;
-      }) : typeof i == "function" ? e.style[n] = i.call(e.__vn__, e.__vn__.data) : e.style[n] = i;
+function ee(t, e) {
+  if (e instanceof Object)
+    for (let n in e) {
+      const s = e[n];
+      s instanceof Promise ? s.then((i) => {
+        t.style[n] = i;
+      }) : typeof s == "function" ? t.style[n] = s.call(t.__vn__, t.__vn__.data) : t.style[n] = s;
     }
   else
-    e.style = t;
+    t.style = e;
 }
-const ot = [
-  "radio",
-  "checkbox",
-  "button",
-  "reset",
-  "submit"
-], at = {
+const ft = ["radio", "checkbox", "button", "reset", "submit"], pt = {
   type: "none"
-}, lt = {
+}, ut = {
   type: "prop",
   key: "value",
   /**
    *
-   * @param {Galaxy.ViewNode} viewNode
-   * @param {Galaxy.View.ReactiveData} scopeReactiveData
+   * @param {ViewNode} viewNode
+   * @param {ReactiveData} scopeReactiveData
    * @param prop
    * @param {Function} expression
    */
-  beforeActivate: function(t, n, i, s) {
-    const r = t.node;
-    if (!n || ot.indexOf(r.type) !== -1)
+  beforeActivate: function(e, n, s, i) {
+    const r = e.node;
+    if (!n || ft.indexOf(r.type) !== -1)
       return;
-    if (s)
-      throw new Error("input.value property does not support binding expressions because it must be able to change its data.\nIt uses its bound value as its `model` and expressions can not be used as model.\n");
-    const l = D(t.blueprint.value).propertyKeys[0].split(".").pop();
+    if (i)
+      throw new Error(
+        "input.value property does not support binding expressions because it must be able to change its data.\nIt uses its bound value as its `model` and expressions can not be used as model.\n"
+      );
+    const a = V(e.blueprint.value).propertyKeys[0].split(".").pop();
     if (r.tagName === "SELECT") {
       const d = new MutationObserver(() => {
-        t.rendered.then(() => {
-          r.value = n.data[l];
+        e.rendered.then(() => {
+          r.value = n.data[a];
         });
       });
-      d.observe(r, { childList: !0 }), t.finalize.push(() => {
+      d.observe(r, { childList: !0 }), e.finalize.push(() => {
         d.disconnect();
-      }), r.addEventListener("change", ye(n, l));
-    } else
-      r.type === "number" || r.type === "range" ? r.addEventListener("input", ct(r, n, l)) : r.addEventListener("input", ye(n, l));
+      }), r.addEventListener(
+        "change",
+        me(n, a)
+      );
+    } else r.type === "number" || r.type === "range" ? r.addEventListener(
+      "input",
+      dt(r, n, a)
+    ) : r.addEventListener(
+      "input",
+      me(n, a)
+    );
   },
-  update: function(e, t) {
-    (t !== e.node.value || !e.node.value) && (e.node.value = t ?? "");
+  update: function(t, e) {
+    (e !== t.node.value || !t.node.value) && (t.node.value = e ?? "");
   }
 };
-function ct(e, t, n) {
+function dt(t, e, n) {
   return function() {
-    t.data[n] = e.value ? Number(e.value) : null;
+    e.data[n] = t.value ? Number(t.value) : null;
   };
 }
-function ye(e, t) {
+function me(t, e) {
   return function(n) {
-    e.data[t] = n.target.value;
+    t.data[e] = n.target.value;
   };
 }
-const ft = {
+const ht = {
   type: "reactive",
   key: "visible",
   getConfig: function() {
@@ -1213,141 +1311,139 @@ const ft = {
   install: function() {
     return !0;
   },
-  update: function(e, t, n) {
-    e.throttleId !== 0 && (window.clearTimeout(e.throttleId), e.throttleId = 0), n && (t = n()), e.throttleId = window.setTimeout(() => {
-      this.visible !== t && this.setVisibility(t);
+  update: function(t, e, n) {
+    t.throttleId !== 0 && (window.clearTimeout(t.throttleId), t.throttleId = 0), n && (e = n()), t.throttleId = window.setTimeout(() => {
+      this.visible !== e && this.setVisibility(e);
     });
   }
 };
-A.data = Fe;
-A.text_3 = Ue;
-A.text_8 = He;
-A.text = Ge;
-A.animations = se;
-A.checked = Ke;
-A.class = qe;
-A.disabled = Je;
-A.if = Xe;
-A.module = ze;
-A.on = Qe;
-A.repeat = xe;
-A.selected = nt;
-A.style = rt;
-A.style_3 = it;
-A.style_8 = st;
-A["value.config"] = at;
-A.value = lt;
-A.visible = ft;
-A._create = {
+O.data = Ke;
+O.text_3 = qe;
+O.text_8 = Ye;
+O.text = Je;
+O.animations = ie;
+O.checked = Xe;
+O.class = ze;
+O.disabled = We;
+O.if = Qe;
+O.module = Ze;
+O.on = nt;
+O.repeat = ve;
+O.selected = ot;
+O.style = ct;
+O.style_3 = at;
+O.style_8 = lt;
+O["value.config"] = pt;
+O.value = ut;
+O.visible = ht;
+O._create = {
   type: "prop",
   key: "_create",
-  getSetter: () => x
+  getSetter: () => w
 };
-A._render = {
+O._render = {
   type: "prop",
   key: "_render",
-  getSetter: () => x
+  getSetter: () => w
 };
-A._destroy = {
+O._destroy = {
   type: "prop",
   key: "_destroy",
-  getSetter: () => x
+  getSetter: () => w
 };
-A.renderConfig = {
+O.renderConfig = {
   type: "prop",
   key: "renderConfig"
 };
-const ne = {
+const te = {
   value: void 0,
   configurable: !1,
   enumerable: !1
-}, me = {
+}, _e = {
   value: null,
   configurable: !1,
   enumerable: !1,
   writable: !0
 };
-function we(e, t, n) {
-  e.insertBefore(t, n);
+function Ce(t, e, n) {
+  t.insertBefore(e, n);
 }
-function Y(e, t) {
-  e.removeChild(t);
+function Y(t, e) {
+  t.removeChild(e);
 }
-function L(e) {
-  const t = this;
-  e ? (t.node.parentNode && Y(t.node.parentNode, t.node), t.placeholder.parentNode && Y(t.placeholder.parentNode, t.placeholder), t.garbage.forEach(function(n) {
+function L(t) {
+  const e = this;
+  t ? (e.node.parentNode && Y(e.node.parentNode, e.node), e.placeholder.parentNode && Y(e.placeholder.parentNode, e.placeholder), e.garbage.forEach(function(n) {
     L.call(n, !0);
-  }), t.hasBeenDestroyed()) : (t.placeholder.parentNode || we(t.node.parentNode, t.placeholder, t.node), t.node.parentNode && Y(t.node.parentNode, t.node), t.garbage.forEach(function(n) {
+  }), e.hasBeenDestroyed()) : (e.placeholder.parentNode || Ce(e.node.parentNode, e.placeholder, e.node), e.node.parentNode && Y(e.node.parentNode, e.node), e.garbage.forEach(function(n) {
     L.call(n, !0);
-  })), t.garbage = [];
+  })), e.garbage = [];
 }
 v.GLOBAL_RENDER_CONFIG = {
   applyClassListAfterRender: !1,
   renderDetached: !1
 };
-v.cleanReferenceNode = function(e) {
-  e instanceof Array ? e.forEach(function(t) {
-    v.cleanReferenceNode(t);
-  }) : e instanceof Object && (e.node = null, v.cleanReferenceNode(e.children));
+v.cleanReferenceNode = function(t) {
+  t instanceof Array ? t.forEach(function(e) {
+    v.cleanReferenceNode(e);
+  }) : t instanceof Object && (t.node = null, v.cleanReferenceNode(t.children));
 };
-v.createIndex = function(e) {
-  if (e < 0)
-    return "0";
-  if (e < 10)
-    return e + "";
-  let t = "9", n = e - 10;
+v.createIndex = function(t) {
+  if (t < 0) return "0";
+  if (t < 10) return t + "";
+  let e = "9", n = t - 10;
   for (; n >= 10; )
-    t += "9", n -= 10;
-  return t + n;
+    e += "9", n -= 10;
+  return e + n;
 };
-function v(e, t, n, i) {
-  const s = this;
-  s.view = n, e.tag instanceof Node ? (s.node = e.tag, e.tag = e.tag.tagName) : s.node = Jt(e.tag || "div", t), "style" in s.node || (s.processEnterAnimation = x), s.blueprint = e, s.data = i instanceof k ? {} : i, s.localPropertyNames = /* @__PURE__ */ new Set(), s.inputs = {}, s.virtual = !1, s.visible = !0, s.placeholder = Yt(e.tag || "div"), s.properties = /* @__PURE__ */ new Set(), s.inDOM = !1, s.setters = {}, s.parent = t, s.finalize = [], s.origin = !1, s.destroyOrigin = 0, s.transitory = !1, s.garbage = [], s.leaveWithParent = !1, s.onLeaveComplete = L.bind(s, !0), R(s, "cache", {
+function v(t, e, n, s) {
+  const i = this;
+  i.view = n, t.tag instanceof Node ? (i.node = t.tag, t.tag = t.tag.tagName) : i.node = Qt(t.tag || "div", e), "style" in i.node || (i.processEnterAnimation = w), i.blueprint = t, i.data = s instanceof R ? {} : s, i.localPropertyNames = /* @__PURE__ */ new Set(), i.inputs = {}, i.virtual = !1, i.visible = !0, i.placeholder = Wt(t.tag || "div"), i.properties = /* @__PURE__ */ new Set(), i.inDOM = !1, i.setters = {}, i.parent = e, i.finalize = [], i.origin = !1, i.destroyOrigin = 0, i.transitory = !1, i.garbage = [], i.leaveWithParent = !1, i.onLeaveComplete = L.bind(i, !0), k(i, "cache", {
     enumerable: !1,
     configurable: !1,
     value: {}
-  }), s.rendered = new Promise(function(a) {
-    "style" in s.node ? s.hasBeenRendered = function() {
-      s.rendered.resolved = !0, s.node.style.removeProperty("display"), s.blueprint._render && s.blueprint._render.call(s, s.data), a(s);
-    } : s.hasBeenRendered = function() {
-      s.rendered.resolved = !0, a();
+  }), i.rendered = new Promise(function(l) {
+    "style" in i.node ? i.hasBeenRendered = function() {
+      i.rendered.resolved = !0, i.node.style.removeProperty("display"), i.blueprint._render && i.blueprint._render.call(i, i.data), l(i);
+    } : i.hasBeenRendered = function() {
+      i.rendered.resolved = !0, l();
     };
-  }), s.rendered.resolved = !1, s.destroyed = new Promise(function(a) {
-    s.hasBeenDestroyed = function() {
-      s.destroyed.resolved = !0, s.blueprint._destroy && s.blueprint._destroy.call(s, s.data), a();
+  }), i.rendered.resolved = !1, i.destroyed = new Promise(function(l) {
+    i.hasBeenDestroyed = function() {
+      i.destroyed.resolved = !0, i.blueprint._destroy && i.blueprint._destroy.call(i, i.data), l();
     };
-  }), s.destroyed.resolved = !1, s.blueprint.renderConfig = Object.assign({}, v.GLOBAL_RENDER_CONFIG, e.renderConfig || {}), me.value = this.node, R(s.blueprint, "node", me), ne.value = this, s.node.__vn__ || (R(s.node, "__vn__", ne), R(s.placeholder, "__vn__", ne)), s.blueprint._create && s.blueprint._create.call(s, s.data);
+  }), i.destroyed.resolved = !1, i.blueprint.renderConfig = Object.assign({}, v.GLOBAL_RENDER_CONFIG, t.renderConfig || {}), _e.value = this.node, k(i.blueprint, "node", _e), te.value = this, i.node.__vn__ || (k(i.node, "__vn__", te), k(i.placeholder, "__vn__", te)), i.blueprint._create && i.blueprint._create.call(i, i.data);
 }
 v.prototype = {
   onLeaveComplete: null,
   dump: function() {
-    let e = this.parent, t = this.garbage;
-    for (; e.transitory && (e.blueprint.hasOwnProperty("if") && !this.blueprint.hasOwnProperty("if") && (t = e.garbage), e.parent && e.parent.transitory); )
-      e = e.parent;
-    t.push(this), this.garbage = [];
+    let t = this.parent, e = this.garbage;
+    for (; t.transitory && (t.blueprint.hasOwnProperty("if") && !this.blueprint.hasOwnProperty("if") && (e = t.garbage), t.parent && t.parent.transitory); )
+      t = t.parent;
+    e.push(this), this.garbage = [];
   },
-  query: function(e) {
-    return this.node.querySelector(e);
+  query: function(t) {
+    return this.node.querySelector(t);
   },
-  dispatchEvent: function(e) {
-    this.node.dispatchEvent(e);
+  dispatchEvent: function(t) {
+    this.node.dispatchEvent(t);
   },
   cloneBlueprint: function() {
-    const e = Object.assign({}, this.blueprint);
-    return v.cleanReferenceNode(e), R(e, "mother", {
+    const t = Object.assign({}, this.blueprint);
+    return v.cleanReferenceNode(t), k(t, "mother", {
       value: this.blueprint,
       writable: !1,
       enumerable: !1,
       configurable: !1
-    }), e;
+    }), t;
   },
   virtualize: function() {
-    this.placeholder.nodeValue = JSON.stringify(this.blueprint, (e, t) => e === "children" ? "<children>" : e === "animations" ? "<animations>" : t, 2), this.virtual = !0, this.setInDOM(!1);
+    this.placeholder.nodeValue = JSON.stringify(this.blueprint, (t, e) => t === "children" ? "<children>" : t === "animations" ? "<animations>" : e, 2), this.virtual = !0, this.setInDOM(!1);
   },
   processEnterAnimation: function() {
     this.node.style.display = null;
   },
-  processLeaveAnimation: x,
+  processLeaveAnimation: w,
   populateHideSequence: function() {
     this.node.style.display = "none";
   },
@@ -1355,156 +1451,155 @@ v.prototype = {
    *
    * @param {boolean} flag
    */
-  setInDOM: function(e) {
-    const t = this;
-    if (t.blueprint.renderConfig.renderDetached) {
-      j(t.index, (n) => {
-        t.blueprint.renderConfig.renderDetached = !1, t.hasBeenRendered(), n();
+  setInDOM: function(t) {
+    const e = this;
+    if (e.blueprint.renderConfig.renderDetached) {
+      j(e.index, (n) => {
+        e.blueprint.renderConfig.renderDetached = !1, e.hasBeenRendered(), n();
       });
       return;
     }
-    if (t.inDOM = e, !t.virtual) {
-      if (e) {
-        "style" in t.node && t.node.style.setProperty("display", "none"), t.node.parentNode || we(t.placeholder.parentNode, t.node, t.placeholder.nextSibling), t.placeholder.parentNode && Y(t.placeholder.parentNode, t.placeholder), j(t.index, (s) => {
-          t.hasBeenRendered(), t.processEnterAnimation(), s();
+    if (e.inDOM = t, !e.virtual) {
+      if (t) {
+        "style" in e.node && e.node.style.setProperty("display", "none"), e.node.parentNode || Ce(e.placeholder.parentNode, e.node, e.placeholder.nextSibling), e.placeholder.parentNode && Y(e.placeholder.parentNode, e.placeholder), j(e.index, (i) => {
+          e.hasBeenRendered(), e.processEnterAnimation(), i();
         });
-        const n = t.getChildNodesAsc(), i = n.length;
-        for (let s = 0; s < i; s++)
-          n[s].setInDOM(!0);
-      } else if (!e && t.node.parentNode) {
-        t.origin = !0, t.transitory = !0;
-        const n = t.processLeaveAnimation, i = t.getChildNodes();
-        t.prepareLeaveAnimation(t.hasAnimation(i), i), B(t.index, (s) => {
-          t.processLeaveAnimation(L.bind(t, !1)), t.origin = !1, t.transitory = !1, t.processLeaveAnimation = n, s();
+        const n = e.getChildNodesAsc(), s = n.length;
+        for (let i = 0; i < s; i++)
+          n[i].setInDOM(!0);
+      } else if (!t && e.node.parentNode) {
+        e.origin = !0, e.transitory = !0;
+        const n = e.processLeaveAnimation, s = e.getChildNodes();
+        e.prepareLeaveAnimation(e.hasAnimation(s), s), F(e.index, (i) => {
+          e.processLeaveAnimation(L.bind(e, !1)), e.origin = !1, e.transitory = !1, e.processLeaveAnimation = n, i();
         });
       }
     }
   },
-  setVisibility: function(e) {
-    const t = this;
-    t.visible = e, e && !t.virtual ? j(t.index, (n) => {
-      t.node.style.display = null, t.processEnterAnimation(), n();
-    }) : !e && t.node.parentNode && (t.origin = !0, t.transitory = !0, B(t.index, (n) => {
-      t.populateHideSequence(), t.origin = !1, t.transitory = !1, n();
+  setVisibility: function(t) {
+    const e = this;
+    e.visible = t, t && !e.virtual ? j(e.index, (n) => {
+      e.node.style.display = null, e.processEnterAnimation(), n();
+    }) : !t && e.node.parentNode && (e.origin = !0, e.transitory = !0, F(e.index, (n) => {
+      e.populateHideSequence(), e.origin = !1, e.transitory = !1, n();
     }));
   },
   /**
    *
-   * @param {Galaxy.ViewNode} childNode
+   * @param {ViewNode} childNode
    * @param position
    */
-  registerChild: function(e, t) {
-    this.node.insertBefore(e.placeholder, t);
+  registerChild: function(t, e) {
+    this.node.insertBefore(t.placeholder, e);
   },
-  createNode: function(e, t) {
-    this.view.createNode(e, t, this);
+  createNode: function(t, e) {
+    this.view.createNode(t, e, this);
   },
   /**
    * @param {string} propertyKey
    * @param {Galaxy.View.ReactiveData} reactiveData
    * @param {Function} expression
    */
-  registerActiveProperty: function(e, t, n) {
-    this.properties.add(t), Ut(this, e, t, n);
+  registerActiveProperty: function(t, e, n) {
+    this.properties.add(e), qt(this, t, e, n);
   },
-  snapshot: function(e) {
-    const t = this.node.getBoundingClientRect(), n = this.node.cloneNode(!0), i = {
+  snapshot: function(t) {
+    const e = this.node.getBoundingClientRect(), n = this.node.cloneNode(!0), s = {
       margin: "0",
-      width: t.width + "px",
-      height: t.height + " px",
-      top: t.top + "px",
-      left: t.left + "px",
+      width: e.width + "px",
+      height: e.height + " px",
+      top: e.top + "px",
+      left: e.left + "px",
       position: "fixed"
     };
-    return Object.assign(n.style, i), {
+    return Object.assign(n.style, s), {
       tag: n,
-      style: i
+      style: s
     };
   },
-  hasAnimation: function(e) {
-    if (this.processLeaveAnimation && this.processLeaveAnimation !== x)
+  hasAnimation: function(t) {
+    if (this.processLeaveAnimation && this.processLeaveAnimation !== w)
       return !0;
-    for (let t = 0, n = e.length; t < n; t++) {
-      const i = e[t];
-      if (i.hasAnimation(i.getChildNodes()))
+    for (let e = 0, n = t.length; e < n; e++) {
+      const s = t[e];
+      if (s.hasAnimation(s.getChildNodes()))
         return !0;
     }
     return !1;
   },
-  prepareLeaveAnimation: function(e, t) {
+  prepareLeaveAnimation: function(t, e) {
     const n = this;
-    if (e) {
-      if (n.processLeaveAnimation === x)
+    if (t) {
+      if (n.processLeaveAnimation === w)
         n.origin ? n.processLeaveAnimation = function() {
           L.call(n, !1);
         } : n.destroyOrigin === 1 && L.call(n, !0);
-      else if (n.processLeaveAnimation !== x && !n.origin)
-        for (let i = 0, s = t.length; i < s; i++)
-          t[i].onLeaveComplete = x;
+      else if (n.processLeaveAnimation !== w && !n.origin)
+        for (let s = 0, i = e.length; s < i; s++)
+          e[s].onLeaveComplete = w;
     } else
       n.processLeaveAnimation = function() {
         L.call(n, !n.origin);
       };
   },
-  destroy: function(e) {
-    const t = this;
-    if (t.transitory = !0, t.parent.destroyOrigin === 0 ? t.destroyOrigin = 1 : t.destroyOrigin = 2, t.inDOM) {
-      const i = t.getChildNodes();
-      e = e || t.hasAnimation(i), t.prepareLeaveAnimation(e, i), t.clean(e, i);
+  destroy: function(t) {
+    const e = this;
+    if (e.transitory = !0, e.parent.destroyOrigin === 0 ? e.destroyOrigin = 1 : e.destroyOrigin = 2, e.inDOM) {
+      const s = e.getChildNodes();
+      t = t || e.hasAnimation(s), e.prepareLeaveAnimation(t, s), e.clean(t, s);
     }
-    t.properties.forEach((i) => i.removeNode(t));
-    let n = t.finalize.length;
-    for (let i = 0; i < n; i++)
-      t.finalize[i].call(t);
-    B(t.index, (i) => {
-      t.processLeaveAnimation(t.destroyOrigin === 2 ? x : t.onLeaveComplete), t.localPropertyNames.clear(), t.properties.clear(), t.finalize = [], t.inDOM = !1, t.inputs = {}, t.view = null, t.parent = null, Reflect.deleteProperty(t.blueprint, "node"), i();
+    e.properties.forEach((s) => s.removeNode(e));
+    let n = e.finalize.length;
+    for (let s = 0; s < n; s++)
+      e.finalize[s].call(e);
+    F(e.index, (s) => {
+      e.processLeaveAnimation(e.destroyOrigin === 2 ? w : e.onLeaveComplete), e.localPropertyNames.clear(), e.properties.clear(), e.finalize = [], e.inDOM = !1, e.inputs = {}, e.view = null, e.parent = null, Reflect.deleteProperty(e.blueprint, "node"), s();
     });
   },
   getChildNodes: function() {
-    const e = [], t = ge.call(this.node.childNodes, 0);
-    for (let n = t.length - 1; n >= 0; n--) {
-      const i = t[n];
-      "__vn__" in i && e.push(i.__vn__);
+    const t = [], e = Oe.call(this.node.childNodes, 0);
+    for (let n = e.length - 1; n >= 0; n--) {
+      const s = e[n];
+      "__vn__" in s && t.push(s.__vn__);
     }
-    return e;
+    return t;
   },
   getChildNodesAsc: function() {
-    const e = [], t = ge.call(this.node.childNodes, 0);
-    for (let n = 0; n < t.length; n++) {
-      const i = t[n];
-      "__vn__" in i && e.push(i.__vn__);
+    const t = [], e = Oe.call(this.node.childNodes, 0);
+    for (let n = 0; n < e.length; n++) {
+      const s = e[n];
+      "__vn__" in s && t.push(s.__vn__);
     }
-    return e;
+    return t;
   },
   /**
    *
    */
-  clean: function(e, t) {
-    t = t || this.getChildNodes(), z(t, e), B(this.index, (n) => {
-      let i = this.finalize.length;
-      for (let s = 0; s < i; s++)
-        this.finalize[s].call(this);
+  clean: function(t, e) {
+    e = e || this.getChildNodes(), z(e, t), F(this.index, (n) => {
+      let s = this.finalize.length;
+      for (let i = 0; i < s; i++)
+        this.finalize[i].call(this);
       this.finalize = [], n();
     });
   },
-  createNext: function(e) {
-    j(this.index, e);
+  createNext: function(t) {
+    j(this.index, t);
   },
   get index() {
-    const e = this.parent;
-    if (e) {
-      let t = this.placeholder.parentNode ? this.placeholder.previousSibling : this.node.previousSibling;
-      if (t) {
-        if (!t.hasOwnProperty("__index__")) {
-          let n = 0, i = this.node;
-          for (; (i = i.previousSibling) !== null; )
-            ++n;
-          t.__index__ = n;
+    const t = this.parent;
+    if (t) {
+      let e = this.placeholder.parentNode ? this.placeholder.previousSibling : this.node.previousSibling;
+      if (e) {
+        if (!e.hasOwnProperty("__index__")) {
+          let n = 0, s = this.node;
+          for (; (s = s.previousSibling) !== null; ) ++n;
+          e.__index__ = n;
         }
-        this.node.__index__ = t.__index__ + 1;
+        this.node.__index__ = e.__index__ + 1;
       } else
         this.node.__index__ = 0;
-      return e.index + "," + v.createIndex(this.node.__index__);
+      return t.index + "," + v.createIndex(this.node.__index__);
     }
     return "0";
   },
@@ -1512,59 +1607,59 @@ v.prototype = {
     return this.inDOM ? this.node : this.placeholder;
   }
 };
-function pt(e, t, n) {
-  const i = t.key, s = t.update || Nt, r = ut(s, e, i);
+function yt(t, e, n) {
+  const s = e.key, i = e.update || Ft, r = mt(i, t, s);
   return n ? function() {
-    const l = n();
-    r(l);
+    const a = n();
+    r(a);
   } : r;
 }
-function ut(e, t, n) {
-  return function(s) {
-    if (s instanceof Promise) {
-      const r = function(a) {
-        e(t, a, n);
+function mt(t, e, n) {
+  return function(i) {
+    if (i instanceof Promise) {
+      const r = function(l) {
+        t(e, l, n);
       };
-      s.then(r).catch(r);
-    } else if (s instanceof Function) {
-      const r = s.call(t, t.data);
-      e(t, r, n);
+      i.then(r).catch(r);
+    } else if (i instanceof Function) {
+      const r = i.call(e, e.data);
+      t(e, r, n);
     } else
-      e(t, s, n);
+      t(e, i, n);
   };
 }
-function dt(e, t, n) {
-  const i = t.key, s = t.update || Ie, r = ht(s, e, i);
+function _t(t, e, n) {
+  const s = e.key, i = e.update || Me, r = bt(i, t, s);
   return n ? function() {
-    const l = n();
-    r(l);
+    const a = n();
+    r(a);
   } : r;
 }
-function ht(e, t, n) {
-  return function(s) {
-    if (s instanceof Promise) {
-      const r = function(a) {
-        e(t, a, n);
+function bt(t, e, n) {
+  return function(i) {
+    if (i instanceof Promise) {
+      const r = function(l) {
+        t(e, l, n);
       };
-      s.then(r).catch(r);
-    } else if (s instanceof Function) {
-      const r = s.call(t, t.data);
-      e(t, r, n);
+      i.then(r).catch(r);
+    } else if (i instanceof Function) {
+      const r = i.call(e, e.data);
+      t(e, r, n);
     } else
-      e(t, s, n);
+      t(e, i, n);
   };
 }
-function yt(e, t, n, i) {
-  const s = t.key, r = t.update, a = e.cache[s];
-  return mt(r, e, a, n, i);
+function gt(t, e, n, s) {
+  const i = e.key, r = e.update, l = t.cache[i];
+  return Ot(r, t, l, n, s);
 }
-function mt(e, t, n, i, s) {
-  const r = e.bind(t);
-  return function(l) {
-    return r(n, l, i, s);
+function Ot(t, e, n, s, i) {
+  const r = t.bind(e);
+  return function(a) {
+    return r(n, a, s, i);
   };
 }
-const _t = Array.prototype, bt = [
+const At = Array.prototype, Et = [
   "push",
   "pop",
   "shift",
@@ -1572,7 +1667,7 @@ const _t = Array.prototype, bt = [
   "splice",
   "sort",
   "reverse"
-], gt = [
+], wt = [
   "push",
   "pop",
   "shift",
@@ -1582,9 +1677,9 @@ const _t = Array.prototype, bt = [
   "reverse",
   "changes",
   "__rd__"
-], At = Object.keys, T = Object.defineProperty, Ot = function(e) {
+], xt = Object.keys, T = Object.defineProperty, vt = function(t) {
   return {
-    id: e || "Scope",
+    id: t || "Scope",
     shadow: {},
     data: {},
     notify: function() {
@@ -1598,23 +1693,23 @@ const _t = Array.prototype, bt = [
     addKeyToShadow: function() {
     }
   };
-}, Et = function(e) {
-  if (e instanceof Array) {
-    const t = ["length"];
-    return e.hasOwnProperty("changes") && t.push("changes"), t;
+}, Ct = function(t) {
+  if (t instanceof Array) {
+    const e = ["length"];
+    return t.hasOwnProperty("changes") && e.push("changes"), e;
   } else
-    return Object.keys(e);
+    return Object.keys(t);
 };
-function xt(e, t, n) {
-  const i = _t[t];
+function Pt(t, e, n) {
+  const s = At[e];
   return function() {
     const r = this.__rd__;
-    let a = arguments.length;
-    const l = new Array(a);
-    for (; a--; )
-      l[a] = arguments[a];
-    const d = i.apply(this, l), p = new C(), o = p.original = e;
-    switch (p.type = t, p.params = l, p.returnValue = d, p.init = n, t) {
+    let l = arguments.length;
+    const a = new Array(l);
+    for (; l--; )
+      a[l] = arguments[l];
+    const d = s.apply(this, a), p = new C(), o = p.original = t;
+    switch (p.type = e, p.params = a, p.returnValue = d, p.init = n, e) {
       case "push":
       case "reset":
       case "unshift":
@@ -1634,39 +1729,39 @@ function xt(e, t, n) {
         });
         break;
     }
-    return e.changes = p, r.notifyDown("length"), r.notifyDown("changes"), r.notify(r.keyInParent, this), d;
+    return t.changes = p, r.notifyDown("length"), r.notifyDown("changes"), r.notify(r.keyInParent, this), d;
   };
 }
 const re = {
-  _(e, t, n) {
-    n instanceof C && (n = n.getInstance()), e instanceof v ? e.setters[t](n) : e[t] = n, I.notify(e, t, n);
+  _(t, e, n) {
+    n instanceof C && (n = n.getInstance()), t instanceof v ? t.setters[e](n) : t[e] = n, D.notify(t, e, n);
   },
-  self(e, t, n, i, s) {
-    s || i || re._(e, t, n);
+  self(t, e, n, s, i) {
+    i || s || re._(t, e, n);
   },
-  props(e, t, n, i, s) {
-    s && re._(e, t, n);
+  props(t, e, n, s, i) {
+    i && re._(t, e, n);
   }
 };
-function ve() {
+function Pe() {
   this.keys = [], this.nodes = [], this.types = [];
 }
-ve.prototype.push = function(e, t, n) {
-  this.keys.push(e), this.nodes.push(t), this.types.push(n);
+Pe.prototype.push = function(t, e, n) {
+  this.keys.push(t), this.nodes.push(e), this.types.push(n);
 };
-function P(e, t, n) {
-  const i = n instanceof P ? n : Ot(n);
-  if (this.data = t, this.id = i.id + (e ? "." + e : "|Scope"), this.keyInParent = e, this.nodesMap = /* @__PURE__ */ Object.create(null), this.parent = i, this.refs = [], this.shadow = /* @__PURE__ */ Object.create(null), this.nodeCount = -1, this.data && this.data.hasOwnProperty("__rd__")) {
+function P(t, e, n) {
+  const s = n instanceof P ? n : vt(n);
+  if (this.data = e, this.id = s.id + (t ? "." + t : "|Scope"), this.keyInParent = t, this.nodesMap = /* @__PURE__ */ Object.create(null), this.parent = s, this.refs = [], this.shadow = /* @__PURE__ */ Object.create(null), this.nodeCount = -1, this.data && this.data.hasOwnProperty("__rd__")) {
     this.refs = this.data.__rd__.refs;
-    const s = this.getRefById(this.id);
-    if (s)
-      return s.parent.isDead && (s.parent = i), this.fixHierarchy(e, s), s;
+    const i = this.getRefById(this.id);
+    if (i)
+      return i.parent.isDead && (i.parent = s), this.fixHierarchy(t, i), i;
     this.refs.push(this);
   } else {
     if (this.refs.push(this), this.data === null) {
-      if (this.parent.shadow[e])
-        return this.parent.shadow[e];
-      this.data = {}, this.parent.data[e] ? new P(e, this.parent.data[e], this.parent) : this.parent.makeReactiveObject(this.parent.data, e, !0);
+      if (this.parent.shadow[t])
+        return this.parent.shadow[t];
+      this.data = {}, this.parent.data[t] ? new P(t, this.parent.data[t], this.parent) : this.parent.makeReactiveObject(this.parent.data, t, !0);
     }
     if (!Object.isExtensible(this.data))
       return;
@@ -1674,9 +1769,9 @@ function P(e, t, n) {
       enumerable: !1,
       configurable: !0,
       value: this
-    }), (this.data instanceof k || this.data.__scope__) && (this.addKeyToShadow = x), this.data instanceof k ? this.walkOnScope(this.data) : this.walk(this.data);
+    }), (this.data instanceof R || this.data.__scope__) && (this.addKeyToShadow = w), this.data instanceof R ? this.walkOnScope(this.data) : this.walk(this.data);
   }
-  this.fixHierarchy(e, this);
+  this.fixHierarchy(t, this);
 }
 P.prototype = {
   get isDead() {
@@ -1686,36 +1781,36 @@ P.prototype = {
   // therefore its keyInParent should NOT be its index in the array but the
   // array's keyInParent. This way we redirect each item in the array to the
   // array's reactive data
-  fixHierarchy: function(e, t) {
-    this.parent.data instanceof Array ? this.keyInParent = this.parent.keyInParent : this.parent.shadow[e] = t;
+  fixHierarchy: function(t, e) {
+    this.parent.data instanceof Array ? this.keyInParent = this.parent.keyInParent : this.parent.shadow[t] = e;
   },
-  setData: function(e) {
-    if (this.removeMyRef(), !(e instanceof Object)) {
+  setData: function(t) {
+    if (this.removeMyRef(), !(t instanceof Object)) {
       this.data = {};
-      for (let t in this.shadow)
-        this.shadow[t] instanceof P ? this.shadow[t].setData(e) : this.notifyDown(t);
+      for (let e in this.shadow)
+        this.shadow[e] instanceof P ? this.shadow[e].setData(t) : this.notifyDown(e);
       return;
     }
-    this.data = e, e.hasOwnProperty("__rd__") ? (this.data.__rd__.addRef(this), this.refs = this.data.__rd__.refs, this.data instanceof Array ? (this.sync("length", this.data.length, !1, !1), this.sync("changes", this.data.changes, !1, !1)) : this.syncAll()) : (T(this.data, "__rd__", {
+    this.data = t, t.hasOwnProperty("__rd__") ? (this.data.__rd__.addRef(this), this.refs = this.data.__rd__.refs, this.data instanceof Array ? (this.sync("length", this.data.length, !1, !1), this.sync("changes", this.data.changes, !1, !1)) : this.syncAll()) : (T(this.data, "__rd__", {
       enumerable: !1,
       configurable: !0,
       value: this
-    }), this.walk(this.data)), this.setupShadowProperties(Et(this.data));
+    }), this.walk(this.data)), this.setupShadowProperties(Ct(this.data));
   },
   /**
    *
    * @param data
    */
-  walk: function(e) {
-    if (!(e instanceof Node)) {
-      if (e instanceof Array)
-        this.makeReactiveArray(e);
-      else if (e instanceof Object)
-        for (let t in e)
-          this.makeReactiveObject(e, t, !1);
+  walk: function(t) {
+    if (!(t instanceof Node)) {
+      if (t instanceof Array)
+        this.makeReactiveArray(t);
+      else if (t instanceof Object)
+        for (let e in t)
+          this.makeReactiveObject(t, e, !1);
     }
   },
-  walkOnScope: function(e) {
+  walkOnScope: function(t) {
   },
   /**
    *
@@ -1723,54 +1818,54 @@ P.prototype = {
    * @param {string} key
    * @param shadow
    */
-  makeReactiveObject: function(e, t, n) {
-    let i = e[t];
-    if (typeof i == "function")
+  makeReactiveObject: function(t, e, n) {
+    let s = t[e];
+    if (typeof s == "function")
       return;
-    const s = Object.getOwnPropertyDescriptor(e, t), r = s && s.get, a = s && s.set;
-    T(e, t, {
+    const i = Object.getOwnPropertyDescriptor(t, e), r = i && i.get, l = i && i.set;
+    T(t, e, {
       get: function() {
-        return r ? r.call(e) : i;
+        return r ? r.call(t) : s;
       },
-      set: function(l) {
-        const d = e.__rd__;
-        if (a && a.call(e, l), i === l) {
-          l instanceof Array ? d.sync(t, l, !0, !1) : l instanceof Object && d.notifyDown(t);
+      set: function(a) {
+        const d = t.__rd__;
+        if (l && l.call(t, a), s === a) {
+          a instanceof Array ? d.sync(e, a, !0, !1) : a instanceof Object && d.notifyDown(e);
           return;
         }
-        i = l;
+        s = a;
         for (let p = 0, o = d.refs.length; p < o; p++) {
           const c = d.refs[p];
-          c.shadow[t] && (c.makeKeyEnum(t), c.shadow[t].setData(l));
+          c.shadow[e] && (c.makeKeyEnum(e), c.shadow[e].setData(a));
         }
-        d.notify(t, i, null, !1);
+        d.notify(e, s, null, !1);
       },
       enumerable: !n,
       configurable: !0
-    }), this.shadow[t] ? this.shadow[t].setData(i) : this.shadow[t] = null, this.sync(t, i, !1, !1);
+    }), this.shadow[e] ? this.shadow[e].setData(s) : this.shadow[e] = null, this.sync(e, s, !1, !1);
   },
   /**
    *
    * @param arr
    * @returns {*}
    */
-  makeReactiveArray: function(e) {
-    if (e.hasOwnProperty("changes"))
-      return e.changes.init;
-    const t = this, n = new C();
-    n.original = e, n.type = "reset", n.params = e;
-    for (let i = 0, s = n.params.length; i < s; i++) {
-      const r = n.params[i];
-      r !== null && typeof r == "object" && new P(n.original.indexOf(r), r, t);
+  makeReactiveArray: function(t) {
+    if (t.hasOwnProperty("changes"))
+      return t.changes.init;
+    const e = this, n = new C();
+    n.original = t, n.type = "reset", n.params = t;
+    for (let s = 0, i = n.params.length; s < i; s++) {
+      const r = n.params[s];
+      r !== null && typeof r == "object" && new P(n.original.indexOf(r), r, e);
     }
-    return t.sync("length", e.length, !1, !1), n.init = n, T(e, "changes", {
+    return e.sync("length", t.length, !1, !1), n.init = n, T(t, "changes", {
       enumerable: !1,
       configurable: !1,
       writable: !0,
       value: n
-    }), bt.forEach(function(i) {
-      T(e, i, {
-        value: xt(e, i, n),
+    }), Et.forEach(function(s) {
+      T(t, s, {
+        value: Pt(t, s, n),
         writable: !1,
         configurable: !0
       });
@@ -1783,29 +1878,29 @@ P.prototype = {
    * @param refs
    * @param {boolean} fromChild
    */
-  notify: function(e, t, n, i) {
+  notify: function(t, e, n, s) {
     if (this.refs === n) {
-      this.sync(e, t, !1, i);
+      this.sync(t, e, !1, s);
       return;
     }
-    for (let s = 0, r = this.refs.length; s < r; s++) {
-      const a = this.refs[s];
-      this !== a && a.notify(e, t, this.refs, i);
+    for (let i = 0, r = this.refs.length; i < r; i++) {
+      const l = this.refs[i];
+      this !== l && l.notify(t, e, this.refs, s);
     }
-    this.sync(e, t, !1, i);
-    for (let s = 0, r = this.refs.length; s < r; s++) {
-      const a = this.refs[s], l = a.keyInParent, d = a.parent;
-      a.parent.notify(l, d.data[l], null, !0);
+    this.sync(t, e, !1, s);
+    for (let i = 0, r = this.refs.length; i < r; i++) {
+      const l = this.refs[i], a = l.keyInParent, d = l.parent;
+      l.parent.notify(a, d.data[a], null, !0);
     }
   },
-  notifyDown: function(e) {
-    const t = this.data[e];
-    this.notifyRefs(e, t), this.sync(e, t, !1, !1);
+  notifyDown: function(t) {
+    const e = this.data[t];
+    this.notifyRefs(t, e), this.sync(t, e, !1, !1);
   },
-  notifyRefs: function(e, t) {
-    for (let n = 0, i = this.refs.length; n < i; n++) {
-      const s = this.refs[n];
-      this !== s && s.notify(e, t, this.refs, !1);
+  notifyRefs: function(t, e) {
+    for (let n = 0, s = this.refs.length; n < s; n++) {
+      const i = this.refs[n];
+      this !== i && i.notify(t, e, this.refs, !1);
     }
   },
   /**
@@ -1815,19 +1910,19 @@ P.prototype = {
    * @param {boolean} sameValueObject
    * @param {boolean} fromChild
    */
-  sync: function(e, t, n, i) {
-    const s = this, r = s.nodesMap[e];
-    if (I.notify(s.data, e, t), r)
-      for (let a = 0, l = r.nodes.length; a < l; a++)
-        s.syncNode(r.types[a], r.nodes[a], r.keys[a], t, n, i);
+  sync: function(t, e, n, s) {
+    const i = this, r = i.nodesMap[t];
+    if (D.notify(i.data, t, e), r)
+      for (let l = 0, a = r.nodes.length; l < a; l++)
+        i.syncNode(r.types[l], r.nodes[l], r.keys[l], e, n, s);
   },
   /**
    *
    */
   syncAll: function() {
-    const e = this, t = At(e.data);
-    for (let n = 0, i = t.length; n < i; n++)
-      e.sync(t[n], e.data[t[n]], !1, !1);
+    const t = this, e = xt(t.data);
+    for (let n = 0, s = e.length; n < s; n++)
+      t.sync(e[n], t.data[e[n]], !1, !1);
   },
   /**
    *
@@ -1838,23 +1933,23 @@ P.prototype = {
    * @param {boolean} sameObjectValue
    * @param {boolean} fromChild
    */
-  syncNode: function(e, t, n, i, s, r) {
-    re[e].call(null, t, n, i, s, r);
+  syncNode: function(t, e, n, s, i, r) {
+    re[t].call(null, e, n, s, i, r);
   },
   /**
    *
    * @param {Galaxy.View.ReactiveData} reactiveData
    */
-  addRef: function(e) {
-    this.refs.indexOf(e) === -1 && this.refs.push(e);
+  addRef: function(t) {
+    this.refs.indexOf(t) === -1 && this.refs.push(t);
   },
   /**
    *
    * @param {Galaxy.View.ReactiveData} reactiveData
    */
-  removeRef: function(e) {
-    const t = this.refs.indexOf(e);
-    t !== -1 && this.refs.splice(t, 1);
+  removeRef: function(t) {
+    const e = this.refs.indexOf(t);
+    e !== -1 && this.refs.splice(e, 1);
   },
   /**
    *
@@ -1864,17 +1959,17 @@ P.prototype = {
       if (this.data.__rd__ !== this)
         this.refs = [this], this.data.__rd__.removeRef(this);
       else if (this.refs.length === 1) {
-        const e = this.data;
-        if (e instanceof Array)
-          for (const t of gt)
-            Reflect.deleteProperty(e, t);
+        const t = this.data;
+        if (t instanceof Array)
+          for (const e of wt)
+            Reflect.deleteProperty(t, e);
       } else {
         this.data.__rd__.removeRef(this);
-        const e = this.refs[0];
+        const t = this.refs[0];
         T(this.data, "__rd__", {
           enumerable: !1,
           configurable: !0,
-          value: e
+          value: t
         }), this.refs = [this];
       }
   },
@@ -1883,9 +1978,9 @@ P.prototype = {
    * @param {string} id
    * @returns {*}
    */
-  getRefById: function(e) {
-    return this.refs.filter(function(t) {
-      return t.id === e;
+  getRefById: function(t) {
+    return this.refs.filter(function(e) {
+      return e.id === t;
     })[0];
   },
   /**
@@ -1896,41 +1991,41 @@ P.prototype = {
    * @param {string} bindType
    * @param expression
    */
-  addNode: function(e, t, n, i, s) {
+  addNode: function(t, e, n, s, i) {
     let r = this.nodesMap[n];
-    r || (r = this.nodesMap[n] = new ve()), i = i || "_", this.nodeCount === -1 && (this.nodeCount = 0);
-    const a = r.nodes.indexOf(e);
-    if (a === -1 || r.keys[a] !== t) {
-      this.nodeCount++, e instanceof v && !e.setters[t] && e.registerActiveProperty(t, this, s), r.push(t, e, i);
-      let l = this.data[n];
-      l instanceof Array && l.changes && (l.hasOwnProperty("changes") ? l.changes = l.changes.init : T(l, "changes", {
+    r || (r = this.nodesMap[n] = new Pe()), s = s || "_", this.nodeCount === -1 && (this.nodeCount = 0);
+    const l = r.nodes.indexOf(t);
+    if (l === -1 || r.keys[l] !== e) {
+      this.nodeCount++, t instanceof v && !t.setters[e] && t.registerActiveProperty(e, this, i), r.push(e, t, s);
+      let a = this.data[n];
+      a instanceof Array && a.changes && (a.hasOwnProperty("changes") ? a.changes = a.changes.init : T(a, "changes", {
         enumerable: !1,
         configurable: !1,
         writable: !0,
-        value: l.changes.init
-      })), this.data instanceof Array && n !== "length" && l && (l = l.init), this.syncNode("_", e, t, l, !1, !1);
+        value: a.changes.init
+      })), this.data instanceof Array && n !== "length" && a && (a = a.init), this.syncNode("_", t, e, a, !1, !1);
     }
   },
   /**
    *
    * @param node
    */
-  removeNode: function(e) {
-    for (let t = 0, n = this.refs.length; t < n; t++)
-      this.removeNodeFromRef(this.refs[t], e);
+  removeNode: function(t) {
+    for (let e = 0, n = this.refs.length; e < n; e++)
+      this.removeNodeFromRef(this.refs[e], t);
   },
   /**
    *
    * @param ref
    * @param node
    */
-  removeNodeFromRef: function(e, t) {
+  removeNodeFromRef: function(t, e) {
     let n;
-    for (let i in e.nodesMap) {
-      n = e.nodesMap[i];
-      let s = -1;
-      for (; (s = n.nodes.indexOf(t)) !== -1; )
-        n.nodes.splice(s, 1), n.keys.splice(s, 1), n.types.splice(s, 1), this.nodeCount--;
+    for (let s in t.nodesMap) {
+      n = t.nodesMap[s];
+      let i = -1;
+      for (; (i = n.nodes.indexOf(e)) !== -1; )
+        n.nodes.splice(i, 1), n.keys.splice(i, 1), n.types.splice(i, 1), this.nodeCount--;
     }
   },
   /**
@@ -1938,336 +2033,336 @@ P.prototype = {
    * @param {string} key
    * @param {boolean} isArray
    */
-  addKeyToShadow: function(e, t) {
-    e in this.shadow || (t ? this.shadow[e] = new P(e, [], this) : this.shadow[e] = null), this.data.hasOwnProperty(e) || this.makeReactiveObject(this.data, e, !1);
+  addKeyToShadow: function(t, e) {
+    t in this.shadow || (e ? this.shadow[t] = new P(t, [], this) : this.shadow[t] = null), this.data.hasOwnProperty(t) || this.makeReactiveObject(this.data, t, !1);
   },
   /**
    *
    */
-  setupShadowProperties: function(e) {
-    for (let t in this.shadow)
-      this.shadow[t] instanceof P ? (this.data.hasOwnProperty(t) || this.makeReactiveObject(this.data, t, !0), this.shadow[t].setData(this.data[t])) : e.indexOf(t) === -1 && this.sync(t, void 0, !1, !1);
+  setupShadowProperties: function(t) {
+    for (let e in this.shadow)
+      this.shadow[e] instanceof P ? (this.data.hasOwnProperty(e) || this.makeReactiveObject(this.data, e, !0), this.shadow[e].setData(this.data[e])) : t.indexOf(e) === -1 && this.sync(e, void 0, !1, !1);
   },
   /**
    *
    * @param {string} key
    */
-  makeKeyEnum: function(e) {
-    const t = Object.getOwnPropertyDescriptor(this.data, e);
-    t && t.enumerable === !1 && (t.enumerable = !0, T(this.data, e, t));
+  makeKeyEnum: function(t) {
+    const e = Object.getOwnPropertyDescriptor(this.data, t);
+    e && e.enumerable === !1 && (e.enumerable = !0, T(this.data, t, e));
   }
 };
-const wt = /=\s*'<([^\[\]<>]*)>(.*)'/m, vt = /=\s*'=\s*"<([^\[\]<>]*)>(.*)"/m, Ct = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m, Pt = /^<([^\[\]<>]*)>\s*([^<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/, St = /\.|\[([^\[\]\n]+)]|([^.\n\[\]]+)/g, Ce = {};
-for (const e in A)
-  A[e].type === "reactive" && (Ce[e] = !0);
-const kt = {
+const St = /=\s*'<([^\[\]<>]*)>(.*)'/m, kt = /=\s*'=\s*"<([^\[\]<>]*)>(.*)"/m, Rt = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m, Tt = /^<([^\[\]<>]*)>\s*([^<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/, jt = /\.|\[([^\[\]\n]+)]|([^.\n\[\]]+)/g, Se = {};
+for (const t in O)
+  O[t].type === "reactive" && (Se[t] = !0);
+const It = {
   none: function() {
-    return x;
+    return w;
   },
-  prop: pt,
-  attr: dt,
-  reactive: yt
+  prop: yt,
+  attr: _t,
+  reactive: gt
 };
-function Rt() {
+function Lt() {
   return "@" + performance.now();
 }
-function ce(e, t) {
-  const i = e.match(St).filter((s) => s !== "" && s !== ".");
-  return t ? i.map((s) => s.indexOf("[") === 0 ? s.substring(1, s.length - 1) : s) : i;
+function ce(t, e) {
+  const s = t.match(jt).filter((i) => i !== "" && i !== ".");
+  return e ? s.map((i) => i.indexOf("[") === 0 ? i.substring(1, i.length - 1) : i) : s;
 }
-function Tt(e, t) {
-  const n = ce(t, !0);
-  let i = n[0];
-  const s = e;
-  let r = e, a = e;
-  if (e[i] === void 0) {
-    for (; a.__parent__; ) {
-      if (a.__parent__.hasOwnProperty(i)) {
-        r = a.__parent__;
+function Mt(t, e) {
+  const n = ce(e, !0);
+  let s = n[0];
+  const i = t;
+  let r = t, l = t;
+  if (t[s] === void 0) {
+    for (; l.__parent__; ) {
+      if (l.__parent__.hasOwnProperty(s)) {
+        r = l.__parent__;
         break;
       }
-      a = a.__parent__;
+      l = l.__parent__;
     }
-    r[i] === void 0 && (r = s);
+    r[s] === void 0 && (r = i);
   }
   r = r || {};
-  const l = n.length - 1;
+  const a = n.length - 1;
   return n.forEach(function(d, p) {
-    r = r[d], p !== l && !(r instanceof Object) && (r = {});
+    r = r[d], p !== a && !(r instanceof Object) && (r = {});
   }), r instanceof C ? r.getInstance() : r === void 0 ? null : r;
 }
-const J = W.DOM_MANIPLATION = {}, Pe = [], Se = [];
-let oe = [], ae = !0, F = !1, M = 0, N = 0, G;
-const ke = function(e, t) {
-  if (t)
-    return e();
-  this.length ? this.shift()(ke.bind(this, e)) : e();
-}, _e = function() {
+const J = W.DOM_MANIPLATION = {}, ke = [], Re = [];
+let oe = [], ae = !0, U = !1, M = 0, N = 0, K;
+const Te = function(t, e) {
+  if (e)
+    return t();
+  this.length ? this.shift()(Te.bind(this, t)) : t();
+}, be = function() {
   if (this.length) {
-    let e = this.shift(), t = J[e];
-    if (!t.length)
+    let t = this.shift(), e = J[t];
+    if (!e.length)
       return X.call(this);
-    ke.call(t, X.bind(this), F);
+    Te.call(e, X.bind(this), U);
   } else
     ae = !0, N = 0, M = 0;
 }, X = function() {
-  if (F)
-    return F = !1, M = 0, X.call(oe);
-  const e = performance.now();
-  N = N || e, M = M + (e - N), N = e, M > 2 ? (M = 0, G && (clearTimeout(G), G = null), G = setTimeout((t) => {
-    N = t, _e.call(this);
-  })) : _e.call(this);
+  if (U)
+    return U = !1, M = 0, X.call(oe);
+  const t = performance.now();
+  N = N || t, M = M + (t - N), N = t, M > 2 ? (M = 0, K && (clearTimeout(K), K = null), K = setTimeout((e) => {
+    N = e, be.call(this);
+  })) : be.call(this);
 };
-function jt(e, t) {
-  return e > t;
+function Nt(t, e) {
+  return t > e;
 }
-function It(e, t) {
-  return e < t;
+function Dt(t, e) {
+  return t < e;
 }
-function Re(e, t, n) {
-  let i = 0, s = e.length - 1, r = 0;
-  for (; i <= s; ) {
-    let a = Math.floor((i + s) / 2), l = e[a];
-    n(t, l) ? r = i = a + 1 : (r = a, s = a - 1);
+function je(t, e, n) {
+  let s = 0, i = t.length - 1, r = 0;
+  for (; s <= i; ) {
+    let l = Math.floor((s + i) / 2), a = t[l];
+    n(e, a) ? r = s = l + 1 : (r = l, i = l - 1);
   }
   return r;
 }
-function Lt(e, t) {
-  return t < e[0] ? 0 : t > e[e.length - 1] ? e.length : Re(e, t, jt);
+function Vt(t, e) {
+  return e < t[0] ? 0 : e > t[t.length - 1] ? t.length : je(t, e, Nt);
 }
-function Mt(e, t) {
-  return t > e[0] ? 0 : t < e[e.length - 1] ? e.length : Re(e, t, It);
+function Bt(t, e) {
+  return e > t[0] ? 0 : e < t[t.length - 1] ? t.length : je(t, e, Dt);
 }
-function Te(e, t, n, i) {
-  e in J ? J[e].push(t) : (J[e] = [t], n.splice(i(n, e), 0, e));
+function Ie(t, e, n, s) {
+  t in J ? J[t].push(e) : (J[t] = [e], n.splice(s(n, t), 0, t));
 }
-let K = 0;
-function je() {
-  K !== 0 && (clearTimeout(K), K = 0), oe = Kt(Se, Pe), K = setTimeout(() => {
+let q = 0;
+function Le() {
+  q !== 0 && (clearTimeout(q), q = 0), oe = zt(Re, ke), q = setTimeout(() => {
     ae && (ae = !1, X.call(oe));
   });
 }
-function B(e, t) {
-  F = !0, Te("<" + e, t, Se, Mt), je();
+function F(t, e) {
+  U = !0, Ie("<" + t, e, Re, Bt), Le();
 }
-function j(e, t) {
-  F = !0, Te(">" + e, t, Pe, Lt), je();
+function j(t, e) {
+  U = !0, Ie(">" + t, e, ke, Vt), Le();
 }
-function z(e, t) {
+function z(t, e) {
   let n = null;
-  for (let i = 0, s = e.length; i < s; i++)
-    n = e[i], n.destroy(t);
+  for (let s = 0, i = t.length; s < i; s++)
+    n = t[s], n.destroy(e);
 }
-function Ie(e, t, n) {
-  t != null && t !== !1 ? e.node.setAttribute(n, t === !0 ? "" : t) : e.node.removeAttribute(n);
+function Me(t, e, n) {
+  e != null && e !== !1 ? t.node.setAttribute(n, e === !0 ? "" : e) : t.node.removeAttribute(n);
 }
-function Nt(e, t, n) {
-  e.node[n] = t;
+function Ft(t, e, n) {
+  t.node[n] = e;
 }
-function Le(e) {
-  let t = {};
-  return R(t, "__parent__", {
+function Ne(t) {
+  let e = {};
+  return k(e, "__parent__", {
     enumerable: !1,
-    value: e
-  }), R(t, "__scope__", {
+    value: t
+  }), k(e, "__scope__", {
     enumerable: !1,
-    value: e.__scope__ || e
-  }), t;
+    value: t.__scope__ || t
+  }), e;
 }
-function D(e) {
-  let t = [], n = [], i = [], s = !1;
-  const r = typeof e;
-  let a = null;
+function V(t) {
+  let e = [], n = [], s = [], i = !1;
+  const r = typeof t;
+  let l = null;
   if (r === "string") {
-    const l = e.match(Pt);
-    l && (i = [l[1]], t = [l[2]], n = [e]);
+    const a = t.match(Tt);
+    a && (s = [a[1]], e = [a[2]], n = [t]);
   } else if (r === "function") {
-    s = !0, a = e;
-    const l = e.toString().match(Ct);
-    l && (n = (l[1] || l[2]).split(",").map((p) => {
-      const o = p.indexOf('"') === -1 ? p.match(wt) : p.match(vt);
+    i = !0, l = t;
+    const a = t.toString().match(Rt);
+    a && (n = (a[1] || a[2]).split(",").map((p) => {
+      const o = p.indexOf('"') === -1 ? p.match(St) : p.match(kt);
       if (o)
-        return i.push(o[1]), t.push(o[2]), "<>" + o[2];
+        return s.push(o[1]), e.push(o[2]), "<>" + o[2];
     }));
   }
   return {
-    propertyKeys: t,
+    propertyKeys: e,
     propertyValues: n,
-    bindTypes: i,
-    handler: a,
-    isExpression: s,
+    bindTypes: s,
+    handler: l,
+    isExpression: i,
     expressionFn: null
   };
 }
-function le(e, t) {
-  let i = ce(t, !0)[0];
-  const s = e;
-  let r = e, a = e, l = 0, d;
-  if (e[i] === void 0) {
-    for (; a.__parent__; ) {
-      if (d = a.__parent__, d.hasOwnProperty(i)) {
+function le(t, e) {
+  let s = ce(e, !0)[0];
+  const i = t;
+  let r = t, l = t, a = 0, d;
+  if (t[s] === void 0) {
+    for (; l.__parent__; ) {
+      if (d = l.__parent__, d.hasOwnProperty(s)) {
         r = d;
         break;
       }
-      if (l++ >= 1e3)
-        throw Error("Maximum nested property lookup has reached `" + i + "`\n" + e);
-      a = d;
+      if (a++ >= 1e3)
+        throw Error("Maximum nested property lookup has reached `" + s + "`\n" + t);
+      l = d;
     }
-    if (r[i] === void 0)
-      return s;
+    if (r[s] === void 0)
+      return i;
   }
   return r;
 }
-function Me(e, t) {
-  const n = t.split("."), i = n.length - 1;
-  let s = e;
-  return n.forEach(function(r, a) {
-    s = le(s, r), a !== i && (s[r] ? s = s[r] : s = s.__rd__.refs.filter((d) => d.shadow[r])[0].shadow[r].data);
-  }), s.__rd__;
+function De(t, e) {
+  const n = e.split("."), s = n.length - 1;
+  let i = t;
+  return n.forEach(function(r, l) {
+    i = le(i, r), l !== s && (i[r] ? i = i[r] : i = i.__rd__.refs.filter((d) => d.shadow[r])[0].shadow[r].data);
+  }), i.__rd__;
 }
-const ie = {};
-function Dt(e) {
-  const t = e.join();
-  if (ie[t])
-    return ie[t];
-  let n = "return [", i = [];
-  for (let r = 0, a = e.length; r < a; r++) {
-    const l = e[r];
-    typeof l == "string" ? l.indexOf("<>this.") === 0 ? i.push('_prop(this.data, "' + l.replace("<>this.", "") + '")') : l.indexOf("<>") === 0 && i.push('_prop(scope, "' + l.replace("<>", "") + '")') : i.push("_var[" + r + "]");
+const ne = {};
+function Ut(t) {
+  const e = t.join();
+  if (ne[e])
+    return ne[e];
+  let n = "return [", s = [];
+  for (let r = 0, l = t.length; r < l; r++) {
+    const a = t[r];
+    typeof a == "string" ? a.indexOf("<>this.") === 0 ? s.push('_prop(this.data, "' + a.replace("<>this.", "") + '")') : a.indexOf("<>") === 0 && s.push('_prop(scope, "' + a.replace("<>", "") + '")') : s.push("_var[" + r + "]");
   }
-  n += i.join(",") + "]";
-  const s = new Function("scope, _prop , _var", n);
-  return ie[t] = s, s;
+  n += s.join(",") + "]";
+  const i = new Function("scope, _prop , _var", n);
+  return ne[e] = i, i;
 }
-function Vt(e, t, n, i, s) {
-  s[0] || (e instanceof v ? s[0] = e.data : s[0] = t);
-  const r = Dt(s);
+function Ht(t, e, n, s, i) {
+  i[0] || (t instanceof v ? i[0] = t.data : i[0] = e);
+  const r = Ut(i);
   return function() {
-    let a = [];
+    let l = [];
     try {
-      a = r.call(e, t, Tt, s);
-    } catch (l) {
+      l = r.call(t, e, Mt, i);
+    } catch (a) {
       console.error(`Can't find the property: 
-` + i.join(`
+` + s.join(`
 `), `
 
 It is recommended to inject the parent object instead of its property.
 
-`, t, `
-`, l);
+`, e, `
+`, a);
     }
-    return n.apply(e, a);
+    return n.apply(t, l);
   };
 }
-function Bt(e, t, n) {
-  if (!e.isExpression)
+function Gt(t, e, n) {
+  if (!t.isExpression)
     return !1;
-  if (e.expressionFn)
-    return e.expressionFn;
+  if (t.expressionFn)
+    return t.expressionFn;
   try {
-    return e.expressionFn = Vt(t, n, e.handler, e.propertyKeys, e.propertyValues), e.expressionFn;
-  } catch (i) {
-    throw Error(i.message + `
-` + e.propertyKeys);
+    return t.expressionFn = Ht(e, n, t.handler, t.propertyKeys, t.propertyValues), t.expressionFn;
+  } catch (s) {
+    throw Error(s.message + `
+` + t.propertyKeys);
   }
 }
-function $(e, t, n, i, s, r) {
-  const a = s.propertyKeys, l = Bt(s, r, i);
-  let d = i, p = null, o = null, c = null, f = [];
-  for (let u = 0, h = a.length; u < h; u++) {
-    p = a[u], o = null;
-    const m = s.bindTypes[u];
-    if (f = ce(p), f.length > 1 && (p = f[0], o = f.slice(1).join(".")), !n && i && ("__rd__" in i ? n = i.__rd__ : n = new P(null, i, i instanceof k ? i.systemId : "child")), f[0] === "Scope")
-      throw new Error("`Scope` keyword must be omitted when it is used  used in bindings: " + a.join("."));
-    p.indexOf("[") === 0 && (p = p.substring(1, p.length - 1)), f[0] === "this" && p === "this" && r instanceof v ? (p = f[1], s.propertyKeys = f.slice(2), o = null, n = new P("data", r.data, "this"), d = le(r.data, p)) : d && (d = le(d, p)), c = d, d !== null && typeof d == "object" && (c = d[p]);
+function $(t, e, n, s, i, r) {
+  const l = i.propertyKeys, a = Gt(i, r, s);
+  let d = s, p = null, o = null, c = null, f = [];
+  for (let u = 0, h = l.length; u < h; u++) {
+    p = l[u], o = null;
+    const m = i.bindTypes[u];
+    if (f = ce(p), f.length > 1 && (p = f[0], o = f.slice(1).join(".")), !n && s && ("__rd__" in s ? n = s.__rd__ : n = new P(null, s, s instanceof R ? s.systemId : "child")), f[0] === "Scope")
+      throw new Error("`Scope` keyword must be omitted when it is used  used in bindings: " + l.join("."));
+    p.indexOf("[") === 0 && (p = p.substring(1, p.length - 1)), f[0] === "this" && p === "this" && r instanceof v ? (p = f[1], i.propertyKeys = f.slice(2), o = null, n = new P("data", r.data, "this"), d = le(r.data, p)) : d && (d = le(d, p)), c = d, d !== null && typeof d == "object" && (c = d[p]);
     let b;
-    if (c instanceof Object ? b = new P(p, c, n || i.__scope__.__rd__) : o ? b = new P(p, null, n) : n && n.addKeyToShadow(p, t === "repeat"), o === null) {
-      if (e instanceof v || R(e, t, {
+    if (c instanceof Object ? b = new P(p, c, n || s.__scope__.__rd__) : o ? b = new P(p, null, n) : n && n.addKeyToShadow(p, e === "repeat"), o === null) {
+      if (t instanceof v || k(t, e, {
         set: function(y) {
-          l || n.data[p] !== y && (n.data[p] = y);
+          a || n.data[p] !== y && (n.data[p] = y);
         },
         get: function() {
-          return l ? l() : n.data[p];
+          return a ? a() : n.data[p];
         },
         enumerable: !0,
         configurable: !0
-      }), n && i instanceof k && e instanceof v && e.localPropertyNames.has(p))
+      }), n && s instanceof R && t instanceof v && t.localPropertyNames.has(p))
         return;
-      n.addNode(e, t, p, m, l);
+      n.addNode(t, e, p, m, a);
     }
-    o !== null && $(e, t, b, c, Object.assign({}, s, { propertyKeys: [o] }), r);
+    o !== null && $(t, e, b, c, Object.assign({}, i, { propertyKeys: [o] }), r);
   }
 }
-function V(e, t, n, i) {
-  const s = De(t);
-  let r, a;
-  const l = i ? pe(t) : t;
+function B(t, e, n, s) {
+  const i = Be(e);
+  let r, l;
+  const a = s ? pe(e) : e;
   let d;
-  n instanceof k || (d = new P(null, n, "BSTD"));
-  for (let p = 0, o = s.length; p < o; p++) {
-    if (r = s[p], a = l[r], a.__singleton__)
+  n instanceof R || (d = new P(null, n, "BSTD"));
+  for (let p = 0, o = i.length; p < o; p++) {
+    if (r = i[p], l = a[r], l.__singleton__)
       continue;
-    const c = D(a);
-    c.propertyKeys.length && ($(l, r, d, n, c, e), e && c.propertyKeys.forEach(function(f) {
+    const c = V(l);
+    c.propertyKeys.length && ($(a, r, d, n, c, t), t && c.propertyKeys.forEach(function(f) {
       try {
-        const u = Me(n, f);
-        e.finalize.push(() => {
-          u.removeNode(l);
+        const u = De(n, f);
+        t.finalize.push(() => {
+          u.removeNode(a);
         });
       } catch (u) {
         console.error("bind_subjects_to_data -> Could not find: " + f + `
  in`, n, u);
       }
-    })), a && typeof a == "object" && !(a instanceof Array) && V(e, a, n);
+    })), l && typeof l == "object" && !(l instanceof Array) && B(t, l, n);
   }
-  return l;
+  return a;
 }
-function Ft(e, t, n, i) {
-  if (n in Ce) {
-    if (i == null)
+function Kt(t, e, n, s) {
+  if (n in Se) {
+    if (s == null)
       return !1;
-    const s = A[n], r = s.getConfig.call(e, t, e.blueprint[n]);
-    return r !== void 0 && (e.cache[n] = r), s.install.call(e, r);
+    const i = O[n], r = i.getConfig.call(t, e, t.blueprint[n]);
+    return r !== void 0 && (t.cache[n] = r), i.install.call(t, r);
   }
   return !0;
 }
-function Ut(e, t, n, i) {
-  const s = A[t] || { type: "attr" };
-  s.key = s.key || t, typeof s.beforeActivate < "u" && s.beforeActivate(e, n, t, i), e.setters[t] = fe(s, e, n, i);
+function qt(t, e, n, s) {
+  const i = O[e] || { type: "attr" };
+  i.key = i.key || e, typeof i.beforeActivate < "u" && i.beforeActivate(t, n, e, s), t.setters[e] = fe(i, t, n, s);
 }
-function fe(e, t, n, i) {
-  return e.type !== "reactive" && t.virtual ? x : typeof e.getSetter < "u" ? e.getSetter(t, e, e, i) : kt[e.type](t, e, i);
+function fe(t, e, n, s) {
+  return t.type !== "reactive" && e.virtual ? w : typeof t.getSetter < "u" ? t.getSetter(e, t, t, s) : It[t.type](e, t, s);
 }
-function be(e, t, n) {
-  const i = t + "_" + e.node.nodeType;
-  let s = A[i] || A[t];
-  switch (s || (s = { type: "prop" }, !(t in e.node) && "setAttribute" in e.node && (s = { type: "attr" }), A[i] = s), s.key = s.key || t, s.type) {
+function ge(t, e, n) {
+  const s = e + "_" + t.node.nodeType;
+  let i = O[s] || O[e];
+  switch (i || (i = { type: "prop" }, !(e in t.node) && "setAttribute" in t.node && (i = { type: "attr" }), O[s] = i), i.key = i.key || e, i.type) {
     case "attr":
     case "prop":
     case "reactive":
-      fe(s, e)(n, null);
+      fe(i, t)(n, null);
       break;
     case "event":
-      e.node[t] = function(r) {
-        n.call(e, r, e.data);
+      t.node[e] = function(r) {
+        n.call(t, r, t.data);
       };
       break;
   }
 }
 W.COMPONENTS = {};
-function W(e) {
-  const t = this;
-  t.scope = e, e.element instanceof v ? (t.container = e.element, t._components = Object.assign({}, e.element.view._components)) : (t.container = new v({
-    tag: e.element
-  }, null, t), t.container.setInDOM(!0));
+function W(t) {
+  const e = this;
+  e.scope = t, t.element instanceof v ? (e.container = t.element, e._components = Object.assign({}, t.element.view._components)) : (e.container = new v({
+    tag: t.element
+  }, null, e), e.container.setInDOM(!0));
 }
-function U(e) {
-  this.type = e;
+function H(t) {
+  this.type = t;
 }
-U.prototype.startKeyframe = function(e, t) {
-  if (!e)
+H.prototype.startKeyframe = function(t, e) {
+  if (!t)
     throw new Error("Argument Missing: view." + this.type + ".startKeyframe(timeline:string) needs a `timeline`");
-  t = t || "+=0";
+  e = e || "+=0";
   const n = {
     [this.type]: {
       // keyframe: true,
@@ -2275,47 +2370,47 @@ U.prototype.startKeyframe = function(e, t) {
         data: "timeline:start",
         duration: 1e-3
       },
-      timeline: e,
-      position: t
+      timeline: t,
+      position: e
     }
   };
   return {
     tag: "comment",
-    text: ["", this.type + ":timeline:start", "position: " + t, "timeline: " + e, ""].join(`
+    text: ["", this.type + ":timeline:start", "position: " + e, "timeline: " + t, ""].join(`
 `),
     animations: n
   };
 };
-U.prototype.keyframe = function(e, t, n) {
-  if (!t)
+H.prototype.keyframe = function(t, e, n) {
+  if (!e)
     throw new Error("Argument Missing: view." + this.type + ".addKeyframe(timeline:string) needs a `timeline`");
-  const i = {
+  const s = {
     [this.type]: {
       // keyframe: true,
       to: {
         duration: 1e-3,
-        onComplete: e
+        onComplete: t
       },
-      timeline: t,
+      timeline: e,
       position: n
     }
   };
   return {
     tag: "comment",
     text: this.type + ":timeline:keyframe",
-    animations: i
+    animations: s
   };
 };
-U.prototype.waitKeyframe = function(e, t) {
-  if (!e)
+H.prototype.waitKeyframe = function(t, e) {
+  if (!t)
     throw new Error("Argument Missing: view." + this.type + ".addKeyframe(timeline:string) needs a `timeline`");
   const n = {
     [this.type]: {
       to: {
         duration: 1e-3
       },
-      timeline: e,
-      position: t
+      timeline: t,
+      position: e
     }
   };
   return {
@@ -2326,39 +2421,38 @@ U.prototype.waitKeyframe = function(e, t) {
 };
 W.prototype = {
   _components: {},
-  components: function(e) {
-    for (const t in e) {
-      const n = e[t];
+  components: function(t) {
+    for (const e in t) {
+      const n = t[e];
       if (typeof n != "function")
-        throw new Error("Component must be type of function: " + t);
-      this._components[t] = n;
+        throw new Error("Component must be type of function: " + e);
+      this._components[e] = n;
     }
   },
   /**
    *
    */
-  entering: new U("enter"),
-  leaving: new U("leave"),
+  entering: new H("enter"),
+  leaving: new H("leave"),
   /**
    *
    * @param {string} key
    * @param blueprint
-   * @param {Galaxy.Scope|Object} scopeData
+   * @param {Scope|Object} scopeData
    * @returns {*}
    */
-  getComponent: function(e, t, n) {
-    let i = n, s = t;
-    if (e)
-      if (e in this._components) {
-        if (t.props && typeof t.props != "object")
+  getComponent: function(t, e, n) {
+    let s = n, i = e;
+    if (t)
+      if (t in this._components) {
+        if (e.props && typeof e.props != "object")
           throw new Error("The `props` must be a literal object.");
-        if (i = Le(n), Object.assign(i, t.props || {}), V(null, i, n), s = this._components[e].call(null, i, t, this), t instanceof Array)
+        if (s = Ne(n), Object.assign(s, e.props || {}), B(null, s, n), i = this._components[t].call(null, s, e, this), e instanceof Array)
           throw new Error("A component's blueprint can NOT be an array. A component must have only one root node.");
-      } else
-        Be.indexOf(e) === -1 && console.warn("Invalid component/tag: " + e);
+      } else Ge.indexOf(t) === -1 && console.warn("Invalid component/tag: " + t);
     return {
-      blueprint: Object.assign(t, s),
-      scopeData: i
+      blueprint: Object.assign(e, i),
+      scopeData: s
     };
   },
   /**
@@ -2366,140 +2460,139 @@ W.prototype = {
    * @param {{enter?: AnimationConfig, leave?:AnimationConfig}} animations
    * @returns Blueprint
    */
-  addTimeline: function(e) {
+  addTimeline: function(t) {
     return {
       tag: "comment",
       text: "timeline",
-      animations: e
+      animations: t
     };
   },
   /**
    *
    * @param {Blueprint|Blueprint[]} blueprint
-   * @return {Galaxy.ViewNode|Array<Galaxy.ViewNode>}
+   * @return {ViewNode|Array<ViewNode>}
    */
-  blueprint: function(e) {
-    const t = this;
-    return this.createNode(e, t.scope, t.container, null);
+  blueprint: function(t) {
+    const e = this;
+    return this.createNode(t, e.scope, e.container, null);
   },
   /**
    *
    * @param {boolean} [hasAnimation]
    */
-  clean: function(e) {
-    this.container.clean(e);
+  clean: function(t) {
+    this.container.clean(t);
   },
-  dispatchEvent: function(e) {
-    this.container.dispatchEvent(e);
+  dispatchEvent: function(t) {
+    this.container.dispatchEvent(t);
   },
   /**
    *
    * @param {Object} blueprint
    * @param {Object} scopeData
-   * @param {Galaxy.ViewNode} parent
+   * @param {ViewNode} parent
    * @param {Node|Element|null} position
-   * @return {Galaxy.ViewNode|Array<Galaxy.ViewNode>}
+   * @return {ViewNode|Array<ViewNode>}
    */
-  createNode: function(e, t, n, i) {
-    const s = this;
-    let r = 0, a = 0;
-    if (typeof e == "string") {
-      const l = document.createElement("div");
-      l.innerHTML = e;
-      const d = Array.prototype.slice.call(l.childNodes);
+  createNode: function(t, e, n, s) {
+    const i = this;
+    let r = 0, l = 0;
+    if (typeof t == "string") {
+      const a = document.createElement("div");
+      a.innerHTML = t;
+      const d = Array.prototype.slice.call(a.childNodes);
       return d.forEach(function(p) {
-        const o = new v({ tag: p }, n, s);
-        n.registerChild(o, i), p.parentNode.removeChild(p), be(o, "animations", {}), o.setInDOM(!0);
+        const o = new v({ tag: p }, n, i);
+        n.registerChild(o, s), p.parentNode.removeChild(p), ge(o, "animations", {}), o.setInDOM(!0);
       }), d;
     } else {
-      if (typeof e == "function")
-        return e.call(s);
-      if (e instanceof Array) {
-        const l = [];
-        for (r = 0, a = e.length; r < a; r++)
-          l.push(s.createNode(e[r], t, n, null));
-        return l;
-      } else if (e instanceof Object) {
-        const l = s.getComponent(e.tag, e, t);
+      if (typeof t == "function")
+        return t.call(i);
+      if (t instanceof Array) {
+        const a = [];
+        for (r = 0, l = t.length; r < l; r++)
+          a.push(i.createNode(t[r], e, n, null));
+        return a;
+      } else if (t instanceof Object) {
+        const a = i.getComponent(t.tag, t, e);
         let d, p;
-        const o = l.blueprint, c = De(o), f = [], u = new v(o, n, s, l.scopeData);
-        for (n.registerChild(u, i), r = 0, a = c.length; r < a; r++)
-          p = c[r], d = o[p], Ft(u, l.scopeData, p, d) !== !1 && f.push(p);
-        for (r = 0, a = f.length; r < a; r++) {
-          if (p = f[r], p === "children")
-            continue;
+        const o = a.blueprint, c = Be(o), f = [], u = new v(o, n, i, a.scopeData);
+        for (n.registerChild(u, s), r = 0, l = c.length; r < l; r++)
+          p = c[r], d = o[p], Kt(u, a.scopeData, p, d) !== !1 && f.push(p);
+        for (r = 0, l = f.length; r < l; r++) {
+          if (p = f[r], p === "children") continue;
           d = o[p];
-          const h = D(d);
-          h.propertyKeys.length ? $(u, p, null, l.scopeData, h, u) : be(u, p, d);
+          const h = V(d);
+          h.propertyKeys.length ? $(u, p, null, a.scopeData, h, u) : ge(u, p, d);
         }
-        return u.virtual || (u.setInDOM(!0), o.children && s.createNode(o.children, l.scopeData, u, null)), u;
+        return u.virtual || (u.setInDOM(!0), o.children && i.createNode(o.children, a.scopeData, u, null)), u;
       } else
         throw Error("blueprint should NOT be null");
     }
   },
-  loadStyle(e) {
-    e.indexOf("./") === 0 && (e = e.replace("./", this.scope.uri.path));
+  loadStyle(t) {
+    t.indexOf("./") === 0 && (t = t.replace("./", this.scope.uri.path));
   }
 };
-function Ne(e, t, n) {
-  if (e instanceof Array) {
-    const i = e.map((s) => Ne(s, t, n));
-    return t && (t.activeRoute.children = i), i;
+function Ve(t, e, n) {
+  if (t instanceof Array) {
+    const s = t.map((i) => Ve(i, e, n));
+    return e && (e.activeRoute.children = s), s;
   }
   return {
-    ...e,
-    fullPath: n + e.path,
+    ...t,
+    fullPath: n + t.path,
     active: !1,
-    hidden: e.hidden || !!e.redirectTo || !1,
-    viewports: e.viewports || {},
-    parent: t ? t.activeRoute : null,
-    children: e.children || []
+    hidden: t.hidden || !!t.redirectTo || !1,
+    viewports: t.viewports || {},
+    parent: e ? e.activeRoute : null,
+    children: t.children || []
   };
 }
-function Ht(e) {
-  return e.map(function(t) {
+function Yt(t) {
+  return t.map(function(e) {
     const n = [];
-    let i = w.PARAMETER_NAME_REGEX.exec(t);
-    for (; i; )
-      n.push(i[1]), i = w.PARAMETER_NAME_REGEX.exec(t);
+    let s = x.PARAMETER_NAME_REGEX.exec(e);
+    for (; s; )
+      n.push(s[1]), s = x.PARAMETER_NAME_REGEX.exec(e);
     return n.length ? {
-      id: t,
+      id: e,
       paramNames: n,
-      paramFinderExpression: new RegExp(t.replace(w.PARAMETER_NAME_REGEX, w.PARAMETER_NAME_REPLACEMENT))
+      paramFinderExpression: new RegExp(e.replace(x.PARAMETER_NAME_REGEX, x.PARAMETER_NAME_REPLACEMENT))
     } : null;
   }).filter(Boolean);
 }
-w.TITLE_SEPARATOR = " • ";
-w.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
-w.PARAMETER_NAME_REPLACEMENT = "([^/]+)";
-w.BASE_URL = "/";
-w.currentPath = {
+x.TITLE_SEPARATOR = " • ";
+x.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
+x.PARAMETER_NAME_REPLACEMENT = "([^/]+)";
+x.BASE_URL = "/";
+x.currentPath = {
   handlers: [],
-  subscribe: function(e) {
-    this.handlers.push(e), e(location.pathname);
+  subscribe: function(t) {
+    this.handlers.push(t), t(location.pathname);
   },
   update: function() {
-    this.handlers.forEach((e) => {
-      e(location.pathname);
+    this.handlers.forEach((t) => {
+      t(location.pathname);
     });
   }
 };
-w.mainListener = function(e) {
-  w.currentPath.update();
+x.mainListener = function(t) {
+  x.currentPath.update();
 };
-window.addEventListener("popstate", w.mainListener);
-function w(e) {
-  const t = this;
-  if (t.__singleton__ = !0, t.config = {
-    baseURL: w.BASE_URL
-  }, t.scope = e, t.routes = [], t.parentScope = e.parentScope, t.parentRouter = e.parentScope ? e.parentScope.__router__ : null, t.parentScope && (!t.parentScope.router || !t.parentScope.router.activeRoute)) {
-    let i = t.parentScope;
-    for (; !i.router || !i.router.activeRoute; )
-      i = i.parentScope;
-    t.parentScope = i, t.parentRouter = i.__router__;
+window.addEventListener("popstate", x.mainListener);
+function x(t) {
+  const e = this;
+  if (e.__singleton__ = !0, e.config = {
+    baseURL: x.BASE_URL
+  }, e.scope = t, e.routes = [], e.parentScope = t.parentScope, e.parentRouter = t.parentScope ? t.parentScope.__router__ : null, e.parentScope && (!e.parentScope.router || !e.parentScope.router.activeRoute)) {
+    let s = e.parentScope;
+    for (; !s.router || !s.router.activeRoute; )
+      s = s.parentScope;
+    e.parentScope = s, e.parentRouter = s.__router__;
   }
-  const n = t.parentScope && t.parentScope.router;
-  t.title = n ? this.parentScope.router.activeRoute.title : "", t.path = n ? t.parentScope.router.activeRoute.path : "/", t.fullPath = this.config.baseURL === "/" ? this.path : this.config.baseURL + this.path, t.parentRoute = n ? this.parentScope.router.activeRoute : null, t.oldURL = "", t.resolvedRouteValue = null, t.resolvedDynamicRouteValue = null, t.routesMap = null, t.data = {
+  const n = e.parentScope && e.parentScope.router;
+  e.title = n ? this.parentScope.router.activeRoute.title : "", e.path = n ? e.parentScope.router.activeRoute.path : "/", e.fullPath = this.config.baseURL === "/" ? this.path : this.config.baseURL + this.path, e.parentRoute = n ? this.parentScope.router.activeRoute : null, e.oldURL = "", e.resolvedRouteValue = null, e.resolvedDynamicRouteValue = null, e.routesMap = null, e.data = {
     routes: [],
     navs: [],
     activeRoute: null,
@@ -2508,142 +2601,146 @@ function w(e) {
     viewports: {
       main: null
     },
-    parameters: t.parentScope && t.parentScope.router ? t.parentScope.router.parameters : {}
-  }, t.onTransitionFn = x, t.onInvokeFn = x, t.onLoadFn = x, t.viewports = {
+    parameters: e.parentScope && e.parentScope.router ? e.parentScope.router.parameters : {}
+  }, e.onTransitionFn = w, e.onInvokeFn = w, e.onLoadFn = w, e.viewports = {
     main: {
       tag: "div",
       module: "<>router.activeModule"
     }
   }, Object.defineProperty(this, "urlParts", {
     get: function() {
-      return t.oldURL.split("/").slice(1);
+      return e.oldURL.split("/").slice(1);
     },
     enumerable: !0
-  }), e.systemId === "@root" && w.currentPath.update();
+  }), t.systemId === "@root" && x.currentPath.update();
 }
-w.prototype = {
-  setup: function(e) {
-    return this.routes = Ne(e, this.parentScope ? this.parentScope.router : null, this.fullPath === "/" ? "" : this.fullPath), this.routes.forEach((t) => {
-      (t.viewports ? Object.keys(t.viewports) : []).forEach((i) => {
-        i === "main" || this.viewports[i] || (this.viewports[i] = {
+x.prototype = {
+  setup: function(t) {
+    return this.routes = Ve(t, this.parentScope ? this.parentScope.router : null, this.fullPath === "/" ? "" : this.fullPath), this.routes.forEach((e) => {
+      (e.viewports ? Object.keys(e.viewports) : []).forEach((s) => {
+        s === "main" || this.viewports[s] || (this.viewports[s] = {
           tag: "div",
-          module: "<>router.viewports." + i
+          module: "<>router.viewports." + s
         });
       });
-    }), this.data.routes = this.routes, this.data.navs = this.routes.filter((t) => !t.hidden), this;
+    }), this.data.routes = this.routes, this.data.navs = this.routes.filter((e) => !e.hidden), this;
   },
   start: function() {
     this.listener = this.detect.bind(this), window.addEventListener("popstate", this.listener), this.detect();
   },
-  setTitle(e) {
-    this.title = e;
+  /**
+   *
+   * @param {string} title
+   */
+  setTitle(t) {
+    this.title = t;
   },
-  getTitle(e) {
-    const t = [];
-    if (e.pageTitle)
-      return e.pageTitle;
+  getTitle(t) {
+    const e = [];
+    if (t.pageTitle)
+      return t.pageTitle;
     if (this.parentRouter) {
       const n = this.parentRoute.pageTitle;
       if (n)
-        return t.push(n), e.title && t.push(e.title), t.join(w.TITLE_SEPARATOR);
-      t.push(this.parentRouter.title);
+        return e.push(n), t.title && e.push(t.title), e.join(x.TITLE_SEPARATOR);
+      e.push(this.parentRouter.title);
     }
-    return this.title && t.push(this.title), e.title && t.push(e.title), t.join(w.TITLE_SEPARATOR);
+    return this.title && e.push(this.title), t.title && e.push(t.title), e.join(x.TITLE_SEPARATOR);
   },
   /**
    *
    * @param {string} path
    * @param {boolean} replace
    */
-  navigateToPath: function(e, t) {
-    if (typeof e != "string")
-      throw new Error("Invalid argument(s) for `navigateToPath`: path must be a string. " + typeof e + " is given");
-    if (e.indexOf("/") !== 0)
-      throw new Error("Invalid argument(s) for `navigateToPath`: path must be starting with a `/`\nPlease use `/" + e + "` instead of `" + e + "`");
-    e.indexOf(this.config.baseURL) !== 0 && (e = this.config.baseURL + e), window.location.pathname !== e && (t ? history.replaceState({}, "", e) : history.pushState({}, "", e), dispatchEvent(new PopStateEvent("popstate", { state: {} })));
+  navigateToPath: function(t, e) {
+    if (typeof t != "string")
+      throw new Error("Invalid argument(s) for `navigateToPath`: path must be a string. " + typeof t + " is given");
+    if (t.indexOf("/") !== 0)
+      throw new Error("Invalid argument(s) for `navigateToPath`: path must be starting with a `/`\nPlease use `/" + t + "` instead of `" + t + "`");
+    t.indexOf(this.config.baseURL) !== 0 && (t = this.config.baseURL + t), window.location.pathname !== t && (e ? history.replaceState({}, "", t) : history.pushState({}, "", t), dispatchEvent(new PopStateEvent("popstate", { state: {} })));
   },
-  navigate: function(e, t) {
-    if (typeof e != "string")
-      throw new Error("Invalid argument(s) for `navigate`: path must be a string. " + typeof e + " is given");
-    if (e.indexOf("/") !== 0)
-      throw new Error("Invalid argument(s) for `navigate`: path must be starting with a `/`\nPlease use `/" + e + "` instead of `" + e + "`");
-    e.indexOf(this.path) !== 0 && (e = this.path + e), this.navigateToPath(e, t);
+  navigate: function(t, e) {
+    if (typeof t != "string")
+      throw new Error("Invalid argument(s) for `navigate`: path must be a string. " + typeof t + " is given");
+    if (t.indexOf("/") !== 0)
+      throw new Error("Invalid argument(s) for `navigate`: path must be starting with a `/`\nPlease use `/" + t + "` instead of `" + t + "`");
+    t.indexOf(this.path) !== 0 && (t = this.path + t), this.navigateToPath(t, e);
   },
-  navigateToRoute: function(e, t) {
-    let n = e.path;
-    e.parent && (n = e.parent.path + e.path), this.navigate(n, t);
+  navigateToRoute: function(t, e) {
+    let n = t.path;
+    t.parent && (n = t.parent.path + t.path), this.navigate(n, e);
   },
   notFound: function() {
   },
-  normalizeHash: function(e) {
-    if (e.indexOf("#!/") === 0)
+  normalizeHash: function(t) {
+    if (t.indexOf("#!/") === 0)
       throw new Error("Please use `#/` instead of `#!/` for you hash");
-    let t = e;
-    return e.indexOf("#/") !== 0 && (e.indexOf("/") !== 0 ? t = "/" + e : e.indexOf("#") === 0 && (t = e.split("#").join("#/"))), t.replace(this.fullPath, "/").replace("//", "/") || "/";
+    let e = t;
+    return t.indexOf("#/") !== 0 && (t.indexOf("/") !== 0 ? e = "/" + t : t.indexOf("#") === 0 && (e = t.split("#").join("#/"))), e.replace(this.fullPath, "/").replace("//", "/") || "/";
   },
-  onTransition: function(e) {
-    return this.onTransitionFn = e, this;
+  onTransition: function(t) {
+    return this.onTransitionFn = t, this;
   },
-  onInvoke: function(e) {
-    return this.onInvokeFn = e, this;
+  onInvoke: function(t) {
+    return this.onInvokeFn = t, this;
   },
-  onLoad: function(e) {
-    return this.onLoadFn = e, this;
+  onLoad: function(t) {
+    return this.onLoadFn = t, this;
   },
-  findMatchRoute: function(e, t, n) {
-    const i = this;
-    let s = 0;
-    const r = i.normalizeHash(t), a = e.map((o) => o.path), l = Ht(a), d = e.filter((o) => l.indexOf(o) === -1 && r.indexOf(o.path) === 0), p = d.length ? d.reduce((o, c) => o.path.length > c.path.length ? o : c) : !1;
+  findMatchRoute: function(t, e, n) {
+    const s = this;
+    let i = 0;
+    const r = s.normalizeHash(e), l = t.map((o) => o.path), a = Yt(l), d = t.filter((o) => a.indexOf(o) === -1 && r.indexOf(o.path) === 0), p = d.length ? d.reduce((o, c) => o.path.length > c.path.length ? o : c) : !1;
     if (p && !(r !== "/" && p.path === "/")) {
       const o = r.slice(0, p.path.length);
-      return i.resolvedRouteValue === o ? Object.assign(i.data.parameters, i.createClearParameters()) : (i.resolvedDynamicRouteValue = null, i.resolvedRouteValue = o, p.redirectTo ? this.navigate(p.redirectTo, !0) : (s++, i.callRoute(p, r, i.createClearParameters(), n)));
+      return s.resolvedRouteValue === o ? Object.assign(s.data.parameters, s.createClearParameters()) : (s.resolvedDynamicRouteValue = null, s.resolvedRouteValue = o, p.redirectTo ? this.navigate(p.redirectTo, !0) : (i++, s.callRoute(p, r, s.createClearParameters(), n)));
     }
-    for (let o = 0, c = l.length; o < c; o++) {
-      const f = l[o], u = f.paramFinderExpression.exec(r);
+    for (let o = 0, c = a.length; o < c; o++) {
+      const f = a[o], u = f.paramFinderExpression.exec(r);
       if (!u)
         continue;
-      s++;
-      const h = i.createParamValueMap(f.paramNames, u.slice(1));
-      if (i.resolvedDynamicRouteValue === t)
-        return Object.assign(i.data.parameters, h);
-      i.resolvedDynamicRouteValue = t, i.resolvedRouteValue = null;
-      const m = a.indexOf(f.id), b = f.id.split("/").filter((y) => y.indexOf(":") !== 0).join("/"), _ = t.replace(b, "").split("/");
-      return i.callRoute(e[m], _.join("/"), h, n);
+      i++;
+      const h = s.createParamValueMap(f.paramNames, u.slice(1));
+      if (s.resolvedDynamicRouteValue === e)
+        return Object.assign(s.data.parameters, h);
+      s.resolvedDynamicRouteValue = e, s.resolvedRouteValue = null;
+      const m = l.indexOf(f.id), b = f.id.split("/").filter((y) => y.indexOf(":") !== 0).join("/"), _ = e.replace(b, "").split("/");
+      return s.callRoute(t[m], _.join("/"), h, n);
     }
-    s === 0 && console.warn("No associated route has been found", t);
+    i === 0 && console.warn("No associated route has been found", e);
   },
-  callRoute: function(e, t, n, i) {
-    const s = this.data.activeRoute, r = this.data.activePath;
-    return this.data.activeRoute = e, this.data.activePath = e.path, this.onTransitionFn.call(this, r, e.path, s, e), e.redirectTo || (s && e.path.indexOf(r) !== 0 && (s.active = !1, typeof s.onLeave == "function" && s.onLeave.call(null, r, e.path, s, e)), e.active = !0), typeof e.onEnter == "function" && e.onEnter.call(null, r, e.path, s, e), document.title = this.getTitle(e), typeof e.handle == "function" ? e.handle.call(this, n, i) : (this.populateViewports(e), j(Rt(), (a) => {
-      Object.assign(this.data.parameters, n), a();
+  callRoute: function(t, e, n, s) {
+    const i = this.data.activeRoute, r = this.data.activePath;
+    return this.data.activeRoute = t, this.data.activePath = t.path, this.onTransitionFn.call(this, r, t.path, i, t), t.redirectTo || (i && t.path.indexOf(r) !== 0 && (i.active = !1, typeof i.onLeave == "function" && i.onLeave.call(null, r, t.path, i, t)), t.active = !0), typeof t.onEnter == "function" && t.onEnter.call(null, r, t.path, i, t), document.title = this.getTitle(t), typeof t.handle == "function" ? t.handle.call(this, n, s) : (this.populateViewports(t), j(Lt(), (l) => {
+      Object.assign(this.data.parameters, n), l();
     }), !1);
   },
-  populateViewports: function(e) {
-    let t = !1;
+  populateViewports: function(t) {
+    let e = !1;
     const n = this.data.viewports;
-    for (const i in n) {
-      let s = e.viewports[i];
-      s !== void 0 && (typeof s == "string" && (s = {
-        path: s,
-        onInvoke: this.onInvokeFn.bind(this, s, i),
-        onLoad: this.onLoadFn.bind(this, s, i)
-      }, t = !0), i === "main" && (this.data.activeModule = s), this.data.viewports[i] = s);
+    for (const s in n) {
+      let i = t.viewports[s];
+      i !== void 0 && (typeof i == "string" && (i = {
+        path: i,
+        onInvoke: this.onInvokeFn.bind(this, i, s),
+        onLoad: this.onLoadFn.bind(this, i, s)
+      }, e = !0), s === "main" && (this.data.activeModule = i), this.data.viewports[s] = i);
     }
-    !t && this.parentRouter && this.parentRouter.populateViewports(e);
+    !e && this.parentRouter && this.parentRouter.populateViewports(t);
   },
   createClearParameters: function() {
-    const e = {};
-    return Object.keys(this.data.parameters).forEach((n) => e[n] = void 0), e;
+    const t = {};
+    return Object.keys(this.data.parameters).forEach((n) => t[n] = void 0), t;
   },
-  createParamValueMap: function(e, t) {
+  createParamValueMap: function(t, e) {
     const n = {};
-    return e.forEach(function(i, s) {
-      n[i] = t[s];
+    return t.forEach(function(s, i) {
+      n[s] = e[i];
     }), n;
   },
   detect: function() {
-    const e = window.location.pathname, t = e ? e.substring(-1) !== "/" ? e + "/" : e : "/", n = this.config.baseURL === "/" ? this.path : this.config.baseURL + this.path;
-    t.indexOf(n) === 0 && t !== this.oldURL && (this.oldURL = t, this.findMatchRoute(this.routes, t, {}));
+    const t = window.location.pathname, e = t ? t.substring(-1) !== "/" ? t + "/" : t : "/", n = this.config.baseURL === "/" ? this.path : this.config.baseURL + this.path;
+    e.indexOf(n) === 0 && e !== this.oldURL && (this.oldURL = e, this.findMatchRoute(this.routes, e, {}));
   },
   getURLParts: function() {
     return this.oldURL.split("/").slice(1);
@@ -2652,170 +2749,89 @@ w.prototype = {
     this.parentRoute && (this.parentRoute.children = []), window.removeEventListener("popstate", this.listener);
   }
 };
-function x() {
-}
-const R = Object.defineProperty, Gt = Reflect.deleteProperty, De = Object.keys, Kt = Array.prototype.concat.bind([]), ge = Array.prototype.slice;
-function pe(e) {
-  let t = e instanceof Array ? [] : {};
-  t.__proto__ = e.__proto__;
-  for (let n in e)
-    if (e.hasOwnProperty(n)) {
-      const i = e[n];
-      i instanceof Promise || i instanceof w ? t[n] = i : typeof i == "object" && i !== null ? n === "animations" && i && typeof i == "object" ? t[n] = i : t[n] = pe(i) : t[n] = i;
-    }
-  return t;
-}
-const qt = document.createComment("");
-function Yt(e) {
-  const t = qt.cloneNode();
-  return t.textContent = e, t;
-}
-function Jt(e, t) {
-  return e === "svg" || t && t.blueprint.tag === "svg" ? document.createElementNS("http://www.w3.org/2000/svg", e) : e === "comment" ? document.createComment("ViewNode") : document.createElement(e);
-}
-function k(e, t, n) {
-  const i = this;
-  i.context = e, i.systemId = t.systemId, i.parentScope = t.parentScope || null, i.element = n || null, i.export = {}, i.uri = new Ee(t.path), i.eventHandlers = {}, i.observers = [];
-  const s = i.element.data ? V(i.element, i.element.data, i.parentScope, !0) : {};
-  R(i, "data", {
-    enumerable: !0,
-    configurable: !0,
-    get: function() {
-      return s;
-    },
-    set: function(r) {
-      if (r === null || typeof r != "object")
-        throw Error("The `Scope.data` property must be type of object and can not be null.");
-      Object.assign(s, r);
-    }
-  }), i.on("module.destroy", this.destroy.bind(i));
-}
-k.prototype = {
-  data: null,
-  systemId: null,
-  parentScope: null,
-  importAsText: function(e) {
-    return e.indexOf("./") === 0 && (e = e.replace("./", this.uri.path)), fetch(e, {
-      headers: {
-        "Content-Type": "text/plain"
-      }
-    }).then((t) => t.text());
-  },
+class Jt {
   /**
-   *
+   * @param {object} module
+   * @param {Scope} scope
    */
-  destroy: function() {
-    Gt(this, "data"), this.observers.forEach(function(e) {
-      e.remove();
-    });
-  },
-  kill: function() {
-    throw Error("Scope.kill() should not be invoked at the runtime");
-  },
-  /**
-   *
-   * @param {Galaxy.ModuleMetaData} moduleMeta
-   * @param {*} config
-   * @returns {*}
-   */
-  load: function(e, t) {
-    const n = Object.assign({}, e, t || {});
-    return n.path.indexOf("./") === 0 && (n.path = this.uri.path + e.path.substr(2)), n.parentScope = this, this.context.load(n);
-  },
-  /**
-   *
-   * @param moduleMetaData
-   * @param viewNode
-   * @returns {*|PromiseLike<T>|Promise<T>}
-   */
-  loadModuleInto: function(e, t) {
-    return this.load(e, {
-      element: t
-    }).then(function(n) {
-      return n.start(), n;
-    });
-  },
-  /**
-   *
-   * @param {string} event
-   * @param {Function} handler
-   */
-  on: function(e, t) {
-    this.eventHandlers[e] || (this.eventHandlers[e] = []), this.eventHandlers[e].indexOf(t) === -1 && this.eventHandlers[e].push(t);
-  },
-  /**
-   *
-   * @param {string} event
-   * @param {*} data
-   */
-  trigger: function(e, t) {
-    this.eventHandlers[e] && this.eventHandlers[e].forEach(function(n) {
-      n.call(null, t);
-    });
-  },
-  /**
-   *
-   * @param object
-   * @returns {Galaxy.Observer}
-   */
-  observe: function(e) {
-    const t = new I(e);
-    return this.observers.push(t), t;
+  constructor(e, n) {
+    this.id = e.id, this.source = typeof e.source == "function" ? e.source : null, this.path = e.path || null, this.scope = n;
   }
-};
-function Ve(e, t) {
-  this.id = e.id, this.systemId = e.systemId, this.source = typeof e.source == "function" ? e.source : null, this.path = e.path || null, this.importId = e.importId || e.path, this.scope = t;
-}
-Ve.prototype = {
-  init: function() {
-    Reflect.deleteProperty(this, "source"), Reflect.deleteProperty(this, "addOnProviders"), this.scope.trigger("module.init");
-  },
-  start: function() {
+  init() {
+    Reflect.deleteProperty(this, "source"), this.scope.trigger("module.init");
+  }
+  start() {
     this.scope.trigger("module.start");
-  },
-  destroy: function() {
+  }
+  destroy() {
     this.scope.trigger("module.destroy");
   }
-};
-function Ae(e, t) {
-  const n = new k(e, t, t.element || this.rootElement);
-  return new Ve(t, n);
 }
-function Oe(e) {
-  return new Promise(async function(t, n) {
+function w() {
+}
+const k = Object.defineProperty, Xt = Reflect.deleteProperty, Be = Object.keys, zt = Array.prototype.concat.bind([]), Oe = Array.prototype.slice;
+function pe(t) {
+  let e = t instanceof Array ? [] : {};
+  e.__proto__ = t.__proto__;
+  for (let n in t)
+    if (t.hasOwnProperty(n)) {
+      const s = t[n];
+      s instanceof Promise || s instanceof x ? e[n] = s : typeof s == "object" && s !== null ? n === "animations" && s && typeof s == "object" ? e[n] = s : e[n] = pe(s) : e[n] = s;
+    }
+  return e;
+}
+const $t = document.createComment("");
+function Wt(t) {
+  const e = $t.cloneNode();
+  return e.textContent = t, e;
+}
+function Qt(t, e) {
+  return t === "svg" || e && e.blueprint.tag === "svg" ? document.createElementNS("http://www.w3.org/2000/svg", t) : t === "comment" ? document.createComment("ViewNode") : document.createElement(t);
+}
+function Ae(t) {
+  const e = new R(t), n = new Jt(t, e);
+  return console.log("Module created:", n), n;
+}
+function Ee(t) {
+  return new Promise(async function(e, n) {
     try {
-      const i = e.source || (await import(
+      const s = t.source || (await import(
         /* @vite-ignore */
-        "/" + e.path
+        "/" + t.path
       )).default;
-      let s = i;
-      typeof i != "function" && (s = function() {
-        console.error("Can't find default function in %c" + e.path, "font-weight: bold;");
+      let i = s;
+      typeof s != "function" && (i = function() {
+        console.error("Can't find default function in %c" + t.path, "font-weight: bold;");
       });
-      const r = s.call(null, e.scope) || null, a = () => (e.init(), t(e));
-      r ? r.then(a) : a();
-    } catch (i) {
-      console.error(i.message + ": " + e.path), console.trace(i), n();
+      const r = i.call(null, t.scope) || null, l = () => (t.init(), e(t));
+      r ? r.then(l) : l();
+    } catch (s) {
+      console.error(s.message + ": " + t.path), console.trace(s), n();
     }
   });
 }
-k.prototype.useView = function() {
-  return new W(this);
-};
-k.prototype.useRouter = function() {
-  const e = new w(this);
-  return this.systemId !== "@root" && this.on("module.destroy", () => e.destroy()), this.__router__ = e, this.router = e.data, e;
-};
+const we = {};
+function Fe(t) {
+  if (!t)
+    throw new Error("Module meta data or constructor is missing");
+  return new Promise(function(e, n) {
+    if (t.hasOwnProperty("constructor") && typeof t.constructor == "function")
+      return t.path = t.id = "internal/" + (/* @__PURE__ */ new Date()).valueOf() + "-" + Math.round(performance.now()), t.source = t.constructor, Ee(Ae(t)).then(e);
+    t.path = t.path.indexOf("/") === 0 ? t.path.substring(1) : t.path, t.id || (t.id = t.parentScope ? t.parentScope.systemId + "/" + t.path : t.path);
+    let s = t.path, i = we[s];
+    i || (we[s] = i = fetch(s).then((r) => r.ok ? r : (console.error(r.statusText, s), n(r.statusText))).catch(n)), i.then((r) => r.clone().text()).then((r) => Ee(Ae(t))).then(e).catch(n);
+  });
+}
 Array.prototype.unique = function() {
-  const e = this.concat();
-  for (let t = 0, n = e.length; t < n; ++t)
-    for (let i = t + 1, s = e.length; i < s; ++i)
-      e[t] === e[i] && e.splice(i--, 1);
-  return e;
+  const t = this.concat();
+  for (let e = 0, n = t.length; e < n; ++e)
+    for (let s = e + 1, i = t.length; s < i; ++s)
+      t[e] === t[s] && t.splice(s--, 1);
+  return t;
 };
-const q = {
+const se = {
   moduleContents: {},
-  addOnProviders: [],
+  // addOnProviders: [],
   rootElement: null,
   bootModule: null,
   /**
@@ -2823,45 +2839,33 @@ const q = {
    * @param {Object} out
    * @returns {*|{}}
    */
-  extend: function(e) {
-    let t = e || {}, n;
-    for (let i = 1; i < arguments.length; i++)
-      if (n = arguments[i], !!n)
-        for (let s in n)
-          n.hasOwnProperty(s) && (n[s] instanceof Array ? t[s] = this.extend(t[s] || [], n[s]) : typeof n[s] == "object" && n[s] !== null ? t[s] = this.extend(t[s] || {}, n[s]) : t[s] = n[s]);
-    return t;
-  },
-  /**
-   *
-   * @param {Galaxy.ModuleMetaData} moduleMeta
-   * @return {Promise<any>}
-   */
-  load: function(e) {
-    if (!e)
-      throw new Error("Module meta data or constructor is missing");
-    const t = this;
-    return new Promise(function(n, i) {
-      if (e.hasOwnProperty("constructor") && typeof e.constructor == "function")
-        return e.path = e.id = "internal/" + (/* @__PURE__ */ new Date()).valueOf() + "-" + Math.round(performance.now()), e.systemId = e.parentScope ? e.parentScope.systemId + "/" + e.id : e.id, e.source = e.constructor, Oe(Ae(t, e)).then(n);
-      e.path = e.path.indexOf("/") === 0 ? e.path.substring(1) : e.path, e.id || (e.id = "@" + e.path), e.systemId = e.parentScope ? e.parentScope.systemId + "/" + e.id : e.id;
-      let s = e.path, r = t.moduleContents[s];
-      r || (t.moduleContents[s] = r = fetch(s).then((a) => a.ok ? a : (console.error(a.statusText, s), i(a.statusText))).catch(i)), r = r.then((a) => a.clone().text()), r.then((a) => Oe(Ae(t, e))).then(n).catch(i);
-    });
+  extend: function(t) {
+    let e = t || {}, n;
+    for (let s = 1; s < arguments.length; s++)
+      if (n = arguments[s], !!n)
+        for (let i in n)
+          n.hasOwnProperty(i) && (n[i] instanceof Array ? e[i] = this.extend(e[i] || [], n[i]) : typeof n[i] == "object" && n[i] !== null ? e[i] = this.extend(e[i] || {}, n[i]) : e[i] = n[i]);
+    return e;
   }
 };
-function zt(e) {
-  if (q.rootElement = e.element, e.id = "@root", !q.rootElement)
+function tn(t) {
+  if (se.rootElement = t.element, t.id = "@root", !se.rootElement)
     throw new Error("element property is mandatory");
-  return new Promise(function(t, n) {
-    q.load(e).then(function(i) {
-      q.bootModule = i, t(i);
-    }).catch(function(i) {
-      console.error("Something went wrong", i), n();
+  return new Promise(function(e, n) {
+    Fe(t).then(function(s) {
+      se.bootModule = s, e(s);
+    }).catch(function(s) {
+      console.error("Something went wrong", s), n();
     });
   });
 }
 export {
-  zt as boot,
-  he as setupTimeline
+  se as Galaxy,
+  Jt as Module,
+  x as Router,
+  R as Scope,
+  W as View,
+  tn as boot,
+  ye as setupTimeline
 };
 //# sourceMappingURL=galaxy.js.map
