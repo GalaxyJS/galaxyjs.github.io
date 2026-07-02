@@ -1040,13 +1040,13 @@ V.GLOBAL_RENDER_CONFIG = {
 };
 function V(e, t, i, a) {
 	let o = this;
-	o.view = i, e.tag instanceof Node ? (o.node = e.tag, e.tag = e.tag.tagName) : o.node = _(e.tag || "div", t), "style" in o.node || (o.processEnterAnimation = n), o.blueprint = e, o.data = a instanceof Z ? {} : a, o.localPropertyNames = /* @__PURE__ */ new Set(), o.inputs = {}, o.virtual = !1, o.visible = !0, o.placeholder = g(e.tag || "div"), o.properties = /* @__PURE__ */ new Set(), o.inDOM = !1, o.setters = {}, o.parent = t, o.finalize = [], o.origin = !1, o.destroyOrigin = 0, o.transitory = !1, o.garbage = [], o.leaveWithParent = !1, o.onLeaveComplete = B.bind(o, !0), r(o, "cache", {
+	o.view = i, e.tag instanceof Node ? (o.node = e.tag, e.tag = e.tag.tagName) : o.node = _(e.tag || "div", t), "style" in o.node || (o.processEnterAnimation = n), o.blueprint = e, o.data = a instanceof Z ? {} : a, o.localPropertyNames = /* @__PURE__ */ new Set(), o.inputs = {}, o.virtual = !1, o.visible = !0, o.placeholder = g(e.tag || "div"), o.properties = /* @__PURE__ */ new Set(), o.inDOM = !1, o.setters = {}, o.parent = t, o.finalize = [], o.origin = !1, o.destroyOrigin = 0, o.transitory = !1, o.garbage = [], o.leaveWithParent = !1, o.onLeaveComplete = B.bind(o, !0), o._display = null, r(o, "cache", {
 		enumerable: !1,
 		configurable: !1,
 		value: {}
 	}), o.rendered = new Promise(function(e) {
 		"style" in o.node ? o.hasBeenRendered = function() {
-			o.rendered.resolved = !0, o.node.style.removeProperty("display"), o.blueprint._render && o.blueprint._render.call(o, o.data), e(o);
+			o.rendered.resolved = !0, o.node.style.setProperty("display", o._display), o.blueprint._render && o.blueprint._render.call(o, o.data), e(o);
 		} : o.hasBeenRendered = function() {
 			o.rendered.resolved = !0, e();
 		};
@@ -1082,7 +1082,7 @@ V.prototype = {
 		this.placeholder.nodeValue = JSON.stringify(this.blueprint, (e, t) => e === "children" ? "<children>" : e === "animations" ? "<animations>" : t, 2), this.virtual = !0, this.setInDOM(!1);
 	},
 	processEnterAnimation: function() {
-		this.node.style.display = null;
+		this.node.style.display = this._display;
 	},
 	processLeaveAnimation: n,
 	populateHideSequence: function() {
@@ -1097,7 +1097,7 @@ V.prototype = {
 		}
 		if (this.inDOM = e, !this.virtual) {
 			if (e) {
-				"style" in this.node && this.node.style.setProperty("display", "none"), this.node.parentNode || Je(this.placeholder.parentNode, this.node, this.placeholder.nextSibling), this.placeholder.parentNode && z(this.placeholder.parentNode, this.placeholder), O(this.index, (e) => {
+				"style" in this.node && (this._display = this.node.style.display === "none" ? null : this.node.style.display, this.node.style.setProperty("display", "none")), this.node.parentNode || Je(this.placeholder.parentNode, this.node, this.placeholder.nextSibling), this.placeholder.parentNode && z(this.placeholder.parentNode, this.placeholder), O(this.index, (e) => {
 					this.hasBeenRendered(), this.processEnterAnimation(), e();
 				});
 				let e = this.getChildNodesAsc(), t = e.length;

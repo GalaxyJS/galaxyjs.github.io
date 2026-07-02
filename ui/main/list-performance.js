@@ -20,7 +20,7 @@ export default (Scope) => {
                   const t0 = performance.now();
 
                   Scope.data.list = [];
-                  for (let i = 0; i < 10000; i++) {
+                  for (let i = 0; i < 1000; i++) {
                     Scope.data.list.push({
                       title: 'index: ' + i
                     });
@@ -32,12 +32,19 @@ export default (Scope) => {
               }
             },
             {
-              tag: 'p',
-              repeat: {
-                data: '<>data.list',
-                as: 'item'
+              style: {
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "1rem",
               },
-              text: '<>item.title'
+              children: {
+                tag: 'span',
+                repeat: {
+                  data: '<>data.list',
+                  as: 'item'
+                },
+                text: '<>item.title'
+              }
             }
           ]
         }
